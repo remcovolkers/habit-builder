@@ -254,13 +254,19 @@ Sociaal brengt gegevens van anderen op andermans scherm. Voor een hobbyproject m
 ### 7.1 Plek in de app
 Besloten (S9): de ranglijst is bereikbaar vanaf **Voortgang** (een kaart "Ranglijst" bovenaan, met je positie), met een eigen route (`#/vrienden`). Geen zesde tabblad; de navigatie blijft vijf items. Op desktop kan de zijbalk later een eigen item krijgen als dat prettiger blijkt.
 
-### 7.2 Schermen
-1. **Uitleg + aanzetten** (bij eerste keer): wat vrienden zien, kies je gebruikersnaam, bevestig.
-2. **Ranglijst** (hoofdscherm): lijst met jou gemarkeerd, rang, naam, punten als getal én balk, reeks. Bovenaan wie je bent en je positie, met "Waar komen mijn punten vandaan?" (§4.6); onderaan "Vrienden toevoegen".
-3. **Vrienden toevoegen**: zoekveld (exacte naam) + "Deel uitnodigingslink"; resultaat "Stuur verzoek".
-4. **Verzoeken**: ontvangen (accepteren/weigeren) en verstuurd (intrekken), met een teller op de knop.
-5. **Vriendenlijst/beheer**: vrienden verwijderen, uitnodigingslinks intrekken.
-6. **Lege toestanden** (verplicht, zoals eerder): geen vrienden ("Nodig iemand uit"), alleen jij op de lijst (ook: "vrienden die even niets deden zie je weer zodra ze beginnen"), geen verbinding, niet ingelogd.
+### 7.2 Schermen (gebouwd in S4)
+
+| Route | Scherm |
+|---|---|
+| Voortgang (`#/stats`) | een **kaart** bovenaan: niet ingelogd "log in om mee te doen"; ingelogd maar nog niet meegedaan "Meedoen" (zonder iets op te halen); meedoend je plek en punten ("Je staat 2e van 5 · 282 punten") met een teller voor nieuwe verzoeken; en een banner als er nog een uitnodiging wacht |
+| `#/vrienden` | **hoofdscherm**, afhankelijk van de status: niet ingelogd (uitleg + inloggen), aanmelden (wat vrienden zien en wat privé blijft, je naam en gebruikersnaam), of de **ranglijst** met binnenkomende verzoeken bovenaan, knoppen *Vrienden toevoegen* en *Beheren*, vernieuwen en "Waar komen mijn punten vandaan?" |
+| `#/vrienden/toevoegen` | zoeken op de exacte gebruikersnaam (resultaat met de juiste knop: verzoek sturen, verstuurd, accepteren of al vrienden) en een uitnodigingslink maken, delen en kopiëren |
+| `#/vrienden/beheer` | verzoeken aan jou en van jou, je vrienden (verwijderen met bevestiging), je uitnodigingslinks (intrekken), je profiel (naam wijzigen) en sociaal uitzetten |
+| `#/vrienden/uitnodiging/<code>` | een uitnodigingslink openen: eerst inloggen (de code blijft bewaard, ook over Google heen) en meedoen, daarna word je direct vrienden; bij een verlopen of kapotte link een nette melding |
+
+Geen zesde tabblad (S9): de ranglijst hoort bij Voortgang en laat die in de navigatie oplichten. Na het inloggen stuurt de app je naar een wachtende uitnodiging.
+
+**Lege en bijzondere toestanden:** niet ingelogd · account wordt hersteld · server kent sociaal nog niet (`unavailable`: de kaart verdwijnt, het scherm legt het uit) · geen verbinding en nog niet bekend of je meedoet (met opnieuw proberen) · offline met een cache ("Stand van 21:24") · je staat er nog alleen · geen verzoeken · geen vrienden · geen uitnodigingslinks.
 
 ### 7.3 Eisen aan de uitvoering
 - Alle teksten in `src/content/nl.js`; werkt in beide thema's (v0lky1, Mel) en op desktop (twee kolommen).
@@ -292,7 +298,7 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 | **S1** | Domein: punten (basis, opbouwbonus, startbonus, minpunten, half gehaalde teller), actief-regel (3 dagen), gelijke stand, tests. Plus de naamvraag bij het aanmaken van een account (S5) | ✔ klaar: de regels uit §4 hebben groene tests; de meting (§4.7) staat erin. |
 | **S2** | Server: migratie 0003, functies, tests, DATAMODEL bijgewerkt | ✔ klaar: niet-vriend ziet niets, vriend ziet alleen de ranglijstvelden, weigeren/intrekken/verlopen/limieten/cascade werken (32 tests op Postgres, 96 controles via de API). **Nog niet op productie gezet**: dat gebeurt bij de release. |
 | **S3** | Data-laag en publiceren: remote-client, samenvatting na sync, offline cache | ✔ klaar: publiceren op de achtergrond; uit = niets verzonden (getest, 66 nieuwe tests); de hele keten ook getest met de echte SDK tegen de lokale Supabase (`npm run db:check-app`, 29 controles) |
-| **S4** | UI: aanzetten, zoeken, link, verzoeken, ranglijst, lege toestanden, beide thema's, desktop | Browsertests groen op 360/390/412 px en desktop; a11y- en overflowrondes groen. |
+| **S4** | UI: aanzetten, zoeken, link, verzoeken, ranglijst, lege toestanden, beide thema's, desktop | ✔ klaar: vijf schermen en een kaart op Voortgang. De browserreeks `npm run db:check-browser` (123 controles, echte Edge tegen de lokale Supabase) slaagt: alle stromen, beide thema's, desktop, 320 px met 200% tekst (geen overflow, niets afgeknipt, tikvlakken van 44 px), offline, namen voor alles wat je kunt bedienen. Alle bestaande browserreeksen blijven slagen. |
 | **S5** | Privacyverklaring, voorwaarden, in-app uitleg, PLAN en DATAMODEL bijgewerkt, browsertests in CI | Release-checklist uit WERKWIJZE doorlopen; test op twee echte telefoons; release `v1.1`. |
 
 ## 11. Risico's
@@ -312,4 +318,4 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 ## 12. Volgende stappen
 
 1. Testdatabase lokaal starten: [DEV-OMGEVING.md](DEV-OMGEVING.md).
-2. S1 (de punten), S2 (de server) en S3 (de data-laag in de app) zijn klaar; daarna S4: de schermen (aanzetten, vrienden zoeken en toevoegen, verzoeken, ranglijst, uitnodigingslink, lege toestanden) en de route `#/vrienden`.
+2. S1 (de punten), S2 (de server), S3 (de data-laag) en S4 (de schermen) zijn klaar. Wat overblijft is S5: de privacyverklaring en voorwaarden bijwerken, de uitleg in de app nalopen, de browserreeksen in CI zetten en proberen op twee echte telefoons; daarna de release (`v1.1`).

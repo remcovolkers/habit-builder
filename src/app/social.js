@@ -115,3 +115,25 @@ export function withOwnSummary({ entries, userId, username, name, summary }) {
 
 /** Voor de uitleg in de UI: over hoeveel dagen de punten gaan. */
 export const WINDOW_DAYS = SCORE_WINDOW_DAYS;
+
+// ---- voor de schermen -----------------------------------------------------------------------------------------------------------
+
+/**
+ * De regels van "Waar komen mijn punten vandaan?" uit de uitsplitsing van buildScoreSummary: { key, points }, met een min bij de
+ * aftrek. Taken staan er altijd; bonus, start en aftrek alleen als ze er zijn.
+ */
+export function describeBreakdown(breakdown) {
+  const b = breakdown ?? { tasks: 0, bonus: 0, start: 0, penalty: 0 };
+  return [
+    { key: 'tasks', points: b.tasks },
+    ...(b.bonus > 0 ? [{ key: 'bonus', points: b.bonus }] : []),
+    ...(b.start > 0 ? [{ key: 'start', points: b.start }] : []),
+    ...(b.penalty > 0 ? [{ key: 'penalty', points: -b.penalty }] : []),
+  ];
+}
+
+/** Jouw plek op de ranglijst: { rank, total, points } (total = aantal mensen op de lijst), of null als je er niet op staat. */
+export function myPosition(board) {
+  const me = (board ?? []).find((row) => row.isMe);
+  return me ? { rank: me.rank, total: board.length, points: me.points } : null;
+}

@@ -40,6 +40,7 @@ Handig:
 | Commando | Doet |
 |---|---|
 | `npm run db:status` | adressen en sleutels |
+| `npm run db:check-browser` | de sociale schermen in een echte browser (Edge, Windows) tegen de lokale database: alle stromen, thema's, desktop, grote tekst, offline (maakt schermafbeeldingen) |
 | `npm run db:check-app` | controleert de hele keten van de app (echte SDK, data-laag en besturing) met drie testaccounts |
 | `npm run db:check-social` | controleert de sociale functies via de echte API (maakt en ruimt testaccounts op) |
 | `npm run db:reset` | leegmaken en alle migraties opnieuw toepassen (schone lei) |

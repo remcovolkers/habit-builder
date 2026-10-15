@@ -10,6 +10,10 @@ import { habitFormView } from './ui/views/habit-form.js';
 import { habitDetailView } from './ui/views/habit-detail.js';
 import { statsView } from './ui/views/stats.js';
 import { achievementsView } from './ui/views/achievements.js';
+import { friendsView } from './ui/views/friends.js';
+import { friendsAddView } from './ui/views/friends-add.js';
+import { friendsManageView } from './ui/views/friends-manage.js';
+import { friendsInviteView } from './ui/views/friends-invite.js';
 import { loginView } from './ui/views/login.js';
 import { initAccount } from './ui/account.js';
 import { initReminders } from './ui/reminders.js';
@@ -26,7 +30,7 @@ import { nl } from './content/nl.js';
 const NAV = [
   { key: 'today', path: '/today' },
   { key: 'habits', path: '/habits' },
-  { key: 'stats', path: '/stats' },
+  { key: 'stats', path: '/stats', also: ['/vrienden'] }, // de ranglijst hoort bij Voortgang (geen eigen tabblad)
   { key: 'achievements', path: '/achievements' },
   { key: 'settings', path: '/settings' },
 ];
@@ -39,14 +43,18 @@ const routes = [
   { path: '/habits/:id', render: ({ params }) => habitDetailView({ id: params.id }) },
   { path: '/stats', render: () => statsView() },
   { path: '/achievements', render: () => achievementsView() },
+  { path: '/vrienden', render: () => friendsView() },
+  { path: '/vrienden/toevoegen', render: () => friendsAddView() },
+  { path: '/vrienden/beheer', render: () => friendsManageView() },
+  { path: '/vrienden/uitnodiging/:code', render: ({ params }) => friendsInviteView({ code: params.code }) },
   { path: '/settings', render: () => settingsView() },
   { path: '/login', render: () => loginView() },
 ];
 
 const tabbar = document.getElementById('tabbar');
 fill(tabbar, 
-  ...NAV.map(({ key, path }) =>
-    h('a', { class: 'tabbar__item', href: `#${path}`, dataset: { path } },
+  ...NAV.map(({ key, path, also }) =>
+    h('a', { class: 'tabbar__item', href: `#${path}`, dataset: { path, also: also?.join(' ') } },
       icon(key),
       h('span', { class: 'tabbar__label' }, nl.nav[key]),
     ),
@@ -55,7 +63,8 @@ fill(tabbar,
 
 function markActive({ path }) {
   for (const link of tabbar.children) {
-    const active = path === link.dataset.path || path.startsWith(`${link.dataset.path}/`);
+    const roots = [link.dataset.path, ...(link.dataset.also?.split(' ') ?? [])];
+    const active = roots.some((root) => path === root || path.startsWith(`${root}/`));
     if (active) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   }

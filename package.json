@@ -16,7 +16,8 @@
     "db:status": "npx --yes supabase@2.121.0 status",
     "db:reset": "npx --yes supabase@2.121.0 db reset",
     "db:check-social": "node tools/social-check.mjs",
-    "db:check-app": "node tools/social-app-check.mjs"
+    "db:check-app": "node tools/social-app-check.mjs",
+    "db:check-browser": "node tools/social-browser-check.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.10"

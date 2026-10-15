@@ -1,5 +1,6 @@
 import { fill, h } from '../dom.js';
 import { account, activate, afterLogin } from '../account.js';
+import { socialApp } from '../social-app.js';
 import { icon } from '../svg.js';
 import { mascot } from '../components/mascot.js';
 import { nl } from '../../content/nl.js';
@@ -82,7 +83,8 @@ export function loginView() {
       if (!CODE.test(token)) throw Object.assign(new Error('code'), { key: 'code_format' });
       await auth.verifyEmailCode(email, token);
       await afterLogin();
-      location.hash = '#/today';
+      const invite = socialApp.pendingInvite(); // een uitnodiging die op je wachtte voordat je was ingelogd
+      location.hash = invite ? `#/vrienden/uitnodiging/${invite}` : '#/today';
     });
   };
 
