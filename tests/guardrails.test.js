@@ -85,3 +85,18 @@ test('CSS: trek-om-te-verversen staat uit (overscroll-behavior-y: none op html)'
   const css = readFileSync(join(ROOT, 'styles/base.css'), 'utf8');
   assert.match(css, /html\s*\{[^}]*overscroll-behavior-y:\s*none/);
 });
+
+test('zoomen met twee vingers staat uit (bewuste keuze): viewport-meta én touch-action', () => {
+  const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
+  const viewport = html.match(/<meta name="viewport" content="([^"]*)"/)[1];
+  assert.match(viewport, /maximum-scale=1/);
+  assert.match(viewport, /user-scalable=no/);
+  assert.match(readFileSync(join(ROOT, 'styles/base.css'), 'utf8'), /html\s*\{[^}]*touch-action:\s*pan-x pan-y/);
+});
+
+test('CSS: tikvlakken zijn minstens 44px en groeien niet mee met grote tekst; de pagina scrolt nooit zijwaarts', () => {
+  const tokens = readFileSync(join(ROOT, 'styles/tokens.css'), 'utf8');
+  assert.match(tokens, /--size-tap:\s*max\(44px,/);
+  assert.match(tokens, /--size-check:\s*max\(44px,/);
+  assert.match(readFileSync(join(ROOT, 'styles/base.css'), 'utf8'), /html\s*\{[^}]*overflow-x:\s*clip/);
+});

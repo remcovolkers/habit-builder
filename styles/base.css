@@ -9,10 +9,15 @@ html {
   background: var(--color-bg-3);
   /* geen "trek om te verversen" en geen rubberband: de app ververst zichzelf (sync), en een per ongeluk herladen gaf rare tussenstanden */
   overscroll-behavior-y: none;
+  /* vangnet: de pagina scrolt nooit zijwaarts. De echte oorzaken (te brede inhoud bij grote tekst) zijn opgelost, zie de 200%-controle. */
+  overflow-x: clip;
+  /* geen zoomen met twee vingers en geen dubbeltik-zoom: de app is voor een telefoon gemaakt en schaalt zelf (bewuste keuze). Het tekstformaat van het toestel blijft werken. */
+  touch-action: pan-x pan-y;
 }
 
 body {
   margin: 0;
+  overflow-wrap: break-word; /* een lang woord breekt af als het niet past, in plaats van buiten het scherm te lopen */
   /* svh = de kleinste schermhoogte (adresbalk zichtbaar). dvh verandert met de adresbalk van Chrome op Android; na een herlaadbeurt
      kon de pagina daardoor net hoger zijn dan het scherm en zonder reden scrollen. */
   min-height: 100svh;
@@ -135,6 +140,7 @@ textarea {
 
 /* typografie */
 .kicker {
+  overflow-wrap: anywhere;
   font-size: var(--font-size-2xs);
   font-weight: var(--font-weight-extra);
   letter-spacing: var(--letter-spacing-kicker);
@@ -146,7 +152,8 @@ textarea {
 .h1 {
   font-family: var(--font-display);
   font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-3xl);
+  font-size: min(var(--font-size-3xl), 9vw); /* bij grote tekst nooit breder dan het scherm */
+  overflow-wrap: anywhere;
   line-height: var(--line-height-tight);
   letter-spacing: var(--letter-spacing-display);
   text-transform: uppercase;
@@ -191,6 +198,7 @@ textarea {
 /* pagina-opbouw */
 .page-header {
   display: flex;
+  flex-wrap: wrap; /* bij grote tekst komt de rechterkant onder de titel */
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
@@ -218,6 +226,7 @@ textarea {
 
 .section-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);

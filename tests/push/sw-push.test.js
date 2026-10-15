@@ -49,6 +49,8 @@ test('push: toont de titel en tekst uit het bericht, met icoon en een vaste tag 
   assert.equal(options.body, 'Vandaag staan 3 gewoontes op je lijst.');
   assert.equal(options.icon, 'icons/icon-192.png');
   assert.equal(options.tag, 'morning-reminder');
+  assert.equal(options.renotify, true, 'een melding met dezelfde tag moet opnieuw aankondigen (geluid en trilling), niet stilletjes vervangen');
+  assert.deepEqual([...options.vibrate], [200, 100, 200]);
   assert.equal(options.data.url, './#/today');
 });
 
@@ -97,4 +99,11 @@ test('klik: een adres buiten de app in het bericht wordt genegeerd', async () =>
     await worker.click(url);
     assert.deepEqual(worker.opened, [`${SCOPE}#/today`], String(url));
   }
+});
+
+test('push: renotify mag alleen samen met een tag (anders gooit showNotification een fout en komt er geen melding)', async () => {
+  const worker = loadWorker();
+  await worker.push(JSON.stringify({ title: 't', body: 'b' }));
+  const { options } = worker.shown[0];
+  assert.ok(options.renotify !== true || (typeof options.tag === 'string' && options.tag !== ''));
 });

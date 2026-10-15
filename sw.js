@@ -76,6 +76,10 @@ self.addEventListener('push', (event) => {
     body: text(data.body, 'Bekijk wat er vandaag op je lijst staat.'),
     icon: 'icons/icon-192.png',
     tag: REMINDER_TAG, // een nieuwe melding vervangt de vorige in plaats van te stapelen
+    // Zonder renotify vervangt Android een melding met dezelfde tag STILLETJES: geen geluid, geen trilling, scherm blijft uit.
+    // Dan sta je pas bij het ontgrendelen bij de melding stil. renotify laat elke nieuwe melding opnieuw aankondigen.
+    renotify: true,
+    vibrate: [200, 100, 200],
     lang: 'nl',
     data: { url: typeof data.url === 'string' ? data.url : './#/today' },
   }));

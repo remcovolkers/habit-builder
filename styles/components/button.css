@@ -10,7 +10,7 @@
   font-family: var(--font-body);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
-  white-space: nowrap;
+  white-space: normal; /* een lange knoptekst breekt af in plaats van buiten het scherm te lopen */
   text-decoration: none;
   cursor: pointer;
 }

@@ -45,8 +45,9 @@
   --space-12: 3rem;
 
   /* maten */
-  --size-tap: 2.75rem;
-  --size-check: 3rem;
+  /* tikvlak: minstens 44px, en groeit niet mee met grote tekst (anders passen er geen knoppen meer naast elkaar) */
+  --size-tap: max(44px, min(2.75rem, 12vw));
+  --size-check: max(44px, min(3rem, 13vw));
   --size-tabbar: 4rem;
   --size-sidebar: 15.5rem;
   --content-max: 40rem;

@@ -85,7 +85,7 @@
 .phases {
   position: relative;
   display: grid;
-  grid-template-columns: var(--s1, 3fr) var(--s2, 4fr) var(--s3, 3fr);
+  grid-template-columns: minmax(0, var(--s1, 3fr)) minmax(0, var(--s2, 4fr)) minmax(0, var(--s3, 3fr));
   gap: 4px;
   margin-top: var(--space-4);
 }
@@ -123,7 +123,7 @@
 
 .phase-labels {
   display: grid;
-  grid-template-columns: var(--s1, 3fr) var(--s2, 4fr) var(--s3, 3fr);
+  grid-template-columns: minmax(0, var(--s1, 3fr)) minmax(0, var(--s2, 4fr)) minmax(0, var(--s3, 3fr));
   gap: 4px;
   margin-top: var(--space-2);
   font-size: var(--font-size-2xs);
@@ -140,11 +140,14 @@
 /* cijfertegels */
 .tiles {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* twee naast elkaar, en onder elkaar zodra ze niet meer passen (bv. bij grote tekst); rem-gebaseerd, dus het volgt de tekstgrootte */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
   gap: var(--space-3);
 }
 
 .tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -196,7 +199,7 @@
 /* heatmap */
 .heat {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
   margin-top: var(--space-3);
 }
@@ -289,6 +292,7 @@
 
 .checklist li {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
   font-size: var(--font-size-sm);
@@ -365,17 +369,18 @@
 
 .detail__actions {
   display: flex;
+  flex-wrap: wrap; /* bij grote tekst komen de knoppen onder elkaar */
   gap: var(--space-2);
 }
 
 .detail__actions > * {
-  flex: 1;
+  flex: 1 1 8rem;
 }
 
 /* automatisme 1–5 */
 .rating {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
@@ -401,6 +406,7 @@
 /* voortgang-overzicht */
 .overview-row {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   padding: var(--space-4);
   color: inherit;
@@ -409,6 +415,7 @@
 
 .overview-row__top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
 }
@@ -421,6 +428,7 @@
 
 .overview-row__stats {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--space-3);
   font-size: var(--font-size-xs);

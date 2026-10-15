@@ -5,7 +5,7 @@
 
 .daynav {
   display: grid;
-  grid-template-columns: var(--size-tap) 1fr var(--size-tap);
+  grid-template-columns: var(--size-tap) minmax(0, 1fr) var(--size-tap); /* minmax(0,…): de datum mag krimpen en afbreken */
   align-items: center;
   text-align: center;
 }
