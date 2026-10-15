@@ -396,6 +396,8 @@ export const nl = {
     hint: 'Elke ochtend een melding met wat er die dag op je lijst staat. Je stelt dit per apparaat in.',
     privacy: 'De melding komt van onze server. Die kent je voornaam, je tijdstip en tijdzone, en per dag hoeveel gewoontes er gepland staan. De namen van je gewoontes blijven bij jou.',
     time: 'Tijdstip',
+    hour: 'uur',
+    minute: 'minuten',
     timeErrors: {
       invalid: 'Kies een tijd, bijvoorbeeld 08:00.',
       before_day_start: (hour) => `Kies een tijd vanaf ${String(hour).padStart(2, '0')}:00; daarvoor is het nog de vorige dag.`,
@@ -408,6 +410,20 @@ export const nl = {
     testSent: 'Testmelding verstuurd. Die komt zo binnen.',
     testDelayed: 'Testmelding over 15 seconden',
     testDelayedSent: 'Gepland. Sluit nu de app en vergrendel je scherm: de melding komt over ongeveer 15 seconden.',
+    battery: {
+      summary: 'Komen meldingen te laat of niet?',
+      title: 'Zorg dat meldingen op tijd komen',
+      intro: 'Om batterij te sparen houdt Android meldingen soms vast tot je de app opent. Zet daarom de batterij-instelling op "Onbeperkt":',
+      steps: (app, alsoChrome) => [
+        `Houd het icoon van ${app} ingedrukt en tik op "App-info" (de i). Of ga naar Instellingen → Apps → ${app}.`,
+        'Kies "Batterij" (soms "App-batterijgebruik").',
+        'Zet op "Onbeperkt" (niet op "Geoptimaliseerd" of "Beperkt").',
+        'Staat "Pauzeer app-activiteit als app niet wordt gebruikt" aan? Zet dat uit.',
+        ...(alsoChrome ? ['Doe dit ook voor Chrome: de melding loopt via Chrome.'] : []),
+      ],
+      understood: 'Begrepen',
+      late: (late) => `De laatste melding kwam ${late} later dan verstuurd. Dat komt meestal door de batterij-instellingen.`,
+    },
     lastPush: {
       none: 'Er is op dit apparaat nog geen melding aangekomen.',
       received: (time) => `Laatste melding aangekomen om ${time}.`,

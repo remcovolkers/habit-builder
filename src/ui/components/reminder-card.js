@@ -2,6 +2,10 @@ import { fill, h } from '../dom.js';
 import { showToast } from './toast.js';
 import { disableReminder, enableReminder, onRemindersChanged, readPushLog, reminders, setReminderTime, testReminder } from '../reminders.js';
 import { state } from '../state.js';
+import { openDialog } from './dialog.js';
+import { timePicker } from './time-picker.js';
+import { pwa } from '../../pwa.js';
+import { isAndroid } from '../../app/reminder.js';
 import { nl } from '../../content/nl.js';
 
 /**
@@ -34,9 +38,42 @@ export function reminderCard() {
   }
 
   const pushLog = h('p', { id: 'pushLog', class: 'field__hint' });
+  const lateNote = h('p', { id: 'batteryLate', class: 'field__error', hidden: true });
+  const onAndroid = isAndroid(globalThis.navigator?.userAgent);
+
+  /** De stappen om de batterij-instelling te openen; voor de app die je nu gebruikt, en bij een geïnstalleerde app ook voor Chrome. */
+  const batterySteps = () => nl.reminder.battery.steps(pwa.installed ? 'Habit Builder' : 'Chrome', pwa.installed);
+  const batteryList = () => h('ol', { class: 'battery-steps' }, ...batterySteps().map((step) => h('li', null, step)));
+
+  const BATTERY_TIP_KEY = 'hb-battery-tip-seen';
+  const batteryTipSeen = () => { try { return localStorage.getItem(BATTERY_TIP_KEY) === '1'; } catch { return false; } };
+  const markBatteryTipSeen = () => { try { localStorage.setItem(BATTERY_TIP_KEY, '1'); } catch { /* opslag geblokkeerd: dan krijg je hem vaker te zien */ } };
+
+  /** Direct na het aanzetten, één keer: zonder dit wordt een melding op Android vaak pas bezorgd als je de app opent. */
+  function showBatteryTip() {
+    if (!onAndroid || batteryTipSeen()) return;
+    markBatteryTipSeen();
+    openDialog({
+      title: nl.reminder.battery.title,
+      description: nl.reminder.battery.intro,
+      content: batteryList(),
+      actions: [{ label: nl.reminder.battery.understood, variant: 'primary' }],
+      cancelLabel: null,
+    });
+  }
+
+  function batteryDetails(open) {
+    if (!onAndroid) return null;
+    return h('details', { class: 'reminder-card__battery', id: 'batteryTips', open },
+      h('summary', null, nl.reminder.battery.summary),
+      h('p', { class: 'field__hint' }, nl.reminder.battery.intro),
+      batteryList(),
+      lateNote);
+  }
 
   /** Wanneer kwam de laatste melding aan, en hoeveel later dan verstuurd? */
   async function showPushLog() {
+    lateNote.hidden = true;
     const log = await readPushLog();
     const clock = (ms) => new Date(ms).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     if (!log) {
@@ -48,13 +85,19 @@ export function reminderCard() {
       return;
     }
     const seconds = Math.round((log.received - log.sent) / 1000);
-    const late = seconds <= 60 ? r.lastPush.immediately : r.lastPush.late(seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${Math.round(seconds / 3600)} uur`);
+    const lateText = seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${Math.round(seconds / 3600)} uur`;
+    if (seconds > 120) { // te laat: de uitleg gaat vanzelf open, want dit is bijna altijd de batterij-instelling
+      lateNote.textContent = nl.reminder.battery.late(lateText);
+      lateNote.hidden = false;
+      lateNote.closest('details')?.setAttribute('open', '');
+    }
+    const late = seconds <= 60 ? r.lastPush.immediately : r.lastPush.late(lateText);
     pushLog.textContent = r.lastPush.detail(clock(log.sent), clock(log.received), late);
   }
 
   function timeField(input) {
     return h('div', { class: 'field' },
-      h('label', { class: 'field__label', for: 'reminderTime' }, r.time),
+      h('span', { class: 'field__label', id: 'reminderTimeLabel' }, r.time),
       input);
   }
 
@@ -73,9 +116,9 @@ export function reminderCard() {
       return;
     }
 
-    const input = h('input', {
-      id: 'reminderTime', class: 'input', type: 'time', value: reminders.time, required: true, disabled: busy,
-      'aria-describedby': 'reminderMessage',
+    // 24-uursnotatie, ongeacht de instelling van het toestel (zie time-picker.js)
+    const input = timePicker({
+      id: 'reminderTime', value: reminders.time, label: r.time, hourLabel: r.hour, minuteLabel: r.minute, disabled: busy, describedBy: 'reminderMessage',
     });
     message.id = 'reminderMessage';
 
@@ -120,7 +163,8 @@ export function reminderCard() {
             }),
           }, r.disable),
           message,
-          pushLog));
+          pushLog),
+        batteryDetails(false));
       showPushLog();
       return;
     }
@@ -136,7 +180,10 @@ export function reminderCard() {
             guarded(async () => {
               say('');
               const result = await enableReminder(time);
-              if (result.ok) showToast({ message: r.enabled });
+              if (result.ok) {
+                showToast({ message: r.enabled });
+                showBatteryTip();
+              }
               else if (result.reason === 'invalid' || result.reason === 'before_day_start') say(timeError(result.reason), true);
               else say(r.errors[result.reason] ?? r.errors.failed, true);
             });

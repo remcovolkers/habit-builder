@@ -111,3 +111,12 @@ test('rearmDate: rekent in de tijdzone van de gebruiker, ook als de datum daar a
   assert.equal(rearmDate({ time: '08:00', now, timeZone: 'America/New_York' }), '2026-10-15');
   assert.equal(rearmDate({ time: '00:10', now, timeZone: 'Europe/Amsterdam' }), '2026-10-16');
 });
+
+test('isAndroid: alleen Android krijgt de uitleg over batterij-instellingen', async () => {
+  const { isAndroid } = await import('../../src/app/reminder.js');
+  assert.equal(isAndroid('Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36'), true);
+  assert.equal(isAndroid('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1'), false);
+  assert.equal(isAndroid('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36'), false);
+  assert.equal(isAndroid(undefined), false);
+  assert.equal(isAndroid(''), false);
+});

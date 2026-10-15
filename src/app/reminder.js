@@ -52,6 +52,9 @@ export function rearmDate({ time, now, timeZone }) {
   return hours * 60 + minutes > nowMinutes ? null : `${parts.year}-${parts.month}-${parts.day}`;
 }
 
+/** Draait dit op Android? Alleen daar helpt de uitleg over batterij-instellingen. */
+export const isAndroid = (userAgent) => /android/i.test(String(userAgent ?? ''));
+
 /** De publieke VAPID-sleutel (base64url) als bytes, zoals pushManager.subscribe die wil. */
 export function base64UrlToBytes(text) {
   const base64 = String(text).replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(String(text).length / 4) * 4, '=');
