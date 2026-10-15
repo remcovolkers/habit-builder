@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { validateHabit } from '../../src/domain/habit.js';
-import { defaultSettings, isValidTimeZone, validateSettings } from '../../src/app/settings.js';
+import { defaultSettings, isValidTimeZone, shouldAskName, suggestDisplayName, validateSettings } from '../../src/app/settings.js';
 import { validHabit } from './helpers.js';
 
 const codes = (errors) => errors.map((e) => `${e.field}.${e.code}`);
@@ -43,7 +43,27 @@ test('validateHabit: schema-fouten komen met detail; schema mag niet na de start
 });
 
 test('instellingen: standaard dagwissel is 04:00', () => {
-  assert.deepEqual(defaultSettings('Europe/Amsterdam'), { id: 'user', timezone: 'Europe/Amsterdam', dayStartHour: 4, displayName: '' });
+  assert.deepEqual(defaultSettings('Europe/Amsterdam'), { id: 'user', timezone: 'Europe/Amsterdam', dayStartHour: 4, displayName: '', nameAsked: false });
+});
+
+test('naamvoorstel uit de gegevens van de inlogdienst: voornaam, anders eerste woord, anders leeg', () => {
+  assert.equal(suggestDisplayName({ given_name: 'Remco', full_name: 'Remco Volkers' }), 'Remco');
+  assert.equal(suggestDisplayName({ full_name: 'Remco Volkers' }), 'Remco');
+  assert.equal(suggestDisplayName({ name: '  Anna   van Dijk ' }), 'Anna');
+  assert.equal(suggestDisplayName({ given_name: '  ', full_name: 'Jan Jansen' }), 'Jan');
+  assert.equal(suggestDisplayName({}), '');
+  assert.equal(suggestDisplayName(undefined), '');
+  assert.equal(suggestDisplayName(null), '');
+  assert.equal(suggestDisplayName({ full_name: 42, name: ['x'] }), '');
+  assert.equal(suggestDisplayName({ given_name: 'x'.repeat(50) }).length, 30);
+});
+
+test('de naam wordt maar één keer gevraagd, en alleen als er nog geen is', () => {
+  assert.equal(shouldAskName({ displayName: '', nameAsked: false }), true);
+  assert.equal(shouldAskName({}), true); // oudere instellingen zonder het veld
+  assert.equal(shouldAskName({ displayName: '   ' }), true);
+  assert.equal(shouldAskName({ displayName: 'Remco' }), false); // al ingevuld (ook op een ander apparaat)
+  assert.equal(shouldAskName({ displayName: '', nameAsked: true }), false); // overgeslagen: niet zeuren
 });
 
 test('instellingen: naam is optioneel en maximaal 30 tekens', () => {

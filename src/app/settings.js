@@ -4,7 +4,23 @@ import { DEFAULT_DAY_START_HOUR, MAX_DAY_START_HOUR } from '../domain/constants.
 export const DISPLAY_NAME_MAX = 30;
 
 export function defaultSettings(timezone) {
-  return { id: 'user', timezone, dayStartHour: DEFAULT_DAY_START_HOUR, displayName: '' };
+  return { id: 'user', timezone, dayStartHour: DEFAULT_DAY_START_HOUR, displayName: '', nameAsked: false };
+}
+
+/**
+ * Een voorstel voor de naam uit de gegevens die de inlogdienst meestuurt (Google geeft given_name / full_name).
+ * Geeft de voornaam, of '' als er niets bruikbaars is (bij inloggen met alleen e-mail).
+ */
+export function suggestDisplayName(metadata) {
+  const given = typeof metadata?.given_name === 'string' ? metadata.given_name.trim() : '';
+  const full = [metadata?.full_name, metadata?.name].find((value) => typeof value === 'string' && value.trim() !== '');
+  const name = given || (full ? full.trim().split(/\s+/)[0] : '');
+  return name.slice(0, DISPLAY_NAME_MAX);
+}
+
+/** Vragen we de naam? Alleen als er nog geen is en we het nog niet eerder hebben gevraagd (ook niet op een ander apparaat). */
+export function shouldAskName(settings) {
+  return String(settings.displayName ?? '').trim() === '' && settings.nameAsked !== true;
 }
 
 export function isValidTimeZone(timeZone) {

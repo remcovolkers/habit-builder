@@ -393,3 +393,15 @@ select.input {
 .account-card {
   margin-bottom: var(--space-8);
 }
+
+.account-card__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.account-card__name b {
+  flex: 1;
+}

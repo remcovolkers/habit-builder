@@ -5,6 +5,8 @@ import { notifyChanged, onChanged, reloadSettings, state } from './state.js';
 import { openDialog } from './components/dialog.js';
 import { showToast } from './components/toast.js';
 import { downloadBackup } from './download.js';
+import { openNameDialog } from './components/name-dialog.js';
+import { shouldAskName, suggestDisplayName } from '../app/settings.js';
 import * as auth from '../data/auth.js';
 import { adoptUser, bindUser, countPending, unlinkAccount, wipeLocalData } from '../data/account-link.js';
 import { createSyncEngine, readMeta } from '../data/sync.js';
@@ -98,19 +100,33 @@ async function attach(user) {
     account.sync = sync;
     emit();
   });
-  account.user = { id: user.id, email: user.email ?? '' };
+  account.user = { id: user.id, email: user.email ?? '', suggestedName: suggestDisplayName(user.user_metadata) };
   account.status = 'signed-in';
   const meta = await readMeta(store);
   account.sync = { state: 'idle', lastSyncAt: meta.lastSyncAt, error: null };
   await refreshPending();
   emit();
   await syncNow();
+  maybeAskName();
 }
+
+let askedName = false;
+
+/** Eerste keer ingelogd en nog geen naam? Vraag hem één keer, na de eerste sync (dan weten we of een ander apparaat hem al kent). */
+function maybeAskName() {
+  if (askedName || !account.user || !shouldAskName(state.settings)) return;
+  askedName = true;
+  openNameDialog({ initial: account.user.suggestedName, onSaved: emit });
+}
+
+/** Voor de accountkaart: na het wijzigen van de naam opnieuw tekenen. */
+export const refreshAccountUI = emit;
 
 function detach() {
   engine = null;
   account.status = 'anonymous';
   account.user = null;
+  askedName = false;
   account.sync = { state: 'idle', lastSyncAt: null, error: null };
   account.pending = 0;
   emit();

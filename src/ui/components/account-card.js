@@ -1,7 +1,8 @@
 import { fill, h } from '../dom.js';
 import { openDialog } from './dialog.js';
 import { showToast } from './toast.js';
-import { account, deleteAccount, onAccountChanged, prepareSignOut, signOut, syncNow } from '../account.js';
+import { account, deleteAccount, onAccountChanged, prepareSignOut, refreshAccountUI, signOut, syncNow } from '../account.js';
+import { openNameDialog } from './name-dialog.js';
 import { downloadBackup } from '../download.js';
 import { state } from '../state.js';
 import { nl } from '../../content/nl.js';
@@ -68,6 +69,13 @@ export function accountCard() {
       h('p', { id: 'accountEmail', class: 'account-card__email' }, nl.account.signedInAs(account.user.email)),
       h('p', { id: 'syncStatus', class: 'section__hint', role: 'status' }, syncText()),
       account.pending > 0 ? h('p', { class: 'section__hint' }, nl.account.sync.pending(account.pending)) : null,
+      h('div', { class: 'account-card__name' },
+        h('span', { class: 'muted' }, nl.account.name.current),
+        h('b', { id: 'accountName' }, String(state.settings.displayName ?? '').trim() || nl.account.name.notSet),
+        h('button', {
+          type: 'button', id: 'changeName', class: 'button button--ghost button--small',
+          onclick: () => openNameDialog({ initial: state.settings.displayName ?? '', onSaved: refreshAccountUI }),
+        }, nl.account.name.change)),
       h('div', { class: 'stack' },
         h('button', {
           type: 'button', id: 'syncNow', class: 'button button--secondary button--block',
