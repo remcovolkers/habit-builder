@@ -1,6 +1,6 @@
 import { fill, h } from '../dom.js';
 import { showToast } from './toast.js';
-import { disableReminder, enableReminder, onRemindersChanged, reminders, setReminderTime, testReminder } from '../reminders.js';
+import { disableReminder, enableReminder, onRemindersChanged, readPushLog, reminders, setReminderTime, testReminder } from '../reminders.js';
 import { state } from '../state.js';
 import { nl } from '../../content/nl.js';
 
@@ -31,6 +31,25 @@ export function reminderCard() {
       busy = false;
       render();
     }
+  }
+
+  const pushLog = h('p', { id: 'pushLog', class: 'field__hint' });
+
+  /** Wanneer kwam de laatste melding aan, en hoeveel later dan verstuurd? */
+  async function showPushLog() {
+    const log = await readPushLog();
+    const clock = (ms) => new Date(ms).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (!log) {
+      pushLog.textContent = r.lastPush.none;
+      return;
+    }
+    if (log.sent === null) {
+      pushLog.textContent = r.lastPush.received(clock(log.received));
+      return;
+    }
+    const seconds = Math.round((log.received - log.sent) / 1000);
+    const late = seconds <= 60 ? r.lastPush.immediately : r.lastPush.late(seconds < 3600 ? `${Math.round(seconds / 60)} min` : `${Math.round(seconds / 3600)} uur`);
+    pushLog.textContent = r.lastPush.detail(clock(log.sent), clock(log.received), late);
   }
 
   function timeField(input) {
@@ -84,6 +103,15 @@ export function reminderCard() {
             }),
           }, r.test),
           h('button', {
+            type: 'button', id: 'testReminderDelayed', class: 'button button--ghost button--block', disabled: busy,
+            onclick: () => guarded(async () => {
+              say('');
+              const result = await testReminder({ delaySeconds: 15 });
+              if (result.ok) say(r.testDelayedSent);
+              else say(r.testFailed[result.reason] ?? r.testFailed.unknown, true);
+            }),
+          }, r.testDelayed),
+          h('button', {
             type: 'button', id: 'disableReminder', class: 'button button--ghost button--block', disabled: busy,
             onclick: () => guarded(async () => {
               await disableReminder();
@@ -91,7 +119,9 @@ export function reminderCard() {
               showToast({ message: r.disabled });
             }),
           }, r.disable),
-          message));
+          message,
+          pushLog));
+      showPushLog();
       return;
     }
 

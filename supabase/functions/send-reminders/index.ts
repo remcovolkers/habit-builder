@@ -270,7 +270,8 @@ async function deliver({ subscriptions, db, vapid, fetchImpl, now, claim, forceT
       continue;
     }
     try {
-      const outcome = await sendPush({ subscription, message, vapid, fetchImpl, now: now.getTime() });
+      // `sent`: wanneer de server hem verstuurde. De app onthoudt wanneer hij aankwam, zodat je kunt zien of een melding vertraging had.
+      const outcome = await sendPush({ subscription, message: { ...message, sent: now.getTime() }, vapid, fetchImpl, now: now.getTime() });
       if (outcome.ok) {
         result.sent++;
         decide(subscription, 'verstuurd');
@@ -316,7 +317,15 @@ export function inspect(subscription, now) {
   };
 }
 
-export async function handleRequest(request, { env, fetchImpl = fetch, now = new Date() }) {
+const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+/** Laat werk doorlopen nadat het antwoord al is verstuurd (Supabase: EdgeRuntime.waitUntil). */
+const defaultBackground = (promise) => {
+  if (typeof EdgeRuntime !== 'undefined' && typeof EdgeRuntime.waitUntil === 'function') EdgeRuntime.waitUntil(promise);
+};
+/** Een testmelding mag hoogstens zo veel seconden vertraagd worden. */
+export const MAX_TEST_DELAY_SECONDS = 30;
+
+export async function handleRequest(request, { env, fetchImpl = fetch, now = new Date(), sleep = defaultSleep, background = defaultBackground }) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   if (request.method !== 'POST') return json(405, { error: 'alleen POST' });
 
@@ -356,17 +365,28 @@ export async function handleRequest(request, { env, fetchImpl = fetch, now = new
   let subscriptions = await db.forUser(userId);
   if (typeof body.endpoint === 'string') subscriptions = subscriptions.filter((subscription) => subscription.endpoint === body.endpoint);
   if (subscriptions.length === 0) return json(404, { error: 'geen apparaat gevonden' });
-  const test = (subscription) => ({
-    title: 'Testmelding',
-    body: composeMessage(subscription, now)?.body ?? 'Het werkt. Vandaag is er niets in te plannen.',
-    url: './#/today',
-  });
-  const results = { sent: 0, skipped: 0, removed: 0, failed: 0 };
-  for (const subscription of subscriptions) {
-    const one = await deliver({ subscriptions: [subscription], db, vapid, fetchImpl, now, claim: false, forceText: test(subscription) });
-    for (const field of Object.keys(results)) results[field] += one[field];
+  // Met een vertraging kun je de app sluiten en het scherm vergrendelen voordat de melding komt: zo test je of hij ook aankomt als het toestel niet actief is.
+  const delay = Math.min(MAX_TEST_DELAY_SECONDS, Math.max(0, Math.floor(Number(body.delaySeconds) || 0)));
+  const run = async () => {
+    if (delay > 0) await sleep(delay * 1000);
+    const at = new Date(now.getTime() + delay * 1000);
+    const test = (subscription) => ({
+      title: 'Testmelding',
+      body: composeMessage(subscription, at)?.body ?? 'Het werkt. Vandaag is er niets in te plannen.',
+      url: './#/today',
+    });
+    const results = { sent: 0, skipped: 0, removed: 0, failed: 0 };
+    for (const subscription of subscriptions) {
+      const one = await deliver({ subscriptions: [subscription], db, vapid, fetchImpl, now: at, claim: false, forceText: test(subscription) });
+      for (const field of Object.keys(results)) results[field] += one[field];
+    }
+    return results;
+  };
+  if (delay > 0) {
+    background(run().catch((error) => console.error('vertraagde testmelding mislukt', error?.message)));
+    return json(202, { mode: 'test', scheduled: true, delaySeconds: delay, devices: subscriptions.length });
   }
-  return json(200, { mode: 'test', ...results });
+  return json(200, { mode: 'test', ...(await run()) });
 }
 
 // Supabase start de functie met Deno.serve; in de tests (Node) bestaat Deno niet en gebeurt er niets.

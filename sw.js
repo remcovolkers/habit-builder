@@ -64,6 +64,19 @@ async function respond(request) {
 // (userVisibleOnly): ook als het bericht onleesbaar is, tonen we de algemene tekst.
 const REMINDER_TAG = 'morning-reminder';
 
+// Wanneer kwam de laatste melding aan, en wanneer had de server hem verstuurd? Instellingen toont dat; zo zie je of een melding vertraging had
+// (bv. doordat het toestel in de slaapstand stond). Staat in de Cache API onder een naam die de opruiming van oude versies met rust laat.
+const META_CACHE = 'hb-meta';
+async function recordPush(sent) {
+  try {
+    const cache = await caches.open(META_CACHE);
+    const entry = { sent: typeof sent === 'number' ? sent : null, received: Date.now() };
+    await cache.put('./push-log.json', new Response(JSON.stringify(entry), { headers: { 'Content-Type': 'application/json' } }));
+  } catch {
+    /* geen opslag: de melding zelf is belangrijker */
+  }
+}
+
 self.addEventListener('push', (event) => {
   let data = {};
   try {
@@ -72,7 +85,7 @@ self.addEventListener('push', (event) => {
     data = {};
   }
   const text = (value, fallback) => (typeof value === 'string' && value.trim() !== '' ? value.slice(0, 200) : fallback);
-  event.waitUntil(self.registration.showNotification(text(data.title, 'Habit Builder'), {
+  event.waitUntil(Promise.all([recordPush(data.sent), self.registration.showNotification(text(data.title, 'Habit Builder'), {
     body: text(data.body, 'Bekijk wat er vandaag op je lijst staat.'),
     icon: 'icons/icon-192.png',
     tag: REMINDER_TAG, // een nieuwe melding vervangt de vorige in plaats van te stapelen
@@ -82,7 +95,7 @@ self.addEventListener('push', (event) => {
     vibrate: [200, 100, 200],
     lang: 'nl',
     data: { url: typeof data.url === 'string' ? data.url : './#/today' },
-  }));
+  })]));
 });
 
 self.addEventListener('notificationclick', (event) => {

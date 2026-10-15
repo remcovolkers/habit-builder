@@ -9,7 +9,7 @@ const source = readFileSync(fileURLToPath(new URL('../../sw.js', import.meta.url
 const ORIGIN = 'https://app.test';
 const SCOPE = `${ORIGIN}/habit-builder/`;
 
-function loadWorker({ clients = [] } = {}) {
+function loadWorker({ clients = [], caches = {} } = {}) {
   const listeners = {};
   const shown = [];
   const opened = [];
@@ -23,7 +23,7 @@ function loadWorker({ clients = [] } = {}) {
     },
     addEventListener: (type, fn) => { listeners[type] = fn; },
   };
-  vm.runInNewContext(source, { self, URL, Request, Response, caches: {}, fetch: async () => new Response() });
+  vm.runInNewContext(source, { self, URL, Request, Response, Date, JSON, caches, fetch: async () => new Response() });
 
   const run = async (type, event) => {
     const pending = [];
@@ -106,4 +106,45 @@ test('push: renotify mag alleen samen met een tag (anders gooit showNotification
   await worker.push(JSON.stringify({ title: 't', body: 'b' }));
   const { options } = worker.shown[0];
   assert.ok(options.renotify !== true || (typeof options.tag === 'string' && options.tag !== ''));
+});
+
+// ---- ontvangst onthouden (voor de diagnose in Instellingen)
+function metaCache() {
+  const stored = new Map();
+  return {
+    stored,
+    caches: { open: async (name) => ({ put: async (key, response) => { stored.set(`${name}|${key}`, await response.json()); } }) },
+  };
+}
+
+test('push: onthoudt wanneer de server hem verstuurde en wanneer hij aankwam', async () => {
+  const { stored, caches } = metaCache();
+  const before = Date.now();
+  const worker = loadWorker({ caches });
+  await worker.push(JSON.stringify({ title: 't', body: 'b', sent: 1760000000000 }));
+  const entry = stored.get('hb-meta|./push-log.json');
+  assert.equal(entry.sent, 1760000000000);
+  assert.ok(entry.received >= before && entry.received <= Date.now());
+  assert.equal(worker.shown.length, 1);
+});
+
+test('push: zonder verzendtijd (oudere melding) staat sent op null; de melding zelf komt gewoon', async () => {
+  const { stored, caches } = metaCache();
+  const worker = loadWorker({ caches });
+  await worker.push(JSON.stringify({ title: 't', body: 'b' }));
+  assert.equal(stored.get('hb-meta|./push-log.json').sent, null);
+  assert.equal(worker.shown.length, 1);
+});
+
+test('push: lukt het opslaan niet (geen cache, of een fout), dan komt de melding toch', async () => {
+  for (const caches of [{}, { open: async () => { throw new Error('vol'); } }, { open: async () => ({ put: async () => { throw new Error('vol'); } }) }]) {
+    const worker = loadWorker({ caches });
+    await worker.push(JSON.stringify({ title: 't', body: 'b', sent: 1 }));
+    assert.equal(worker.shown.length, 1);
+  }
+});
+
+test('push: de onthouden gegevens staan in een cache die de opruiming van oude versies niet raakt (hb-meta, niet hb-shell-…)', () => {
+  assert.ok(source.includes("const META_CACHE = 'hb-meta'"));
+  assert.ok(!'hb-meta'.startsWith('hb-shell-'));
 });

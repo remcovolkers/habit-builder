@@ -406,6 +406,15 @@ export const nl = {
     status: (time) => `Aan: elke dag rond ${time}.`,
     test: 'Stuur een testmelding',
     testSent: 'Testmelding verstuurd. Die komt zo binnen.',
+    testDelayed: 'Testmelding over 15 seconden',
+    testDelayedSent: 'Gepland. Sluit nu de app en vergrendel je scherm: de melding komt over ongeveer 15 seconden.',
+    lastPush: {
+      none: 'Er is op dit apparaat nog geen melding aangekomen.',
+      received: (time) => `Laatste melding aangekomen om ${time}.`,
+      detail: (sent, received, late) => `Laatste melding: verstuurd om ${sent}, aangekomen om ${received}${late}.`,
+      immediately: ' (direct)',
+      late: (text) => ` (${text} later)`,
+    },
     testFailed: {
       not_deployed: 'De herinnering is nog niet klaargezet op de server (de functie ontbreekt).',
       not_configured: 'De server mist nog instellingen voor de herinnering.',

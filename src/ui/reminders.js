@@ -170,13 +170,24 @@ export async function setReminderTime(time) {
   return null;
 }
 
-/** Laat de server nu een melding sturen. Geeft { ok } of { ok: false, reason }. */
-export async function testReminder() {
+/** De laatste melding die op dit toestel aankwam: { sent, received } (ms), of null. Geschreven door de service worker. */
+export async function readPushLog() {
+  try {
+    const cache = await caches.open('hb-meta');
+    const hit = await cache.match('./push-log.json');
+    return hit ? await hit.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Laat de server een melding sturen (met `delaySeconds` pas na een paar seconden). Geeft { ok } of { ok: false, reason }. */
+export async function testReminder({ delaySeconds = 0 } = {}) {
   const subscription = await currentSubscription().catch(() => null);
   if (!subscription) return { ok: false, reason: 'no_device' };
   try {
     await upload(subscription, reminders.time); // eerst bijwerken: de testtekst komt uit de actuele samenvatting
-    return await sendTestReminder({ client: await auth.getClient(), endpoint: subscription.endpoint });
+    return await sendTestReminder({ client: await auth.getClient(), endpoint: subscription.endpoint, delaySeconds });
   } catch (error) {
     console.warn('testmelding mislukt', error);
     return { ok: false, reason: 'unknown' };

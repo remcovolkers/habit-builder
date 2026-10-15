@@ -91,22 +91,27 @@ async function world({ subs, users = { 'token-a': 'user-a', 'token-b': 'user-b' 
     VAPID_PUBLIC_KEY: b64uEncode(new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey))),
   };
   const rows = [];
+  const receivers = [];
   for (const [index, extra] of subs.entries()) {
     const receiver = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+    const authBytes = crypto.getRandomValues(new Uint8Array(16));
+    receivers.push({ ...receiver, uaPublic: new Uint8Array(await crypto.subtle.exportKey('raw', receiver.publicKey)), authSecret: authBytes });
     rows.push({
       id: `s${index}`, user_id: 'user-a', endpoint: `https://push.example.org/${index}`,
       p256dh: b64uEncode(new Uint8Array(await crypto.subtle.exportKey('raw', receiver.publicKey))),
-      auth: b64uEncode(crypto.getRandomValues(new Uint8Array(16))),
+      auth: b64uEncode(authBytes),
       remind_time: '08:00', timezone: 'Europe/Amsterdam', summary: { name: 'Remco', days: { '2026-10-16': [3, 1] } }, last_notified_date: null,
       ...extra,
     });
   }
   const pushes = [];
+  const bodies = [];
   const fetchImpl = async (input, init = {}) => {
     const url = new URL(input);
     if (url.origin === 'https://push.example.org') {
       const index = Number(url.pathname.slice(1));
       pushes.push(index);
+      bodies.push({ index, body: init.body });
       return new Response(null, { status: pushStatus[index] ?? 201 });
     }
     assert.equal(url.origin, SUPABASE);
@@ -136,10 +141,10 @@ async function world({ subs, users = { 'token-a': 'user-a', 'token-b': 'user-b' 
     Object.assign(row, patch);
     return new Response(null, { status: 204 });
   };
-  const call = (headers, body, method = 'POST', now = at(6, 5)) =>
+  const call = (headers, body, method = 'POST', now = at(6, 5), extra = {}) =>
     handleRequest(new Request(`${SUPABASE}/functions/v1/send-reminders`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) }),
-      { env: (name) => env[name], fetchImpl, now });
-  return { rows, pushes, call, env };
+      { env: (name) => env[name], fetchImpl, now, ...extra });
+  return { rows, pushes, call, env, receivers, bodies };
 }
 
 const cron = { 'x-cron-secret': 'geheim' };
@@ -271,4 +276,71 @@ test('een al gemeld apparaat dat toch "due" lijkt (twee runs tegelijk) krijgt de
   const [a, b] = await Promise.all([call(cron, {}), call(cron, {})]);
   const outcomes = [...(await a.json()).decisions, ...(await b.json()).decisions].map((d) => d.outcome).sort();
   assert.deepEqual(outcomes, ['al_gemeld_vandaag', 'verstuurd']);
+});
+
+// ---------------------------------------------------------------------------------------------
+// Verzendtijd in de melding, en een testmelding met vertraging
+// ---------------------------------------------------------------------------------------------
+async function decryptFor(receiver, body) {
+  const enc = new TextEncoder();
+  const salt = body.slice(0, 16);
+  const senderPublic = body.slice(21, 21 + body[20]);
+  const peer = await crypto.subtle.importKey('raw', senderPublic, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+  const shared = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: peer }, receiver.privateKey, 256));
+  const hkdf = async (s, ikm, info, bytes) => new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt: s, info }, await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits']), bytes * 8));
+  const join = (...parts) => Uint8Array.from(parts.flatMap((p) => [...p]));
+  const prk = await hkdf(receiver.authSecret, shared, join(enc.encode('WebPush: info\0'), receiver.uaPublic, senderPublic), 32);
+  const key = await crypto.subtle.importKey('raw', await hkdf(salt, prk, enc.encode('Content-Encoding: aes128gcm\0'), 16), 'AES-GCM', false, ['decrypt']);
+  const plain = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: await hkdf(salt, prk, enc.encode('Content-Encoding: nonce\0'), 12) }, key, body.slice(21 + body[20])));
+  return JSON.parse(new TextDecoder().decode(plain.slice(0, -1)));
+}
+
+test('elke melding bevat het moment van versturen (sent), zodat de app de vertraging kan tonen', async () => {
+  const { call, receivers, bodies } = await world({ subs: [{}] });
+  await call(cron, {});
+  const message = await decryptFor(receivers[0], bodies[0].body);
+  assert.equal(message.sent, at(6, 5).getTime());
+  assert.equal(message.title, 'Goedemorgen, Remco');
+});
+
+test('testmelding met vertraging: het antwoord komt direct (202), de melding volgt na de wachttijd, in de achtergrond', async () => {
+  const { call, pushes, receivers, bodies } = await world({ subs: [{}] });
+  const waits = [];
+  const tasks = [];
+  const response = await call({ authorization: 'Bearer token-a' }, { test: true, delaySeconds: 15 }, 'POST', at(6, 5), {
+    sleep: async (ms) => { waits.push(ms); },
+    background: (promise) => tasks.push(promise),
+  });
+  assert.equal(response.status, 202);
+  assert.deepEqual(await response.json(), { mode: 'test', scheduled: true, delaySeconds: 15, devices: 1 });
+  assert.deepEqual(pushes, [], 'nog niets verstuurd: dat gebeurt na de wachttijd');
+  await Promise.all(tasks);
+  assert.deepEqual(waits, [15000]);
+  assert.deepEqual(pushes, [0]);
+  const message = await decryptFor(receivers[0], bodies[0].body);
+  assert.equal(message.title, 'Testmelding');
+  assert.equal(message.sent, at(6, 5).getTime() + 15000, 'het verzendtijdstip is dat van het echte versturen, na de wachttijd');
+});
+
+test('testmelding met vertraging: hoogstens 30 seconden, en rommel of 0 betekent meteen versturen', async () => {
+  const run = async (delaySeconds) => {
+    const { call, pushes } = await world({ subs: [{}] });
+    const waits = [];
+    const tasks = [];
+    const response = await call({ authorization: 'Bearer token-a' }, { test: true, delaySeconds }, 'POST', at(6, 5), { sleep: async (ms) => { waits.push(ms); }, background: (p) => tasks.push(p) });
+    await Promise.all(tasks);
+    return { status: response.status, waits, pushes: pushes.length };
+  };
+  assert.deepEqual(await run(500), { status: 202, waits: [30000], pushes: 1 });
+  assert.deepEqual(await run(0), { status: 200, waits: [], pushes: 1 });
+  assert.deepEqual(await run('abc'), { status: 200, waits: [], pushes: 1 });
+  assert.deepEqual(await run(-5), { status: 200, waits: [], pushes: 1 });
+});
+
+test('testmelding met vertraging: een onbekend apparaat geeft ook dan een nette 404, zonder iets in te plannen', async () => {
+  const { call } = await world({ subs: [{}] });
+  const tasks = [];
+  const response = await call({ authorization: 'Bearer token-b' }, { test: true, delaySeconds: 10 }, 'POST', at(6, 5), { sleep: async () => {}, background: (p) => tasks.push(p) });
+  assert.equal(response.status, 404);
+  assert.equal(tasks.length, 0);
 });

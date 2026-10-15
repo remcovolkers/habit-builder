@@ -47,6 +47,12 @@ test('deleteSubscription: verwijdert op endpoint', async () => {
 
 const httpError = (status, body) => ({ data: null, error: { message: 'x', context: { status, json: async () => body } } });
 
+test('sendTestReminder met vertraging: stuurt delaySeconds mee en meldt "gepland" als de server 202 antwoordt', async () => {
+  const client = fakeClient({ invoke: { data: { mode: 'test', scheduled: true, delaySeconds: 15, devices: 1 }, error: null } });
+  assert.deepEqual(await sendTestReminder({ client, endpoint: 'E', delaySeconds: 15 }), { ok: true, scheduled: true });
+  assert.deepEqual(client.calls[0].options.body, { test: true, endpoint: 'E', delaySeconds: 15 });
+});
+
 test('sendTestReminder: roept de functie aan met { test, endpoint } en meldt succes', async () => {
   const client = fakeClient();
   assert.deepEqual(await sendTestReminder({ client, endpoint: 'E' }), { ok: true });

@@ -41,8 +41,8 @@ export async function deleteSubscription({ client, endpoint }) {
  * Geeft { ok: true } of { ok: false, reason }: 'not_deployed' (functie bestaat niet), 'not_configured' (geheimen ontbreken),
  * 'no_device' (geen abonnement gevonden), 'push_failed' (de push-dienst weigerde het) of 'unknown'.
  */
-export async function sendTestReminder({ client, endpoint }) {
-  const { data, error } = await client.functions.invoke('send-reminders', { body: { test: true, endpoint } });
+export async function sendTestReminder({ client, endpoint, delaySeconds = 0 }) {
+  const { data, error } = await client.functions.invoke('send-reminders', { body: delaySeconds > 0 ? { test: true, endpoint, delaySeconds } : { test: true, endpoint } });
   if (error) {
     const status = Number(error.context?.status ?? 0);
     if (status === 404) {
@@ -52,6 +52,7 @@ export async function sendTestReminder({ client, endpoint }) {
     if (status === 500) return { ok: false, reason: 'not_configured' };
     return { ok: false, reason: 'unknown' };
   }
+  if (data?.scheduled === true) return { ok: true, scheduled: true }; // komt over `delaySeconds` seconden, vanaf de server
   if (data?.sent > 0) return { ok: true };
   return { ok: false, reason: data?.removed > 0 ? 'no_device' : 'push_failed' };
 }
