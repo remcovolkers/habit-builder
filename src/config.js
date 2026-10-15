@@ -17,7 +17,9 @@ const environments = Object.freeze({
     vapidPublicKey: 'BD3G0l0Him4c4U6xidaHdMNmhu_kJ_0nzN4D9XzR90033-i_5YX0truvEJAi391OVvlFp5XqGUL9uthy4e3gHNs',
   }),
   development: Object.freeze({
-    supabaseUrl: '',
+    // De lokale Supabase (`npm run db:start`). {host} wordt de host waarop je de app opent, zodat het ook vanaf je telefoon werkt.
+    // De sleutel is de publieke standaardsleutel van de lokale stack (`npm run db:status`); leeg = nog niet ingevuld, dan geldt productie.
+    supabaseUrl: 'http://{host}:54321',
     supabasePublishableKey: '',
     // Het ontwikkelproject heeft geen herinnering-functie: de knop blijft daar verborgen.
     vapidPublicKey: '',
@@ -32,7 +34,8 @@ export function pickEnvironment(hostname, envs = environments) {
   const development = envs.development;
   const isProductionHost = !hostname || hostname === PRODUCTION_HOST;
   const useDevelopment = !isProductionHost && development.supabaseUrl !== '' && development.supabasePublishableKey !== '';
-  return { environment: useDevelopment ? 'development' : 'production', ...(useDevelopment ? development : envs.production) };
+  const chosen = useDevelopment ? { ...development, supabaseUrl: development.supabaseUrl.replace('{host}', hostname) } : envs.production;
+  return { environment: useDevelopment ? 'development' : 'production', ...chosen };
 }
 
 export const config = Object.freeze({

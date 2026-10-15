@@ -1,76 +1,51 @@
-# Ontwikkelomgeving: een eigen testdatabase
+# Ontwikkelomgeving: een eigen testdatabase, lokaal
 
-Tot nu toe is er **één** Supabase-project en dat is productie: wie inlogt, praat met de echte gegevens. Voor nieuwe features (vooral de sociale, waar je minstens twee accounts nodig hebt) is dat te riskant. Daarom komt er een tweede, gratis project: **`habit-builder-dev`**.
+Tot nu toe is er **één** Supabase-project en dat is productie: wie inlogt, praat met de echte gegevens. Voor nieuwe features (vooral de sociale, waar je minstens twee accounts nodig hebt) is dat te riskant. De gratis Supabase staat maar twee projecten per persoon toe, dus draait de testdatabase **lokaal op je eigen computer**, in Docker. Dat is gratis, heeft geen limiet en je kunt hem in één commando leegmaken.
 
 ## Hoe de app kiest
 
 De app kijkt naar waar hij draait (`src/config.js`, functie `pickEnvironment`):
 
-| Waar | Project |
+| Waar | Database |
 |---|---|
-| `remcovolkers.github.io` (de productie-site) | **productie** |
-| `localhost`, het IP-adres van je computer, alles anders | **ontwikkeling** (zodra dat is ingevuld; anders productie) |
+| `remcovolkers.github.io` (de productie-site) | **productie** (Supabase in de cloud) |
+| `localhost`, het IP-adres van je computer, alles anders | **lokaal** (`http://<die host>:54321`) |
 
 Gevolgen:
-- Een feature-versie die je lokaal draait kan de echte gegevens **niet** raken, want de browser praat met het testproject.
-- Productie en test hebben een eigen opslag in de browser (verschillende adressen), dus de gegevens van beide lopen nooit door elkaar.
-- Onder in Instellingen staat in de testomgeving **"· testomgeving"** achter het versienummer, zodat je het ziet.
-- De ochtendherinnering (Web Push) bestaat in de testomgeving niet: de knop is er verborgen. Die functie test je op productie of niet; de sociale feature heeft hem niet nodig.
+- Een feature-versie die je lokaal draait kan de echte gegevens **niet** raken.
+- Productie en lokaal hebben een eigen opslag in de browser (verschillende adressen), dus de gegevens lopen nooit door elkaar.
+- Onder in Instellingen staat in de testomgeving **"· testomgeving"** achter het versienummer.
+- De ochtendherinnering (Web Push) bestaat lokaal niet: de knop is er verborgen. De sociale feature heeft hem niet nodig.
+- De dev-server (`npm run serve`) laat in zijn CSP ook het lokale adres toe. Het bestand `index.html` en dus productie blijven strak.
 
-## Stap 1 – Het project aanmaken
+## Eenmalig: Docker Desktop
 
-1. https://supabase.com/dashboard → **New project**.
-2. Naam: `habit-builder-dev`. Regio: dezelfde als het productieproject. Kies een sterk databasewachtwoord en bewaar het in je wachtwoordmanager (je hebt het zelden nodig).
-3. **Let op:** de gratis limiet is **2 actieve projecten per organisatie** (volgens meerdere gidsen; niet bij Supabase zelf bevestigd). Heb je er in je huidige organisatie al twee? Maak dan een **tweede organisatie** aan (dashboard → organisatie-keuzemenu linksboven → **New organization**, type Free) en zet `habit-builder-dev` daarin. Een gepauzeerd project telt niet mee, maar pauzeer geen project dat moet blijven draaien. Weigert het dashboard dit toch, dan is de terugvaloptie een lokale Supabase met Docker (`supabase start`); die is niet ingericht op deze computer (Docker en WSL ontbreken) en vraagt ongeveer 2–3 GB aan downloads.
+1. Installeer Docker Desktop (https://www.docker.com/products/docker-desktop/), kies de **WSL2**-backend en herstart als dat gevraagd wordt.
+2. **Start Docker Desktop** en wacht tot onderin links "Engine running" staat. De engine moet draaien voordat het volgende werkt.
+3. Open daarna een **nieuwe terminal** (of herstart VS Code), anders kent die het `docker`-commando nog niet.
 
-## Stap 2 – De database vullen
+## De lokale database starten
 
-Dezelfde migraties als productie, in volgorde. **SQL Editor → New query →** inhoud plakken **→ Run**. Elk bestand is idempotent.
+In de projectmap:
 
-1. `supabase/migrations/0001_init.sql`
-2. `supabase/migrations/0002_push.sql` (alleen om het schema gelijk te houden; de herinnering zelf werkt in de testomgeving niet)
-3. later: `0003_social.sql` en verder, **eerst hier**, en pas na de test op productie.
+```
+npm run db:start      # eerste keer: downloadt de images (± 2–3 GB), daarna in seconden
+npm run db:status     # toont de adressen en sleutels
+```
 
-Controle: draai in de projectmap `node tools/live-check.mjs --dev` (kan pas nadat stap 5 klaar is). Alle regels moeten OK zijn.
+`db:start` draait de database, de API en het inloggen, en past alle migraties uit `supabase/migrations/` automatisch toe. Er draait geen realtime, opslag of edge-functions (de app gebruikt ze niet).
 
-## Stap 3 – Inloggen mogelijk maken
+Handig:
 
-**Authentication → URL Configuration**
-
-| Veld | Waarde |
+| Commando | Doet |
 |---|---|
-| Site URL | `http://localhost:5173/` |
-| Redirect URLs | `http://localhost:5173/**` |
-| Redirect URLs | `http://192.168.*.*:5173/**` (voor testen op je telefoon via je eigen wifi) |
+| `npm run db:status` | adressen en sleutels |
+| `npm run db:reset` | leegmaken en alle migraties opnieuw toepassen (schone lei) |
+| `npm run db:stop` | stoppen (de gegevens blijven bewaard) |
+| http://localhost:54323 | **Studio**: tabellen bekijken en SQL draaien |
+| http://localhost:54324 | **het mailvenster**: hier staan de inlogcodes |
 
-**Authentication → Emails**: zelfde instellingen als productie (zie `docs/M4-SETUP.md`, stap 3):
-- **SMTP**: dezelfde Gmail-gegevens (`smtp.gmail.com`, poort 587, je app-wachtwoord). Het wachtwoord komt alleen in het dashboard.
-- **Rate limit** voor e-mail op bijvoorbeeld 30 per uur.
-- **Templates**: zowel "Magic Link" als "Confirm signup" met de code erin (`{{ .Token }}`, de tekst staat in M4-SETUP).
-- **Providers → Email**: aan, en "Enable email signups" aan.
-
-Inloggen met Google is in de testomgeving **niet nodig**: de e-mailcode volstaat. (Wil je het toch, dan moet je in de Google-console het adres `https://<testproject>.supabase.co/auth/v1/callback` toevoegen aan de OAuth-client.)
-
-## Stap 4 – Testaccounts
-
-Voor vrienden en ranglijst heb je **minstens twee accounts** nodig. Zonder tweede mailadres kan dat met Gmail-"plusadressen": alles komt in dezelfde inbox terecht, maar Supabase ziet het als verschillende accounts.
-
-| Account | E-mailadres |
-|---|---|
-| Test 1 | `jouwnaam+test1@gmail.com` |
-| Test 2 | `jouwnaam+test2@gmail.com` |
-| Test 3 (voor een groep van drie) | `jouwnaam+test3@gmail.com` |
-
-Twee accounts tegelijk in beeld: gebruik **twee browserprofielen of een privévenster** op je computer, of je computer en je telefoon. Elk heeft zijn eigen sessie. Accounts weer weggooien kan altijd: **Authentication → Users → ⋯ → Delete user** (de gegevens verdwijnen mee).
-
-## Stap 5 – Mij de gegevens geven
-
-Uit het dashboard van het testproject, **Project Settings → API Keys** (of **Connect**):
-
-- de **Project URL** (`https://xxxx.supabase.co`);
-- de **publishable key** (`sb_publishable_…`).
-
-Beide zijn publiek bedoeld; je mag ze gewoon in de chat zetten. **Nooit** de secret / service-role key. Ik vul ze dan in `src/config.js` in, zet de URL in de CSP van `index.html` en laat de dagelijkse keepalive ook het testproject aanroepen (een gratis project pauzeert anders na een week stilte; je kunt het dan altijd zelf weer aanzetten in het dashboard).
+De **publishable key** uit `db:status` is voor de lokale stack altijd dezelfde en publiek; ze staat in `src/config.js`.
 
 ## Proberen
 
@@ -78,12 +53,26 @@ Beide zijn publiek bedoeld; je mag ze gewoon in de chat zetten. **Nooit** de sec
 npm run serve
 ```
 
-- Op je computer: http://localhost:5173/ → Instellingen → **Inloggen of account maken**. Onderaan staat "testomgeving".
-- Op je telefoon (zelfde wifi): `ipconfig` geeft het IPv4-adres van je computer, bijvoorbeeld `192.168.1.20`; open `http://192.168.1.20:5173/`. Windows vraagt eenmalig om toestemming voor de firewall. Via dit gewone http werken de service worker en meldingen niet, dus de offline-app en pushmeldingen proef je daar niet; inloggen, synchroniseren en de sociale functies wel.
+Open http://localhost:5173/ → Instellingen → **Inloggen of account maken**, vul een e-mailadres in (bijvoorbeeld `test1@example.com`; er wordt niets echt verstuurd) en haal de **code uit het mailvenster** op http://localhost:54324. Onderaan Instellingen staat "testomgeving".
+
+**Twee accounts tegelijk** (voor vrienden en ranglijst): gebruik een tweede browserprofiel of een privévenster, en log in met `test2@example.com`. Elk heeft een eigen sessie. Een derde account voor een groep van drie: `test3@example.com`.
+
+**Op je telefoon** (zelfde wifi): `ipconfig` geeft het IPv4-adres van je computer, bijvoorbeeld `192.168.1.20`; open `http://192.168.1.20:5173/`. Windows vraagt eenmalig om toestemming voor de firewall; sta het toe voor privénetwerken. De poorten 5173 (app) en 54321 (database) moeten bereikbaar zijn. Via gewoon http werken de service worker en meldingen niet; inloggen, synchroniseren en de sociale functies wel.
+
+## Controleren dat het goed staat
+
+`node tools/live-check.mjs --dev` controleert de lokale database (migraties aanwezig, niet-ingelogde bezoekers kunnen niets lezen of schrijven).
 
 ## Een wijziging aan de database uitrollen
 
-1. Schrijf de migratie (`supabase/migrations/000N_….sql`, **achterwaarts compatibel**, zie WERKWIJZE).
+1. Schrijf de migratie (`supabase/migrations/000N_….sql`, **achterwaarts compatibel**, zie WERKWIJZE). De lokale database pakt hem op met `npm run db:reset` (of bij de eerstvolgende `db:start` op een schone database).
 2. Draai het RLS-testscript (`supabase/tests/rls-check.mjs`; het heeft PGlite nodig en staat daarom niet in `npm test`, zie de kop van het bestand). Dit nemen we voor de sociale feature op in de CI (milestone S2).
-3. Plak de migratie in het **testproject** en test de app lokaal met twee accounts.
-4. Pas bij de release plak je dezelfde migratie op **productie**, vóórdat de nieuwe app uitgerold wordt.
+3. Test de app lokaal met twee accounts.
+4. Pas bij de release plak je dezelfde migratie in het **productieproject** (Supabase-dashboard → SQL Editor), vóórdat de nieuwe app uitgerold wordt.
+
+## Verschillen met productie (goed om te weten)
+
+- Inloggen met Google is lokaal niet ingesteld; de e-mailcode is genoeg.
+- Het mailvenster vangt alle mails op; er gaat nooit iets echt de deur uit.
+- Gebruikers, e-mailadressen en gegevens bestaan alleen op jouw computer.
+- Productie draait Postgres in de cloud met jouw SMTP en rate limits; lokaal zijn die ruimer. Gedrag rond maillimieten test je dus alleen op productie.

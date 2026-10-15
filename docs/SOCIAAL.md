@@ -27,7 +27,7 @@ Wat het níét is: een sociaal netwerk. Geen feed, geen reacties, geen openbare 
 | S8 | **Een uitnodigingslink maakt direct vrienden.** Zoeken op gebruikersnaam blijft een verzoek met acceptatie (zie V12). |
 | S9 | **Navigatie via Voortgang** (geen zesde tabblad). |
 | S10 | **Geen minimumleeftijd, geen blokkeerfunctie.** Dat pakken we aan als het nodig blijkt. Lastigvallen wordt klein gehouden met een rustige weigerregel (V13) en limieten (V18). |
-| S11 | **Een aparte testdatabase** (tweede Supabase-project) voor ontwikkeling: [DEV-OMGEVING.md](DEV-OMGEVING.md). |
+| S11 | **Een aparte testdatabase**, lokaal in Docker (de gratis Supabase staat maar 2 projecten per persoon toe): [DEV-OMGEVING.md](DEV-OMGEVING.md). |
 
 ### Wat dit verandert aan eerdere afspraken
 
@@ -126,6 +126,26 @@ Je eigen regel staat er altijd. Nieuwe vrienden zonder enige activiteit verschij
 ### 4.6 Bekende zwakte (aanvaard)
 De score wordt **door de app van de gebruiker berekend en gepubliceerd**. Een vriend met kennis kan dus valsspelen. Voor een kring van vrienden is dat aanvaardbaar: er valt niets te winnen. De server beperkt wel de **waardebereiken** (score 0–100, aantallen ≤ 1000) en de update-frequentie. Een tweede zwakte: iemand met één habit haalt makkelijk 100%; dat wordt gemilderd doordat het aantal habits en de reeks zichtbaar zijn (V23). Wil je ooit strenger zijn, dan kan de server de score afleiden uit de gesynchroniseerde check-ins (veel werk, past slecht bij "de server begrijpt de records niet").
 
+### 4.7 Meting op voorbeeldgegevens (S1)
+
+Weekscore op 15 oktober, vandaag nog niets afgevinkt, met een jaar geschiedenis. Berekening: 0–30 ms.
+
+| Soort gebruiker | Score | gedaan/gepland |
+|---|---|---|
+| 3 habits dagelijks, 90% gedaan | 95 | 19/20 |
+| 3 habits dagelijks, 50% gedaan | 55 | 11/20 |
+| 15 habits gemengd, 70% gedaan | 79 | 70/89 |
+| 15 habits gemengd, 40% gedaan | 57 | 45/79 |
+| alleen flexibele habits (2× en 3× per week), 60% | 91 | 10/11 |
+| beginner, 1 habit, 8 dagen bezig | 57 | 4/7 |
+| beginner, 2 habits, 2 dagen bezig | 100 | 6/6 |
+| 5 dagen niets gedaan | 33 | 6/18 (staat niet meer in andermans lijst) |
+
+Wat opvalt:
+- **Dagelijkse habits geven eerlijke uitkomsten.** 90% gedaan geeft 95, 50% geeft 55; het kleine verschil komt doordat vandaag alleen meetelt wat je deed.
+- **Flexibele habits trekken de score naar boven.** Een flexibele habit staat pas op je lijst als je hem meeneemt of afvinkt, dus je kunt hem bijna niet "missen". Wie vooral flexibele habits heeft, scoort daardoor makkelijk hoog (hierboven 91 bij 60% gedaan). Dit volgt uit S6 (punten op de dag dat je afvinkt) en is voor een kring van vrienden te verdragen. Het staat als **open punt** voor S4/later: een mogelijke verfijning is dat een afgesloten week met een niet-gehaald doel (bijv. 1 van de 2 keer) het tekort als gemist meetelt.
+- **Beginners** doen meteen mee: twee habits, twee dagen bezig, geeft al 100 (6 geplande items; minimum is 3).
+
 ## 5. Datamodel (voorstel, Supabase)
 
 Alles is **additief**: een nieuwe migratie `0003_social.sql`; de bestaande tabellen en de huidige productie-app blijven ongemoeid (zie "Werkwijze: database"). Geen `records`-wijzigingen: het sociale deel leeft in eigen tabellen, zodat sociaal uit te zetten en op te ruimen is zonder de sync te raken.
@@ -216,7 +236,7 @@ Besloten (S9): de ranglijst is bereikbaar vanaf **Voortgang** (een kaart "Rangli
 ## 9. Besloten en nog open
 
 Alle vragen uit het eerste concept zijn beantwoord (S5–S11 bovenaan). Wat overblijft is uitvoering, geen keuze meer:
-- **Testdatabase:** opzetten volgens [DEV-OMGEVING.md](DEV-OMGEVING.md) (jij maakt het project en geeft de URL en de publishable key; die zijn publiek).
+- **Testdatabase:** lokaal in Docker, volgens [DEV-OMGEVING.md](DEV-OMGEVING.md).
 - **Naam bij het aanmaken van een account** (S5): de huidige naamdialoog krijgt de uitleg dat vrienden de naam zien. Bestaande accounts krijgen de vraag eenmalig bij het aanzetten van sociaal.
 - **Het gevolg van S6/S7 in één zin:** je score beweegt dagelijks (afvinken verhoogt hem meteen, een onaf gelaten dag drukt hem 's nachts), en wie 3 dagen stil is zie je niet meer; dat is de bedoeling.
 
@@ -226,7 +246,7 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 
 | M | Inhoud | Klaar als… |
 |---|---|---|
-| **S0** | Dit document akkoord; besluiten S5–S11 genomen; dev-Supabase staat en de app kan er lokaal mee verbinden | besluiten ✔; testdatabase in uitvoering |
+| **S0** | Dit document akkoord; besluiten S5–S11 genomen; de lokale testdatabase draait en de app kan er mee verbinden | besluiten ✔; testdatabase in uitvoering |
 | **S1** | Domein: weekscore met punten per dag, actief-regel (3 dagen), gelijke stand, tests. Plus de naamvraag bij het aanmaken van een account (S5) | Alle regels uit §4 hebben groene tests; een meting op voorbeelddata is besproken. |
 | **S2** | Server: migratie 0003, functies, RLS-tests, DATAMODEL bijgewerkt | RLS-testscript bewijst: niet-vriend ziet niets, vriend ziet alleen de ranglijstvelden, weigeren met wachttijd, intrekken, verlopen, limieten en cascade werken. |
 | **S3** | Data-laag en publiceren: remote-client, samenvatting na sync, offline cache | Publiceren gebeurt op de achtergrond; uit = niets verzonden (testbaar). |
@@ -241,7 +261,7 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 | X2 | Lastigvallen via verzoeken | stille weigering met wachttijd, limieten, intrekken, geen vrije tekst; blokkeren later als het nodig blijkt |
 | X3 | Valsspelen met de score | aanvaard binnen vrienden; bereikcontroles; reeks en habit-aantal zichtbaar |
 | X4 | Ranglijst demotiveert (altijd laatste staan) | schuivend venster van 7 dagen, percentage i.p.v. aantal, wie stil is valt weg, uit te zetten |
-| X5 | Productiedata raakt vermengd met testen | aparte dev-Supabase (S11); migratie additief |
+| X5 | Productiedata raakt vermengd met testen | lokale testdatabase (S11); migratie additief |
 | X6 | Privacyverklaring loopt achter op de feature | S5 is een voorwaarde voor release |
 | X7 | Ontwikkelwerk groeit uit tot "sociaal netwerk" | §3.5 houdt scope klein; aanmoedigen/groepen later apart |
 | X8 | Navigatie raakt overvol | besloten: via Voortgang (S9) |
@@ -249,5 +269,5 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 
 ## 12. Volgende stappen
 
-1. Testdatabase opzetten (jij in het Supabase-dashboard, ik in de repo): [DEV-OMGEVING.md](DEV-OMGEVING.md).
-2. Daarna S1: het domein van de score, dat zonder server en zonder scherm volledig te testen is.
+1. Testdatabase lokaal starten: [DEV-OMGEVING.md](DEV-OMGEVING.md).
+2. S1 (het domein van de score) is klaar; daarna S2, de server: migratie 0003, functies en RLS-tests.

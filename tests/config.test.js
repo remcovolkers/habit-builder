@@ -59,3 +59,10 @@ test('de CSP in index.html staat verbindingen toe naar beide projecten (en naar 
   }
   assert.ok(!connect.includes('*'), 'connect-src mag geen jokertekens bevatten');
 });
+
+test('het adres van het ontwikkelproject volgt de host waarop je de app opent (ook vanaf je telefoon)', () => {
+  const local = { ...envs, development: { supabaseUrl: 'http://{host}:54321', supabasePublishableKey: 'local-key', vapidPublicKey: '' } };
+  assert.equal(pickEnvironment('localhost', local).supabaseUrl, 'http://localhost:54321');
+  assert.equal(pickEnvironment('192.168.1.20', local).supabaseUrl, 'http://192.168.1.20:54321');
+  assert.equal(pickEnvironment(PRODUCTION_HOST, local).supabaseUrl, 'https://prod.supabase.co');
+});
