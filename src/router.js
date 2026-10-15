@@ -49,6 +49,7 @@ export function startRouter({ routes, outlet, notFound, onChange }) {
       view = document.createTextNode('Er ging iets mis bij het openen van deze pagina.');
     }
     fill(outlet, view);
+    window.scrollTo(0, 0); // een nieuwe pagina begint bovenaan, niet waar de vorige stond
     outlet.focus({ preventScroll: true });
     onChange?.(ctx);
   }

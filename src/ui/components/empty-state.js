@@ -12,9 +12,10 @@ const STARTERS = ['water', 'reading', 'running'];
  *   cta:       { href, label, desktopOnly } de hoofdactie; desktopOnly als op mobiel de FAB die rol heeft
  *   secondary: { href, label } een rustiger tweede stap
  *   starters:  toon enkele sjablonen om mee te beginnen
+ *   compact:   een kleine regel boven bestaande inhoud (bv. de medailles), in plaats van een heel scherm
  */
-export function emptyState({ art, slot = 'empty', title, text, cta = null, secondary = null, starters = false }) {
-  return h('div', { class: 'empty' },
+export function emptyState({ art, slot = 'empty', title, text, cta = null, secondary = null, starters = false, compact = false }) {
+  return h('div', { class: compact ? 'empty empty--compact' : 'empty' },
     mascot(slot, 'empty__mascot') ?? h('div', { class: 'empty__art', 'aria-hidden': 'true' }, icon(art, { strokeWidth: 1.6 })),
     h('h2', { class: 'empty__title' }, title),
     text ? h('p', { class: 'empty__text' }, text) : null,

@@ -184,7 +184,7 @@ function renderDay(view) {
     h('div', { class: 'today__columns' },
       h('div', { class: 'today__main' }, ...groupSections),
       side.length > 0 ? h('div', { class: 'today__side' }, ...side) : null),
-    fab({ href: '#/habits/new', label: view.hasHabits ? nl.habits.new : nl.today.createFirst, extended: !view.hasHabits }));
+    fab({ href: '#/habits/new', label: nl.habits.new }));
 }
 
 function dayLink(date, label, symbol, enabled) {

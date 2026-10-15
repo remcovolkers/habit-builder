@@ -7,15 +7,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  min-width: 3.5rem;
+  width: 3.5rem;
   height: 3.5rem;
   background: var(--color-accent);
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-card), var(--shadow-glow);
   color: var(--color-on-accent);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-extra);
   text-decoration: none;
   transition: transform var(--duration-fast) var(--ease-out), filter var(--duration-fast);
 }
@@ -25,18 +22,15 @@
   height: 1.5rem;
 }
 
-.fab--extended {
-  padding: 0 var(--space-5) 0 var(--space-4);
-}
-
 .fab:active {
   transform: scale(0.94);
 }
 
-/* de lijst eindigt boven de knop, zodat het laatste item nooit eronder verdwijnt */
+/* een lijst eindigt boven de knop (knop 3,5rem + 1rem afstand tot de tabbalk + 1rem lucht), zodat het laatste item nooit eronder verdwijnt;
+   een lege pagina heeft die ruimte niet nodig (en hoort niet te scrollen) */
 @media (max-width: 959px) {
-  .app__main:has(.fab) {
-    padding-bottom: calc(var(--size-tabbar) + var(--safe-bottom) + 8rem);
+  .app__main:has(.fab):not(:has(.empty)) {
+    padding-bottom: calc(var(--size-tabbar) + var(--safe-bottom) + 5.5rem);
   }
 }
 

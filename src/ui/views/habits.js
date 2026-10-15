@@ -82,7 +82,7 @@ export function habitsView() {
         section('planned'),
         section('graduated', { collapsed: true }),
         section('archived', { collapsed: true }),
-        fab({ href: '#/habits/new', label: habits.length === 0 ? nl.today.createFirst : nl.habits.new, extended: habits.length === 0 }));
+        fab({ href: '#/habits/new', label: nl.habits.new }));
     },
   });
 }

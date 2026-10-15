@@ -17,8 +17,8 @@
 
 /* lege schermen: een vriendelijke gast boven de tekst */
 .empty .mascot {
-  width: 9rem;
-  height: 9rem;
+  width: clamp(5rem, 15dvh, 9rem);
+  height: clamp(5rem, 15dvh, 9rem);
 }
 
 /* de fase van een habit, rechtsboven in de hero-kaart */

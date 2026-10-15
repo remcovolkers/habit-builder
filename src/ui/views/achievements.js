@@ -34,7 +34,7 @@ export function achievementsView() {
           h('h1', { class: 'page-title' }, nl.achievements.title),
           h('span', { class: 'kicker' }, nl.achievements.count(reached.length, keys.length))),
         reached.length === 0
-          ? emptyState({ art: 'achievements', slot: 'achievement', title: nl.achievements.emptyTitle, text: nl.achievements.empty, secondary: { href: '#/today', label: nl.nav.today } })
+          ? emptyState({ art: 'achievements', slot: 'achievement', title: nl.achievements.emptyTitle, text: nl.achievements.empty, compact: true })
           : null,
         h('ul', { class: 'achievements' }, ...keys.map(medal)));
     },
