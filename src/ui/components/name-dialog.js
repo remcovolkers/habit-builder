@@ -1,6 +1,7 @@
 import { h } from '../dom.js';
 import { openDialog } from './dialog.js';
 import { showToast } from './toast.js';
+import { charCounter } from './char-counter.js';
 import { saveSettings } from '../state.js';
 import { DISPLAY_NAME_MAX } from '../../app/settings.js';
 import { nl } from '../../content/nl.js';
@@ -14,7 +15,7 @@ export function openNameDialog({ initial = '', onSaved = null } = {}) {
   let saved = false;
   const error = h('p', { class: 'field__error', role: 'alert', hidden: true }, t.tooLong);
   const input = h('input', {
-    id: 'nameInput', class: 'input', type: 'text', maxlength: DISPLAY_NAME_MAX + 10, autocomplete: 'given-name',
+    id: 'nameInput', class: 'input', type: 'text', autocomplete: 'given-name',
     value: initial, 'aria-label': t.label,
     onkeydown: (event) => {
       if (event.key === 'Enter') {
@@ -27,7 +28,7 @@ export function openNameDialog({ initial = '', onSaved = null } = {}) {
   openDialog({
     title: t.title,
     description: t.text,
-    content: h('div', { class: 'field' }, input, error),
+    content: h('div', { class: 'field' }, input, charCounter(input, DISPLAY_NAME_MAX), error),
     cancelLabel: t.skip,
     actions: [{
       label: t.save,

@@ -4,12 +4,13 @@ import { notifyChanged, state } from '../state.js';
 import { showToast } from '../components/toast.js';
 import { nl } from '../../content/nl.js';
 import { emptyState } from '../components/empty-state.js';
+import { charCounter } from '../components/char-counter.js';
 import { overviewSection } from '../components/overview.js';
 import { socialCard } from '../components/social-card.js';
 import { statsForHabit, streakSpan } from '../../app/habit-detail.js';
 import { saveWeeklyReview } from '../../app/actions.js';
 import { formatDateShort } from '../../app/format.js';
-import { ValidationError } from '../../data/repository.js';
+import { REVIEW_TEXT_MAX, ValidationError } from '../../data/repository.js';
 import { addDays, startOfWeek } from '../../domain/dates.js';
 import { isTracked } from '../../domain/rules.js';
 
@@ -37,8 +38,8 @@ function reviewCard(snapshot, today) {
   const weekStart = startOfWeek(today);
   const current = snapshot.reviews.find((r) => r.weekStart === weekStart) ?? null;
   const r = nl.stats.review;
-  const wentWell = h('textarea', { id: 'wentWell', class: 'input', rows: 3, maxlength: 1100, value: null }, current?.wentWell ?? '');
-  const adjust = h('textarea', { id: 'adjust', class: 'input', rows: 3, maxlength: 1100 }, current?.adjust ?? '');
+  const wentWell = h('textarea', { id: 'wentWell', class: 'input', rows: 3 }, current?.wentWell ?? '');
+  const adjust = h('textarea', { id: 'adjust', class: 'input', rows: 3 }, current?.adjust ?? '');
   const error = h('p', { class: 'field__error', role: 'alert', hidden: true }, r.tooLong);
 
   async function submit(event) {
@@ -60,8 +61,8 @@ function reviewCard(snapshot, today) {
     h('h2', { class: 'section__title' }, r.title),
     h('form', { class: 'review form', novalidate: true, onsubmit: submit },
       h('p', { class: 'xs muted' }, r.week(formatDateShort(weekStart))),
-      h('div', { class: 'field' }, h('label', { class: 'field__label', for: 'wentWell' }, r.wentWell), wentWell),
-      h('div', { class: 'field' }, h('label', { class: 'field__label', for: 'adjust' }, r.adjust), adjust),
+      h('div', { class: 'field' }, h('label', { class: 'field__label', for: 'wentWell' }, r.wentWell), wentWell, charCounter(wentWell, REVIEW_TEXT_MAX)),
+      h('div', { class: 'field' }, h('label', { class: 'field__label', for: 'adjust' }, r.adjust), adjust, charCounter(adjust, REVIEW_TEXT_MAX)),
       error,
       h('button', { type: 'submit', class: 'button button--primary button--block' }, r.save)),
     earlier.length > 0

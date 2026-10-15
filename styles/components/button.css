@@ -75,6 +75,7 @@
   height: 1.25rem;
 }
 
+.icon-button:disabled,
 .icon-button.is-disabled {
   opacity: 0.3;
   pointer-events: none;

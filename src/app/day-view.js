@@ -48,7 +48,7 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
   const { habits, dayPlans } = snapshot;
   const { habitById, bundles } = prepared ?? prepareSnapshot(snapshot);
 
-  const day = buildToday({ bundles, dayPlans, today: date });
+  const day = buildToday({ bundles, dayPlans, today: date, now: today });
   const attach = (entry) => ({ ...entry, habit: habitById.get(entry.habitId) });
 
   const entries = [...day.scheduled, ...day.planned].map(attach).sort(byHabitOrder);
