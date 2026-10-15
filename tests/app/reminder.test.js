@@ -87,3 +87,27 @@ test('base64UrlToBytes: zet een VAPID-sleutel om naar 65 bytes die met 0x04 begi
   assert.equal(bytes[0], 4);
   assert.equal(Buffer.from(bytes).toString('base64url'), key);
 });
+
+// --- een nieuw tijdstip geldt vanaf de eerstvolgende keer (rearmDate) -------------------------------
+
+test('rearmDate: een tijdstip dat nog komt vandaag = opnieuw scherp (null), zodat de melding vandaag nog komt', async () => {
+  const { rearmDate } = await import('../../src/app/reminder.js');
+  const now = new Date(Date.UTC(2026, 9, 15, 15, 31)); // 17:31 in Amsterdam (CEST)
+  assert.equal(rearmDate({ time: '17:35', now, timeZone: 'Europe/Amsterdam' }), null);
+  assert.equal(rearmDate({ time: '23:59', now, timeZone: 'Europe/Amsterdam' }), null);
+});
+
+test('rearmDate: een tijdstip dat vandaag al voorbij is = vandaag als gemeld, de eerste melding is morgen', async () => {
+  const { rearmDate } = await import('../../src/app/reminder.js');
+  const now = new Date(Date.UTC(2026, 9, 15, 15, 31));
+  assert.equal(rearmDate({ time: '08:00', now, timeZone: 'Europe/Amsterdam' }), '2026-10-15');
+  assert.equal(rearmDate({ time: '17:31', now, timeZone: 'Europe/Amsterdam' }), '2026-10-15', 'precies nu telt als voorbij');
+});
+
+test('rearmDate: rekent in de tijdzone van de gebruiker, ook als de datum daar anders is dan in UTC', async () => {
+  const { rearmDate } = await import('../../src/app/reminder.js');
+  const now = new Date(Date.UTC(2026, 9, 15, 22, 30)); // 00:30 op 16 okt in Amsterdam, 18:30 op 15 okt in New York
+  assert.equal(rearmDate({ time: '08:00', now, timeZone: 'Europe/Amsterdam' }), null, '08:00 komt nog (het is net na middernacht)');
+  assert.equal(rearmDate({ time: '08:00', now, timeZone: 'America/New_York' }), '2026-10-15');
+  assert.equal(rearmDate({ time: '00:10', now, timeZone: 'Europe/Amsterdam' }), '2026-10-16');
+});

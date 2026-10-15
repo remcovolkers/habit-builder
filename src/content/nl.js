@@ -462,6 +462,8 @@ export const nl = {
   account: {
     title: 'Account',
     anonymous: 'Je gebruikt de app alleen op dit apparaat. Log in om je gegevens veilig te stellen en te synchroniseren.',
+    restoring: 'Je account wordt opgehaald…',
+    restoringOffline: 'Je bent offline. Je account wordt opgehaald zodra er verbinding is. Je gegevens op dit apparaat zijn gewoon beschikbaar.',
     login: 'Inloggen of account maken',
     signedInAs: (email) => `Ingelogd als ${email}`,
     sync: {

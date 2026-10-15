@@ -63,3 +63,17 @@ test('sendTestReminder: vertaalt de uitkomsten naar redenen die de UI kan uitleg
   assert.equal(await reason({ data: { sent: 0, failed: 0, removed: 1 }, error: null }), 'no_device');
   assert.equal(await reason({ data: null, error: { message: 'netwerk' } }), 'unknown');
 });
+
+test('saveSubscription: last_notified_date gaat alleen mee als het tijdstip is ingesteld of gewijzigd (anders blijft het staan)', async () => {
+  const withNone = fakeClient();
+  await saveSubscription({ client: withNone, userId: 'u1', subscription, remindTime: '08:00', timezone: 'UTC', summary: {} });
+  assert.ok(!('last_notified_date' in withNone.calls[0].row), 'een gewone bijwerking van de samenvatting raakt het niet aan');
+
+  const rearmed = fakeClient();
+  await saveSubscription({ client: rearmed, userId: 'u1', subscription, remindTime: '08:00', timezone: 'UTC', summary: {}, lastNotifiedDate: null });
+  assert.equal(rearmed.calls[0].row.last_notified_date, null, 'null = vandaag opnieuw scherp');
+
+  const skipToday = fakeClient();
+  await saveSubscription({ client: skipToday, userId: 'u1', subscription, remindTime: '08:00', timezone: 'UTC', summary: {}, lastNotifiedDate: '2026-10-15' });
+  assert.equal(skipToday.calls[0].row.last_notified_date, '2026-10-15');
+});

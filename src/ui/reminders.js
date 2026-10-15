@@ -5,7 +5,7 @@
 import { config } from '../config.js';
 import * as auth from '../data/auth.js';
 import { deleteSubscription, saveSubscription, sendTestReminder } from '../data/push-remote.js';
-import { base64UrlToBytes, buildReminderSummary, DEFAULT_REMINDER_TIME, validateReminderTime } from '../app/reminder.js';
+import { base64UrlToBytes, buildReminderSummary, DEFAULT_REMINDER_TIME, rearmDate, validateReminderTime } from '../app/reminder.js';
 import { account, onAccountChanged, onBeforeLeave } from './account.js';
 import { onChanged, state } from './state.js';
 
@@ -57,6 +57,7 @@ export async function refreshReminders() {
   reminders.time = readStoredTime();
   if (!config.vapidPublicKey) reminders.status = 'unconfigured';
   else if (!supported()) reminders.status = 'unsupported';
+  else if (account.status === 'restoring') reminders.status = 'unconfigured'; // verborgen tot we weten of je bent ingelogd (anders flitst "log in")
   else if (account.status !== 'signed-in') reminders.status = 'signed-out';
   else if (Notification.permission === 'denied') reminders.status = 'denied';
   else reminders.status = (await currentSubscription().catch(() => null)) ? 'on' : 'off';
@@ -64,12 +65,14 @@ export async function refreshReminders() {
   return reminders.status;
 }
 
-async function upload(subscription, time) {
+/** `rearm`: het tijdstip is net ingesteld of gewijzigd, dus "vandaag al gemeld" opnieuw bepalen (zie rearmDate). */
+async function upload(subscription, time, { rearm = false } = {}) {
   const client = await auth.getClient();
   const snapshot = await state.repo.snapshot();
   const summary = buildReminderSummary({ snapshot, today: state.today, settings: state.settings });
   await saveSubscription({
     client, userId: account.user.id, subscription: subscription.toJSON(), remindTime: time, timezone: state.settings.timezone, summary,
+    lastNotifiedDate: rearm ? rearmDate({ time, now: new Date(), timeZone: state.settings.timezone }) : undefined,
   });
   lastUploaded = JSON.stringify([subscription.endpoint, time, state.settings.timezone, summary]);
 }
@@ -78,7 +81,7 @@ let lastUploaded = '';
 let uploadTimer = null;
 
 /** Houdt de server bij: tijdstip, tijdzone en de samenvatting van de komende dagen. Doet niets als er niets veranderd is. */
-export async function syncReminder({ force = false } = {}) {
+export async function syncReminder({ force = false, rearm = false } = {}) {
   if (reminders.status !== 'on' || !navigator.onLine) return;
   try {
     const subscription = await currentSubscription();
@@ -87,7 +90,7 @@ export async function syncReminder({ force = false } = {}) {
     const summary = buildReminderSummary({ snapshot, today: state.today, settings: state.settings });
     const signature = JSON.stringify([subscription.endpoint, reminders.time, state.settings.timezone, summary]);
     if (!force && signature === lastUploaded) return;
-    await upload(subscription, reminders.time);
+    await upload(subscription, reminders.time, { rearm });
   } catch (error) {
     console.warn('herinnering bijwerken mislukt', error);
   }
@@ -123,7 +126,7 @@ export async function enableReminder(time) {
     subscription ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
     storeTime(time);
     reminders.time = time;
-    await upload(subscription, time);
+    await upload(subscription, time, { rearm: true });
   } catch (error) {
     console.warn('herinnering aanzetten mislukt', error);
     await subscription?.unsubscribe().catch(() => {}); // geen half abonnement achterlaten
@@ -163,7 +166,7 @@ export async function setReminderTime(time) {
   storeTime(time);
   reminders.time = time;
   emit();
-  await syncReminder({ force: true });
+  await syncReminder({ force: true, rearm: true });
   return null;
 }
 

@@ -57,6 +57,12 @@ export function accountCard() {
   const root = h('section', { class: 'section account-card' });
 
   function render() {
+    if (account.status === 'restoring') {
+      fill(root,
+        h('h2', { class: 'section__title' }, nl.account.title),
+        h('p', { id: 'accountRestoring', class: 'section__hint', role: 'status' }, navigator.onLine ? nl.account.restoring : nl.account.restoringOffline));
+      return;
+    }
     if (account.status !== 'signed-in') {
       fill(root,
         h('h2', { class: 'section__title' }, nl.account.title),

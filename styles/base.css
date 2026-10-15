@@ -7,6 +7,8 @@
 html {
   -webkit-text-size-adjust: 100%;
   background: var(--color-bg-3);
+  /* geen "trek om te verversen" en geen rubberband: de app ververst zichzelf (sync), en een per ongeluk herladen gaf rare tussenstanden */
+  overscroll-behavior-y: none;
 }
 
 body {

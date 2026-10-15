@@ -11,13 +11,13 @@ function fail(error, fallback) {
 }
 
 /** Registreert dit apparaat (of werkt het bij). `subscription` is wat `pushSubscription.toJSON()` geeft. */
-export async function saveSubscription({ client, userId, subscription, remindTime, timezone, summary }) {
+export async function saveSubscription({ client, userId, subscription, remindTime, timezone, summary, lastNotifiedDate }) {
   const { endpoint, keys } = subscription;
   if (!endpoint || !keys?.p256dh || !keys?.auth) throw new Error('onvolledig push-abonnement');
-  const { error } = await client.from(TABLE).upsert(
-    { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth, remind_time: remindTime, timezone, summary },
-    { onConflict: 'user_id,endpoint' },
-  );
+  const row = { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth, remind_time: remindTime, timezone, summary };
+  // alleen meesturen als het tijdstip is ingesteld of gewijzigd (zie rearmDate); een gewone bijwerking van de samenvatting laat het staan
+  if (lastNotifiedDate !== undefined) row.last_notified_date = lastNotifiedDate;
+  const { error } = await client.from(TABLE).upsert(row, { onConflict: 'user_id,endpoint' });
   if (error) throw fail(error, 'Opslaan mislukt');
 }
 

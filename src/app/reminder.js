@@ -36,6 +36,22 @@ export function buildReminderSummary({ snapshot, today, settings, days = REMINDE
   return { name: String(settings.displayName ?? '').trim().slice(0, DISPLAY_NAME_MAX), days: entries };
 }
 
+/**
+ * Wat `last_notified_date` wordt als je het tijdstip instelt of wijzigt, zodat een nieuw tijdstip meteen geldt vanaf de eerstvolgende keer:
+ *   • ligt het tijdstip nog voor je (vandaag), dan `null`: de melding komt vandaag nog, ook als er vandaag al een kwam;
+ *   • is het tijdstip vandaag al voorbij, dan vandaag: de eerste melding is morgen (anders krijg je er meteen een als je 's middags
+ *     het standaardtijdstip 08:00 aanzet).
+ */
+export function rearmDate({ time, now, timeZone }) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+      .formatToParts(now).map((part) => [part.type, part.value]),
+  );
+  const nowMinutes = Number(parts.hour) * 60 + Number(parts.minute);
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes > nowMinutes ? null : `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 /** De publieke VAPID-sleutel (base64url) als bytes, zoals pushManager.subscribe die wil. */
 export function base64UrlToBytes(text) {
   const base64 = String(text).replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(String(text).length / 4) * 4, '=');

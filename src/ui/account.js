@@ -14,7 +14,10 @@ import { createSupabaseRemote } from '../data/supabase-remote.js';
 import { nl } from '../content/nl.js';
 
 export const account = {
-  status: 'anonymous', // 'anonymous' | 'signed-in'
+  // 'anonymous' | 'restoring' | 'signed-in'
+  // restoring: er is een bewaarde sessie (of we komen terug van Google) maar die is nog niet opgehaald of gecontroleerd.
+  // In die tussentijd zeggen we niet dat je bent uitgelogd: geen inlogknop en geen zetje om in te loggen.
+  status: auth.hasStoredSession() || auth.isAuthCallback() ? 'restoring' : 'anonymous',
   user: null, // { id, email }
   sync: { state: 'idle', lastSyncAt: null, error: null },
   pending: 0,
@@ -148,11 +151,22 @@ function detach() {
   emit();
 }
 
+/**
+ * Geen sessie gevonden terwijl we er een verwachtten. Is hij ook echt uit de opslag verdwenen (verlopen of ingetrokken), dan zijn we
+ * anoniem. Staat hij er nog, maar kon hij niet gecontroleerd worden (geen verbinding), dan blijven we "ophalen" en proberen we het later opnieuw.
+ */
+function settleRestoring() {
+  if (auth.hasStoredSession()) return;
+  account.status = 'anonymous';
+  emit();
+}
+
 function handleSession(user) {
   // één na één verwerken: de auth-callback kan snel achter elkaar meerdere keren komen
   attaching = attaching.then(async () => {
     if (!user) {
       if (account.status === 'signed-in') detach();
+      else if (account.status === 'restoring') settleRestoring();
       return;
     }
     if (account.user?.id === user.id) return;
@@ -190,11 +204,14 @@ export async function activate() {
     if (account.status === 'signed-in') scheduleSync();
   });
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && account.status === 'signed-in') syncNow();
+    if (document.hidden) return;
+    if (account.status === 'signed-in') syncNow();
+    else if (account.status === 'restoring') retryRestore();
   });
+  const retryRestore = () => auth.currentUser().then((u) => handleSession(u)).catch(() => {});
   window.addEventListener('online', () => {
     if (account.status === 'signed-in') syncNow();
-    else auth.currentUser().then((u) => handleSession(u)).catch(() => {});
+    else retryRestore();
   });
   setInterval(() => {
     if (!document.hidden && account.status === 'signed-in') syncNow();

@@ -73,7 +73,7 @@ function backupSection() {
 function themeSection() {
   const current = themeFor(state.settings.theme).id;
   // het thema reist alleen mee naar andere apparaten als je bent ingelogd; de tekst volgt de inlogstatus
-  const hintText = () => (account.status === 'signed-in' ? nl.settings.theme.hint : nl.settings.theme.hintLocal);
+  const hintText = () => (account.status === 'anonymous' ? nl.settings.theme.hintLocal : nl.settings.theme.hint);
   const hint = h('p', { class: 'section__hint', id: 'themeHint' }, hintText());
   const stop = onAccountChanged(() => (hint.isConnected ? (hint.textContent = hintText()) : stop()));
   return h('fieldset', { class: 'section themes' },

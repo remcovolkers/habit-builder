@@ -230,3 +230,45 @@ test('test: een testmelding laat vaker versturen toe en verandert niets aan "van
   assert.deepEqual(pushes, [0, 0]);
   assert.equal(rows[0].last_notified_date, null);
 });
+
+// ---------------------------------------------------------------------------------------------
+// Diagnose: het antwoord vertelt waarom er wel of geen melding kwam
+// ---------------------------------------------------------------------------------------------
+test('cron-antwoord: per apparaat de gegevens waarop "aan de beurt" gebaseerd is, zonder sleutels of namen van habits', async () => {
+  const { call } = await world({ subs: [{}, { remind_time: '09:00' }] });
+  const body = await (await call(cron, {})).json();
+  assert.equal(body.checked, 2);
+  assert.equal(body.at, '2026-10-16T06:05:00.000Z');
+  assert.deepEqual(body.inspect.map((i) => [i.remind_time, i.local_time, i.local_date, i.due, i.planned_today]), [
+    ['08:00', '08:05', '2026-10-16', true, [3, 1]],
+    ['09:00', '08:05', '2026-10-16', false, [3, 1]],
+  ]);
+  const text = JSON.stringify(body);
+  for (const secret of ['p256dh', 'auth', 'endpoint', 'push.example.org', 'Remco']) assert.ok(!text.includes(secret), `${secret} hoort niet in het antwoord`);
+});
+
+test('cron-antwoord: de beslissing per apparaat — verstuurd, al gemeld, niets gepland, verlopen of geweigerd', async () => {
+  const { call } = await world({
+    subs: [{}, { last_notified_date: '2026-10-16' }, { summary: { days: { '2026-10-16': [0, 0] } } }, {}, {}],
+    pushStatus: { 3: 410, 4: 503 },
+  });
+  const body = await (await call(cron, {})).json();
+  const outcomes = Object.fromEntries(body.decisions.map((d, i) => [i, d.outcome]));
+  // het tweede apparaat is niet "due" (al gemeld), dus komt niet in de beslissingen
+  assert.deepEqual(body.decisions.map((d) => d.outcome), ['verstuurd', 'niets_gepland_vandaag', 'abonnement_verlopen_410', 'push_dienst_weigerde_503'], JSON.stringify(outcomes));
+  assert.deepEqual(body.inspect.map((i) => i.due), [true, false, true, true, true]);
+});
+
+test('cron-antwoord: een onbekende tijdzone staat als reden in de inspectie in plaats van een crash', async () => {
+  const { call } = await world({ subs: [{ timezone: 'Mars/Olympus' }] });
+  const body = await (await call(cron, {})).json();
+  assert.equal(body.due, 0);
+  assert.deepEqual([body.inspect[0].local_time, body.inspect[0].due, body.inspect[0].timezone], [null, false, 'Mars/Olympus']);
+});
+
+test('een al gemeld apparaat dat toch "due" lijkt (twee runs tegelijk) krijgt de beslissing "al_gemeld_vandaag"', async () => {
+  const { call } = await world({ subs: [{}] });
+  const [a, b] = await Promise.all([call(cron, {}), call(cron, {})]);
+  const outcomes = [...(await a.json()).decisions, ...(await b.json()).decisions].map((d) => d.outcome).sort();
+  assert.deepEqual(outcomes, ['al_gemeld_vandaag', 'verstuurd']);
+});

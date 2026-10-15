@@ -246,7 +246,9 @@ async function userFromToken({ url, key, token, fetchImpl }) {
 
 /** Stuurt naar de gegeven abonnementen en ruimt verlopen op. `claim`: alleen versturen als "vandaag" nog vrij is (cron). */
 async function deliver({ subscriptions, db, vapid, fetchImpl, now, claim, forceText }) {
-  const result = { sent: 0, skipped: 0, removed: 0, failed: 0 };
+  // decisions: per apparaat wat er gebeurde en waarom. Staat in het antwoord (zie net._http_response) zodat je kunt zien waarom er geen melding kwam.
+  const result = { sent: 0, skipped: 0, removed: 0, failed: 0, decisions: [] };
+  const decide = (subscription, outcome) => result.decisions.push({ id: shortId(subscription.id), outcome });
   for (const subscription of subscriptions) {
     const { date } = localMoment(now, subscription.timezone);
     const message = forceText ?? composeMessage(subscription, now);
@@ -254,33 +256,64 @@ async function deliver({ subscriptions, db, vapid, fetchImpl, now, claim, forceT
       const mine = await db.claim(subscription.id, date);
       if (!mine) {
         result.skipped++;
+        decide(subscription, 'al_gemeld_vandaag');
         continue;
       }
       if (!message) { // niets te doen vandaag: wel als "gemeld" laten staan, zodat we het niet elke 5 minuten opnieuw bekijken
         result.skipped++;
+        decide(subscription, 'niets_gepland_vandaag');
         continue;
       }
     } else if (!message) {
       result.skipped++;
+      decide(subscription, 'niets_gepland_vandaag');
       continue;
     }
     try {
       const outcome = await sendPush({ subscription, message, vapid, fetchImpl, now: now.getTime() });
-      if (outcome.ok) result.sent++;
-      else if (outcome.gone) {
+      if (outcome.ok) {
+        result.sent++;
+        decide(subscription, 'verstuurd');
+      } else if (outcome.gone) {
         await db.remove(subscription.id);
         result.removed++;
+        decide(subscription, `abonnement_verlopen_${outcome.status}`);
       } else {
         result.failed++;
+        decide(subscription, `push_dienst_weigerde_${outcome.status}`);
         if (claim) await db.release(subscription.id, subscription.last_notified_date ?? null); // volgende ronde opnieuw proberen
       }
     } catch (error) {
-      console.error('versturen mislukt', subscription.id, error?.message);
+      console.error('versturen mislukt', shortId(subscription.id), error?.message);
       result.failed++;
+      decide(subscription, 'fout_bij_versturen');
       if (claim) await db.release(subscription.id, subscription.last_notified_date ?? null).catch(() => {});
     }
   }
   return result;
+}
+
+const shortId = (id) => String(id).slice(0, 8);
+
+/** Per apparaat de gegevens waarop "aan de beurt" gebaseerd is, zonder gevoelige velden. Voor het zoeken naar een reden. */
+export function inspect(subscription, now) {
+  let local = null;
+  try {
+    local = localMoment(now, subscription.timezone);
+  } catch {
+    /* onbekende tijdzone: dat is de reden */
+  }
+  const entry = local ? subscription.summary?.days?.[local.date] : undefined;
+  return {
+    id: shortId(subscription.id),
+    remind_time: subscription.remind_time,
+    timezone: subscription.timezone,
+    local_time: local ? `${String(Math.floor(local.minutes / 60)).padStart(2, '0')}:${String(local.minutes % 60).padStart(2, '0')}` : null,
+    local_date: local?.date ?? null,
+    last_notified_date: subscription.last_notified_date ?? null,
+    due: isDue(subscription, now),
+    planned_today: Array.isArray(entry) ? entry : null,
+  };
 }
 
 export async function handleRequest(request, { env, fetchImpl = fetch, now = new Date() }) {
@@ -300,8 +333,12 @@ export async function handleRequest(request, { env, fetchImpl = fetch, now = new
   const cronHeader = request.headers.get('x-cron-secret');
   if (cronHeader !== null) {
     if (!safeEqual(cronHeader, env('CRON_SECRET'))) return json(401, { error: 'geen toegang' });
-    const due = (await db.all()).filter((subscription) => isDue(subscription, now));
-    return json(200, { mode: 'cron', due: due.length, ...(await deliver({ subscriptions: due, db, vapid, fetchImpl, now, claim: true })) });
+    const all = await db.all();
+    const due = all.filter((subscription) => isDue(subscription, now));
+    const outcome = await deliver({ subscriptions: due, db, vapid, fetchImpl, now, claim: true });
+    const body = { mode: 'cron', at: now.toISOString(), checked: all.length, due: due.length, ...outcome, inspect: all.map((subscription) => inspect(subscription, now)) };
+    if (due.length > 0) console.log('cron', JSON.stringify({ due: due.length, sent: outcome.sent, skipped: outcome.skipped, removed: outcome.removed, failed: outcome.failed, decisions: outcome.decisions }));
+    return json(200, body);
   }
 
   const token = /^Bearer (.+)$/.exec(request.headers.get('authorization') ?? '')?.[1];

@@ -80,3 +80,8 @@ test('CSS: de pagina is nooit hoger dan het scherm — min-height gebruikt svh, 
   assert.doesNotMatch(css, /min-height:\s*100dvh/);
   assert.doesNotMatch(css, /\d+dvh/);
 });
+
+test('CSS: trek-om-te-verversen staat uit (overscroll-behavior-y: none op html)', () => {
+  const css = readFileSync(join(ROOT, 'styles/base.css'), 'utf8');
+  assert.match(css, /html\s*\{[^}]*overscroll-behavior-y:\s*none/);
+});
