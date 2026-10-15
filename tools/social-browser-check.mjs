@@ -1,7 +1,7 @@
-// De sociale schermen in een echte browser (headless Microsoft Edge, Windows) tegen de LOKALE Supabase, met de echte app en echte inlogcodes
+// De sociale schermen in een echte browser (headless Edge of Chrome, op Windows en Linux) tegen de LOKALE Supabase, met de echte app en echte inlogcodes
 // (uit het lokale mailvenster): niet ingelogd, uitnodiging, aanmelden, ranglijst, vrienden zoeken en toevoegen, verzoeken, beheren, thema's,
 // desktop, grote tekst op 320px, offline en uitzetten. Controleert onderweg overflow, afgeknipte tekst en tikvlakken van 44px.
-// Gebruik: npm run db:start, dan: npm run db:check-browser [map voor schermafbeeldingen]
+// Gebruik: npm run db:start, dan: npm run db:check-browser [map voor schermafbeeldingen]. Een andere browser: zet BROWSER op het pad.
 // Maakt en ruimt de testaccounts ui-me, ui-anna, ui-bram, ui-cor en ui-dora (@example.com) op.
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
@@ -12,7 +12,14 @@ import { join } from 'node:path';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const OUT = process.argv[2] ?? join(tmpdir(), 'hb-social-shots');
 mkdirSync(OUT, { recursive: true });
-const EDGE = [process.env['ProgramFiles(x86)'], process.env.ProgramFiles].map((p) => `${p}\\Microsoft\\Edge\\Application\\msedge.exe`).find((p) => existsSync(p));
+const BROWSER = [
+  process.env.BROWSER,
+  process.env['ProgramFiles(x86)'] && `${process.env['ProgramFiles(x86)']}\\Microsoft\\Edge\\Application\\msedge.exe`,
+  process.env.ProgramFiles && `${process.env.ProgramFiles}\\Microsoft\\Edge\\Application\\msedge.exe`,
+  process.env.ProgramFiles && `${process.env.ProgramFiles}\\Google\\Chrome\\Application\\chrome.exe`,
+  '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/microsoft-edge',
+].find((p) => p && existsSync(p));
+if (!BROWSER) throw new Error('Geen Edge of Chrome gevonden (zet BROWSER op het pad van de browser)');
 const API = 'http://127.0.0.1:54321';
 const MAIL = 'http://127.0.0.1:54324';
 const KEY = 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH';
@@ -21,7 +28,7 @@ const J = JSON.stringify;
 
 const server = spawn(process.execPath, ['tools/serve.mjs'], { cwd: ROOT, env: { ...process.env, PORT: '5174' }, stdio: 'ignore' });
 const profile = mkdtempSync(join(tmpdir(), 'hb-edge-'));
-const edge = spawn(EDGE, ['--headless=new', '--disable-gpu', '--remote-debugging-port=9337', `--user-data-dir=${profile}`, '--no-first-run', '--unsafely-treat-insecure-origin-as-secure=http://localhost:5174', 'about:blank'], { stdio: 'ignore' });
+const edge = spawn(BROWSER, ['--headless=new', '--disable-gpu', ...(process.env.CI ? ['--no-sandbox'] : []), '--remote-debugging-port=9337', `--user-data-dir=${profile}`, '--no-first-run', '--unsafely-treat-insecure-origin-as-secure=http://localhost:5174', 'about:blank'], { stdio: 'ignore' });
 
 const results = [];
 const problems = [];
@@ -387,7 +394,8 @@ try {
 } catch (error) {
   check(`onverwachte fout: ${error.message}`, false);
 } finally {
-  spawn('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });
+  if (process.platform === 'win32') spawn('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });
+  else edge.kill('SIGKILL');
   server.kill();
   const failed = results.filter((r) => !r.ok).length;
   console.log(`\n${results.length - failed}/${results.length} geslaagd`);
