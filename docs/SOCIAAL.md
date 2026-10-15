@@ -294,12 +294,12 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 
 | M | Inhoud | Klaar als… |
 |---|---|---|
-| **S0** | Dit document akkoord; besluiten S5–S11 genomen; de lokale testdatabase draait en de app kan er mee verbinden | besluiten ✔; testdatabase in uitvoering |
+| **S0** | Dit document akkoord; besluiten S5–S11 genomen; de lokale testdatabase draait en de app kan er mee verbinden | ✔ klaar |
 | **S1** | Domein: punten (basis, opbouwbonus, startbonus, minpunten, half gehaalde teller), actief-regel (3 dagen), gelijke stand, tests. Plus de naamvraag bij het aanmaken van een account (S5) | ✔ klaar: de regels uit §4 hebben groene tests; de meting (§4.7) staat erin. |
 | **S2** | Server: migratie 0003, functies, tests, DATAMODEL bijgewerkt | ✔ klaar: niet-vriend ziet niets, vriend ziet alleen de ranglijstvelden, weigeren/intrekken/verlopen/limieten/cascade werken (32 tests op Postgres, 96 controles via de API). **Nog niet op productie gezet**: dat gebeurt bij de release. |
 | **S3** | Data-laag en publiceren: remote-client, samenvatting na sync, offline cache | ✔ klaar: publiceren op de achtergrond; uit = niets verzonden (getest, 66 nieuwe tests); de hele keten ook getest met de echte SDK tegen de lokale Supabase (`npm run db:check-app`, 29 controles) |
 | **S4** | UI: aanzetten, zoeken, link, verzoeken, ranglijst, lege toestanden, beide thema's, desktop | ✔ klaar: vijf schermen en een kaart op Voortgang. De browserreeks `npm run db:check-browser` (123 controles, echte Edge tegen de lokale Supabase) slaagt: alle stromen, beide thema's, desktop, 320 px met 200% tekst (geen overflow, niets afgeknipt, tikvlakken van 44 px), offline, namen voor alles wat je kunt bedienen. Alle bestaande browserreeksen blijven slagen. |
-| **S5** | Privacyverklaring, voorwaarden, in-app uitleg, PLAN en DATAMODEL bijgewerkt, browsertests in CI | Release-checklist uit WERKWIJZE doorlopen; test op twee echte telefoons; release `v1.1`. |
+| **S5** | Privacyverklaring, voorwaarden, in-app uitleg, PLAN en DATAMODEL bijgewerkt, browsertests in CI | ✔ privacyverklaring en voorwaarden bijgewerkt (met een test die ze gelijk houdt aan de database), privacylink bij het aanmelden, PLAN en DATAMODEL bijgewerkt, de workflow **Integratie** draait de API-controles en 123 browsercontroles op GitHub. **Nog te doen:** proberen op twee echte telefoons, en de release volgens [RELEASE-v1.1.md](RELEASE-v1.1.md). |
 
 ## 11. Risico's
 

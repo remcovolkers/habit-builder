@@ -64,6 +64,8 @@ Open http://localhost:5173/ → Instellingen → **Inloggen of account maken**, 
 
 ## Controleren dat het goed staat
 
+GitHub draait dezelfde controles in de workflow **Integratie** (lokale Supabase in Docker plus een echte browser) op elke push naar `develop` en `feature/**`.
+
 `node tools/live-check.mjs --dev` controleert de lokale database (migraties aanwezig, niet-ingelogde bezoekers kunnen niets lezen of schrijven).
 
 ## Een wijziging aan de database uitrollen

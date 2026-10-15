@@ -14,7 +14,7 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | D2 | Hosting | GitHub Pages (statisch), subpad `/habit-builder/`. |
 | D3 | Backend | Supabase (Postgres, Auth, RLS, Edge Functions) op het gratis plan. |
 | D4 | Data | **Offline-first**: lokaal in IndexedDB, op de achtergrond sync naar Supabase. |
-| D5 | Gebruikers | **Meerdere gebruikers** (vrienden/familie). Strikte RLS, account verwijderen, geen sociale functies. |
+| D5 | Gebruikers | **Meerdere gebruikers** (vrienden/familie). Strikte RLS, account verwijderen. Sociale functies waren bewust buiten versie 1; vrienden en een ranglijst komen als **opt-in** in versie 1.1 (zie [SOCIAAL.md](SOCIAAL.md)). |
 | D6 | Taal | Nederlands. Alle teksten in `src/content/nl.js`, zodat een tweede taal later mogelijk blijft. |
 | D7 | Meldingen | Ochtendherinnering via Web Push (Android/desktop). iOS-ondersteuning bewust later. |
 | D8 | Design | Komt later (Moda). Nu: functionaliteit plus een design-token-laag zodat de skin los te wisselen is. |
@@ -36,6 +36,7 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | M5 PWA: manifest, icoon, offline start, updatemelding, installatieknop | klaar |
 | M7 ochtendherinnering (Web Push): server ingericht, geplande melding en testmelding komen aan op een echte telefoon (Android); batterij-uitleg en ontwikkelaarsopties voor het testen | klaar |
 | FAB, lege toestanden, weekstrook, week-/maandoverzicht, notities, herstelmoment, volgorde van habits, privacylink in de app | klaar |
+| Vrienden en ranglijst (S1–S5, [SOCIAAL.md](SOCIAAL.md)): punten, server, data-laag, schermen, privacyverklaring en voorwaarden | klaar op `feature/vrienden`; nog niet uitgerold (release 1.1: [RELEASE-v1.1.md](RELEASE-v1.1.md)) |
 
 ## Dekking van de eisen (stand versie 1)
 
@@ -142,7 +143,7 @@ Prioriteit: **M** = must (v1), **S** = should (v1 als het past), **C** = could (
 - **Privacy:** de privacyverklaring en voorwaarden staan als link in Instellingen (en op het inlogscherm).
 
 ### Buiten scope voor v1
-Sociale functies, native app, iOS-push, AI-coach, negatieve habits ("stoppen met X"), widgets, meerdere talen.
+Sociale functies (komen in 1.1, zie D5), native app, iOS-push, AI-coach, negatieve habits ("stoppen met X"), widgets, meerdere talen.
 
 ## 4. Domeinregels (de "ironclad" kern)
 
