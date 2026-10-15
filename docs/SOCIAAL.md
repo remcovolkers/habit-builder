@@ -103,7 +103,7 @@ De ranglijst telt **punten**, over de **laatste 7 dagen, vandaag meegerekend**. 
 | Een afgeronde taak (één afgevinkte habit op één dag; gedaan of minimale versie) | **+10** | `TASK_POINTS` |
 | Opbouwbonus, per taak, zolang de habit nog niet eigen is: de eerste 21 dagen | **+4** | `BUILD_BONUS_STARTING` |
 | Opbouwbonus, per taak, vanaf dag 22 tot de ingeburgerd-grens (66 dagen, per habit instelbaar) | **+2** | `BUILD_BONUS_BUILDING` |
-| Startbonus, eenmalig bij de **eerste afgeronde taak** van een nieuwe habit (hoogstens 2 per venster) | **+10** | `START_BONUS`, `START_BONUS_MAX` |
+| Startbonus, eenmalig bij de **eerste afgeronde taak** van een nieuwe habit (hoogstens 3 per venster) | **+10** | `START_BONUS`, `START_BONUS_MAX` |
 | Een gemiste dag (habit met vaste dagen) die **direct op een gemiste dag volgt**; de eerste misser van een rij is gratis | **−5** | `MISS_PENALTY`, `MISS_GRACE` |
 | Een flexibele habit waarvan een week/maand eindigt zonder dat het doel gehaald is, **als de vorige week/maand ook gemist was**: per ontbrekende keer | **−5** | idem |
 | Een teller die je half haalde (bijv. 5 van 8 glazen) | **+5** (de helft van een taak, plus de helft van de opbouwbonus), geen minpunten | `PARTIAL_FRACTION` |
@@ -147,13 +147,13 @@ De berekening levert naast het totaal een uitsplitsing (`breakdown`: taken, bonu
 | 15 habits gemengd, 40%, 200 dagen | 480 | **365** |
 | starter: 2 habits, 5 dagen bezig, alles gedaan | 120 | **188** |
 | starter: 1 habit, 5 dagen bezig, 50% | 20 | **28** |
-| knoeier: elke dag een nieuwe habit, één keer afvinken | 70 | **68** |
+| knoeier: elke dag een nieuwe habit, één keer afvinken | 70 | **78** |
 
 Wat opvalt:
 - **Wie trouw is, merkt de minpunten niet.** Met een gratis eerste misser staat iemand die 90% haalt op 190 (de aftrek is nul). Een gewone slechte dag kost niets; pas een rij missers wordt voelbaar.
 - **Een slechte periode doet nog wel pijn**: 50% gedaan in de opbouwfase geeft 78, onder het basisresultaat (90). Wie zijn habit vaak twee dagen op rij laat liggen, verliest punten.
 - **Veel habits blijven voordeel geven**: 15 habits half doen (365) staat ruim boven 3 habits bijna perfect (190). Dat volgt uit tellen per taak (§4.2) en is de eerste knop om aan te draaien (bijvoorbeeld een plafond van punten per dag).
-- **Knoeien is niet meer afgeschrikt, alleen niet meer lonend**: elke dag een nieuwe habit starten en één keer afvinken levert 68 op, evenveel als trouw één habit doen (70). De gratis eerste misser haalt een deel van de afschrikking weg. Wil je dat strenger, dan helpt `START_BONUS_MAX = 1` of de startbonus pas bij de derde afgeronde taak.
+- **Knoeien loont een beetje**: elke dag een nieuwe habit starten en één keer afvinken levert 78 op, iets meer dan trouw één habit doen (70). De drie startbonussen en de gratis eerste misser zijn daar de oorzaak van. Besloten: eerst de praktijk afwachten. Wil je dat strenger, dan helpt een lagere `START_BONUS_MAX` of de startbonus pas bij de derde afgeronde taak.
 - **De opbouwbonus is bescheiden** (ongeveer 20% in de eerste 21 dagen, 10% daarna) en verdwijnt zodra een habit eigen is. Een starter die in de eerste week alles doet staat net zo hoog als een gevestigde gebruiker (188 tegen 190). Dat is de bedoeling van het "starten" belonen; `START_BONUS` en `BUILD_BONUS_STARTING` zijn de knoppen.
 
 ## 5. Datamodel (voorstel, Supabase)

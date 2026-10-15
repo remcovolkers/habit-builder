@@ -52,7 +52,7 @@ export const BUILD_BONUS_STARTING = 4;
 export const BUILD_BONUS_BUILDING = 2;
 /** Eenmalig bij de eerste afgeronde taak van een nieuwe habit, hoogstens START_BONUS_MAX per venster (tegen aanmaken en weggooien). */
 export const START_BONUS = 10;
-export const START_BONUS_MAX = 2;
+export const START_BONUS_MAX = 3;
 /** Aftrek per gemiste dag (of per ontbrekende keer bij een flexibele habit). Half zoveel als een taak oplevert. */
 export const MISS_PENALTY = 5;
 /** Per habit zijn de eerste MISS_GRACE missers van een rij gratis: een enkele misser kost niets, nooit twee keer achter elkaar. */

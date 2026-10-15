@@ -257,12 +257,19 @@ test('een habit met een eigen ingeburgerd-grens (graduationDays) volgt die grens
 
 // ---- startbonus ----------------------------------------------------------------------------------------------------------
 
-test('een nieuwe habit geeft een startbonus bij de eerste afgeronde taak, hoogstens twee per venster', () => {
-  const habits = ['a', 'b', 'c'].map((id) => habit(id, ALL_DAYS, { startDate: '2026-10-13' }));
+test('een nieuwe habit geeft een startbonus bij de eerste afgeronde taak, hoogstens drie per venster', () => {
+  assert.equal(START_BONUS_MAX, 3);
+  const habits = ['a', 'b', 'c', 'd'].map((id) => habit(id, ALL_DAYS, { startDate: '2026-10-13' }));
   const s = summary({ habits, checkIns: habits.flatMap((h) => days('2026-10-13', TODAY).map((d) => done(h.id, d))) });
-  assert.equal(s.breakdown.start, START_BONUS_MAX * START_BONUS);
-  assert.equal(s.breakdown.tasks, 9 * TASK_POINTS);
-  assert.equal(s.breakdown.bonus, 9 * BUILD_BONUS_STARTING);
+  assert.equal(s.breakdown.start, START_BONUS_MAX * START_BONUS); // de vierde habit krijgt niets meer
+  assert.equal(s.breakdown.tasks, 12 * TASK_POINTS);
+  assert.equal(s.breakdown.bonus, 12 * BUILD_BONUS_STARTING);
+});
+
+test('twee nieuwe habits geven twee startbonussen', () => {
+  const habits = ['a', 'b'].map((id) => habit(id, ALL_DAYS, { startDate: '2026-10-13' }));
+  const s = summary({ habits, checkIns: habits.flatMap((h) => days('2026-10-13', TODAY).map((d) => done(h.id, d))) });
+  assert.equal(s.breakdown.start, 2 * START_BONUS);
 });
 
 test('aanmaken zonder afvinken geeft geen startbonus', () => {
@@ -275,12 +282,14 @@ test('een habit die al eerder is afgevinkt geeft geen startbonus meer', () => {
   assert.equal(s.breakdown.start, 0);
 });
 
-test('elke dag een nieuwe habit starten en één keer afvinken loont niet: de gemiste dagen na de eerste misser trekken het af', () => {
+test('elke dag een nieuwe habit starten en één keer afvinken loont nauwelijks: de gemiste dagen na de eerste misser trekken het af', () => {
   const farm = WEEK.map((d, i) => habit(`farm${i}`, ALL_DAYS, { startDate: d }));
   const s = summary({ habits: farm, checkIns: farm.map((h, i) => done(h.id, WEEK[i])) });
   const honest = summary({ habits: [habit('a')], checkIns: [early('a'), ...WEEK.map((d) => done('a', d))] });
   assert.equal(s.breakdown.penalty, 10 * MISS_PENALTY); // per habit is de eerste misser gratis, de rest kost
-  assert.ok(s.points < honest.points, `${s.points} moet lager zijn dan ${honest.points}`);
+  assert.equal(s.breakdown.start, START_BONUS_MAX * START_BONUS);
+  // met een startbonus voor drie habits levert knoeien een paar punten meer op dan trouw één habit doen; meer dan dat niet
+  assert.ok(s.points <= honest.points + START_BONUS, `${s.points} is meer dan ${honest.points} + ${START_BONUS}`);
 });
 
 // ---- rest van de samenvatting --------------------------------------------------------------------------------------------
