@@ -14,6 +14,7 @@ export const nl = {
     save: 'Opslaan',
     delete: 'Verwijderen',
     undo: 'Ongedaan maken',
+    charsUsed: (used, max) => `${used} van ${max} tekens gebruikt`,
   },
   nav: {
     today: 'Vandaag',
@@ -339,6 +340,10 @@ export const nl = {
       nothingPlannedPeriod: 'Er stond niets gepland in deze periode.',
       planned: (n) => `${n} gepland`,
       doneOf: (done, total) => `${done} van ${total} gedaan`,
+      detail: {
+        open: 'Open op Vandaag',
+        states: { done: 'Gedaan', minimal: 'Minimale versie', partial: 'Bezig', skipped: 'Overgeslagen', missed: 'Niet gedaan', open: 'Nog open', planned: 'Gepland' },
+      },
     },
     emptyTitle: 'Nog niets te zien',
     empty: 'Zodra je een paar dagen bezig bent, zie je hier hoe sterk je gewoontes worden.',

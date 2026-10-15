@@ -15,7 +15,7 @@ const counts = (status) => status === 'done' || status === 'minimal';
  *   pool      – de stapel: flexibele habits van de lopende week/maand die niet vandaag zijn ingepland
  * Volgorde = volgorde van `bundles`; sorteren is aan de UI.
  */
-export function buildToday({ bundles, dayPlans = [], today }) {
+export function buildToday({ bundles, dayPlans = [], today, now = today }) {
   const scheduled = [];
   const planned = [];
   const pool = [];
@@ -41,9 +41,10 @@ export function buildToday({ bundles, dayPlans = [], today }) {
 
     const dayUnit = units.find((u) => u.kind === 'day' && u.start === today);
     if (dayUnit) {
-      // herstelmoment (PLAN §2): de vorige geplande dag is gemist, dit is de eerstvolgende gelegenheid
+      // herstelmoment (PLAN §2): de vorige geplande dag is gemist, dit is de eerstvolgende gelegenheid.
+      // Gemist is een dag pas als hij voorbij is: kijk je vooruit en is vandaag nog niet afgevinkt, dan is er niets gemist (`now` = de echte vandaag).
       const previous = units.filter((u) => u.kind === 'day' && u.end < today).at(-1);
-      scheduled.push({ ...base, kind: 'day', unit: dayUnit, overdue: false, recovery: loggedToday === undefined && previous?.status === 'missed' });
+      scheduled.push({ ...base, kind: 'day', unit: dayUnit, overdue: false, recovery: loggedToday === undefined && previous?.status === 'missed' && previous.end < now });
     }
 
     const monthDayUnit = units.find(

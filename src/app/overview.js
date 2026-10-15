@@ -49,6 +49,24 @@ export function buildWeekStrip({ snapshot, date, today }) {
 }
 
 /**
+ * Wat er op één dag gepland stond en hoe het ging, voor het detail onder het overzicht.
+ * state per habit: 'done' | 'minimal' | 'partial' | 'skipped' | 'missed' (voorbij, niets gedaan) | 'open' (vandaag) | 'planned' (toekomst)
+ */
+export function buildDayDetail({ snapshot, date, today }) {
+  const view = buildDayView({ snapshot, date, today, prepared: prepareSnapshot(snapshot, horizonFor(date)) });
+  const pending = date > today ? 'planned' : date === today ? 'open' : 'missed';
+  const items = view.groups.flatMap((group) => group.entries).map((entry) => ({
+    habitId: entry.habitId,
+    name: entry.habit.name,
+    icon: entry.habit.icon,
+    color: entry.habit.color,
+    state: entry.loggedToday ?? pending,
+  }));
+  const offset = diffDays(date, today);
+  return { date, ...view.progress, items, editable: items.length > 0 && offset >= -BACKFILL_DAYS && offset <= PLAN_AHEAD_DAYS };
+}
+
+/**
  * Overzicht van een week of maand rond `anchor`, als raster (een maand is altijd hele weken).
  * Geeft ook de totalen (alleen tot en met vandaag) en of je een periode terug of vooruit kunt.
  */

@@ -116,7 +116,7 @@ span.weekstrip__day {
 .overview__dows,
 .overview__grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: var(--space-1);
   margin: 0;
   padding: 0;
@@ -138,6 +138,8 @@ span.weekstrip__day {
   align-content: center;
   gap: 1px;
   aspect-ratio: 1;
+  width: 100%; /* vaste breedte: anders rekt min-height via de beeldverhouding de cel op bij grote tekst */
+  min-width: 0;
   min-height: 2.5rem;
   border: 1px solid var(--color-hairline);
   border-radius: 8px;
@@ -158,6 +160,13 @@ span.weekstrip__day {
 .overview__count {
   font-size: var(--font-size-2xs);
   opacity: 0.85;
+}
+
+button.overview__cell {
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
 }
 
 .overview__cell[data-state='outside'] {
@@ -204,8 +213,66 @@ span.weekstrip__day {
   outline-offset: 1px;
 }
 
+.overview__cell[data-selected='true'] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
 @media (hover: hover) {
-  a.overview__cell:hover {
+  button.overview__cell:hover {
     filter: brightness(1.15);
   }
+}
+
+/* het detail van de gekozen dag */
+.overview__detail {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-hairline);
+}
+
+.overview__detail-title {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.overview__detail-title::first-letter {
+  text-transform: uppercase;
+}
+
+.overview__detail-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overview__detail-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.overview__detail-name {
+  overflow-wrap: anywhere;
+}
+
+.overview__detail-state {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: right;
+}
+
+.overview__detail-item[data-state='done'] .overview__detail-state,
+.overview__detail-item[data-state='minimal'] .overview__detail-state {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-bold);
+}
+
+.overview__detail-item[data-state='missed'] .overview__detail-state {
+  color: var(--color-danger);
 }

@@ -145,7 +145,8 @@ async function main() {
     check(`alles wat je kunt bedienen heeft een naam: ${where}`, unnamed.length === 0, J(unnamed));
     const h1s = await count('#app h1');
     check(`precies één hoofdkop: ${where}`, h1s === 1, String(h1s));
-    const small = await ev(`[...document.querySelectorAll('#app a.button, #app button, #app .tabbar a, #tabbar a, #app input')].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && (r.height < 43.5 || (e.tagName !== 'INPUT' && r.width < 43.5)); }).map((e) => (e.id || e.className || e.tagName) + ' ' + Math.round(e.getBoundingClientRect().width) + 'x' + Math.round(e.getBoundingClientRect().height))`);
+    // de dagcellen van het overzicht (7 kolommen) kunnen op 320px geen 44px breed zijn; ze zijn een kalender, geen losse knoppen
+    const small = await ev(`[...document.querySelectorAll('#app a.button, #app button:not(.overview__cell), #app .tabbar a, #tabbar a, #app input')].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && (r.height < 43.5 || (e.tagName !== 'INPUT' && r.width < 43.5)); }).map((e) => (e.id || e.className || e.tagName) + ' ' + Math.round(e.getBoundingClientRect().width) + 'x' + Math.round(e.getBoundingClientRect().height))`);
     check(`tikvlakken minstens 44px: ${where}`, small.length === 0, J(small));
   };
   const uiLogin = async (email) => {

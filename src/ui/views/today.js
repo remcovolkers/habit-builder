@@ -17,6 +17,7 @@ import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
 import { adjustCounter, clearCheckIn, logCheckIn, planHabit, RuleError, unplanHabit } from '../../app/actions.js';
 import { counterDoneValue } from '../../domain/counter.js';
+import { charCounter } from '../components/char-counter.js';
 import { datesBetween, formatDateLong, greetingFor, localHour, relativeDayLabel } from '../../app/format.js';
 import { addDays, diffDays, isValidDate } from '../../domain/dates.js';
 import { BACKFILL_DAYS, NOTE_MAX_LENGTH, PLAN_AHEAD_DAYS } from '../../domain/constants.js';
@@ -89,7 +90,7 @@ function renderDay(view, week) {
 
   function more(entry) {
     const { habit } = entry;
-    const noteInput = h('input', { id: 'noteInput', type: 'text', class: 'input', maxlength: NOTE_MAX_LENGTH, value: entry.noteToday ?? '', placeholder: nl.today.actions.notePlaceholder });
+    const noteInput = h('input', { id: 'noteInput', type: 'text', class: 'input', value: entry.noteToday ?? '', placeholder: nl.today.actions.notePlaceholder });
     const note = () => noteInput.value.trim() || null;
     const logged = entryState(entry) !== 'open';
     const actions = [];
@@ -120,7 +121,7 @@ function renderDay(view, week) {
     }
     openDialog({
       title: nl.today.actions.title(habit.name),
-      content: view.canLog ? h('div', { class: 'field' }, h('label', { class: 'field__label', for: 'noteInput' }, nl.today.actions.note), noteInput) : null,
+      content: view.canLog ? h('div', { class: 'field' }, h('label', { class: 'field__label', for: 'noteInput' }, nl.today.actions.note), noteInput, charCounter(noteInput, NOTE_MAX_LENGTH)) : null,
       actions,
     });
   }

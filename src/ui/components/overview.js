@@ -1,12 +1,25 @@
 import { fill, h } from '../dom.js';
-import { buildPeriodOverview } from '../../app/overview.js';
-import { BACKFILL_DAYS, PLAN_AHEAD_DAYS } from '../../domain/constants.js';
-import { diffDays } from '../../domain/dates.js';
-import { formatDateShort } from '../../app/format.js';
+import { buildDayDetail, buildPeriodOverview } from '../../app/overview.js';
+import { formatDateLong, formatDateShort } from '../../app/format.js';
 import { nl } from '../../content/nl.js';
 
-// Welke periode je bekeek blijft staan als het scherm door een wijziging opnieuw wordt getekend.
-const chosen = { period: 'week', anchor: null };
+// Welke periode en welke dag je bekeek blijft staan als het scherm door een wijziging opnieuw wordt getekend.
+const chosen = { period: 'week', anchor: null, selected: null };
+
+/** Het detail van de gekozen dag: per habit hoe het ging, met een link om het op Vandaag aan te passen. */
+function dayDetail(detail) {
+  const o = nl.stats.overview.detail;
+  return h('section', { class: 'overview__detail', id: 'overviewDetail', 'aria-live': 'polite' },
+    h('h3', { class: 'overview__detail-title' }, formatDateLong(detail.date)),
+    h('ul', { class: 'overview__detail-list' }, ...detail.items.map((item) =>
+      h('li', { class: 'overview__detail-item', dataset: { color: item.color, state: item.state } },
+        h('span', { class: 'overview__detail-icon', 'aria-hidden': 'true' }, item.icon),
+        h('span', { class: 'overview__detail-name' }, item.name),
+        h('span', { class: 'overview__detail-state' }, o.states[item.state])))),
+    detail.editable
+      ? h('a', { class: 'button button--secondary button--block', href: `#/today?date=${detail.date}` }, o.open)
+      : null);
+}
 
 const periodLabel = (o) => (o.period === 'week'
   ? `${formatDateShort(o.start)} – ${formatDateShort(o.end)}`
@@ -29,6 +42,7 @@ export function overviewSection(snapshot, today) {
     const focusKey = active?.dataset?.focusKey ?? null;
     const fallbackKey = active?.dataset?.focusFallback ?? null;
     const data = buildPeriodOverview({ snapshot, today, period: chosen.period, anchor: chosen.anchor });
+    if (chosen.selected && !data.days.some((day) => day.inPeriod && day.date === chosen.selected)) chosen.selected = null; // de gekozen dag valt buiten de getoonde periode
     const go = (anchor) => { chosen.anchor = anchor; render(); };
     const step = (key, label, target, enabled, symbol) => h('button', {
       type: 'button', class: 'icon-button', dataset: { focusKey: key, focusFallback: key === 'prev' ? 'next' : 'prev' }, 'aria-label': label, disabled: !enabled, onclick: () => go(target.anchor),
@@ -53,8 +67,7 @@ export function overviewSection(snapshot, today) {
       h('p', { class: 'overview__summary' }, total === 0 ? o.nothingPlannedPeriod : o.summary(done, total, percent)),
       h('div', { class: 'overview__dows', 'aria-hidden': 'true' }, ...nl.weekdays.short.map((name) => h('span', null, name))),
       h('ul', { class: `overview__grid overview__grid--${data.period}` }, ...data.days.map((day) => {
-        const offset = diffDays(day.date, today);
-        const linkable = day.inPeriod && offset >= -BACKFILL_DAYS && offset <= PLAN_AHEAD_DAYS && day.total > 0;
+        const selectable = day.inPeriod && day.total > 0;
         const props = { class: 'overview__cell', dataset: { state: day.state, level: String(day.level), today: day.isToday ? 'true' : null } };
         const content = day.inPeriod
           ? [
@@ -65,10 +78,17 @@ export function overviewSection(snapshot, today) {
               : null,
           ]
           : [];
-        return h('li', { class: 'overview__item' }, linkable
-          ? h('a', { ...props, href: day.isToday ? '#/today' : `#/today?date=${day.date}` }, ...content)
+        return h('li', { class: 'overview__item' }, selectable
+          ? h('button', {
+            ...props,
+            type: 'button',
+            'aria-pressed': String(day.date === chosen.selected),
+            dataset: { ...props.dataset, focusKey: `day:${day.date}`, selected: day.date === chosen.selected ? 'true' : null },
+            onclick: () => { chosen.selected = day.date === chosen.selected ? null : day.date; render(); },
+          }, ...content)
           : h('span', props, ...content));
-      })));
+      })),
+      chosen.selected ? dayDetail(buildDayDetail({ snapshot, date: chosen.selected, today })) : null);
 
     const find = (key) => (key ? root.querySelector(`[data-focus-key="${CSS.escape(key)}"]`) : null);
     let target = find(focusKey);
