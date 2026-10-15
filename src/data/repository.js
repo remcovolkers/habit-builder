@@ -16,7 +16,7 @@ import { COUNTER_MAX } from '../domain/counter.js';
 import { isValidDate } from '../domain/dates.js';
 import { CHECK_IN_STATUSES, validateHabit } from '../domain/habit.js';
 import { defaultSettings, validateSettings } from '../app/settings.js';
-import { COLLECTIONS } from './memory-store.js';
+import { DATA_COLLECTIONS } from './memory-store.js';
 
 export const REVIEW_TEXT_MAX = 1000;
 
@@ -41,10 +41,17 @@ export function createRepository({
   uuid = () => crypto.randomUUID(),
   timezone = detectTimeZone,
 }) {
+  // Elke schrijfactie komt ook in de "outbox": wat de sync-motor nog naar de server moet sturen.
+  // rev wisselt bij elke wijziging, zodat een wijziging tijdens het versturen nooit verloren gaat.
+  let revCounter = 0;
+  const track = (collection, id) =>
+    store.put('outbox', { id: `${collection}|${id}`, collection, recordId: id, rev: `${Date.now()}-${++revCounter}` });
+
   async function upsert(collection, record) {
     const existing = await store.get(collection, record.id);
     const stamped = { ...record, createdAt: existing?.createdAt ?? record.createdAt ?? now(), updatedAt: now(), deletedAt: null };
     await store.put(collection, stamped);
+    await track(collection, record.id);
     return stamped;
   }
 
@@ -52,6 +59,7 @@ export function createRepository({
     const existing = await store.get(collection, id);
     if (!existing || existing.deletedAt != null) return false;
     await store.put(collection, { ...existing, deletedAt: now(), updatedAt: now() });
+    await track(collection, id);
     return true;
   }
 
@@ -60,10 +68,12 @@ export function createRepository({
 
   return {
     storeKind: store.kind,
+    store, // voor de sync-motor en de accountkoppeling; schermen gebruiken dit niet
 
     // --- instellingen ---------------------------------------------------------------------
     async getSettings() {
-      const saved = await store.get('settings', 'user');
+      const stored = await store.get('settings', 'user');
+      const saved = stored && live(stored) ? stored : null;
       return { ...defaultSettings(timezone()), ...(saved ?? {}) };
     },
     async saveSettings(patch) {
@@ -206,10 +216,20 @@ export function createRepository({
         ratings: data.ratings,
         reviews: data.reviews,
       };
-      for (const collection of COLLECTIONS) {
+      for (const collection of DATA_COLLECTIONS) {
+        const incoming = sets[collection] ?? [];
+        const incomingIds = new Set(incoming.map((record) => record.id));
+        const previous = await store.getAll(collection);
         await store.clear(collection);
-        for (const record of sets[collection] ?? []) {
+        for (const record of incoming) {
           await store.put(collection, { ...record, createdAt: record.createdAt ?? stamp, updatedAt: stamp, deletedAt: null });
+          await track(collection, record.id);
+        }
+        // wat er eerst was en nu niet meer: grafsteen, anders haalt de sync het van de server terug
+        for (const old of previous) {
+          if (incomingIds.has(old.id)) continue;
+          await store.put(collection, { id: old.id, createdAt: old.createdAt ?? stamp, updatedAt: stamp, deletedAt: stamp });
+          await track(collection, old.id);
         }
       }
     },

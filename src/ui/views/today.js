@@ -7,6 +7,7 @@ import { entryState, habitCard } from '../components/habit-card.js';
 import { poolCard } from '../components/pool-card.js';
 import { ring } from '../components/ring.js';
 import { icon } from '../svg.js';
+import { account, dismissNudge, nudgeDismissed, nudgeElement } from '../account.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
 import { adjustCounter, clearCheckIn, logCheckIn, planHabit, RuleError, unplanHabit } from '../../app/actions.js';
@@ -161,6 +162,9 @@ function renderDay(view) {
             onPlanOther: planOther,
             onDoneNow: (e) => perform(() => log(e.habitId, 'done'), nl.today.toasts.done(e.habit.name)),
           }))))
+      : null,
+    account.status === 'anonymous' && view.hasHabits && view.mode === 'today' && !nudgeDismissed()
+      ? nudgeElement((event) => { dismissNudge(); event.target.closest('.nudge').remove(); })
       : null,
     allDone
       ? h('section', { class: 'section celebrate', role: 'status' },

@@ -29,8 +29,8 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | Teller-habits (bv. 8 glazen water) en sjablonen | klaar |
 | M6 (deels) Moda-design op de bestaande schermen, lokale fonts | klaar |
 | M3 detailpagina (sterkte, fases, heatmap), tips, ingeburgerd-flow, achievements, automatisme, review, export/import | klaar |
-| M4 voorbereiding: IndexedDB-migratie v1 naar v2 getest | klaar |
-| M4 Supabase, auth, sync | volgende |
+| IndexedDB-migraties (v1 naar v2 naar v3) getest | klaar |
+| M4 Supabase, auth (Google + e-mailcode), sync, keepalive | gebouwd; wacht op jouw Supabase-configuratie (zie docs/M4-SETUP.md) |
 | M5 PWA (manifest, service worker, offline) | open |
 | M7 ochtendherinnering (Web Push) | open |
 
@@ -140,6 +140,12 @@ Eerste check-in · reeksen en dagen: 7/21/42/66/100/365 · perfecte week · *com
 
 ### 4.8 Randgevallen die expliciet getest worden
 Maand met 28/29/30/31 dagen en dag-van-de-maand 31; week- en maandwissel; zomer-/wintertijd; dagwissel-uur; cadence-wijziging halverwege een week; pauze die een periode overspant; backfill over een periodegrens; dubbele check-in op dezelfde datum (offline op twee apparaten); habit met startdatum in de toekomst; ingeburgerd met onderhoudsmodus.
+
+> **Afwijking van dit hoofdstuk (besloten in M4):** op de server staat niet per soort record een tabel, maar één tabel
+> `public.records` (`user_id`, `collection`, `id`, `data jsonb`, `deleted_at`, `seq`). Dat scheelt SQL en migraties
+> zodra de app verandert, en de server hoeft de records niet te begrijpen: de app is offline-first en de bron van waarheid
+> staat lokaal. Strikte RLS per gebruiker staat in `supabase/migrations/0001_init.sql`. De tabellen hieronder beschrijven
+> de records zoals de app ze gebruikt.
 
 ## 5. Datamodel (Supabase / Postgres, spiegel in IndexedDB)
 

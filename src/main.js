@@ -9,6 +9,8 @@ import { habitFormView } from './ui/views/habit-form.js';
 import { habitDetailView } from './ui/views/habit-detail.js';
 import { statsView } from './ui/views/stats.js';
 import { achievementsView } from './ui/views/achievements.js';
+import { loginView } from './ui/views/login.js';
+import { initAccount } from './ui/account.js';
 import { celebrateAchievements } from './ui/components/achievement.js';
 import { checkAchievements } from './app/achievement-runner.js';
 import { settingsView } from './ui/views/settings.js';
@@ -32,6 +34,7 @@ const routes = [
   { path: '/stats', render: () => statsView() },
   { path: '/achievements', render: () => achievementsView() },
   { path: '/settings', render: () => settingsView() },
+  { path: '/login', render: () => loginView() },
 ];
 
 const tabbar = document.getElementById('tabbar');
@@ -77,6 +80,9 @@ function checkForAchievements() {
 }
 onChanged(checkForAchievements);
 checkForAchievements();
+
+// Account: alleen actief als er een sessie is (of we terugkomen van Google); een mislukte start blokkeert de app nooit.
+initAccount().catch((error) => console.warn('account starten mislukt', error));
 
 startRouter({
   routes,

@@ -1,0 +1,30 @@
+name: Supabase keepalive
+
+# Het gratis Supabase-project pauzeert na ~7 dagen zonder activiteit. Deze job roept dagelijks de (publieke)
+# functie public.ping() aan; dat is een gewone databasequery en telt als activiteit.
+# De publishable key is publiek bedoeld (staat ook in src/config.js); er zijn geen secrets nodig.
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: https://rbsqafttotdaakpwtjmh.supabase.co
+      SUPABASE_KEY: sb_publishable_urCSdZ4XH3w1ojZLne7WbA_y9rnK7zq
+    steps:
+      - name: ping() aanroepen
+        run: |
+          response=$(curl --fail --silent --show-error --max-time 30 \
+            -X POST "$SUPABASE_URL/rest/v1/rpc/ping" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          echo "antwoord: $response"
+          test "$response" = '"ok"'

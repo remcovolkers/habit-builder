@@ -6,7 +6,7 @@ import { nl } from '../../content/nl.js';
  * actions: [{ label, variant: 'primary'|'secondary'|'danger', onClick }] — de dialoog sluit na onClick,
  * tenzij die `false` teruggeeft (bv. bij een validatiefout).
  */
-export function openDialog({ title, description = null, content = null, actions = [], cancelLabel = nl.app.cancel }) {
+export function openDialog({ title, description = null, content = null, actions = [], cancelLabel = nl.app.cancel, onClose = null }) {
   const dialog = h('dialog', { class: 'dialog', 'aria-labelledby': 'dialog-title' });
   const close = () => dialog.close();
 
@@ -28,7 +28,10 @@ export function openDialog({ title, description = null, content = null, actions 
     content,
     h('div', { class: 'dialog__actions' }, ...buttons),
   );
-  dialog.addEventListener('close', () => dialog.remove());
+  dialog.addEventListener('close', () => {
+    dialog.remove();
+    onClose?.();
+  });
   document.body.append(dialog);
   dialog.showModal();
   return { close };

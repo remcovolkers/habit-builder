@@ -25,9 +25,10 @@ npm run stage   # kopieert de publiceerbare bestanden naar _site/
 | `styles/` | `tokens.css` (design tokens uit het Moda-ontwerp, alleen donker) plus component- en view-CSS. |
 | `fonts/` | Lokale lettertypen (Manrope, Chakra Petch); zie `fonts/README.md`. |
 | `habit-builder-moda-files/` | Het originele Moda-ontwerp, als referentie. |
-| `supabase/` | SQL-migraties en Edge Functions. |
+| `vendor/` | Vastgepinde externe code (supabase-js, als één bestand gebundeld); zie `vendor/README.md`. |
+| `supabase/` | SQL-migraties en de test ervan. Zet-op-instructies: `docs/M4-SETUP.md`. |
 | `tests/` | `node:test` voor domein, router en guardrails. |
-| `tools/` | Dev-server en staging, zonder dependencies. |
+| `tools/` | Dev-server, staging en `live-check.mjs` (controle van de echte Supabase), zonder dependencies. |
 
 ## Deployen
 

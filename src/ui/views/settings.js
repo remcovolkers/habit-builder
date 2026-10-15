@@ -1,10 +1,12 @@
 import { h } from '../dom.js';
 import { reloadSettings, saveSettings, state } from '../state.js';
 import { openDialog } from '../components/dialog.js';
+import { accountCard } from '../components/account-card.js';
+import { downloadBackup } from '../download.js';
 import { showToast } from '../components/toast.js';
 import { ValidationError } from '../../data/repository.js';
 import { DISPLAY_NAME_MAX } from '../../app/settings.js';
-import { buildExport, parseImport } from '../../app/backup.js';
+import { parseImport } from '../../app/backup.js';
 import { MAX_DAY_START_HOUR } from '../../domain/constants.js';
 import { nl } from '../../content/nl.js';
 
@@ -23,14 +25,7 @@ function backupSection() {
   };
 
   async function download() {
-    const snapshot = await state.repo.snapshot();
-    const json = JSON.stringify(buildExport(snapshot), null, 2);
-    const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-    const link = h('a', { href: url, download: `habit-builder-backup-${state.today}.json` });
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    await downloadBackup(state.repo, state.today);
     say(b.exported);
   }
 
@@ -104,6 +99,7 @@ export function settingsView() {
 
   return h('div', null,
     h('h1', { class: 'page-title' }, nl.settings.title),
+    accountCard(),
     h('form', { class: 'form', novalidate: true, onsubmit: submit },
       h('div', { class: 'field' },
         h('label', { class: 'field__label', for: 'displayName' }, nl.settings.displayName), displayName,

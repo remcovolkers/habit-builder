@@ -302,3 +302,94 @@ select.input {
   border-color: var(--color-border);
   color: var(--color-accent);
 }
+
+/* inloggen en account */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-hairline);
+}
+
+.login {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.login__body {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.login__intro {
+  font-size: var(--font-size-sm);
+}
+
+.login__links {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.login__privacy {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.login__privacy svg {
+  width: 1rem;
+  flex: none;
+  color: var(--color-accent);
+}
+
+.login__sent {
+  font-size: var(--font-size-sm);
+}
+
+.input--code {
+  max-width: none;
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  letter-spacing: 0.4em;
+  text-align: center;
+}
+
+.account-card__email {
+  margin-bottom: var(--space-2);
+  font-weight: var(--font-weight-bold);
+  word-break: break-all;
+}
+
+.nudge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.nudge__dismiss {
+  margin-left: auto;
+  background: none;
+  border: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.account-card {
+  margin-bottom: var(--space-8);
+}
