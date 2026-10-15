@@ -118,3 +118,28 @@ test('je eigen rij komt er ook in als de server nog niets van jou heeft, en zond
   const entries = [{ userId: 'a' }];
   assert.equal(withOwnSummary({ entries, userId: 'me', username: 'remco', name: 'x', summary: null }), entries);
 });
+
+// ---- voor de schermen ----------------------------------------------------------------------------------------------------------
+
+import { describeBreakdown, myPosition } from '../../src/app/social.js';
+
+test('de uitsplitsing van je punten: taken altijd, bonus/start/aftrek alleen als ze er zijn, de aftrek met een min', () => {
+  assert.deepEqual(describeBreakdown({ tasks: 210, bonus: 42, start: 30, penalty: 10 }), [
+    { key: 'tasks', points: 210 }, { key: 'bonus', points: 42 }, { key: 'start', points: 30 }, { key: 'penalty', points: -10 },
+  ]);
+  assert.deepEqual(describeBreakdown({ tasks: 70, bonus: 0, start: 0, penalty: 0 }), [{ key: 'tasks', points: 70 }]);
+  assert.deepEqual(describeBreakdown({ tasks: 0, bonus: 0, start: 0, penalty: 15 }), [{ key: 'tasks', points: 0 }, { key: 'penalty', points: -15 }]);
+});
+
+test('zonder uitsplitsing is er alleen een lege regel voor de taken', () => {
+  assert.deepEqual(describeBreakdown(undefined), [{ key: 'tasks', points: 0 }]);
+  assert.deepEqual(describeBreakdown(null), [{ key: 'tasks', points: 0 }]);
+});
+
+test('jouw plek op de ranglijst: rang, aantal mensen en punten; geen plek als je er niet op staat', () => {
+  const board = [{ isMe: false, rank: 1, points: 300 }, { isMe: true, rank: 2, points: 200 }, { isMe: false, rank: 3, points: 90 }];
+  assert.deepEqual(myPosition(board), { rank: 2, total: 3, points: 200 });
+  assert.equal(myPosition([{ isMe: false, rank: 1, points: 5 }]), null);
+  assert.equal(myPosition([]), null);
+  assert.equal(myPosition(undefined), null);
+});
