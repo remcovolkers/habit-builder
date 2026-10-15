@@ -24,6 +24,16 @@ test('R8: geen onveilige HTML-injectie in de broncode', () => {
   assert.deepEqual(offenders.map((f) => relative(ROOT, f)), []);
 });
 
+test('architectuur: src/domain is puur — geen DOM, netwerk, opslag of imports uit ui/data', () => {
+  const domainFiles = walk(join(ROOT, 'src', 'domain')).filter((f) => f.endsWith('.js'));
+  const impure = /\b(window|document|localStorage|sessionStorage|indexedDB|fetch|navigator|location)\b|from\s+['"]\.\.\/(ui|data)\//;
+  const offenders = domainFiles.filter((f) => {
+    const code = readFileSync(f, 'utf8').replace(/\/\/.*$/gm, ''); // commentaar mag deze woorden bevatten
+    return impure.test(code);
+  });
+  assert.deepEqual(offenders.map((f) => relative(ROOT, f)), []);
+});
+
 test('R3: de service-role key staat nergens in de repo', () => {
   const files = ['src', 'tools', 'tests', 'docs', 'supabase', '.github']
     .flatMap((d) => {

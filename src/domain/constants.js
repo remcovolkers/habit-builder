@@ -19,3 +19,17 @@ export const AUTOMATICITY_THRESHOLD = 4;
 
 /** Fasegrenzen in actieve dagen sinds de start. */
 export const PHASE_STARTING_UNTIL_DAY = 21;
+
+/**
+ * Gewoontesterkte: per eenheid s = s·a + gedaan·(1–a), met a = STRENGTH_ALPHA^(dagen in de eenheid).
+ * 0.95 per dag geeft ~66% na 3 weken en ~97% na 66 dagen dagelijks volhouden; een week is a = 0.95^7.
+ */
+export const STRENGTH_ALPHA = 0.95;
+
+/** Achievements. */
+export const MILESTONE_DAYS = [7, 21, 42, 66, 100, 365];
+export const MILESTONE_MIN_CONSISTENCY = 0.5;
+export const PERFECT_WEEK_MIN_UNITS = 3;
+export const COMEBACK_GAP_DAYS = 7;
+export const ACTIVE_HABITS_ACHIEVEMENT = 3;
+export const REVIEW_STREAK_WEEKS = 4;

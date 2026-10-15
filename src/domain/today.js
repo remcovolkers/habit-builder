@@ -1,0 +1,69 @@
+// Het Vandaag-scherm en de stapel (PLAN §4.6, F10–F12), afgeleid uit check-ins en dagplannen.
+// Niets wordt gemuteerd: een plan van gisteren zonder check-in valt vanzelf terug in de stapel.
+import { computeUnits } from './units.js';
+import { isTracked } from './rules.js';
+
+const counts = (status) => status === 'done' || status === 'minimal';
+
+/**
+ * bundles:  [{ habit, checkIns, pauses }]
+ * dayPlans: [{ habitId, date }]  — flexibele habits die de gebruiker voor een dag heeft meegenomen
+ *
+ * Geeft:
+ *   scheduled – vaste weekdagen van vandaag en dag-van-de-maand-eenheden die open staan (of vandaag zijn gelogd)
+ *   planned   – flexibele habits die vandaag zijn meegenomen of vandaag al zijn gelogd
+ *   pool      – de stapel: flexibele habits van de lopende week/maand die niet vandaag zijn ingepland
+ * Volgorde = volgorde van `bundles`; sorteren is aan de UI.
+ */
+export function buildToday({ bundles, dayPlans = [], today }) {
+  const scheduled = [];
+  const planned = [];
+  const pool = [];
+
+  for (const { habit, checkIns = [], pauses = [] } of bundles) {
+    if (!isTracked(habit, today)) continue;
+
+    let loggedToday;
+    for (const c of checkIns) if (c.date === today) loggedToday = c.status;
+    const pausedToday = pauses.some((p) => today >= p.from && (p.to == null || today <= p.to));
+    if (pausedToday && loggedToday === undefined) continue;
+
+    const units = computeUnits({ habit, checkIns, pauses, today });
+    const base = { habitId: habit.id, loggedToday: loggedToday ?? null, doneToday: counts(loggedToday) };
+
+    const dayUnit = units.find((u) => u.kind === 'day' && u.start === today);
+    if (dayUnit) scheduled.push({ ...base, kind: 'day', unit: dayUnit, overdue: false });
+
+    const monthDayUnit = units.find(
+      (u) =>
+        u.type === 'day_of_month' &&
+        u.start <= today &&
+        today <= u.end &&
+        (u.status === 'open' || loggedToday !== undefined),
+    );
+    if (monthDayUnit) {
+      scheduled.push({ ...base, kind: 'day_of_month', unit: monthDayUnit, overdue: monthDayUnit.overdue === true });
+    }
+
+    const periodUnit = units.find((u) => u.type === 'times_per_period' && u.start <= today && today <= u.end);
+    if (periodUnit && (loggedToday !== undefined || (periodUnit.status !== 'paused' && periodUnit.status !== 'skipped'))) {
+      const plannedToday = dayPlans.some((p) => p.habitId === habit.id && p.date === today);
+      const entry = {
+        ...base,
+        kind: 'period',
+        span: periodUnit.span,
+        unit: periodUnit,
+        count: periodUnit.count,
+        target: periodUnit.target,
+        remainingDays: periodUnit.remainingDays,
+        atRisk: periodUnit.atRisk,
+        satisfied: periodUnit.status === 'done',
+        plannedToday,
+      };
+      if (plannedToday || loggedToday !== undefined) planned.push(entry);
+      else pool.push(entry);
+    }
+  }
+
+  return { scheduled, planned, pool };
+}
