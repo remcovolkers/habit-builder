@@ -26,6 +26,25 @@
   color: var(--color-text-muted);
 }
 
+/* teller bij velden met een maximum: "12 / 200" */
+.field__counter {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.field__counter[data-level='near'] {
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.field__counter[data-level='full'] {
+  color: var(--color-danger);
+  font-weight: var(--font-weight-bold);
+}
+
 .field__error {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
@@ -66,9 +85,11 @@
   opacity: 0.55;
 }
 
+/* vaste hoogte: wie veel typt krijgt een schuifbalk in het veld, het veld zelf rekt niet op */
 textarea.input {
   min-height: 5.25rem;
-  resize: vertical;
+  resize: none;
+  overflow-y: auto;
 }
 
 select.input {

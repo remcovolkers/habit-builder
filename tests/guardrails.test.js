@@ -100,3 +100,12 @@ test('CSS: tikvlakken zijn minstens 44px en groeien niet mee met grote tekst; de
   assert.match(tokens, /--size-check:\s*max\(44px,/);
   assert.match(readFileSync(join(ROOT, 'styles/base.css'), 'utf8'), /html\s*\{[^}]*overflow-x:\s*clip/);
 });
+
+test('formulieren: een tekstvak rekt niet op (resize: none, eigen schuifbalk) en een invoerveld met limiet heeft een teller', () => {
+  assert.match(readFileSync(join(ROOT, 'styles/components/form.css'), 'utf8'), /textarea\.input\s*\{[^}]*resize:\s*none;[^}]*overflow-y:\s*auto/);
+  // een veld met een limiet zet die niet zelf met `maxlength` (anders ziet de gebruiker hem niet): charCounter() doet dat en toont de teller
+  const offenders = sourceFiles
+    .filter((f) => f.includes(`${join(ROOT, 'src', 'ui')}`) && !f.endsWith('char-counter.js'))
+    .filter((f) => /maxlength:\s*(?!\d+\b)[A-Z_]+/.test(readFileSync(f, 'utf8')));
+  assert.deepEqual(offenders.map((f) => relative(ROOT, f)), []);
+});

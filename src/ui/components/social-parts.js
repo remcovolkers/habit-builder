@@ -1,9 +1,10 @@
 // Onderdelen die meerdere sociale schermen delen: foutteksten, uitsplitsing van je punten, het aanmeldformulier, een uitnodigingsbanner.
 import { h } from '../dom.js';
 import { showToast } from './toast.js';
+import { charCounter } from './char-counter.js';
 import { saveSettings, state } from '../state.js';
 import { socialApp } from '../social-app.js';
-import { describeBreakdown, suggestUsername, validateUsername } from '../../app/social.js';
+import { USERNAME_MAX, describeBreakdown, suggestUsername, validateUsername } from '../../app/social.js';
 import { DISPLAY_NAME_MAX } from '../../app/settings.js';
 import { MISS_PENALTY, SOCIAL_ACTIVE_DAYS, START_BONUS_MAX, TASK_POINTS } from '../../domain/constants.js';
 import { nl } from '../../content/nl.js';
@@ -64,15 +65,21 @@ export function onboardingForm({ onJoined = null } = {}) {
   const t = nl.friends.intro;
   const startName = String(state.settings?.displayName ?? '').trim();
   const nameInput = h('input', {
-    id: 'socialName', class: 'input', type: 'text', maxlength: DISPLAY_NAME_MAX + 10, autocomplete: 'nickname', value: startName, 'aria-describedby': 'socialNameHint',
+    id: 'socialName', class: 'input', type: 'text', autocomplete: 'nickname', value: startName, 'aria-describedby': 'socialNameHint',
   });
   const userInput = h('input', {
-    id: 'socialUsername', class: 'input', type: 'text', maxlength: 30, autocomplete: 'off', autocapitalize: 'none', autocorrect: 'off', spellcheck: 'false',
+    id: 'socialUsername', class: 'input', type: 'text', autocomplete: 'off', autocapitalize: 'none', autocorrect: 'off', spellcheck: 'false',
     value: suggestUsername(startName), 'aria-describedby': 'socialUserHint socialUserError', 'aria-required': 'true',
   });
+  const nameCount = charCounter(nameInput, DISPLAY_NAME_MAX);
+  const userCount = charCounter(userInput, USERNAME_MAX);
   let touched = false;
   userInput.addEventListener('input', () => { touched = true; });
-  nameInput.addEventListener('input', () => { if (!touched) userInput.value = suggestUsername(nameInput.value); });
+  nameInput.addEventListener('input', () => {
+    if (touched) return;
+    userInput.value = suggestUsername(nameInput.value);
+    userCount.update(); // de voorgestelde naam is niet getypt: de teller moet hem toch tellen
+  });
 
   const nameError = h('p', { id: 'socialNameError', class: 'field__error', role: 'alert', hidden: true });
   const userError = h('p', { id: 'socialUserError', class: 'field__error', role: 'alert', hidden: true });
@@ -114,10 +121,10 @@ export function onboardingForm({ onJoined = null } = {}) {
 
   return h('form', { class: 'form onboarding', novalidate: true, onsubmit },
     h('div', { class: 'field' },
-      h('label', { class: 'field__label', for: 'socialName' }, t.nameLabel), nameInput,
+      h('label', { class: 'field__label', for: 'socialName' }, t.nameLabel), nameInput, nameCount,
       h('p', { id: 'socialNameHint', class: 'field__hint' }, t.nameHint), nameError),
     h('div', { class: 'field' },
-      h('label', { class: 'field__label', for: 'socialUsername' }, t.usernameLabel), userInput,
+      h('label', { class: 'field__label', for: 'socialUsername' }, t.usernameLabel), userInput, userCount,
       h('p', { id: 'socialUserHint', class: 'field__hint' }, t.usernameHint), userError),
     submit,
     h('p', { class: 'xs muted' }, t.offAnytime, ' ',

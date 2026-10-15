@@ -3,6 +3,7 @@ import { notifyChanged, state } from '../state.js';
 import { showToast } from '../components/toast.js';
 import { openDialog } from '../components/dialog.js';
 import { stepper } from '../components/stepper.js';
+import { charCounter } from '../components/char-counter.js';
 import { nl } from '../../content/nl.js';
 import { ValidationError } from '../../data/repository.js';
 import { applyHabitForm } from '../../app/actions.js';
@@ -57,14 +58,15 @@ async function mount(root, id, templateKey = null) {
   // --- hulpjes voor velden ----------------------------------------------------------------
   const errorEls = {};
   const errorFor = (field) => (errorEls[field] ??= h('p', { id: `err-${field}`, class: 'field__error', role: 'alert', hidden: true }));
-  const field = (label, control, { id: forId, hint = null, errorField = null, group = false } = {}) =>
+  const field = (label, control, { id: forId, hint = null, errorField = null, group = false, max = null } = {}) =>
     h(group ? 'fieldset' : 'div', { class: 'field' },
       h(group ? 'legend' : 'label', { class: 'field__label', for: group ? null : forId }, label),
       control,
+      max ? charCounter(control, max) : null,
       hint ? h('p', { class: 'field__hint', id: `hint-${errorField ?? forId}` }, hint) : null,
       errorField ? errorFor(errorField) : null);
 
-  const name = h('input', { id: 'name', class: 'input', type: 'text', maxlength: NAME_MAX + 20, placeholder: nl.form.namePlaceholder, value: base.name ?? '', autocomplete: 'off', 'aria-describedby': 'err-name' });
+  const name = h('input', { id: 'name', class: 'input', type: 'text', placeholder: nl.form.namePlaceholder, value: base.name ?? '', autocomplete: 'off', 'aria-describedby': 'err-name' });
 
   const iconChoices = [...new Set([...(base.icon && !ICONS.includes(base.icon) ? [base.icon] : []), ...ICONS])];
   const chosenIcon = base.icon ?? ICONS[0];
@@ -138,6 +140,7 @@ async function mount(root, id, templateKey = null) {
       fill(counterBox, h('legend', { class: 'field__label' }, nl.form.counter), h('p', { class: 'field__hint' }, nl.form.counterOnlyDaily));
       return;
     }
+    const unitInput = h('input', { id: 'counterUnit', class: 'input', type: 'text', value: form.unit, placeholder: nl.form.counterUnitPlaceholder, 'aria-describedby': 'err-counterUnit', oninput: (e) => { form.unit = e.target.value; } });
     fill(counterBox,
       h('legend', { class: 'field__label' }, nl.form.counter),
       h('label', { class: 'switch' },
@@ -147,7 +150,8 @@ async function mount(root, id, templateKey = null) {
         ? h('div', { class: 'subfields' },
           h('p', { class: 'field__hint' }, nl.form.counterHint),
           h('label', { class: 'field__label', for: 'counterUnit' }, nl.form.counterUnit),
-          h('input', { id: 'counterUnit', class: 'input', type: 'text', maxlength: COUNTER_UNIT_MAX + 10, value: form.unit, placeholder: nl.form.counterUnitPlaceholder, 'aria-describedby': 'err-counterUnit', oninput: (e) => { form.unit = e.target.value; } }),
+          unitInput,
+          charCounter(unitInput, COUNTER_UNIT_MAX),
           errorFor('counterUnit'),
           h('label', { class: 'field__label', for: 'counterTarget' }, nl.form.counterTarget),
           h('input', { id: 'counterTarget', class: 'input input--number', type: 'number', inputmode: 'numeric', min: 1, max: COUNTER_MAX, value: form.target, 'aria-describedby': 'err-counterTarget', oninput: (e) => { form.target = e.target.value; } }),
@@ -163,9 +167,9 @@ async function mount(root, id, templateKey = null) {
       h('input', { class: 'choice__input', type: 'radio', name: 'daypart', value: d, checked: d === (base.daypart ?? 'anytime') }),
       h('span', { class: 'segmented__face' }, nl.dayparts[d]))));
   const startDate = h('input', { id: 'startDate', class: 'input', type: 'date', value: existing?.startDate ?? today, disabled: started, 'aria-describedby': 'err-startDate hint-startDate' });
-  const cue = h('input', { id: 'cue', class: 'input', type: 'text', maxlength: TEXT_MAX + 20, value: base.cue ?? '', placeholder: nl.form.cuePlaceholder, 'aria-describedby': 'err-cue' });
-  const why = h('textarea', { id: 'why', class: 'input', rows: 2, maxlength: TEXT_MAX + 20, placeholder: nl.form.whyPlaceholder, 'aria-describedby': 'err-why' }, base.why ?? '');
-  const minimal = h('input', { id: 'minimalVersion', class: 'input', type: 'text', maxlength: TEXT_MAX + 20, value: base.minimalVersion ?? '', placeholder: nl.form.minimalPlaceholder, 'aria-describedby': 'err-minimalVersion' });
+  const cue = h('input', { id: 'cue', class: 'input', type: 'text', value: base.cue ?? '', placeholder: nl.form.cuePlaceholder, 'aria-describedby': 'err-cue' });
+  const why = h('textarea', { id: 'why', class: 'input', rows: 2, placeholder: nl.form.whyPlaceholder, 'aria-describedby': 'err-why' }, base.why ?? '');
+  const minimal = h('input', { id: 'minimalVersion', class: 'input', type: 'text', value: base.minimalVersion ?? '', placeholder: nl.form.minimalPlaceholder, 'aria-describedby': 'err-minimalVersion' });
 
   const formError = h('p', { class: 'field__error', role: 'alert', hidden: true });
   const radio = (groupName) => root.querySelector(`input[name="${groupName}"]:checked`)?.value ?? '';
@@ -243,7 +247,7 @@ async function mount(root, id, templateKey = null) {
         h('p', { class: 'field__label' }, nl.form.templates),
         h('div', { class: 'choices' }, ...Object.entries(TEMPLATES).map(([key, template]) =>
           h('a', { class: 'chip-link', href: `#/habits/new?template=${key}`, 'aria-current': key === templateKey ? 'true' : null }, `${template.icon} ${template.name}`)))),
-      field(nl.form.name, name, { id: 'name', errorField: 'name' }),
+      field(nl.form.name, name, { id: 'name', errorField: 'name', max: NAME_MAX }),
       field(nl.form.icon, iconGroup, { group: true, errorField: 'icon' }),
       field(nl.form.color, colorGroup, { group: true, errorField: 'color' }),
       h('fieldset', { class: 'field' },
@@ -254,9 +258,9 @@ async function mount(root, id, templateKey = null) {
       counterBox,
       field(nl.form.daypart, daypart, { group: true, errorField: 'daypart' }),
       field(nl.form.startDate, startDate, { id: 'startDate', errorField: 'startDate', hint: started ? nl.form.startDateLocked : null }),
-      field(nl.form.cue, cue, { id: 'cue', errorField: 'cue' }),
-      field(nl.form.why, why, { id: 'why', errorField: 'why' }),
-      field(nl.form.minimal, minimal, { id: 'minimalVersion', errorField: 'minimalVersion' }),
+      field(nl.form.cue, cue, { id: 'cue', errorField: 'cue', max: TEXT_MAX }),
+      field(nl.form.why, why, { id: 'why', errorField: 'why', max: TEXT_MAX }),
+      field(nl.form.minimal, minimal, { id: 'minimalVersion', errorField: 'minimalVersion', max: TEXT_MAX }),
       formError,
       h('div', { class: 'form__actions' },
         h('button', { type: 'submit', class: 'button button--primary' }, nl.form.submit),
