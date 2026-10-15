@@ -116,7 +116,7 @@ span.weekstrip__day {
 .overview__dows,
 .overview__grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: var(--space-1);
   margin: 0;
   padding: 0;
@@ -138,6 +138,8 @@ span.weekstrip__day {
   align-content: center;
   gap: 1px;
   aspect-ratio: 1;
+  width: 100%; /* vaste breedte: anders rekt min-height via de beeldverhouding de cel op bij grote tekst */
+  min-width: 0;
   min-height: 2.5rem;
   border: 1px solid var(--color-hairline);
   border-radius: 8px;
@@ -161,7 +163,7 @@ span.weekstrip__day {
 }
 
 button.overview__cell {
-  width: 100%;
+  padding: 0;
   background: transparent;
   font: inherit;
   cursor: pointer;
