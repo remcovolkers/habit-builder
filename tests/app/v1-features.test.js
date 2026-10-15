@@ -96,6 +96,17 @@ test('herstelmoment: niet meer zodra je vandaag al iets hebt gelogd', () => {
   assert.equal(recovery(h, [done('h', '2026-10-13'), done('h', TODAY)]), false);
 });
 
+const recoveryOn = (h, checkIns, date) => entryOf(buildDayView({ snapshot: snapshot({ habits: [h], checkIns }), date, today: TODAY }), h.id)?.recovery;
+
+test('herstelmoment: kijk je vooruit en is vandaag nog niet afgevinkt, dan is er niets gemist en dus geen herstelmoment', () => {
+  const h = habit('h', { startDate: '2026-10-10', schedules: [{ effectiveFrom: '2026-10-10', schedule: daily }] });
+  const checkIns = [done('h', '2026-10-13')]; // vandaag (15 okt) is nog open, gisteren was gemist
+  assert.equal(recoveryOn(h, checkIns, TODAY), true, 'vandaag zelf blijft een herstelmoment: gisteren is echt gemist');
+  assert.equal(recoveryOn(h, checkIns, '2026-10-16'), false, 'morgen: vandaag is nog niet voorbij');
+  assert.equal(recoveryOn(h, checkIns, '2026-10-18'), false, 'ook verder vooruit niet');
+  assert.equal(recoveryOn(h, [done('h', '2026-10-14')], '2026-10-16'), false);
+});
+
 test('herstelmoment: bij vaste weekdagen telt de vorige geplande dag, niet gisteren', () => {
   // elke donderdag; de vorige donderdag (8 okt) is gemist
   const thursdays = habit('h', { startDate: '2026-10-01', schedules: [{ effectiveFrom: '2026-10-01', schedule: { type: 'weekdays', weekdays: [3] } }] });
