@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildDayView } from '../../src/app/day-view.js';
-import { formatDateLong, formatDateShort, formatSchedule, relativeDayLabel, datesBetween } from '../../src/app/format.js';
+import {
+  formatDateLong, formatDateShort, formatSchedule, relativeDayLabel, datesBetween, greetingFor, localHour,
+} from '../../src/app/format.js';
 import { validHabit, TODAY } from './helpers.js';
 
 const daily = { type: 'weekdays', weekdays: [0, 1, 2, 3, 4, 5, 6] };
@@ -99,6 +101,19 @@ test('datums in het Nederlands', () => {
   assert.equal(formatDateLong('2026-10-15'), 'donderdag 15 oktober');
   assert.equal(formatDateShort('2026-10-15'), 'do 15 okt');
   assert.equal(formatDateShort('2026-12-01'), 'di 1 dec');
+});
+
+test('begroeting: morgen, middag en avond; het uur volgt de tijdzone', () => {
+  assert.equal(greetingFor(0), 'Goedemorgen');
+  assert.equal(greetingFor(11), 'Goedemorgen');
+  assert.equal(greetingFor(12), 'Goedemiddag');
+  assert.equal(greetingFor(17), 'Goedemiddag');
+  assert.equal(greetingFor(18), 'Goedenavond');
+  assert.equal(greetingFor(23), 'Goedenavond');
+  const now = new Date('2026-10-15T20:00:00Z');
+  assert.equal(localHour(now, 'Europe/Amsterdam'), 22); // CEST
+  assert.equal(localHour(now, 'Pacific/Auckland'), 9);
+  assert.equal(localHour(new Date('2026-10-15T22:30:00Z'), 'Europe/Amsterdam'), 0); // middernacht is 0, niet 24
 });
 
 test('relatieve dagen', () => {

@@ -1,0 +1,65 @@
+/* voortgangsring: --p is een getal 0–100 (gezet vanuit JS via style.setProperty) */
+.ring {
+  --p: 0;
+  --size: 5.25rem;
+  --thick: 7px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--size);
+  height: var(--size);
+  border-radius: var(--radius-full);
+}
+
+.ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, rgba(41, 255, 185, 0.35), var(--color-accent) calc(var(--p) * 1%), var(--color-hairline) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--thick)), #000 calc(100% - var(--thick) + 1px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - var(--thick)), #000 calc(100% - var(--thick) + 1px));
+  filter: drop-shadow(0 0 6px rgba(41, 255, 185, 0.35));
+}
+
+.ring__head {
+  position: absolute;
+  inset: 0;
+  transform: rotate(calc(var(--p) * 3.6deg));
+}
+
+.ring__head::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: var(--thick);
+  height: var(--thick);
+  margin-left: calc(var(--thick) / -2);
+  border-radius: var(--radius-full);
+  background: #fff;
+  box-shadow: 0 0 8px #fff, 0 0 14px var(--color-accent);
+}
+
+.ring__label {
+  position: relative;
+  text-align: center;
+  line-height: 1;
+}
+
+.ring__value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+}
+
+.ring__caption {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-muted);
+}

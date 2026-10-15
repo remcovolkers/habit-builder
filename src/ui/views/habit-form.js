@@ -2,6 +2,7 @@ import { fill, h } from '../dom.js';
 import { notifyChanged, state } from '../state.js';
 import { showToast } from '../components/toast.js';
 import { openDialog } from '../components/dialog.js';
+import { stepper } from '../components/stepper.js';
 import { nl } from '../../content/nl.js';
 import { ValidationError } from '../../data/repository.js';
 import {
@@ -77,7 +78,7 @@ async function mount(root, id, templateKey = null) {
       h('span', { class: 'choice__face' }, icon))));
 
   const chosenColor = base.color ?? HABIT_COLORS[0];
-  const colorGroup = h('div', { class: 'choices', role: 'radiogroup' },
+  const colorGroup = h('div', { class: 'choices choices--colors', role: 'radiogroup' },
     ...HABIT_COLORS.map((color, i) => h('label', { class: 'choice' },
       h('input', { class: 'choice__input', type: 'radio', name: 'color', value: color, checked: color === chosenColor }),
       h('span', { class: 'choice__face choice__face--color', dataset: { color }, title: nl.colors[i] },
@@ -93,17 +94,13 @@ async function mount(root, id, templateKey = null) {
       }),
       h('span', { class: 'segmented__face' }, nl.form.scheduleTypes[type]))));
 
-  const numberInput = (inputId, value, max, onInput) =>
-    h('input', {
-      id: inputId, class: 'input input--number', type: 'number', inputmode: 'numeric', min: 1, max, value, 'aria-describedby': 'err-schedule',
-      oninput: (e) => onInput(e.target.value),
-    });
+  const countStepper = (inputId, value, max, label, onChange) => stepper({ id: inputId, value, min: 1, max, label, onChange });
 
   function renderDetails() {
     if (form.type === 'weekdays') {
       fill(details, 
         h('p', { class: 'field__label' }, nl.form.weekdaysLabel),
-        h('div', { class: 'choices' }, ...nl.weekdays.short.map((label, i) => h('label', { class: 'choice' },
+        h('div', { class: 'choices choices--week' }, ...nl.weekdays.short.map((label, i) => h('label', { class: 'choice' },
           h('input', {
             class: 'choice__input', type: 'checkbox', value: String(i), checked: form.weekdays.has(i),
             onchange: (e) => (e.target.checked ? form.weekdays.add(i) : form.weekdays.delete(i)),
@@ -113,12 +110,12 @@ async function mount(root, id, templateKey = null) {
       const week = form.type === 'per_week';
       fill(details, 
         h('label', { class: 'field__label', for: 'count' }, week ? nl.form.countWeek : nl.form.countMonth),
-        numberInput('count', week ? form.perWeek : form.perMonth, week ? 7 : 31, (v) => { form[week ? 'perWeek' : 'perMonth'] = v; }),
+        countStepper('count', week ? form.perWeek : form.perMonth, week ? 7 : 31, week ? nl.form.countWeek : nl.form.countMonth, (v) => { form[week ? 'perWeek' : 'perMonth'] = v; }),
         h('p', { class: 'field__hint' }, nl.form.flexibleHint));
     } else if (form.type === 'day_of_month') {
       fill(details, 
         h('label', { class: 'field__label', for: 'day' }, nl.form.dayOfMonth),
-        numberInput('day', form.day, 31, (v) => { form.day = v; }),
+        countStepper('day', form.day, 31, nl.form.dayOfMonth, (v) => { form.day = v; }),
         h('p', { class: 'field__hint' }, nl.form.dayOfMonthHint));
     } else {
       fill(details);
@@ -165,8 +162,10 @@ async function mount(root, id, templateKey = null) {
   renderCounter();
 
   // --- overige velden ---------------------------------------------------------------------
-  const daypart = h('select', { id: 'daypart', class: 'input', 'aria-describedby': 'err-daypart' },
-    ...DAYPARTS.map((d) => h('option', { value: d, selected: d === (base.daypart ?? 'anytime') }, nl.dayparts[d])));
+  const daypart = h('div', { class: 'segmented', role: 'radiogroup', 'aria-describedby': 'err-daypart' },
+    ...DAYPARTS.map((d) => h('label', { class: 'segmented__item' },
+      h('input', { class: 'choice__input', type: 'radio', name: 'daypart', value: d, checked: d === (base.daypart ?? 'anytime') }),
+      h('span', { class: 'segmented__face' }, nl.dayparts[d]))));
   const startDate = h('input', { id: 'startDate', class: 'input', type: 'date', value: existing?.startDate ?? today, disabled: started, 'aria-describedby': 'err-startDate hint-startDate' });
   const cue = h('input', { id: 'cue', class: 'input', type: 'text', maxlength: TEXT_MAX + 20, value: base.cue ?? '', placeholder: nl.form.cuePlaceholder, 'aria-describedby': 'err-cue' });
   const why = h('textarea', { id: 'why', class: 'input', rows: 2, maxlength: TEXT_MAX + 20, placeholder: nl.form.whyPlaceholder, 'aria-describedby': 'err-why' }, base.why ?? '');
@@ -181,7 +180,7 @@ async function mount(root, id, templateKey = null) {
     for (const el of [formError, ...Object.values(errorEls)]) el.hidden = true;
 
     const values = {
-      name: name.value, icon: radio('icon'), color: radio('color'), daypart: daypart.value,
+      name: name.value, icon: radio('icon'), color: radio('color'), daypart: radio('daypart'),
       startDate: started ? existing.startDate : startDate.value,
       cue: cue.value, why: why.value, minimalVersion: minimal.value, schedule: buildSchedule(),
       counter: counterAllowed() && form.counterOn
@@ -265,7 +264,7 @@ async function mount(root, id, templateKey = null) {
         started ? h('p', { class: 'field__hint' }, nl.form.changeHint) : null,
         errorFor('schedule')),
       counterBox,
-      field(nl.form.daypart, daypart, { id: 'daypart', errorField: 'daypart' }),
+      field(nl.form.daypart, daypart, { group: true, errorField: 'daypart' }),
       field(nl.form.startDate, startDate, { id: 'startDate', errorField: 'startDate', hint: started ? nl.form.startDateLocked : null }),
       field(nl.form.cue, cue, { id: 'cue', errorField: 'cue' }),
       field(nl.form.why, why, { id: 'why', errorField: 'why' }),

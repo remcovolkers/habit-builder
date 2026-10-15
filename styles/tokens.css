@@ -1,73 +1,113 @@
-/* Design tokens. Het Moda-design vervangt later alleen de waarden in dit bestand
-   (en waar nodig de component-CSS); view-CSS gebruikt uitsluitend deze variabelen. */
+/* Design tokens, overgenomen uit het Moda-ontwerp (habit-builder-moda-files/assets/theme.css).
+   Alleen donker. Component- en view-CSS gebruikt uitsluitend deze variabelen. */
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 
-  /* kleur */
-  --color-bg: #f6f7f5;
-  --color-surface: #ffffff;
-  --color-surface-2: #eef1ee;
-  --color-text: #1b2420;
-  --color-text-muted: #5a6761;
-  --color-border: #d9dfdb;
-  --color-accent: #2f6f5e;
-  --color-accent-contrast: #ffffff;
-  --color-focus: #1d5fd1;
-  --color-warning: #9a5b00;
-  --color-warning-bg: #fdf0d8;
-  --color-danger: #b3261e;
-  --color-danger-bg: #fbe4e2;
+  /* kleur · merk */
+  --color-accent: #29ffb9;
+  --color-accent-tint: #8fffdc;
+  --color-accent-10: rgba(41, 255, 185, 0.10);
+  --color-accent-16: rgba(41, 255, 185, 0.16);
+  --color-accent-22: rgba(41, 255, 185, 0.22);
+  --color-accent-50: rgba(41, 255, 185, 0.50);
+  --color-on-accent: #06140f;
 
-  /* habit-kleuren (c1–c8); de view-CSS kiest er één via data-color */
-  --habit-c1: #2f9e7a;
-  --habit-c2: #3b82f6;
-  --habit-c3: #8b5cf6;
-  --habit-c4: #ec4899;
-  --habit-c5: #f97316;
-  --habit-c6: #d4a017;
-  --habit-c7: #e5484d;
-  --habit-c8: #78838d;
+  /* kleur · achtergrond */
+  --color-bg-1: #10221d;
+  --color-bg-2: #0c1513;
+  --color-bg-3: #090c0c;
+  --color-surface: rgba(24, 24, 26, 0.82);
+  --color-surface-solid: #18181a;
+  --color-elevated: #1c1c1f;
+  --color-scrim: rgba(4, 8, 7, 0.72);
+
+  /* kleur · tekst */
+  --color-text: #e4e9f2;
+  --color-text-muted: #8d919a;
+  --color-text-faint: #5d616a;
+
+  /* kleur · lijnen */
+  --color-border: rgba(41, 255, 185, 0.50);
+  --color-hairline: rgba(255, 255, 255, 0.08);
+  --color-hairline-strong: rgba(255, 255, 255, 0.14);
+
+  /* kleur · status */
+  --color-danger: #ff6b6b;
+  --color-danger-12: rgba(255, 107, 107, 0.12);
+  --color-warning: #ffb547;
+  --color-warning-12: rgba(255, 181, 71, 0.12);
+  --color-paused: #6f7480;
+  --color-paused-16: rgba(111, 116, 128, 0.16);
+
+  /* kleur · habit-palet (c1–c8, zie HABIT_COLORS) */
+  --habit-c1: #29ffb9;
+  --habit-c2: #2ed3c6;
+  --habit-c3: #5cc8ff;
+  --habit-c4: #b6f25c;
+  --habit-c5: #ffc857;
+  --habit-c6: #ff8a7a;
+  --habit-c7: #ff7eb6;
+  --habit-c8: #d9c7a3;
 
   /* typografie */
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --text-sm: 0.875rem;
-  --text-md: 1rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.75rem;
-  --leading: 1.5;
+  --font-display: "Chakra Petch", "Manrope", sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+  --font-size-2xs: 0.6875rem;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-md: 0.9375rem;
+  --font-size-lg: 1.0625rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.5rem;
+  --line-height-tight: 1.1;
+  --line-height-snug: 1.3;
+  --line-height-body: 1.5;
+  --letter-spacing-kicker: 0.26em;
+  --letter-spacing-display: 0.04em;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extra: 800;
 
-  /* ruimte, vorm, schaduw */
+  /* radius */
+  --radius-xs: 4px;
+  --radius-pill: 8px;
+  --radius-button: 10px;
+  --radius-card: 14px;
+  --radius-hero: 22px;
+  --radius-full: 999px;
+
+  /* ruimte (4pt) */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
+  --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
-  --radius-md: 0.75rem;
-  --radius-pill: 999px;
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.06);
+  --space-10: 2.5rem;
+  --space-12: 3rem;
 
-  /* layout */
-  --tap-target: 2.75rem; /* 44px */
+  /* maten */
+  --size-tap: 2.75rem;
+  --size-check: 3rem;
+  --size-tabbar: 4rem;
   --content-max: 40rem;
-  --tabbar-height: 4rem;
-}
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #121715;
-    --color-surface: #1a211e;
-    --color-surface-2: #222b27;
-    --color-text: #e8eeea;
-    --color-text-muted: #9aa8a1;
-    --color-border: #2e3a35;
-    --color-accent: #5fb89f;
-    --color-accent-contrast: #0e1512;
-    --color-focus: #7fb0ff;
-    --color-warning: #fbbf24;
-    --color-warning-bg: #3a2c0b;
-    --color-danger: #ff8a85;
-    --color-danger-bg: #3a1614;
-    --shadow-sm: none;
-  }
+  /* schaduw en gloed */
+  --shadow-glow: 0 0 18px rgba(41, 255, 185, 0.22);
+  --shadow-glow-soft: 0 0 12px rgba(41, 255, 185, 0.12);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.5);
+  --ring-focus: 0 0 0 3px rgba(41, 255, 185, 0.28);
+  --ring-error: 0 0 0 3px rgba(255, 107, 107, 0.22);
+
+  /* beweging */
+  --duration-fast: 150ms;
+  --duration-base: 240ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 }

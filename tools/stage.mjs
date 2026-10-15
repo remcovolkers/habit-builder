@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const OUT = join(ROOT, '_site');
-const PUBLISH = ['index.html', 'manifest.webmanifest', 'sw.js', 'src', 'styles', 'vendor', 'icons'];
+const PUBLISH = ['index.html', 'manifest.webmanifest', 'sw.js', 'src', 'styles', 'vendor', 'icons', 'fonts'];
 
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT);

@@ -19,6 +19,20 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | D7 | Meldingen | Ochtendherinnering via Web Push (Android/desktop). iOS-ondersteuning bewust later. |
 | D8 | Design | Komt later (Moda). Nu: functionaliteit plus een design-token-laag zodat de skin los te wisselen is. |
 
+## Voortgang
+
+| Mijlpaal | Status |
+|---|---|
+| M0 skelet, CI, Pages | klaar |
+| M1 domeinlogica + tests | klaar |
+| M2 lokale UI (habits, Vandaag, stapel, backfill, undo) | klaar |
+| Teller-habits (bv. 8 glazen water) en sjablonen | klaar |
+| M6 (deels) Moda-design op de bestaande schermen, lokale fonts | klaar |
+| M3 statistieken, fases, ingeburgerd-flow, achievements, review, export/import | volgende |
+| M4 Supabase, auth, sync | open |
+| M5 PWA (manifest, service worker, offline) | open |
+| M7 ochtendherinnering (Web Push) | open |
+
 ## 2. Gewoontetheorie die in het product zit
 
 - **66 dagen, niet 21 of 42.** Onderzoek (Lally et al., 2009): mediaan 66 dagen, spreiding 18–254 dagen. Eén gemiste dag schaadt het proces nauwelijks. De app gebruikt daarom een gewoontesterkte-score in plaats van harde streaks, en toont "dit duurt gemiddeld ~9 weken, jij zit op week X".

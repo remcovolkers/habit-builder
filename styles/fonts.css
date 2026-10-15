@@ -1,0 +1,9 @@
+/* Lokale fonts: werkt offline en past binnen de CSP. Zie fonts/README.md. */
+@font-face { font-family: "Manrope"; src: url("../fonts/manrope-wght--regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Manrope"; src: url("../fonts/manrope-wght--medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Manrope"; src: url("../fonts/manrope-wght--semibold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Manrope"; src: url("../fonts/manrope-wght--bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Manrope"; src: url("../fonts/manrope-wght--extrabold.ttf") format("truetype"); font-weight: 800; font-display: swap; }
+
+@font-face { font-family: "Chakra Petch"; src: url("../fonts/chakrapetch-semibold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Chakra Petch"; src: url("../fonts/chakrapetch-bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }

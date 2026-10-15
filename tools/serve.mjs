@@ -17,10 +17,12 @@ const MIME = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.ico': 'image/x-icon',
+  '.ttf': 'font/ttf',
+  '.woff2': 'font/woff2',
 };
 
 // Alleen wat ook op Pages terechtkomt; docs/, tests/, supabase/ e.d. blijven onbereikbaar.
-const PUBLIC = ['index.html', 'manifest.webmanifest', 'sw.js', 'src', 'styles', 'vendor', 'icons'];
+const PUBLIC = ['index.html', 'manifest.webmanifest', 'sw.js', 'src', 'styles', 'vendor', 'icons', 'fonts'];
 
 function isPublic(relative) {
   const [first] = relative.split(sep);

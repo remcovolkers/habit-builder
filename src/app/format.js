@@ -15,6 +15,20 @@ export function formatDateShort(date) {
   return `${nl.weekdays.short[(utcDate(date).getUTCDay() + 6) % 7]} ${utcDate(date).getUTCDate()} ${nl.months.short[utcDate(date).getUTCMonth()]}`;
 }
 
+/** Het lokale uur (0–23) in `timeZone`; voor de begroeting, niet voor de dagwissel. */
+export function localHour(now, timeZone) {
+  const part = new Intl.DateTimeFormat('en-US', { timeZone, hourCycle: 'h23', hour: '2-digit' })
+    .formatToParts(now)
+    .find((p) => p.type === 'hour');
+  return Number(part.value);
+}
+
+/** 'Goedemorgen' (vóór 12 uur), 'Goedemiddag' (vóór 18 uur) of 'Goedenavond'. */
+export function greetingFor(hour) {
+  if (hour < 12) return nl.greeting.morning;
+  return hour < 18 ? nl.greeting.afternoon : nl.greeting.evening;
+}
+
 /** 'Vandaag', 'Gisteren', 'Morgen' of de korte datum. */
 export function relativeDayLabel(date, today) {
   const offset = diffDays(date, today);

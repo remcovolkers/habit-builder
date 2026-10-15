@@ -7,14 +7,15 @@ import { todayView } from './ui/views/today.js';
 import { habitsView } from './ui/views/habits.js';
 import { habitFormView } from './ui/views/habit-form.js';
 import { settingsView } from './ui/views/settings.js';
+import { icon } from './ui/svg.js';
 import { nl } from './content/nl.js';
 
 const NAV = [
-  { key: 'today', path: '/today', icon: '☀' },
-  { key: 'habits', path: '/habits', icon: '☰' },
-  { key: 'stats', path: '/stats', icon: '▤' },
-  { key: 'achievements', path: '/achievements', icon: '★' },
-  { key: 'settings', path: '/settings', icon: '⚙' },
+  { key: 'today', path: '/today' },
+  { key: 'habits', path: '/habits' },
+  { key: 'stats', path: '/stats' },
+  { key: 'achievements', path: '/achievements' },
+  { key: 'settings', path: '/settings' },
 ];
 
 const routes = [
@@ -29,9 +30,9 @@ const routes = [
 
 const tabbar = document.getElementById('tabbar');
 fill(tabbar, 
-  ...NAV.map(({ key, path, icon }) =>
+  ...NAV.map(({ key, path }) =>
     h('a', { class: 'tabbar__item', href: `#${path}`, dataset: { path } },
-      h('span', { class: 'tabbar__icon', 'aria-hidden': 'true' }, icon),
+      icon(key),
       h('span', { class: 'tabbar__label' }, nl.nav[key]),
     ),
   ),

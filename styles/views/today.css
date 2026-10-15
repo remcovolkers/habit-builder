@@ -1,40 +1,32 @@
 .today__header {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-4);
 }
 
 .daynav {
   display: grid;
-  grid-template-columns: var(--tap-target) 1fr var(--tap-target);
+  grid-template-columns: var(--size-tap) 1fr var(--size-tap);
   align-items: center;
   text-align: center;
 }
 
-.daynav__link {
-  display: grid;
-  place-items: center;
-  width: var(--tap-target);
-  height: var(--tap-target);
-  border-radius: var(--radius-pill);
-  color: var(--color-text);
-  font-size: var(--text-xl);
-  text-decoration: none;
+.today__hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
 }
 
-.daynav__link.is-disabled {
-  opacity: 0.25;
-}
-
-.today__date {
-  font-size: var(--text-lg);
-}
-
-/* alleen de eerste letter: "Donderdag 15 oktober" (maandnamen blijven klein) */
-.today__date::first-letter {
-  text-transform: uppercase;
+.today__title {
+  font-size: var(--font-size-3xl);
 }
 
 .today__back {
   justify-self: center;
-  font-size: var(--text-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.today__inner > .section:first-of-type {
+  margin-top: var(--space-6);
 }

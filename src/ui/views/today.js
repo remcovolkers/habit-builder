@@ -5,11 +5,13 @@ import { showToast } from '../components/toast.js';
 import { openDialog } from '../components/dialog.js';
 import { entryState, habitCard } from '../components/habit-card.js';
 import { poolCard } from '../components/pool-card.js';
+import { ring } from '../components/ring.js';
+import { icon } from '../svg.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
 import { adjustCounter, clearCheckIn, logCheckIn, planHabit, RuleError, unplanHabit } from '../../app/actions.js';
 import { counterDoneValue } from '../../domain/counter.js';
-import { datesBetween, formatDateLong, relativeDayLabel } from '../../app/format.js';
+import { datesBetween, formatDateLong, greetingFor, localHour, relativeDayLabel } from '../../app/format.js';
 import { addDays, diffDays, isValidDate } from '../../domain/dates.js';
 import { BACKFILL_DAYS, PLAN_AHEAD_DAYS } from '../../domain/constants.js';
 
@@ -127,19 +129,30 @@ function renderDay(view) {
 
   const cardOptions = { canLog: view.canLog, onToggle: toggle, onMore: more, onAdjust: adjust };
 
+  const tally = (entries) => {
+    const counted = entries.filter((e) => e.loggedToday !== 'skipped');
+    return { done: counted.filter((e) => e.doneToday).length, total: counted.length };
+  };
+  const allDone = view.progress.total > 0 && view.progress.done === view.progress.total;
+  const poolPeriod = view.pool.every((e) => e.span === 'week') ? nl.today.pool.thisWeek : nl.today.pool.thisPeriod;
+
   return h('div', { class: 'today__inner' },
     header(view),
     banner(view),
     view.groups.length === 0 && view.pool.length === 0 ? emptyState(view) : null,
-    view.progress.total > 0 && view.progress.done === view.progress.total
-      ? h('p', { class: 'banner banner--success', role: 'status' }, nl.today.allDone) : null,
-    ...view.groups.map((group) =>
-      h('section', { class: 'section', 'aria-labelledby': `dp-${group.daypart}` },
-        h('h2', { id: `dp-${group.daypart}`, class: 'section__title' }, nl.dayparts[group.daypart]),
-        h('ul', { class: 'card-list' }, ...group.entries.map((entry) => habitCard(entry, cardOptions))))),
+    ...view.groups.map((group) => {
+      const { done, total } = tally(group.entries);
+      return h('section', { class: 'section', 'aria-labelledby': `dp-${group.daypart}` },
+        h('div', { class: 'section-head' },
+          h('h2', { id: `dp-${group.daypart}`, class: 'section__title' }, nl.dayparts[group.daypart]),
+          h('span', { class: 'xs muted' }, nl.today.sectionCount(done, total))),
+        h('ul', { class: 'card-list' }, ...group.entries.map((entry) => habitCard(entry, cardOptions))));
+    }),
     view.pool.length > 0
-      ? h('section', { class: 'section section--pool', 'aria-labelledby': 'pool-title' },
-        h('h2', { id: 'pool-title', class: 'section__title' }, nl.today.pool.title),
+      ? h('section', { class: 'section', 'aria-labelledby': 'pool-title' },
+        h('div', { class: 'section-head' },
+          h('h2', { id: 'pool-title', class: 'section__title' }, nl.today.pool.title),
+          h('span', { class: 'kicker' }, poolPeriod)),
         h('p', { class: 'section__hint' }, nl.today.pool.hint),
         h('ul', { class: 'card-list' }, ...view.pool.map((entry) =>
           poolCard(entry, {
@@ -148,31 +161,40 @@ function renderDay(view) {
             onPlanOther: planOther,
             onDoneNow: (e) => perform(() => log(e.habitId, 'done'), nl.today.toasts.done(e.habit.name)),
           }))))
+      : null,
+    allDone
+      ? h('section', { class: 'section celebrate', role: 'status' },
+        h('div', { class: 'celebrate__emoji', 'aria-hidden': 'true' }, '🌿'),
+        h('h2', { class: 'celebrate__title' }, nl.today.celebrateTitle),
+        h('p', { class: 'celebrate__text' }, nl.today.celebrateText))
       : null);
 }
 
+function dayLink(date, label, symbol, enabled) {
+  return enabled
+    ? h('a', { class: 'icon-button', href: dayHref(date, state.today), 'aria-label': label }, icon(symbol))
+    : h('span', { class: 'icon-button is-disabled', 'aria-hidden': 'true' }, icon(symbol));
+}
+
 function header(view) {
-  const { today } = state;
+  const { today, settings } = state;
   const { date, progress } = view;
-  const offset = diffDays(date, today);
   const prev = addDays(date, -1);
   const next = addDays(date, 1);
-  const hasPrev = diffDays(prev, today) >= -BACKFILL_DAYS;
-  const hasNext = diffDays(next, today) <= PLAN_AHEAD_DAYS;
+  const name = String(settings.displayName ?? '').trim();
+  const title = date === today
+    ? [name ? `${greetingFor(localHour(new Date(), settings.timezone))},` : greetingFor(localHour(new Date(), settings.timezone)), name ? h('br') : null, name || null]
+    : [relativeDayLabel(date, today)];
 
   return h('header', { class: 'today__header' },
     h('div', { class: 'daynav' },
-      hasPrev ? h('a', { class: 'daynav__link', href: dayHref(prev, today), 'aria-label': nl.today.previousDay }, '‹') : h('span', { class: 'daynav__link is-disabled', 'aria-hidden': 'true' }, '‹'),
-      h('div', { class: 'daynav__title' },
-        h('p', { class: 'kicker' }, relativeDayLabel(date, today)),
-        h('h1', { class: 'today__date' }, formatDateLong(date))),
-      hasNext ? h('a', { class: 'daynav__link', href: dayHref(next, today), 'aria-label': nl.today.nextDay }, '›') : h('span', { class: 'daynav__link is-disabled', 'aria-hidden': 'true' }, '›')),
-    offset !== 0 ? h('a', { class: 'today__back', href: '#/today' }, nl.today.backToToday) : null,
-    progress.total > 0
-      ? h('div', { class: 'progress' },
-        h('progress', { class: 'progress__bar', max: progress.total, value: progress.done, 'aria-label': nl.today.progress(progress.done, progress.total) }),
-        h('p', { class: 'progress__label' }, nl.today.progress(progress.done, progress.total)))
-      : null);
+      dayLink(prev, nl.today.previousDay, 'back', diffDays(prev, today) >= -BACKFILL_DAYS),
+      h('p', { class: 'kicker' }, formatDateLong(date)),
+      dayLink(next, nl.today.nextDay, 'next', diffDays(next, today) <= PLAN_AHEAD_DAYS)),
+    h('div', { class: 'today__hero' },
+      h('h1', { class: 'page-title today__title' }, ...title),
+      progress.total > 0 ? ring(progress.done, progress.total) : null),
+    date !== today ? h('a', { class: 'today__back', href: '#/today' }, nl.today.backToToday) : null);
 }
 
 function banner(view) {

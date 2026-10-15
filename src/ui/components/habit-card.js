@@ -1,7 +1,6 @@
 import { h } from '../dom.js';
+import { icon } from '../svg.js';
 import { nl } from '../../content/nl.js';
-
-const SYMBOL = { done: '✓', minimal: '◐', skipped: '–', partial: '', open: '' };
 
 export function entryState(entry) {
   if (entry.loggedToday === 'done') return 'done';
@@ -11,17 +10,17 @@ export function entryState(entry) {
   return 'open';
 }
 
-function counterText(entry) {
-  const { counter } = entry.habit;
-  const value = entry.valueToday ?? 0;
-  return counter.target ? `${value}/${counter.target} ${counter.unit}` : `${value} ${counter.unit}`;
+/** Wat er binnen de afvinkknop staat: een vinkje, ½ voor de minimale versie of een streepje. */
+function checkFace(state) {
+  if (state === 'done') return icon('check', { strokeWidth: 3 });
+  if (state === 'minimal') return h('span', { class: 'check__label' }, '½');
+  if (state === 'skipped') return h('span', { class: 'check__label' }, '–');
+  return null;
 }
 
 function metaLine(entry) {
   const parts = [];
-  if (entry.habit.counter) {
-    parts.push(counterText(entry));
-  } else if (entry.kind === 'period') {
+  if (entry.kind === 'period') {
     parts.push(entry.span === 'week' ? nl.today.progressWeek(entry.count, entry.target) : nl.today.progressMonth(entry.count, entry.target));
   } else if (entry.kind === 'day_of_month') {
     parts.push(entry.overdue ? nl.today.overdue : nl.today.dueOn(entry.unit.due.slice(8)));
@@ -30,10 +29,13 @@ function metaLine(entry) {
   return parts.join(' · ');
 }
 
-/** +/−-bediening voor een teller (bv. glazen water). De waarde hoort bij de getoonde dag. */
+/** +/−-bediening voor een teller (bv. glazen water) met een meter naar het dagdoel. */
 function counterControl(entry, { canLog, onAdjust }) {
   const { habit } = entry;
+  const { counter } = habit;
   const value = entry.valueToday ?? 0;
+  const meter = h('div', { class: 'meter', 'aria-hidden': 'true' }, h('div', { class: 'meter__fill' }));
+  meter.firstChild.style.setProperty('--p', String(counter.target ? Math.min(100, Math.round((value / counter.target) * 100)) : (value > 0 ? 100 : 0)));
   return h('div', { class: 'counter', role: 'group', 'aria-label': habit.name },
     h('button', {
       type: 'button',
@@ -43,7 +45,11 @@ function counterControl(entry, { canLog, onAdjust }) {
       disabled: !canLog || value <= 0,
       onclick: () => onAdjust(entry, -1),
     }, '−'),
-    h('output', { class: 'counter__value', 'aria-live': 'polite' }, String(value)),
+    h('div', { class: 'counter__middle' },
+      h('div', { class: 'counter__reading' },
+        h('output', { class: 'counter__value', 'aria-live': 'polite' }, String(value)),
+        h('span', { class: 'counter__goal' }, counter.target ? `/ ${counter.target} ${counter.unit}` : counter.unit)),
+      meter),
     h('button', {
       type: 'button',
       class: 'counter__button counter__button--plus',
@@ -59,18 +65,19 @@ export function habitCard(entry, { canLog, onToggle, onMore, onAdjust }) {
   const { habit } = entry;
   const state = entryState(entry);
   const meta = metaLine(entry);
+  const isCounter = Boolean(habit.counter);
   return h('li', {
     class: 'habit-card',
-    dataset: { state, color: habit.color, overdue: entry.overdue ? 'true' : null, counter: habit.counter ? 'true' : null },
+    dataset: { state, color: habit.color, overdue: entry.overdue ? 'true' : null, counter: isCounter ? 'true' : null },
   },
   h('span', { class: 'habit-card__icon', 'aria-hidden': 'true' }, habit.icon),
   h('div', { class: 'habit-card__body' },
     h('div', { class: 'habit-card__name' }, habit.name),
     meta ? h('div', { class: 'habit-card__meta' }, meta) : null,
-    state !== 'open' && state !== 'partial' ? h('div', { class: 'habit-card__state' }, nl.today.states[state]) : null,
+    !isCounter && state !== 'open' ? h('div', { class: 'habit-card__state' }, nl.today.states[state]) : null,
   ),
-  habit.counter
-    ? counterControl(entry, { canLog, onAdjust })
+  isCounter
+    ? null
     : h('button', {
       type: 'button',
       class: 'check',
@@ -79,12 +86,13 @@ export function habitCard(entry, { canLog, onToggle, onMore, onAdjust }) {
       'aria-label': state === 'open' ? nl.today.check(habit.name) : nl.today.uncheck(habit.name),
       disabled: !canLog,
       onclick: () => onToggle(entry),
-    }, SYMBOL[state]),
+    }, checkFace(state)),
   h('button', {
     type: 'button',
     class: 'habit-card__more',
     dataset: { focusKey: `more:${habit.id}` },
     'aria-label': nl.today.more(habit.name),
     onclick: () => onMore(entry),
-  }, '⋯'));
+  }, '⋯'),
+  isCounter ? counterControl(entry, { canLog, onAdjust }) : null);
 }
