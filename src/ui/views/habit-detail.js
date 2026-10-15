@@ -6,6 +6,7 @@ import { openDialog } from '../components/dialog.js';
 import { icon } from '../svg.js';
 import { mascot } from '../components/mascot.js';
 import { emptyState } from '../components/empty-state.js';
+import { formatDateShort as shortDate } from '../../app/format.js';
 import { nl } from '../../content/nl.js';
 import { TIPS } from '../../content/tips.js';
 import { buildHabitDetail } from '../../app/habit-detail.js';
@@ -138,6 +139,16 @@ function graduationCard(detail, refresh) {
     h('p', { class: 'xs muted card__text' }, hint));
 }
 
+/** De laatste notities (en redenen bij overslaan) bij check-ins van deze habit. */
+function notesCard(detail) {
+  if (detail.notes.length === 0) return null;
+  return h('section', { class: 'card card--quiet notes' },
+    h('h2', { class: 'section__title' }, nl.detail.notes.title),
+    h('ul', { class: 'notes__list' }, ...detail.notes.map((n) => h('li', { class: 'notes__item' },
+      h('span', { class: 'notes__meta' }, `${shortDate(n.date)} · ${nl.today.states[n.status] ?? ''}`),
+      h('p', { class: 'notes__text' }, n.note)))));
+}
+
 function automaticityCard(detail) {
   const { habit, ratingThisWeek } = detail;
   if (habit.status !== 'active' && habit.status !== 'graduated') return null;
@@ -209,6 +220,7 @@ function renderDetail(detail) {
      h('div', { class: 'detail__secondary' },
       graduationCard(detail),
       automaticityCard(detail),
+      notesCard(detail),
 
       habit.why ? h('section', { class: 'card card--quiet' }, h('span', { class: 'kicker' }, nl.detail.personal.why), h('p', { class: 'quote' }, `“${habit.why}”`)) : null,
       habit.cue ? h('section', { class: 'card card--quiet' }, h('span', { class: 'kicker' }, nl.detail.personal.cue), h('p', { class: 'card__text' }, habit.cue)) : null,

@@ -99,6 +99,16 @@ function themeSection() {
       })));
 }
 
+/** Links naar de privacyverklaring en voorwaarden (staan op GitHub, in de repository van de app). */
+function legalSection() {
+  const l = nl.settings.legal;
+  const link = (file, label) => h('a', { class: 'button button--ghost button--block', href: `${nl.login.legalBase}/${file}`, target: '_blank', rel: 'noopener noreferrer' }, label);
+  return h('section', { class: 'section legal' },
+    h('h2', { class: 'section__title' }, l.title),
+    h('p', { class: 'section__hint' }, l.hint),
+    h('div', { class: 'stack' }, link('PRIVACY.md', l.privacy), link('VOORWAARDEN.md', l.terms)));
+}
+
 export function settingsView() {
   const { settings } = state;
   const errorEl = (id) => h('p', { id, class: 'field__error', role: 'alert', hidden: true });
@@ -142,5 +152,6 @@ export function settingsView() {
         h('label', { class: 'field__label', for: 'dayStartHour' }, nl.settings.dayStart), hour,
         h('p', { id: 'hint-day', class: 'field__hint' }, nl.settings.dayStartHint), errorEls.dayStartHour),
       h('button', { type: 'submit', class: 'button button--primary button--block' }, nl.settings.save)),
-    backupSection())));
+    backupSection(),
+    legalSection())));
 }

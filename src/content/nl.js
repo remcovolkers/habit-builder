@@ -26,7 +26,10 @@ export const nl = {
     short: ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'],
     long: ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag'],
   },
-  months: { short: ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'] },
+  months: {
+    short: ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'],
+    long: ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'],
+  },
   days: { today: 'Vandaag', yesterday: 'Gisteren', tomorrow: 'Morgen' },
   schedule: {
     daily: 'Elke dag',
@@ -67,6 +70,16 @@ export const nl = {
     counterMinus: (name) => `Eén eraf: ${name}`,
     overdue: 'Te laat',
     dueOn: (day) => `Vanaf dag ${day}`,
+    week: {
+      label: 'Deze week',
+      day: (weekday, number, day) => `${weekday} ${number}: ${day.state === 'empty' ? 'niets gepland' : day.state === 'future' ? `${day.total} gepland` : `${day.done} van ${day.total} gedaan`}`,
+    },
+    recovery: {
+      badge: 'Herstelmoment',
+      text: 'Je vorige keer is gemist. Pak het nu weer op, ook met een klein begin.',
+      minimal: (text) => `Klein begin: ${text}`,
+      why: (why) => `Waarom: ${why}`,
+    },
     progressWeek: (count, target) => `${count}/${target} deze week`,
     progressMonth: (count, target) => `${count}/${target} deze maand`,
     pool: {
@@ -91,7 +104,10 @@ export const nl = {
       goalReached: 'Doel gehaald',
       minimal: (text) => `Minimale versie: ${text}`,
       skip: 'Overslaan',
-      skipReason: 'Reden (optioneel)',
+      note: 'Notitie (optioneel)',
+      notePlaceholder: 'Bijvoorbeeld: hoe ging het, of waarom sla je over?',
+      saveNote: 'Notitie opslaan',
+      noteSaved: (name) => `${name}: notitie opgeslagen`,
       clear: 'Wissen',
       unplan: 'Terug naar de stapel',
     },
@@ -116,6 +132,13 @@ export const nl = {
     new: 'Nieuwe habit',
     emptyTitle: 'Nog geen habits',
     empty: 'Hier komen al je gewoontes te staan: actief, gepauzeerd en ingeburgerd. Begin met één.',
+    reorder: {
+      start: 'Volgorde',
+      done: 'Klaar',
+      hint: 'Verplaats je habits met de pijlen. De volgorde geldt ook op Vandaag.',
+      up: (name) => `${name} een plek omhoog`,
+      down: (name) => `${name} een plek omlaag`,
+    },
     pauseAll: 'Pauzeer alles',
     resumeAll: 'Hervat alles',
     pausedAll: 'Alle habits gepauzeerd',
@@ -210,6 +233,12 @@ export const nl = {
 
   settings: {
     title: 'Instellingen',
+    legal: {
+      title: 'Privacy en voorwaarden',
+      hint: 'Wat we bewaren, waarom, en de spelregels voor deze app.',
+      privacy: 'Privacyverklaring',
+      terms: 'Voorwaarden',
+    },
     theme: {
       title: 'Uiterlijk',
       hint: 'Kies hoe de app eruitziet. Omdat je bent ingelogd, geldt dit op al je apparaten.',
@@ -239,6 +268,7 @@ export const nl = {
     theory: 'Gemiddeld duurt het ~9 weken voor iets automatisch voelt. Voor jou kan het korter of langer zijn.',
     tiles: { strength: 'Gewoontesterkte', streak: 'Reeks', consistency: 'Consistentie', total: 'Totaal' },
     consistencyHint: 'laatste 6 weken',
+    notes: { title: 'Laatste notities' },
     noData: '–',
     streakBest: (n, unit) => `🔥 beste: ${n} ${unit}`,
     units: { day: ['dag', 'dagen'], week: ['week', 'weken'], month: ['maand', 'maanden'] },
@@ -286,6 +316,19 @@ export const nl = {
 
   stats: {
     title: 'Voortgang',
+    overview: {
+      title: 'Overzicht',
+      week: 'Week',
+      month: 'Maand',
+      periodLabel: 'Periode',
+      previous: 'Vorige periode',
+      next: 'Volgende periode',
+      summary: (done, total, percent) => `${done} van ${total} gedaan (${percent}%)`,
+      nothingPlanned: 'niets gepland',
+      nothingPlannedPeriod: 'Er stond niets gepland in deze periode.',
+      planned: (n) => `${n} gepland`,
+      doneOf: (done, total) => `${done} van ${total} gedaan`,
+    },
     emptyTitle: 'Nog niets te zien',
     empty: 'Zodra je een paar dagen bezig bent, zie je hier hoe sterk je gewoontes worden.',
     summary: { week: 'Gedaan, laatste 7 dagen', graduated: 'Ingeburgerd', active: 'Actieve habits' },

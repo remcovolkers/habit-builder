@@ -13,6 +13,7 @@
 //   replaceAll(data)  (import: vervangt alles)
 //   snapshot() -> { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews }
 import { COUNTER_MAX } from '../domain/counter.js';
+import { NOTE_MAX_LENGTH } from '../domain/constants.js';
 import { isValidDate } from '../domain/dates.js';
 import { CHECK_IN_STATUSES, validateHabit } from '../domain/habit.js';
 import { defaultSettings, validateSettings } from '../app/settings.js';
@@ -116,8 +117,11 @@ export function createRepository({
       if (!isValidDate(date)) errors.push({ field: 'date', code: 'invalid' });
       if (!CHECK_IN_STATUSES.includes(status)) errors.push({ field: 'status', code: 'invalid' });
       if (value !== null && !(Number.isInteger(value) && value >= 0 && value <= COUNTER_MAX)) errors.push({ field: 'value', code: 'invalid' });
+      if (note !== null && typeof note !== 'string') errors.push({ field: 'note', code: 'invalid' });
+      else if (note !== null && note.trim().length > NOTE_MAX_LENGTH) errors.push({ field: 'note', code: 'too_long' });
       if (errors.length > 0) throw new ValidationError(errors);
-      return upsert('checkIns', { id: checkInId(habitId, date), habitId, date, status, note, value });
+      const cleanNote = note === null || note.trim() === '' ? null : note.trim();
+      return upsert('checkIns', { id: checkInId(habitId, date), habitId, date, status, note: cleanNote, value });
     },
     async clearCheckIn(habitId, date) {
       return softDelete('checkIns', checkInId(habitId, date));

@@ -11,7 +11,9 @@ html {
 
 body {
   margin: 0;
-  min-height: 100dvh;
+  /* svh = de kleinste schermhoogte (adresbalk zichtbaar). dvh verandert met de adresbalk van Chrome op Android; na een herlaadbeurt
+     kon de pagina daardoor net hoger zijn dan het scherm en zonder reden scrollen. */
+  min-height: 100svh;
   font-family: var(--font-body);
   font-size: var(--font-size-md);
   line-height: var(--line-height-body);
@@ -109,7 +111,7 @@ textarea {
 .app {
   position: relative;
   z-index: 1;
-  min-height: 100dvh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
 }
@@ -274,4 +276,26 @@ summary.section__title {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* overslaan-link: alleen zichtbaar als hij focus heeft (toetsenbord) */
+.skip-link {
+  position: fixed;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 30;
+  min-height: var(--size-tap);
+  padding: 0 var(--space-4);
+  background: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius-button);
+  color: var(--color-on-accent);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: none;
 }

@@ -1,0 +1,211 @@
+/* Weekstrook op Vandaag en week-/maandoverzicht op Voortgang. */
+.weekstrip {
+  margin-top: var(--space-2);
+}
+
+.weekstrip__list {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.weekstrip__day {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-height: var(--size-tap);
+  padding: var(--space-1) 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.weekstrip__name {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.weekstrip__number {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.weekstrip__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1px solid var(--color-text-faint);
+  border-radius: var(--radius-full);
+}
+
+.weekstrip__day[data-state='all'] .weekstrip__dot {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 6px rgb(var(--accent-rgb) / 0.5);
+}
+
+.weekstrip__day[data-state='some'] .weekstrip__dot {
+  background: linear-gradient(90deg, var(--color-accent) 50%, transparent 50%);
+  border-color: var(--color-accent);
+}
+
+.weekstrip__day[data-state='none'] .weekstrip__dot {
+  border-color: var(--color-danger);
+}
+
+.weekstrip__day[data-state='open'] .weekstrip__dot {
+  border-color: var(--color-accent-50);
+}
+
+.weekstrip__day[data-state='empty'] .weekstrip__dot {
+  border-style: dashed;
+  opacity: 0.5;
+}
+
+.weekstrip__day[data-state='future'] .weekstrip__dot {
+  border-color: var(--color-accent-50);
+}
+
+.weekstrip__day[data-today='true'] .weekstrip__name {
+  color: var(--color-accent);
+}
+
+.weekstrip__day[data-selected='true'] {
+  background: var(--color-accent-10);
+  border-color: var(--color-accent-50);
+}
+
+span.weekstrip__day {
+  opacity: 0.45;
+}
+
+@media (hover: hover) {
+  a.weekstrip__day:hover {
+    border-color: var(--color-accent-50);
+  }
+}
+
+/* overzicht per week of maand */
+.overview__nav {
+  display: grid;
+  grid-template-columns: var(--size-tap) 1fr var(--size-tap);
+  align-items: center;
+  margin-top: var(--space-3);
+  text-align: center;
+}
+
+.overview__label {
+  margin: 0;
+  font-weight: var(--font-weight-bold);
+  text-transform: capitalize;
+}
+
+.overview__summary {
+  margin: var(--space-1) 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.overview__dows,
+.overview__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.overview__dows {
+  margin-bottom: var(--space-1);
+  color: var(--color-text-faint);
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.overview__cell {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 1px;
+  aspect-ratio: 1;
+  min-height: 2.5rem;
+  border: 1px solid var(--color-hairline);
+  border-radius: 8px;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.overview__grid--week .overview__cell {
+  aspect-ratio: auto;
+  min-height: 4rem;
+}
+
+.overview__number {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.overview__count {
+  font-size: var(--font-size-2xs);
+  opacity: 0.85;
+}
+
+.overview__cell[data-state='outside'] {
+  visibility: hidden;
+}
+
+.overview__cell[data-state='empty'],
+.overview__cell[data-state='open'],
+.overview__cell[data-state='future'] {
+  border-style: dashed;
+  color: var(--color-text-muted);
+}
+
+.overview__cell[data-level='0'] {
+  background: var(--color-danger-12);
+  border-color: rgb(var(--danger-rgb) / 0.5);
+}
+
+.overview__cell[data-level='1'] {
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  border-color: var(--color-accent-50);
+}
+
+.overview__cell[data-level='2'] {
+  background: color-mix(in srgb, var(--color-accent) 36%, transparent);
+  border-color: var(--color-accent-50);
+}
+
+.overview__cell[data-level='3'] {
+  background: color-mix(in srgb, var(--color-accent) 62%, transparent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.overview__cell[data-level='4'] {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+  box-shadow: 0 0 8px rgb(var(--accent-rgb) / 0.3);
+}
+
+.overview__cell[data-today='true'] {
+  outline: 2px solid var(--color-text);
+  outline-offset: 1px;
+}
+
+@media (hover: hover) {
+  a.overview__cell:hover {
+    filter: brightness(1.15);
+  }
+}

@@ -6,6 +6,8 @@ import { scheduleAt } from '../domain/schedule.js';
 import { buildHabitStats } from '../domain/stats.js';
 import { pickTip } from './tips.js';
 
+export const NOTES_SHOWN = 5;
+
 /** In welke eenheid telt de reeks? 'day' | 'week' | 'month' */
 export function streakSpan(habit, units, today) {
   const last = units.at(-1);
@@ -73,6 +75,7 @@ export function buildHabitDetail({ habit, snapshot, today }) {
     remainingDays: Math.max(0, graduationDays - stats.activeDays),
     phaseBar: phaseBar({ activeDays: stats.activeDays, graduationDays, graduated: stats.graduated }),
     pausedNow,
+    notes: mine.checkIns.filter((c) => typeof c.note === 'string' && c.note !== '').sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, NOTES_SHOWN).map((c) => ({ date: c.date, status: c.status, note: c.note })),
     useAutomaticity: habitRatings.length > 0,
     latestRating,
     ratingThisWeek: habitRatings.find((r) => r.weekStart === thisWeek) ?? null,

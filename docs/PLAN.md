@@ -1,6 +1,6 @@
 # Habit Builder – Plan & Requirements
 
-Status: concept, wacht op akkoord · Datum: 2026-10-15
+Status: **versie 1** · Bijgewerkt: 2026-10-16 (de eerste versie was een concept van 2026-10-15)
 
 ## 1. Doel en scope
 
@@ -27,14 +27,49 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | M1 domeinlogica + tests | klaar |
 | M2 lokale UI (habits, Vandaag, stapel, backfill, undo) | klaar |
 | Teller-habits (bv. 8 glazen water) en sjablonen | klaar |
-| M6 (deels) Moda-design op de bestaande schermen, lokale fonts | klaar |
+| M6 Moda-design, lokale fonts, toegankelijkheidsronde en prestatiemeting (zie §3.5) | klaar |
 | Thema's: v0lky1 Theme en Mel Theme (Pokémon), kiesbaar in Instellingen | klaar |
 | Desktopweergave: zijbalk en twee kolommen vanaf 960px, tablet vanaf 720px, mobiel ongewijzigd (`styles/layout.css`) | klaar |
 | M3 detailpagina (sterkte, fases, heatmap), tips, ingeburgerd-flow, achievements, automatisme, review, export/import | klaar |
 | IndexedDB-migraties (v1 naar v2 naar v3) getest | klaar |
 | M4 Supabase, auth (Google + e-mailcode), sync, keepalive | klaar en op het echte project getest |
 | M5 PWA: manifest, icoon, offline start, updatemelding, installatieknop | klaar |
-| M7 ochtendherinnering (Web Push): code, tests en stappenplan klaar; wacht op de server-inrichting (`docs/M7-SETUP.md`) en een test op een echte telefoon | in uitvoering |
+| M7 ochtendherinnering (Web Push): server ingericht, de testmelding komt aan op een echte telefoon. De melding op het ingestelde tijdstip via de planning moet nog één keer in het echt gezien worden | bijna klaar |
+| FAB, lege toestanden, weekstrook, week-/maandoverzicht, notities, herstelmoment, volgorde van habits, privacylink in de app | klaar |
+
+## Dekking van de eisen (stand versie 1)
+
+De IDs verwijzen naar §3. "Klaar" = gebouwd en met tests of een browsertest afgedekt.
+
+| Eis | Stand | Opmerking |
+|---|---|---|
+| F1 habits beheren | klaar | aanmaken, bewerken, pauzeren, archiveren, verwijderen (zacht) |
+| F2 cadence-typen | klaar | vaste weekdagen, N× per week, dag van de maand, N× per maand |
+| F3 cadence wijzigen met ingangsdatum | klaar | schema-versies, geschiedenis blijft |
+| F4 startdatum in de toekomst | klaar | staat onder "Gepland" tot de startdag |
+| F5 doel met aantal | klaar | tellers (bv. 8 glazen) |
+| F6 templates | klaar | |
+| F7 volgorde instelbaar | klaar | knop "Volgorde" op Habits, pijlen per habit; geldt ook op Vandaag |
+| F10 Vandaag | klaar | afvinken, overslaan (met notitie), minimale versie |
+| F11 stapel | klaar | |
+| F12 terugval in de stapel | klaar | afgeleid, niet gemuteerd |
+| F13 terugwerkend invullen en undo | klaar | tot 14 dagen terug |
+| F14 notitie per check-in | klaar | veld in de acties-dialoog, staat bij de habit, laatste vijf op de detailpagina |
+| F15 pauzemodus | klaar | per habit en globaal |
+| F16 dag-navigatie en weekweergave | klaar | vorige/volgende dag en een weekstrook (ma t/m zo) onder de kop |
+| F20 cijfers per habit | klaar | |
+| F21 heatmap en week/maand-overzicht | klaar | heatmap per habit (6 weken); op Voortgang een overzicht per week of maand |
+| F22 ingeburgerd-flow | klaar | inclusief onderhoudsmodus |
+| F23 achievements | klaar | |
+| F24 tips | klaar | per fase en situatie op de detailpagina; op Vandaag een **herstelmoment** na een gemiste dag (met je "waarom") |
+| F25 automatisme en review | klaar | |
+| F30 inloggen | klaar | e-mailcode én Google |
+| F31 offline en sync | klaar | |
+| F32 export en import | klaar | |
+| F33 account verwijderen | klaar | |
+| F34 instellingen | klaar | dagwissel en tijdzone in Instellingen; de herinneringstijd per apparaat in de herinneringskaart |
+| F35 ochtendherinnering | bijna klaar | zie M7 hierboven |
+| F36 installeerbaar | klaar | |
 
 ## 2. Gewoontetheorie die in het product zit
 
@@ -101,6 +136,11 @@ Prioriteit: **M** = must (v1), **S** = should (v1 als het past), **C** = could (
 - **Privacy:** minimale data, notities zijn privé, volledige verwijdering mogelijk, korte privacyverklaring in de app.
 - **Onderhoudbaarheid:** domeinlogica puur en getest; één bron voor constanten.
 
+**Gemeten in versie 1**
+- **Prestaties:** met 15 habits en een jaar aan check-ins (± 4.400) staat Vandaag er na ~0,2 s; met een 4× trager gemaakte processor (ongeveer een middenklasse-telefoon) na ~0,5 s. De eis was onder 1 s. Een eerste opzet van de weekstrook rekende de hele geschiedenis zeven keer door (1,2 s); dat is opgelost door alleen de laatste maanden te gebruiken, met een test die bewijst dat de uitkomst gelijk blijft.
+- **Toegankelijkheid:** een geautomatiseerde ronde in de browser controleert op elke pagina: taal en koppenstructuur, een toegankelijke naam voor alles wat bedienbaar is (via de accessibility-boom), minimaal 44×44 px tikvlak, zichtbare focus, een "Naar de inhoud"-link, gedrag van dialogen (focus erin, Escape sluit, focus terug), 200% tekstgrootte zonder horizontaal scrollen en "minder beweging". Contrast (WCAG AA) wordt per thema getest. **Niet gedaan:** controle met een echte schermlezer (TalkBack/VoiceOver).
+- **Privacy:** de privacyverklaring en voorwaarden staan als link in Instellingen (en op het inlogscherm).
+
 ### Buiten scope voor v1
 Sociale functies, native app, iOS-push, AI-coach, negatieve habits ("stoppen met X"), widgets, meerdere talen.
 
@@ -150,6 +190,8 @@ Maand met 28/29/30/31 dagen en dag-van-de-maand 31; week- en maandwissel; zomer-
 > de records zoals de app ze gebruikt.
 
 ## 5. Datamodel (Supabase / Postgres, spiegel in IndexedDB)
+
+> **De actuele beschrijving staat in [DATAMODEL.md](DATAMODEL.md).** De tabellen hieronder zijn het oorspronkelijke ontwerp; zie ook de afwijking hierboven (één tabel `records`) en het blok "Afwijkingen van het ontwerp" verderop.
 
 Alle tabellen hebben client-gegenereerde `id uuid`, `user_id`, `created_at`, `updated_at` (server-trigger) en `deleted_at` (soft delete voor sync). RLS: `user_id = auth.uid()` voor select, insert, update en delete.
 
@@ -235,7 +277,22 @@ M7 staat achteraan, omdat push een Edge Function, VAPID-sleutels en pg_cron vraa
 | R8 | Veel gebruikersdata in vanilla JS geeft XSS-risico. | Geen `innerHTML` met gebruikersdata, CSP, lint-regel/check in CI. |
 | R9 | Meerdere gebruikers brengt AVG-verplichtingen met zich mee. | Dataminimalisatie, accountverwijdering, korte privacyverklaring, geen tracking. |
 
-## 9. Wat ik van jou nodig heb
+### Afwijkingen van het ontwerp (besloten tijdens de bouw)
+
+| Plan | Gebouwd | Waarom |
+|---|---|---|
+| tabellen per soort record, `profiles` | één tabel `records` plus `push_subscriptions`; instellingen zijn een record | minder SQL en migraties; de server hoeft de records niet te begrijpen |
+| `supabase/functions/delete-account` | SQL-functie `delete_my_account()` | eenvoudiger en veiliger: geen service-sleutel nodig |
+| `send-morning-reminders` | `send-reminders`, één bestand zonder imports | plakbaar in het dashboard en testbaar |
+| tips, achievements, templates als JSON | JavaScript-modules in `src/content/` | geen fetch nodig, werkt offline en in tests |
+| `local-store.js`, `supabase-store.js` | `idb-store.js`, `memory-store.js`, `supabase-remote.js` | naamgeving tijdens de bouw |
+| (niet in het plan) | thema's (v0lky1, Mel), desktopweergave, Google-login, tellers, FAB, lege toestanden | wensen na de eerste oplevering |
+
+### Later (na versie 1)
+
+Ideeën die bewust niet in versie 1 zitten: een herinnering voor de avond of voor een gemiste dag, push op de iPhone (waarschijnlijk mogelijk voor een geïnstalleerde app, ongetest), zoeken door notities, een tweede taal, een controle met een echte schermlezer.
+
+## 9. Wat ik van jou nodig had (afgerond)
 1. Supabase-project aanmaken (alleen de **URL** en **anon key** delen, nooit de service-key).
 2. GitHub-repo (naam bepaalt het Pages-subpad) en Pages op "GitHub Actions" zetten.
 3. Een SMTP-keuze (voorstel: Resend) vóór M4.

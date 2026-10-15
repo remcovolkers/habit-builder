@@ -25,20 +25,26 @@ export function buildToday({ bundles, dayPlans = [], today }) {
 
     let loggedToday;
     let valueToday = null;
+    let noteToday = null;
     for (const c of checkIns) {
       if (c.date === today) {
         loggedToday = c.status;
         valueToday = c.value ?? null;
+        noteToday = c.note ?? null;
       }
     }
     const pausedToday = pauses.some((p) => today >= p.from && (p.to == null || today <= p.to));
     if (pausedToday && loggedToday === undefined) continue;
 
     const units = computeUnits({ habit, checkIns, pauses, today });
-    const base = { habitId: habit.id, loggedToday: loggedToday ?? null, valueToday, doneToday: counts(loggedToday) };
+    const base = { habitId: habit.id, loggedToday: loggedToday ?? null, valueToday, noteToday, doneToday: counts(loggedToday) };
 
     const dayUnit = units.find((u) => u.kind === 'day' && u.start === today);
-    if (dayUnit) scheduled.push({ ...base, kind: 'day', unit: dayUnit, overdue: false });
+    if (dayUnit) {
+      // herstelmoment (PLAN §2): de vorige geplande dag is gemist, dit is de eerstvolgende gelegenheid
+      const previous = units.filter((u) => u.kind === 'day' && u.end < today).at(-1);
+      scheduled.push({ ...base, kind: 'day', unit: dayUnit, overdue: false, recovery: loggedToday === undefined && previous?.status === 'missed' });
+    }
 
     const monthDayUnit = units.find(
       (u) =>

@@ -10,6 +10,9 @@ export const WEEK_STARTS_ON = 'monday';
 /** Aantal dagen waarna terugwerkend invullen of corrigeren niet meer kan. */
 export const BACKFILL_DAYS = 14;
 
+/** Langste notitie (of reden bij overslaan) bij een check-in. */
+export const NOTE_MAX_LENGTH = 200;
+
 /** Hoeveel dagen vooruit een flexibele habit ingepland mag worden. */
 export const PLAN_AHEAD_DAYS = 7;
 

@@ -4,6 +4,7 @@ import { notifyChanged, state } from '../state.js';
 import { showToast } from '../components/toast.js';
 import { nl } from '../../content/nl.js';
 import { emptyState } from '../components/empty-state.js';
+import { overviewSection } from '../components/overview.js';
 import { statsForHabit, streakSpan } from '../../app/habit-detail.js';
 import { saveWeeklyReview } from '../../app/actions.js';
 import { formatDateShort } from '../../app/format.js';
@@ -92,6 +93,7 @@ export function statsView() {
             habits.length === 0
               ? emptyState({ art: 'stats', title: nl.stats.emptyTitle, text: nl.stats.empty, cta: { href: '#/habits/new', label: nl.habits.new } })
               : h('div', { class: 'detail' },
+                overviewSection(snapshot, today),
                 h('section', { class: 'tiles' },
                   h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.week), h('span', { class: 'tile__value' }, String(doneLastWeek))),
                   h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.graduated), h('span', { class: 'tile__value' }, String(graduated)),

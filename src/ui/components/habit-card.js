@@ -94,5 +94,21 @@ export function habitCard(entry, { canLog, onToggle, onMore, onAdjust }) {
     'aria-label': nl.today.more(habit.name),
     onclick: () => onMore(entry),
   }, '⋯'),
-  isCounter ? counterControl(entry, { canLog, onAdjust }) : null);
+  isCounter ? counterControl(entry, { canLog, onAdjust }) : null,
+  extras(entry, state));
+}
+
+/** Onder de kaart over de volle breedte: het herstelmoment (alleen als de habit nog open staat) en de notitie van vandaag. */
+function extras(entry, state) {
+  const { habit } = entry;
+  const blocks = [];
+  if (entry.recovery === true && state === 'open') {
+    blocks.push(h('div', { class: 'habit-card__recovery' },
+      h('span', { class: 'badge badge--recovery' }, nl.today.recovery.badge),
+      h('p', null, nl.today.recovery.text),
+      habit.minimalVersion && !habit.counter ? h('p', null, nl.today.recovery.minimal(habit.minimalVersion)) : null,
+      habit.why ? h('p', { class: 'habit-card__why' }, nl.today.recovery.why(habit.why)) : null));
+  }
+  if (entry.noteToday) blocks.push(h('p', { class: 'habit-card__note' }, `“${entry.noteToday}”`));
+  return blocks.length > 0 ? h('div', { class: 'habit-card__extra' }, ...blocks) : null;
 }

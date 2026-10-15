@@ -43,7 +43,7 @@
 }
 
 .button--small {
-  min-height: 2.25rem;
+  min-height: var(--size-tap); /* klein van opmaak, niet van tikvlak (minstens 44px) */
   padding: 0 var(--space-3);
   font-size: var(--font-size-xs);
 }

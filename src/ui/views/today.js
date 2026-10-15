@@ -9,6 +9,8 @@ import { ring } from '../components/ring.js';
 import { icon } from '../svg.js';
 import { mascot } from '../components/mascot.js';
 import { emptyState } from '../components/empty-state.js';
+import { weekStrip } from '../components/week-strip.js';
+import { buildWeekStrip } from '../../app/overview.js';
 import { fab } from '../components/fab.js';
 import { account, dismissNudge, nudgeDismissed, nudgeElement } from '../account.js';
 import { nl } from '../../content/nl.js';
@@ -17,7 +19,7 @@ import { adjustCounter, clearCheckIn, logCheckIn, planHabit, RuleError, unplanHa
 import { counterDoneValue } from '../../domain/counter.js';
 import { datesBetween, formatDateLong, greetingFor, localHour, relativeDayLabel } from '../../app/format.js';
 import { addDays, diffDays, isValidDate } from '../../domain/dates.js';
-import { BACKFILL_DAYS, PLAN_AHEAD_DAYS } from '../../domain/constants.js';
+import { BACKFILL_DAYS, NOTE_MAX_LENGTH, PLAN_AHEAD_DAYS } from '../../domain/constants.js';
 
 const dayHref = (date, today) => (date === today ? '#/today' : `#/today?date=${date}`);
 
@@ -57,12 +59,15 @@ export function todayView({ query }) {
 
   return liveView({
     className: 'today',
-    load: async () => buildDayView({ snapshot: await state.repo.snapshot(), date, today: state.today }),
-    render: (view) => renderDay(view),
+    load: async () => {
+      const snapshot = await state.repo.snapshot();
+      return { view: buildDayView({ snapshot, date, today: state.today }), week: buildWeekStrip({ snapshot, date, today: state.today }) };
+    },
+    render: ({ view, week }) => renderDay(view, week),
   });
 }
 
-function renderDay(view) {
+function renderDay(view, week) {
   const { today } = state;
   const { repo } = state;
   const { date } = view;
@@ -84,7 +89,8 @@ function renderDay(view) {
 
   function more(entry) {
     const { habit } = entry;
-    const reason = h('input', { type: 'text', class: 'input', maxlength: 120, 'aria-label': nl.today.actions.skipReason, placeholder: nl.today.actions.skipReason });
+    const noteInput = h('input', { id: 'noteInput', type: 'text', class: 'input', maxlength: NOTE_MAX_LENGTH, value: entry.noteToday ?? '', placeholder: nl.today.actions.notePlaceholder });
+    const note = () => noteInput.value.trim() || null;
     const logged = entryState(entry) !== 'open';
     const actions = [];
     if (view.canLog) {
@@ -92,21 +98,31 @@ function renderDay(view) {
       actions.push({
         label: habit.counter ? nl.today.actions.goalReached : nl.today.actions.done,
         variant: 'primary',
-        onClick: () => perform(() => log(habit.id, 'done', null, doneValue), nl.today.toasts.done(habit.name)),
+        onClick: () => perform(() => log(habit.id, 'done', note(), doneValue), nl.today.toasts.done(habit.name)),
       });
       if (habit.minimalVersion && !habit.counter) {
-        actions.push({ label: nl.today.actions.minimal(habit.minimalVersion), onClick: () => perform(() => log(habit.id, 'minimal'), nl.today.toasts.minimal(habit.name)) });
+        actions.push({ label: nl.today.actions.minimal(habit.minimalVersion), onClick: () => perform(() => log(habit.id, 'minimal', note()), nl.today.toasts.minimal(habit.name)) });
       }
       actions.push({
         label: nl.today.actions.skip,
-        onClick: () => perform(() => log(habit.id, 'skipped', reason.value.trim() || null), nl.today.toasts.skipped(habit.name)),
+        onClick: () => perform(() => log(habit.id, 'skipped', note()), nl.today.toasts.skipped(habit.name)),
       });
+      if (logged) {
+        actions.push({
+          label: nl.today.actions.saveNote,
+          onClick: () => perform(() => log(habit.id, entry.loggedToday, note(), entry.valueToday), nl.today.actions.noteSaved(habit.name)),
+        });
+      }
       if (logged) actions.push({ label: nl.today.actions.clear, onClick: () => perform(() => clearCheckIn(repo, { habitId: habit.id, date }, today), nl.today.toasts.cleared(habit.name)) });
     }
     if (view.canPlan && entry.plannedToday && !logged) {
       actions.push({ label: nl.today.actions.unplan, onClick: () => perform(() => unplanHabit(repo, { habitId: habit.id, date }), nl.today.toasts.unplanned(habit.name)) });
     }
-    openDialog({ title: nl.today.actions.title(habit.name), content: view.canLog ? reason : null, actions });
+    openDialog({
+      title: nl.today.actions.title(habit.name),
+      content: view.canLog ? h('div', { class: 'field' }, h('label', { class: 'field__label', for: 'noteInput' }, nl.today.actions.note), noteInput) : null,
+      actions,
+    });
   }
 
   function planOnDay(entry, planDate) {
@@ -178,7 +194,7 @@ function renderDay(view) {
   // Op mobiel onder elkaar; op desktop de dag links en de stapel (met zetje en feest) rechts.
   const side = [poolSection, nudge, celebrate].filter(Boolean);
   return h('div', { class: 'today__inner' },
-    header(view),
+    header(view, week),
     banner(view),
     view.groups.length === 0 && view.pool.length === 0 ? todayEmpty(view) : null,
     h('div', { class: 'today__columns' },
@@ -193,7 +209,7 @@ function dayLink(date, label, symbol, enabled) {
     : h('span', { class: 'icon-button is-disabled', 'aria-hidden': 'true' }, icon(symbol));
 }
 
-function header(view) {
+function header(view, week) {
   const { today, settings } = state;
   const { date, progress } = view;
   const prev = addDays(date, -1);
@@ -211,6 +227,7 @@ function header(view) {
     h('div', { class: 'today__hero' },
       h('h1', { class: 'page-title today__title' }, ...title),
       progress.total > 0 ? ring(progress.done, progress.total) : null),
+    view.hasHabits ? weekStrip(week, { hrefFor: (d) => dayHref(d, state.today) }) : null,
     date !== today ? h('a', { class: 'today__back', href: '#/today' }, nl.today.backToToday) : null);
 }
 

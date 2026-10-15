@@ -380,7 +380,16 @@ select.input {
   gap: var(--space-2);
 }
 
+.nudge a,
 .nudge__dismiss {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-tap);
+}
+
+.nudge__dismiss {
+  min-width: var(--size-tap);
+  justify-content: center;
   margin-left: auto;
   background: none;
   border: 0;

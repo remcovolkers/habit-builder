@@ -4,7 +4,7 @@
   justify-items: center;
   gap: var(--space-3);
   max-width: 28rem;
-  margin: clamp(var(--space-2), 4dvh, var(--space-10)) auto 0;
+  margin: clamp(var(--space-2), 4svh, var(--space-10)) auto 0;
   padding: var(--space-4);
   color: var(--color-text-muted);
   text-align: center;
@@ -13,8 +13,8 @@
 .empty__art {
   display: grid;
   place-items: center;
-  width: clamp(4.5rem, 13dvh, 6.5rem);
-  height: clamp(4.5rem, 13dvh, 6.5rem);
+  width: clamp(4.5rem, 13svh, 6.5rem);
+  height: clamp(4.5rem, 13svh, 6.5rem);
   margin-bottom: var(--space-2);
   background: var(--color-accent-10);
   border: 1px solid var(--color-border);

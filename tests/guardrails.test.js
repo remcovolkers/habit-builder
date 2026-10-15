@@ -73,3 +73,10 @@ test('D2: index.html gebruikt alleen relatieve paden (Pages draait op een subpad
   const absolute = [...html.matchAll(/\b(?:href|src)="(\/[^"]*)"/g)].map((m) => m[1]);
   assert.deepEqual(absolute, []);
 });
+
+test('CSS: de pagina is nooit hoger dan het scherm — min-height gebruikt svh, niet dvh (dvh verandert met de adresbalk van Chrome op Android)', () => {
+  const css = ['styles/base.css', 'styles/components/empty.css', 'styles/components/mascot.css']
+    .map((f) => readFileSync(join(ROOT, f), 'utf8')).join('\n');
+  assert.doesNotMatch(css, /min-height:\s*100dvh/);
+  assert.doesNotMatch(css, /\d+dvh/);
+});

@@ -5,6 +5,7 @@ import { DEFAULT_GRADUATION_DAYS, PLAN_AHEAD_DAYS } from '../domain/constants.js
 import { clampCounter, counterDoneValue, counterStatus } from '../domain/counter.js';
 import { canBackfill } from '../domain/rules.js';
 import { scheduleAt } from '../domain/schedule.js';
+import { moveHabit } from './ordering.js';
 
 export class RuleError extends Error {
   constructor(code) {
@@ -50,6 +51,19 @@ export async function clearCheckIn(repo, { habitId, date }, today) {
   const previous = await repo.getCheckIn(habitId, date);
   await repo.clearCheckIn(habitId, date);
   return { undo: () => restoreCheckIn(repo, habitId, date, previous) };
+}
+
+// --- volgorde van habits -----------------------------------------------------------------------
+
+/** Verplaatst een habit een plek omhoog (-1) of omlaag (+1) binnen de getoonde lijst. */
+export async function reorderHabit(repo, { habitId, visibleIds, direction }) {
+  const habits = await repo.listHabits();
+  const changes = moveHabit({ habits, visibleIds, id: habitId, direction });
+  for (const { id, sortOrder } of changes) {
+    const habit = habits.find((item) => item.id === id);
+    await repo.saveHabit({ ...habit, sortOrder });
+  }
+  return changes.length;
 }
 
 // --- dagplannen -------------------------------------------------------------------------------

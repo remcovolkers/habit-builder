@@ -432,3 +432,88 @@
 .card--flush {
   padding: 0;
 }
+
+/* ---- herstelmoment en notitie op de kaart van vandaag ---- */
+.habit-card__extra {
+  display: grid;
+  gap: var(--space-2);
+  grid-column: 1 / -1;
+}
+
+.habit-card__recovery {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--color-accent-10);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-button);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.habit-card__recovery p {
+  margin: 0;
+}
+
+.habit-card__why {
+  color: var(--color-text);
+  font-style: italic;
+}
+
+.badge--recovery {
+  justify-self: start;
+  background: var(--color-accent-16);
+  color: var(--color-accent);
+}
+
+.habit-card__note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+/* ---- volgorde aanpassen ---- */
+.habits__tools {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.habit-row[data-reordering='true'] {
+  display: flex;
+  align-items: center;
+}
+
+.habit-row[data-reordering='true'] .habit-row__link {
+  flex: 1;
+  min-width: 0;
+}
+
+.habit-row__moves {
+  display: flex;
+  flex: none;
+  gap: var(--space-1);
+  padding-right: var(--space-2);
+}
+
+/* ---- notities op de detailpagina ---- */
+.notes__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notes__meta {
+  color: var(--color-text-faint);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.notes__text {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}

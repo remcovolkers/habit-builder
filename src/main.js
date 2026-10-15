@@ -60,6 +60,12 @@ function markActive({ path }) {
 }
 
 const outlet = document.getElementById('app');
+
+// "Naar de inhoud": wie met het toetsenbord werkt hoeft niet elke keer door de navigatie heen
+document.getElementById('skipLink')?.addEventListener('click', () => {
+  outlet.focus();
+  outlet.scrollIntoView({ block: 'start' });
+});
 fill(outlet, h('p', { class: 'muted' }, nl.app.loading));
 
 const repo = await openRepository();

@@ -37,6 +37,8 @@ export function matchRoute(routes, path) {
  * routes: [{ path, render(ctx) -> Node }]; ctx = { path, params, query }
  */
 export function startRouter({ routes, outlet, notFound, onChange }) {
+  let firstRender = true;
+
   function resolve() {
     const { path, query } = parseHash(location.hash);
     const match = matchRoute(routes, path);
@@ -50,7 +52,10 @@ export function startRouter({ routes, outlet, notFound, onChange }) {
     }
     fill(outlet, view);
     window.scrollTo(0, 0); // een nieuwe pagina begint bovenaan, niet waar de vorige stond
-    outlet.focus({ preventScroll: true });
+    // focus naar de pagina bij een routewissel (schermlezers lezen de nieuwe pagina voor); niet bij het eerste laden,
+    // anders begint de eerste Tab al in de inhoud en komt het toetsenbord nooit bij "Naar de inhoud" of de navigatie
+    if (!firstRender) outlet.focus({ preventScroll: true });
+    firstRender = false;
     onChange?.(ctx);
   }
   window.addEventListener('hashchange', resolve);

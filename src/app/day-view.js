@@ -7,6 +7,36 @@ const byHabitOrder = (a, b) =>
   (a.habit.sortOrder ?? 0) - (b.habit.sortOrder ?? 0) || a.habit.name.localeCompare(b.habit.name, 'nl');
 
 /**
+ * Groepeert de gegevens per habit, één keer. Wie veel dagen achter elkaar nodig heeft (weekstrook, overzicht) maakt dit één keer
+ * en geeft het aan elke buildDayView mee.
+ *
+ * `from` (optioneel): rekent alleen met gegevens vanaf die datum. Dat is veel sneller bij een lange geschiedenis en geeft
+ * dezelfde uitkomst voor dagen die minstens een maand na `from` liggen (een week of maand is dan nooit doormidden gesneden).
+ */
+export function prepareSnapshot(snapshot, from = null) {
+  const { habits, checkIns, pauses } = snapshot;
+  const checkInsBy = new Map();
+  const pausesBy = new Map();
+  for (const c of checkIns) {
+    if (from !== null && c.date < from) continue;
+    if (!checkInsBy.has(c.habitId)) checkInsBy.set(c.habitId, []);
+    checkInsBy.get(c.habitId).push(c);
+  }
+  for (const p of pauses) {
+    if (!pausesBy.has(p.habitId)) pausesBy.set(p.habitId, []);
+    pausesBy.get(p.habitId).push(p);
+  }
+  return {
+    habitById: new Map(habits.map((h) => [h.id, h])),
+    bundles: habits.map((habit) => ({
+      habit: from !== null && habit.startDate < from ? { ...habit, startDate: from } : habit,
+      checkIns: checkInsBy.get(habit.id) ?? [],
+      pauses: pausesBy.get(habit.id) ?? [],
+    })),
+  };
+}
+
+/**
  * snapshot: { habits, checkIns, pauses, dayPlans }
  * date: de dag die getoond wordt; today: de echte "vandaag" (met dagwissel).
  *
@@ -14,14 +44,9 @@ const byHabitOrder = (a, b) =>
  * canLog:  afvinken mag (vandaag en tot 14 dagen terug)
  * canPlan: stapel-items mogen aan deze dag worden toegevoegd (vandaag en later)
  */
-export function buildDayView({ snapshot, date, today }) {
-  const { habits, checkIns, pauses, dayPlans } = snapshot;
-  const habitById = new Map(habits.map((h) => [h.id, h]));
-  const bundles = habits.map((habit) => ({
-    habit,
-    checkIns: checkIns.filter((c) => c.habitId === habit.id),
-    pauses: pauses.filter((p) => p.habitId === habit.id),
-  }));
+export function buildDayView({ snapshot, date, today, prepared = null }) {
+  const { habits, dayPlans } = snapshot;
+  const { habitById, bundles } = prepared ?? prepareSnapshot(snapshot);
 
   const day = buildToday({ bundles, dayPlans, today: date });
   const attach = (entry) => ({ ...entry, habit: habitById.get(entry.habitId) });

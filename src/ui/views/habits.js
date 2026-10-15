@@ -6,7 +6,8 @@ import { nl } from '../../content/nl.js';
 import { emptyState } from '../components/empty-state.js';
 import { fab } from '../components/fab.js';
 import { formatDateShort, formatSchedule } from '../../app/format.js';
-import { pauseAll, resumeAll } from '../../app/actions.js';
+import { pauseAll, reorderHabit, resumeAll } from '../../app/actions.js';
+import { byOrder } from '../../app/ordering.js';
 import { scheduleAt } from '../../domain/schedule.js';
 
 export const currentSchedule = (habit, today) => scheduleAt(habit.schedules, today) ?? habit.schedules[0].schedule;
@@ -20,16 +21,35 @@ function sectionOf(habit, pauses, today) {
   return isPausedOn(pauses, today) ? 'paused' : 'active';
 }
 
-function row(habit, section, today) {
+// of je de volgorde aanpast; blijft staan als het scherm opnieuw wordt getekend
+let reordering = false;
+
+function moveButton(habit, direction, ids, enabled) {
+  const up = direction < 0;
+  return h('button', {
+    type: 'button',
+    class: 'icon-button habit-row__move',
+    dataset: { focusKey: `move:${habit.id}:${up ? 'up' : 'down'}`, focusFallback: `move:${habit.id}:${up ? 'down' : 'up'}` },
+    'aria-label': up ? nl.habits.reorder.up(habit.name) : nl.habits.reorder.down(habit.name),
+    disabled: !enabled,
+    onclick: async () => {
+      await reorderHabit(state.repo, { habitId: habit.id, visibleIds: ids, direction });
+      notifyChanged();
+    },
+  }, up ? '↑' : '↓');
+}
+
+function row(habit, section, today, order = null) {
   const meta = [formatSchedule(currentSchedule(habit, today))];
   if (section === 'planned') meta.push(nl.habits.startsOn(formatDateShort(habit.startDate)));
-  return h('li', { class: 'habit-row', dataset: { color: habit.color, section } },
+  return h('li', { class: 'habit-row', dataset: { color: habit.color, section, reordering: order ? 'true' : null } },
     h('a', { class: 'habit-row__link', href: `#/habits/${encodeURIComponent(habit.id)}` },
       h('span', { class: 'habit-row__icon', 'aria-hidden': 'true' }, habit.icon),
       h('span', { class: 'habit-row__body' },
         h('span', { class: 'habit-row__name' }, habit.name),
         h('span', { class: 'habit-row__meta' }, meta.join(' · '))),
-      h('span', { class: 'habit-row__chevron', 'aria-hidden': 'true' }, '›')));
+      order ? null : h('span', { class: 'habit-row__chevron', 'aria-hidden': 'true' }, '›')),
+    order ? h('div', { class: 'habit-row__moves' }, moveButton(habit, -1, order.ids, order.index > 0), moveButton(habit, 1, order.ids, order.index < order.ids.length - 1)) : null);
 }
 
 export function habitsView() {
@@ -42,7 +62,7 @@ export function habitsView() {
     render: ({ habits, pauses }) => {
       const { today } = state;
       const groups = { active: [], paused: [], planned: [], graduated: [], archived: [] };
-      for (const habit of habits) {
+      for (const habit of [...habits].sort(byOrder)) {
         groups[sectionOf(habit, pauses.filter((p) => p.habitId === habit.id), today)].push(habit);
       }
       const running = [...groups.active, ...groups.paused];
@@ -50,18 +70,31 @@ export function habitsView() {
 
       const section = (key, { collapsed = false } = {}) => {
         if (groups[key].length === 0) return null;
-        const list = h('ul', { class: 'card-list' }, ...groups[key].map((habit) => row(habit, key, today)));
+        const ids = groups[key].map((habit) => habit.id);
+        const canOrder = reordering && !collapsed && ids.length > 1;
+        const list = h('ul', { class: 'card-list' }, ...groups[key].map((habit, index) => row(habit, key, today, canOrder ? { ids, index } : null)));
         const title = nl.habits.sections[key];
         return collapsed
           ? h('details', { class: 'section' }, h('summary', { class: 'section__title' }, `${title} (${groups[key].length})`), list)
           : h('section', { class: 'section' }, h('h2', { class: 'section__title' }, title), list);
       };
 
+      const canReorder = groups.active.length + groups.paused.length + groups.planned.length > 1 && ['active', 'paused', 'planned'].some((k) => groups[k].length > 1);
+      if (!canReorder) reordering = false;
+
       return h('div', null,
         h('header', { class: 'page-header' },
           h('h1', { class: 'page-title' }, nl.habits.title),
           h('a', { class: 'button button--primary desktop-only', href: '#/habits/new' }, nl.habits.new)),
-        running.length > 0
+        canReorder
+          ? h('div', { class: 'habits__tools' },
+            h('button', {
+              type: 'button', id: 'reorderToggle', class: reordering ? 'button button--secondary' : 'button button--ghost', 'aria-pressed': reordering ? 'true' : 'false',
+              onclick: () => { reordering = !reordering; notifyChanged(); },
+            }, reordering ? nl.habits.reorder.done : nl.habits.reorder.start),
+            reordering ? h('p', { class: 'section__hint' }, nl.habits.reorder.hint) : null)
+          : null,
+        running.length > 0 && !reordering
           ? h('button', {
             type: 'button',
             class: 'button button--ghost',
