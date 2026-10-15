@@ -1,0 +1,41 @@
+// Bewaakt de afspraken uit PLAN.md die niet in de gewone logica terugkomen.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
+
+function walk(dir) {
+  return readdirSync(dir).flatMap((name) => {
+    const full = join(dir, name);
+    return statSync(full).isDirectory() ? walk(full) : [full];
+  });
+}
+
+const sourceFiles = ['src', 'tools']
+  .flatMap((d) => walk(join(ROOT, d)))
+  .filter((f) => f.endsWith('.js') || f.endsWith('.mjs'));
+
+test('R8: geen onveilige HTML-injectie in de broncode', () => {
+  const forbidden = /\b(innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval)\b|new Function\(/;
+  const offenders = sourceFiles.filter((f) => forbidden.test(readFileSync(f, 'utf8')));
+  assert.deepEqual(offenders.map((f) => relative(ROOT, f)), []);
+});
+
+test('R3: de service-role key staat nergens in de repo', () => {
+  const files = ['src', 'tools', 'tests', 'docs', 'supabase', '.github']
+    .flatMap((d) => {
+      try { return walk(join(ROOT, d)); } catch { return []; }
+    })
+    .filter((f) => !f.endsWith('guardrails.test.js'));
+  const offenders = files.filter((f) => /service_role|sb_secret_/i.test(readFileSync(f, 'utf8')));
+  assert.deepEqual(offenders.map((f) => relative(ROOT, f)), []);
+});
+
+test('D2: index.html gebruikt alleen relatieve paden (Pages draait op een subpad)', () => {
+  const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
+  const absolute = [...html.matchAll(/\b(?:href|src)="(\/[^"]*)"/g)].map((m) => m[1]);
+  assert.deepEqual(absolute, []);
+});

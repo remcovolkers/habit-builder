@@ -1,0 +1,50 @@
+// Hash-router: GitHub Pages heeft geen SPA-fallback, dus routes leven achter '#'.
+
+export const DEFAULT_PATH = '/today';
+
+/** '#/habits/abc?x=1' -> { path: '/habits/abc', query: { x: '1' } } */
+export function parseHash(hash) {
+  const raw = String(hash ?? '').replace(/^#/, '');
+  const [pathPart, queryPart = ''] = raw.split('?');
+  let path = '/' + pathPart.replace(/^\/+/, '');
+  if (path.length > 1) path = path.replace(/\/+$/, '');
+  if (path === '/') path = DEFAULT_PATH;
+  return { path, query: Object.fromEntries(new URLSearchParams(queryPart)) };
+}
+
+/** Zoekt de eerste route waarvan het patroon past ('/habits/:id'); geeft params terug. */
+export function matchRoute(routes, path) {
+  const segments = path.split('/').filter(Boolean);
+  for (const route of routes) {
+    const pattern = route.path.split('/').filter(Boolean);
+    if (pattern.length !== segments.length) continue;
+    const params = {};
+    const ok = pattern.every((part, i) => {
+      if (part.startsWith(':')) {
+        params[part.slice(1)] = decodeURIComponent(segments[i]);
+        return true;
+      }
+      return part === segments[i];
+    });
+    if (ok) return { route, params };
+  }
+  return null;
+}
+
+/**
+ * Koppelt routes aan een container.
+ * routes: [{ path, render(ctx) -> Node }]; ctx = { path, params, query }
+ */
+export function startRouter({ routes, outlet, notFound, onChange }) {
+  function resolve() {
+    const { path, query } = parseHash(location.hash);
+    const match = matchRoute(routes, path);
+    const ctx = { path, params: match?.params ?? {}, query };
+    const view = match ? match.route.render(ctx) : notFound(ctx);
+    outlet.replaceChildren(view);
+    outlet.focus({ preventScroll: true });
+    onChange?.(ctx);
+  }
+  window.addEventListener('hashchange', resolve);
+  resolve();
+}

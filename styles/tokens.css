@@ -1,0 +1,55 @@
+/* Design tokens. Het Moda-design vervangt later alleen de waarden in dit bestand
+   (en waar nodig de component-CSS); view-CSS gebruikt uitsluitend deze variabelen. */
+:root {
+  color-scheme: light dark;
+
+  /* kleur */
+  --color-bg: #f6f7f5;
+  --color-surface: #ffffff;
+  --color-surface-2: #eef1ee;
+  --color-text: #1b2420;
+  --color-text-muted: #5a6761;
+  --color-border: #d9dfdb;
+  --color-accent: #2f6f5e;
+  --color-accent-contrast: #ffffff;
+  --color-focus: #1d5fd1;
+
+  /* typografie */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --leading: 1.5;
+
+  /* ruimte, vorm, schaduw */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --radius-md: 0.75rem;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.06);
+
+  /* layout */
+  --tap-target: 2.75rem; /* 44px */
+  --content-max: 40rem;
+  --tabbar-height: 4rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #121715;
+    --color-surface: #1a211e;
+    --color-surface-2: #222b27;
+    --color-text: #e8eeea;
+    --color-text-muted: #9aa8a1;
+    --color-border: #2e3a35;
+    --color-accent: #5fb89f;
+    --color-accent-contrast: #0e1512;
+    --color-focus: #7fb0ff;
+    --shadow-sm: none;
+  }
+}
