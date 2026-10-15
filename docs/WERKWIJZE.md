@@ -51,7 +51,7 @@ Pas daarna werkt "beschermen" ook echt: zonder deze regel is het een afspraak, m
 
 - Lokaal: `npm run serve` (http://localhost:5173) toont de branch waar je op staat. Voor een uitrol-achtige proef met service worker: `npm run stage` en `SERVE_ROOT=_site npm run serve`.
 - Op je telefoon kan dat via het IP-adres van je computer, of na een release. Een tweede publieke versie naast productie bestaat niet: GitHub Pages heeft één site per repository.
-- **Let op, de database is gedeeld.** Er is één Supabase-project en dat is productie. Een feature-versie die inlogt, praat dus met de échte gegevens. Probeer schrijf-acties daarom met een testaccount, of anoniem (dan blijft alles op je eigen apparaat).
+- **De database is gescheiden.** Alles wat niet op de productie-site draait (localhost, het IP-adres van je computer) praat met een **lokale testdatabase** (Docker), niet met de echte gegevens. Zie [DEV-OMGEVING.md](DEV-OMGEVING.md). Zolang die niet is ingericht, geldt het oude voorbehoud: probeer schrijf-acties met een testaccount, of anoniem.
 
 ## Wijzigingen aan de database (Supabase) zijn extra voorzichtig
 
@@ -59,10 +59,10 @@ Gebruikers draaien soms nog een oudere app-versie (de app-cache werkt pas bij na
 
 1. **Eerst uitbreiden**: nieuwe kolommen met een standaardwaarde, nieuwe tabellen, nieuwe functies. Daarna pas de app die ze gebruikt uitrollen.
 2. **Nooit in één stap hernoemen of verwijderen** wat de huidige productie-app nog gebruikt. Eerst de app uitrollen die het niet meer nodig heeft; in een latere release opruimen.
-3. Migraties staan in `supabase/migrations/` (genummerd, herhaalbaar) en worden met de hand in de SQL-editor uitgevoerd; de RLS-controle in `supabase/tests/rls-check.mjs` draait mee.
+3. Migraties staan in `supabase/migrations/` (genummerd, herhaalbaar) en worden met de hand in de SQL-editor uitgevoerd; lokaal pakt `npm run db:start` ze zelf op. De server-tests (`tests/server/`, Postgres in Node) draaien mee in `npm test` en in CI, en bewijzen onder meer dat een gebruiker nooit andermans gegevens ziet. Een migratie gaat **eerst lokaal** getest naar productie bij de release, vóórdat de nieuwe app wordt uitgerold.
 4. De Edge Function (`send-reminders`) wordt met de hand geplakt in het dashboard. Houd het bestand in de repo gelijk aan wat er live staat.
 
-Wil je ooit grotere schema-wijzigingen proberen zonder risico, dan is een tweede (gratis) Supabase-project voor ontwikkeling de nette oplossing; `src/config.js` wijst dan op dat project.
+Schema-wijzigingen worden **eerst op de lokale testdatabase** geprobeerd en pas bij de release op productie gezet (zie DEV-OMGEVING.md).
 
 ## Terugdraaien
 
@@ -73,4 +73,4 @@ Wil je ooit grotere schema-wijzigingen proberen zonder risico, dan is een tweede
 
 `npm test` (in CI, bij elke push en pull request) toetst de logica, de data-laag, sync, de service worker, de thema's en de push-functie, plus afspraken als "geen `innerHTML`", "geen service-sleutel in de repo" en "geen `dvh` in hoogtes".
 
-De **browsertests** (de flows in Chrome op telefoon- en desktopformaat) staan nog niet in de repository en draaien dus niet in CI. Die in de repo zetten en in CI draaien is de logische eerste stap om de productieversie echt te beschermen.
+De **sociale functies** hebben ook een aparte workflow, **Integratie** (`.github/workflows/integration.yml`): een lokale Supabase in Docker, de API-controles en een echte browser (123 controles) op elke push naar `develop` en `feature/**` en bij pull requests (± 2 minuten). Die is bewust geen verplichte check; kijk bij een rode run in het logboek en in de schermafbeeldingen (artifact). De overige browsertests (de oudere flows voor habits, Vandaag, thema's en instellingen) staan nog niet in de repository; die in de repo zetten is een logische vervolgstap.

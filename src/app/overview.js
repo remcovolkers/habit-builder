@@ -23,7 +23,7 @@ export function levelFor({ done, total }) {
 }
 
 // Voor een dag in een week of maand is de geschiedenis van de maand daarvoor genoeg (zie prepareSnapshot): dat scheelt veel rekenwerk.
-const horizonFor = (date) => startOfMonth(addMonths(startOfWeek(date), -1));
+export const horizonFor = (date) => startOfMonth(addMonths(startOfWeek(date), -1));
 
 const progressOn = (snapshot, prepared, date, today) => buildDayView({ snapshot, date, today, prepared }).progress;
 

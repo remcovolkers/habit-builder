@@ -10,6 +10,16 @@
   "scripts": {
     "serve": "node tools/serve.mjs",
     "test": "node --test \"tests/**/*.test.js\"",
-    "stage": "node tools/stage.mjs"
+    "stage": "node tools/stage.mjs",
+    "db:start": "npx --yes supabase@2.121.0 start",
+    "db:stop": "npx --yes supabase@2.121.0 stop",
+    "db:status": "npx --yes supabase@2.121.0 status",
+    "db:reset": "npx --yes supabase@2.121.0 db reset",
+    "db:check-social": "node tools/social-check.mjs",
+    "db:check-app": "node tools/social-app-check.mjs",
+    "db:check-browser": "node tools/social-browser-check.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10"
   }
 }
