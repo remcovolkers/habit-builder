@@ -10,6 +10,9 @@ export const WEEK_STARTS_ON = 'monday';
 /** Aantal dagen waarna terugwerkend invullen of corrigeren niet meer kan. */
 export const BACKFILL_DAYS = 14;
 
+/** Hoeveel dagen vooruit een flexibele habit ingepland mag worden. */
+export const PLAN_AHEAD_DAYS = 7;
+
 /** Ingeburgerd: mediaan uit Lally et al. (2009). Per habit overschrijfbaar. */
 export const DEFAULT_GRADUATION_DAYS = 66;
 export const CONSISTENCY_WINDOW_DAYS = 42;

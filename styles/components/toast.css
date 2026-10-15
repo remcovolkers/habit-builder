@@ -1,0 +1,32 @@
+.toast-region {
+  position: fixed;
+  inset: auto var(--space-4) calc(var(--tabbar-height) + var(--space-3) + env(safe-area-inset-bottom)) var(--space-4);
+  display: grid;
+  justify-items: center;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: var(--content-max);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  background: var(--color-text);
+  color: var(--color-bg);
+  border-radius: var(--radius-md);
+  pointer-events: auto;
+}
+
+.toast__action {
+  min-height: var(--tap-target);
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}

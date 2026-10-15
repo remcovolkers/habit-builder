@@ -133,10 +133,10 @@ Alle tabellen hebben client-gegenereerde `id uuid`, `user_id`, `created_at`, `up
 | Tabel | Belangrijkste kolommen |
 |---|---|
 | `profiles` | `user_id`, `display_name`, `timezone`, `day_start_hour`, `reminder_time`, `reminder_enabled` |
-| `habits` | `name`, `icon`, `color`, `daypart`, `start_date`, `status` (planned/active/paused/graduated/archived), `cue`, `why`, `minimal_version`, `graduation_days` (66), `graduated_at`, `sort_order` |
+| `habits` | `name`, `icon`, `color`, `daypart`, `start_date`, `status` (planned/active/graduated/archived; "gepauzeerd" is afgeleid uit `habit_pauses`), `end_date`, `maintenance`, `cue`, `why`, `minimal_version`, `graduation_days` (66), `graduated_at`, `sort_order` |
 | `habit_schedules` | `habit_id`, `effective_from`, `schedule` jsonb (`type`, `weekdays[]`, `count`, `period`, `day_of_month`) |
 | `habit_pauses` | `habit_id`, `from_date`, `to_date` (null = lopend) |
-| `check_ins` | `habit_id`, `date`, `status` (done/minimal/skipped), `value`, `note` – **unique (habit_id, date)** |
+| `check_ins` | `habit_id`, `date`, `status` (done/minimal/skipped), `value`, `note` – **unique (habit_id, date)**. Lokaal is de sleutel de combinatie van habit-id en datum; bij sync wordt op (habit_id, date) ge-upsert. |
 | `day_plans` | `habit_id`, `date` – unique (habit_id, date) |
 | `automaticity_ratings` | `habit_id`, `week_start`, `score` 1–5 |
 | `weekly_reviews` | `week_start`, `went_well`, `adjust` |

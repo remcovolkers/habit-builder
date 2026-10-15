@@ -19,7 +19,7 @@
   min-height: var(--tap-target);
   color: var(--color-text-muted);
   text-decoration: none;
-  font-size: var(--text-sm);
+  font-size: 0.75rem;
 }
 
 .tabbar__item[aria-current='page'] {

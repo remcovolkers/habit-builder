@@ -1,4 +1,5 @@
 // Hash-router: GitHub Pages heeft geen SPA-fallback, dus routes leven achter '#'.
+import { fill } from './ui/dom.js';
 
 export const DEFAULT_PATH = '/today';
 
@@ -40,8 +41,14 @@ export function startRouter({ routes, outlet, notFound, onChange }) {
     const { path, query } = parseHash(location.hash);
     const match = matchRoute(routes, path);
     const ctx = { path, params: match?.params ?? {}, query };
-    const view = match ? match.route.render(ctx) : notFound(ctx);
-    outlet.replaceChildren(view);
+    let view;
+    try {
+      view = match ? match.route.render(ctx) : notFound(ctx);
+    } catch (error) {
+      console.error(error);
+      view = document.createTextNode('Er ging iets mis bij het openen van deze pagina.');
+    }
+    fill(outlet, view);
     outlet.focus({ preventScroll: true });
     onChange?.(ctx);
   }

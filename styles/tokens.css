@@ -13,6 +13,20 @@
   --color-accent: #2f6f5e;
   --color-accent-contrast: #ffffff;
   --color-focus: #1d5fd1;
+  --color-warning: #9a5b00;
+  --color-warning-bg: #fdf0d8;
+  --color-danger: #b3261e;
+  --color-danger-bg: #fbe4e2;
+
+  /* habit-kleuren (c1–c8); de view-CSS kiest er één via data-color */
+  --habit-c1: #2f9e7a;
+  --habit-c2: #3b82f6;
+  --habit-c3: #8b5cf6;
+  --habit-c4: #ec4899;
+  --habit-c5: #f97316;
+  --habit-c6: #d4a017;
+  --habit-c7: #e5484d;
+  --habit-c8: #78838d;
 
   /* typografie */
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -50,6 +64,10 @@
     --color-accent: #5fb89f;
     --color-accent-contrast: #0e1512;
     --color-focus: #7fb0ff;
+    --color-warning: #fbbf24;
+    --color-warning-bg: #3a2c0b;
+    --color-danger: #ff8a85;
+    --color-danger-bg: #3a1614;
     --shadow-sm: none;
   }
 }

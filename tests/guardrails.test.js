@@ -24,8 +24,21 @@ test('R8: geen onveilige HTML-injectie in de broncode', () => {
   assert.deepEqual(offenders.map((f) => relative(ROOT, f)), []);
 });
 
-test('architectuur: src/domain is puur — geen DOM, netwerk, opslag of imports uit ui/data', () => {
-  const domainFiles = walk(join(ROOT, 'src', 'domain')).filter((f) => f.endsWith('.js'));
+test('UI: geen replaceChildren/append/prepend/before/after — die maken van null de tekst "null"; gebruik fill() of h()', () => {
+  const unsafe = /\.(replaceChildren|append|prepend|before|after)\(/;
+  const offenders = sourceFiles
+    .filter((f) => !f.endsWith(join('ui', 'dom.js')) && f.includes(`${join(ROOT, 'src')}`))
+    .filter((f) => {
+      const code = readFileSync(f, 'utf8').replace(/\/\/.*$/gm, '').replace(/document\.body\.append\(/g, '');
+      return unsafe.test(code);
+    });
+  assert.deepEqual(offenders.map((f) => relative(ROOT, f)), []);
+});
+
+test('architectuur: src/domain en src/app zijn puur — geen DOM, netwerk, opslag of imports uit ui/data', () => {
+  const domainFiles = ['domain', 'app']
+    .flatMap((d) => walk(join(ROOT, 'src', d)))
+    .filter((f) => f.endsWith('.js'));
   const impure = /\b(window|document|localStorage|sessionStorage|indexedDB|fetch|navigator|location)\b|from\s+['"]\.\.\/(ui|data)\//;
   const offenders = domainFiles.filter((f) => {
     const code = readFileSync(f, 'utf8').replace(/\/\/.*$/gm, ''); // commentaar mag deze woorden bevatten

@@ -1,0 +1,40 @@
+.today__header {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.daynav {
+  display: grid;
+  grid-template-columns: var(--tap-target) 1fr var(--tap-target);
+  align-items: center;
+  text-align: center;
+}
+
+.daynav__link {
+  display: grid;
+  place-items: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  font-size: var(--text-xl);
+  text-decoration: none;
+}
+
+.daynav__link.is-disabled {
+  opacity: 0.25;
+}
+
+.today__date {
+  font-size: var(--text-lg);
+}
+
+/* alleen de eerste letter: "Donderdag 15 oktober" (maandnamen blijven klein) */
+.today__date::first-letter {
+  text-transform: uppercase;
+}
+
+.today__back {
+  justify-self: center;
+  font-size: var(--text-sm);
+}

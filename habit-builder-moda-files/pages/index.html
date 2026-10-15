@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="nl"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Habit Builder · Vandaag</title>
+<link rel="stylesheet" href="/assets/theme.css">
+<script src="https://cdn.moda.app/runtime-libs/tailwind-browser-4.1.13-index.global.min.js"></script></head>
+<body>
+<main class="stage">
+  <nav class="stage-nav"><a href="/" aria-current="page">1 · Vandaag</a><a href="/habit">2 · Habit detail</a><a href="/nieuw">3 · Nieuwe habit</a><a href="/componenten">Componenten</a></nav>
+  <div class="phone">
+    <div class="deco"><i class="leaf leaf--1"></i><i class="leaf leaf--2"></i><i class="leaf leaf--3"></i><i class="mote mote--1"></i><i class="mote mote--2"></i><i class="mote mote--3"></i></div>
+    <div class="statusbar"><span>9:41</span><span>●●● 5G ▮</span></div>
+    <div class="phone-scroll">
+      <div class="stack-lg relative">
+        <header class="row-between">
+          <div class="stack">
+            <span class="kicker">Donderdag 15 oktober</span>
+            <h1 class="h1 text-gradient">Goedemorgen,<br>Remco</h1>
+          </div>
+          <div class="ring ring--60" role="img" aria-label="3 van 5 gedaan">
+            <div class="ring-head"></div>
+            <div class="ring-label"><b class="num">3<span class="muted">/5</span></b><span>gedaan</span></div>
+          </div>
+        </header>
+
+        <section class="stack">
+          <div class="section-head"><h2 class="h2">Ochtend</h2><span class="xs muted">2 van 3</span></div>
+          <article class="card card--sweep">
+            <div class="habit habit--done">
+              <div class="habit-icon">💧</div>
+              <div class="grow"><div class="habit-name">Water drinken</div><div class="habit-meta">Gedaan om 07:12</div></div>
+              <button class="check check--done" aria-label="Gedaan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+            </div>
+          </article>
+          <article class="card">
+            <div class="habit">
+              <div class="habit-icon">📖</div>
+              <div class="grow"><div class="habit-name">10 minuten lezen</div><div class="habit-cue">Na het ontbijt</div></div>
+              <button class="check" aria-label="Markeer als gedaan"></button>
+            </div>
+          </article>
+          <article class="card">
+            <div class="habit">
+              <div class="habit-icon">🧘</div>
+              <div class="grow"><div class="habit-name">Meditatie</div><div class="habit-meta">Minimale versie</div></div>
+              <div class="check-wrap"><button class="check check--min" aria-label="Minimale versie gedaan"></button><span class="check-inner">½</span></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="stack">
+          <div class="section-head"><h2 class="h2">Avond</h2><span class="xs muted">0 van 1</span></div>
+          <article class="card">
+            <div class="habit">
+              <div class="habit-icon">🏃</div>
+              <div class="grow"><div class="habit-name">Hardlopen</div><div class="habit-cue">Na het werk, bij de voordeur</div></div>
+              <button class="check" aria-label="Markeer als gedaan"></button>
+            </div>
+            <div class="habit-actions">
+              <button class="btn btn--secondary btn--sm grow">Minimale versie: schoenen aan</button>
+              <button class="btn btn--ghost btn--sm">Overslaan</button>
+            </div>
+          </article>
+        </section>
+
+        <section class="stack">
+          <div class="section-head"><h2 class="h2">Oningepland</h2><span class="kicker">Deze week</span></div>
+          <article class="card card--pool">
+            <div class="habit">
+              <div class="habit-icon">🎸</div>
+              <div class="grow"><div class="habit-name">Gitaar oefenen</div><div class="row mt-2"><div class="dots"><i class="dot dot--on"></i><i class="dot"></i></div><span class="xs muted">1 van 2 · nog 4 dagen</span></div></div>
+            </div>
+            <button class="btn btn--secondary btn--sm btn--block mt-4">＋ Neem mee vandaag</button>
+          </article>
+          <article class="card card--pool card--risk">
+            <div class="habit">
+              <div class="habit-icon">🧹</div>
+              <div class="grow"><div class="habit-name">Garage opruimen</div><div class="row mt-2"><div class="dots"><i class="dot dot--warn"></i></div><span class="badge badge--warn"><i class="pulse"></i>nog 1 dag</span></div></div>
+            </div>
+            <button class="btn btn--primary btn--sm btn--block mt-4">＋ Neem mee vandaag</button>
+          </article>
+          <article class="card card--pool card--satisfied">
+            <div class="habit">
+              <div class="habit-icon">📞</div>
+              <div class="grow"><div class="habit-name">Oma bellen</div></div>
+              <span class="badge badge--ok">✓ 1 van 1</span>
+            </div>
+          </article>
+          <a class="link-muted" href="#">Plan voor een andere dag</a>
+        </section>
+
+        <section class="celebrate">
+          <div class="celebrate-emoji">🌿</div>
+          <h3 class="h2 text-gradient">Alles gedaan vandaag</h3>
+          <p class="small muted">Rust lekker uit. Morgen staat je pad weer klaar.</p>
+        </section>
+      </div>
+    </div>
+    <nav class="tabbar" aria-label="Hoofdnavigatie">
+      <a class="tab tab--on" href="/" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l3 3 5-6"></path></svg>Vandaag</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"></path></svg>Habits</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>Voortgang</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="9" r="6"></circle><path d="M8.5 14L7 22l5-3 5 3-1.5-8"></path></svg>Prestaties</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg>Instellingen</a>
+    </nav>
+  </div>
+</main>
+
+</body></html>

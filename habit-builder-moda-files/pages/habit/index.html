@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="nl"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Habit Builder · Hardlopen</title>
+<link rel="stylesheet" href="/assets/theme.css">
+<script src="https://cdn.moda.app/runtime-libs/tailwind-browser-4.1.13-index.global.min.js"></script></head>
+<body>
+<main class="stage">
+  <nav class="stage-nav"><a href="/">1 · Vandaag</a><a href="/habit" aria-current="page">2 · Habit detail</a><a href="/nieuw">3 · Nieuwe habit</a><a href="/componenten">Componenten</a></nav>
+  <div class="phone">
+    <div class="deco"><i class="leaf leaf--1"></i><i class="leaf leaf--3"></i><i class="mote mote--1"></i><i class="mote mote--2"></i></div>
+    <div class="statusbar"><span>9:41</span><span>●●● 5G ▮</span></div>
+    <div class="phone-scroll">
+      <div class="stack-lg relative">
+        <div class="topbar"><a class="icon-btn" href="/" aria-label="Terug">←</a><span class="kicker">Habit</span><a class="icon-btn" href="#" aria-label="Bewerken">✎</a></div>
+
+        <section class="card card--hero card--sweep">
+          <div class="row">
+            <div class="habit-icon">🏃</div>
+            <div class="grow"><h1 class="h1">HARDLOPEN</h1><span class="xs muted">3× per week · Avond</span></div>
+          </div>
+          <div class="row-between mt-4"><span class="badge badge--build">Opbouw</span><span class="small"><b class="num">Dag 34</b> <span class="muted">van ~66</span></span></div>
+          <div class="phases"><i class="phase-seg phase-seg--done"></i><i class="phase-seg phase-seg--partial"></i><i class="phase-seg"></i><i class="phase-marker"></i></div>
+          <div class="phase-labels"><span>Opstarten</span><span class="on">Opbouw</span><span>Ingeburgerd</span></div>
+          <p class="xs muted mt-4">Gemiddeld duurt het ~9 weken voor iets automatisch voelt.</p>
+        </section>
+
+        <section class="tiles">
+          <div class="tile"><span class="tile-label">Gewoontesterkte</span><span class="tile-value">72<small>%</small></span><div class="meter"><div class="meter-fill w-72"></div></div></div>
+          <div class="tile"><span class="tile-label">Reeks</span><span class="tile-value shimmer">3<small>weken</small></span><span class="xs muted">🔥 beste: 5 weken</span></div>
+          <div class="tile"><span class="tile-label">Consistentie</span><span class="tile-value">85<small>%</small></span><span class="xs muted">laatste 6 weken</span></div>
+          <div class="tile"><span class="tile-label">Totaal</span><span class="tile-value">41<small>×</small></span><span class="xs muted">sinds 10 sep</span></div>
+        </section>
+
+        <section class="card card--quiet">
+          <div class="section-head"><h2 class="h2">Laatste 6 weken</h2></div>
+          <div class="heat mt-2">
+            <span class="heat-day">Ma</span><span class="heat-day">Di</span><span class="heat-day">Wo</span><span class="heat-day">Do</span><span class="heat-day">Vr</span><span class="heat-day">Za</span><span class="heat-day">Zo</span>
+            <i class="cell cell--done"></i><i class="cell cell--none"></i><i class="cell cell--missed"></i><i class="cell cell--none"></i><i class="cell cell--none"></i><i class="cell cell--done"></i><i class="cell cell--none"></i>
+            <i class="cell cell--done"></i><i class="cell cell--none"></i><i class="cell cell--min"></i><i class="cell cell--none"></i><i class="cell cell--none"></i><i class="cell cell--skip"></i><i class="cell cell--none"></i>
+            <i class="cell cell--paused"></i><i class="cell cell--paused"></i><i class="cell cell--paused"></i><i class="cell cell--paused"></i><i class="cell cell--paused"></i><i class="cell cell--paused"></i><i class="cell cell--paused"></i>
+            <i class="cell cell--done"></i><i class="cell cell--none"></i><i class="cell cell--done"></i><i class="cell cell--none"></i><i class="cell cell--none"></i><i class="cell cell--done"></i><i class="cell cell--none"></i>
+            <i class="cell cell--done"></i><i class="cell cell--none"></i><i class="cell cell--done"></i><i class="cell cell--none"></i><i class="cell cell--none"></i><i class="cell cell--min"></i><i class="cell cell--none"></i>
+            <i class="cell cell--done"></i><i class="cell cell--none"></i><i class="cell cell--done"></i><i class="cell cell--today"></i><i class="cell cell--none"></i><i class="cell cell--none"></i><i class="cell cell--none"></i>
+          </div>
+          <div class="legend">
+            <span><i class="cell cell--done"></i>Gedaan</span><span><i class="cell cell--min"></i>Minimaal</span><span><i class="cell cell--skip"></i>Overgeslagen</span><span><i class="cell cell--paused"></i>Gepauzeerd</span><span><i class="cell cell--missed"></i>Gemist</span><span><i class="cell cell--none"></i>Niet gepland</span><span><i class="cell cell--today"></i>Vandaag</span>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="h2">Ingeburgerd?</h2>
+          <ul class="checklist">
+            <li><i class="ck ck--part">·</i>66 actieve dagen<span class="val">34/66</span></li>
+            <li><i class="ck ck--ok">✓</i>80% consistentie<span class="val val--ok">85% ✓</span></li>
+            <li><i class="ck">?</i>Automatisme ≥ 4 <span class="xs muted">(optioneel)</span><span class="val">niet ingevuld</span></li>
+          </ul>
+          <button class="btn btn--block" disabled="">Markeer als ingeburgerd</button>
+          <p class="xs muted mt-2">Nog 32 actieve dagen te gaan.</p>
+        </section>
+
+        <section class="stack">
+          <article class="card card--quiet"><span class="kicker">Waarom</span><p class="quote mt-2">“Ik ben iemand die elke week beweegt.”</p></article>
+          <article class="card card--quiet"><span class="kicker">Cue</span><p class="mt-2">Na het ontbijt, bij de voordeur</p></article>
+          <article class="card card--quiet"><span class="kicker">Minimale versie</span><p class="mt-2">Schoenen aan en 1 minuut lopen</p></article>
+        </section>
+
+        <section class="card card--quiet tip">
+          <span class="tip-icon">🌱</span>
+          <div><span class="kicker">Goed om te weten</span><p class="small mt-2">Week 2–3 voelt vaak moeilijk. Dat hoort erbij.</p></div>
+        </section>
+
+        <section class="row">
+          <button class="btn btn--secondary grow">Bewerken</button>
+          <button class="btn btn--secondary grow">Pauzeren</button>
+          <button class="btn btn--danger grow">Archiveren</button>
+        </section>
+      </div>
+    </div>
+    <nav class="tabbar" aria-label="Hoofdnavigatie">
+      <a class="tab" href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l3 3 5-6"></path></svg>Vandaag</a>
+      <a class="tab tab--on" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"></path></svg>Habits</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg>Voortgang</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="9" r="6"></circle><path d="M8.5 14L7 22l5-3 5 3-1.5-8"></path></svg>Prestaties</a>
+      <a class="tab" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg>Instellingen</a>
+    </nav>
+  </div>
+  <div class="stage-row">
+    <div><div class="row"><span class="badge badge--start">Opstarten</span><span class="badge badge--build">Opbouw</span><span class="badge badge--set">Ingeburgerd</span></div><p class="stage-caption">Fase-badges</p></div>
+    <div><button class="btn btn--primary">Markeer als ingeburgerd</button><p class="stage-caption">Enabled state</p></div>
+  </div>
+</main>
+
+</body></html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="nl"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Habit Builder · Nieuwe habit</title>
+<link rel="stylesheet" href="/assets/theme.css">
+<script src="https://cdn.moda.app/runtime-libs/tailwind-browser-4.1.13-index.global.min.js"></script></head>
+<body>
+<main class="stage">
+  <nav class="stage-nav"><a href="/">1 · Vandaag</a><a href="/habit">2 · Habit detail</a><a href="/nieuw" aria-current="page">3 · Nieuwe habit</a><a href="/componenten">Componenten</a></nav>
+  <div class="stage-row">
+  <div class="phone">
+    <div class="deco"><i class="leaf leaf--2"></i><i class="mote mote--3"></i></div>
+    <div class="statusbar"><span>9:41</span><span>●●● 5G ▮</span></div>
+    <div class="phone-scroll">
+      <form class="stack-lg relative">
+        <div class="topbar"><a class="icon-btn" href="/" aria-label="Sluiten">✕</a><span class="kicker">Nieuwe habit</span><span class="icon-btn" aria-hidden="true">🏃</span></div>
+        <h1 class="h1 text-gradient">WAT WIL JE<br>OPBOUWEN?</h1>
+
+        <div class="field"><label class="label" for="naam">Naam</label><input id="naam" class="input input--focus" value="Hardlopen"><span class="hint">Kort en concreet werkt het best.</span></div>
+
+        <div class="field"><span class="label">Icoon</span>
+          <div class="emoji-row"><span class="emoji emoji--on">🏃</span><span class="emoji">💧</span><span class="emoji">📖</span><span class="emoji">🧘</span><span class="emoji">🎸</span><span class="emoji">🥗</span><span class="emoji">😴</span><span class="emoji">✍️</span><span class="emoji">＋</span></div>
+        </div>
+
+        <div class="field"><span class="label">Kleur</span>
+          <div class="swatches"><i class="swatch sw-mint swatch--on"></i><i class="swatch sw-teal"></i><i class="swatch sw-sky"></i><i class="swatch sw-lime"></i><i class="swatch sw-amber"></i><i class="swatch sw-coral"></i><i class="swatch sw-rose"></i><i class="swatch sw-sand"></i></div>
+        </div>
+
+        <div class="field"><span class="label">Herhaling</span>
+          <div class="segmented"><span class="seg">Dagelijks</span><span class="seg seg--on">Vaste dagen</span><span class="seg">X keer per week</span><span class="seg">Dag van de maand</span><span class="seg">X keer per maand</span></div>
+          <div class="subpanel"><span class="subpanel-title">Op welke dagen?</span>
+            <div class="chips--week"><span class="chip chip--on">Ma</span><span class="chip">Di</span><span class="chip chip--on">Wo</span><span class="chip">Do</span><span class="chip">Vr</span><span class="chip chip--on">Za</span><span class="chip">Zo</span></div>
+          </div>
+        </div>
+
+        <div class="field"><span class="label">Dagdeel</span>
+          <div class="segmented"><span class="seg">Ochtend</span><span class="seg">Middag</span><span class="seg seg--on">Avond</span><span class="seg">Overdag</span></div>
+        </div>
+
+        <div class="field"><label class="label" for="start">Startdatum</label><input id="start" class="input" value="Ma 19 oktober 2026"></div>
+
+        <div class="field"><label class="label" for="cue">Cue</label><input id="cue" class="input input--error" placeholder="Na … doe ik …" value="Hardlopen"><span class="hint hint--error">Koppel het aan een moment: “Na … doe ik …”</span></div>
+
+        <div class="field"><label class="label" for="waarom">Waarom</label><textarea id="waarom" class="input textarea" placeholder="Ik ben iemand die…">Ik ben iemand die elke week beweegt.</textarea></div>
+
+        <div class="field"><label class="label" for="min">Minimale versie</label><input id="min" class="input" placeholder="De kleinste stap die nog telt" value="Schoenen aan en 1 minuut lopen"><span class="hint">Voor dagen dat het tegenzit. Telt als half.</span></div>
+
+        <button class="btn btn--primary btn--block" type="button">Habit opslaan</button>
+      </form>
+    </div>
+  </div>
+  <div class="stack">
+    <div class="board-cell"><span class="kicker">Herhaling · Dagelijks</span><p class="small muted">Geen extra instelling. Elke dag op de lijst.</p></div>
+    <div class="board-cell"><span class="kicker">X keer per week</span><div class="row-between"><span class="small">Hoe vaak per week?</span><div class="stepper"><button type="button" aria-label="Minder">−</button><output>3</output><button type="button" aria-label="Meer">+</button></div></div><p class="hint">Komt in “Oningepland deze week”.</p></div>
+    <div class="board-cell"><span class="kicker">Dag van de maand</span><div class="row-between"><span class="small">Dag</span><div class="stepper"><button type="button">−</button><output>31</output><button type="button">+</button></div></div><p class="hint">Korte maand? Dan de laatste dag.</p></div>
+    <div class="board-cell"><span class="kicker">X keer per maand</span><div class="row-between"><span class="small">Hoe vaak per maand?</span><div class="stepper"><button type="button">−</button><output>2</output><button type="button">+</button></div></div></div>
+  </div>
+  </div>
+</main>
+
+</body></html>
