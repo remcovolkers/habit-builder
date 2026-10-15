@@ -151,3 +151,49 @@ textarea.input {
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
+
+/* teller-instelling en sjablonen */
+.switch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap-target);
+}
+
+.switch input {
+  width: 1.5rem;
+  height: 1.5rem;
+  accent-color: var(--color-accent);
+}
+
+.subfields {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-md);
+}
+
+.templates {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.chip-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.chip-link[aria-current='true'] {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent);
+}

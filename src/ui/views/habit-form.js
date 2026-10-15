@@ -10,6 +10,8 @@ import {
 import { DAYPARTS, HABIT_COLORS, NAME_MAX, TEXT_MAX } from '../../domain/habit.js';
 import { ALL_WEEKDAYS, WORKDAYS } from '../../domain/schedule.js';
 import { currentSchedule } from './habits.js';
+import { TEMPLATES } from '../../content/templates.js';
+import { COUNTER_MAX, COUNTER_UNIT_MAX } from '../../domain/counter.js';
 
 const ICONS = ['💧', '📖', '🏃', '🧘', '🥗', '😴', '💪', '🎸', '🧹', '📞', '✍️', '🚴', '🧠', '🌱', '☀️', '🦷', '💊', '🚭', '📝', '🎨', '🐕', '🧺', '💻', '🛌'];
 const TYPES = ['daily', 'weekdays', 'per_week', 'day_of_month', 'per_month'];
@@ -20,14 +22,14 @@ function typeOf(schedule) {
   return 'day_of_month';
 }
 
-/** Route '/habits/new' (id = null) of '/habits/:id'. */
-export function habitFormView({ id }) {
+/** Route '/habits/new' (id = null, optioneel ?template=water) of '/habits/:id'. */
+export function habitFormView({ id, template = null }) {
   const root = h('div', { class: 'habit-form' });
-  mount(root, id);
+  mount(root, id, template);
   return root;
 }
 
-async function mount(root, id) {
+async function mount(root, id, templateKey = null) {
   const { repo, today } = state;
   const existing = id === null ? null : await repo.getHabit(id);
   if (id !== null && !existing) {
@@ -36,18 +38,23 @@ async function mount(root, id) {
       h('a', { class: 'button button--ghost', href: '#/habits' }, nl.habits.title));
     return;
   }
+  const preset = existing ? null : (TEMPLATES[templateKey] ?? null);
+  const base = existing ?? preset ?? {};
   const pauses = existing ? await repo.listPauses(existing.id) : [];
   const openPause = pauses.find((p) => p.to == null) ?? null;
   const started = existing !== null && existing.startDate <= today;
 
   // --- beginwaarden -----------------------------------------------------------------------
-  const initial = existing ? currentSchedule(existing, today) : { type: 'weekdays', weekdays: [...ALL_WEEKDAYS] };
+  const initial = existing ? currentSchedule(existing, today) : (preset?.schedule ?? { type: 'weekdays', weekdays: [...ALL_WEEKDAYS] });
   const form = {
     type: typeOf(initial),
     weekdays: new Set(initial.type === 'weekdays' && initial.weekdays.length < 7 ? initial.weekdays : WORKDAYS),
     perWeek: initial.type === 'times_per_period' && initial.period === 'week' ? initial.count : 2,
     perMonth: initial.type === 'times_per_period' && initial.period === 'month' ? initial.count : 2,
     day: initial.type === 'day_of_month' ? initial.day : 1,
+    counterOn: Boolean(base.counter),
+    unit: base.counter?.unit ?? 'glazen',
+    target: base.counter ? (base.counter.target ?? '') : 8,
   };
 
   // --- hulpjes voor velden ----------------------------------------------------------------
@@ -60,16 +67,16 @@ async function mount(root, id) {
       hint ? h('p', { class: 'field__hint', id: `hint-${errorField ?? forId}` }, hint) : null,
       errorField ? errorFor(errorField) : null);
 
-  const name = h('input', { id: 'name', class: 'input', type: 'text', maxlength: NAME_MAX + 20, placeholder: nl.form.namePlaceholder, value: existing?.name ?? '', autocomplete: 'off', 'aria-describedby': 'err-name' });
+  const name = h('input', { id: 'name', class: 'input', type: 'text', maxlength: NAME_MAX + 20, placeholder: nl.form.namePlaceholder, value: base.name ?? '', autocomplete: 'off', 'aria-describedby': 'err-name' });
 
-  const iconChoices = [...new Set([...(existing && !ICONS.includes(existing.icon) ? [existing.icon] : []), ...ICONS])];
-  const chosenIcon = existing?.icon ?? ICONS[0];
+  const iconChoices = [...new Set([...(base.icon && !ICONS.includes(base.icon) ? [base.icon] : []), ...ICONS])];
+  const chosenIcon = base.icon ?? ICONS[0];
   const iconGroup = h('div', { class: 'choices', role: 'radiogroup' },
     ...iconChoices.map((icon) => h('label', { class: 'choice' },
       h('input', { class: 'choice__input', type: 'radio', name: 'icon', value: icon, checked: icon === chosenIcon }),
       h('span', { class: 'choice__face' }, icon))));
 
-  const chosenColor = existing?.color ?? HABIT_COLORS[0];
+  const chosenColor = base.color ?? HABIT_COLORS[0];
   const colorGroup = h('div', { class: 'choices', role: 'radiogroup' },
     ...HABIT_COLORS.map((color, i) => h('label', { class: 'choice' },
       h('input', { class: 'choice__input', type: 'radio', name: 'color', value: color, checked: color === chosenColor }),
@@ -82,7 +89,7 @@ async function mount(root, id) {
     ...TYPES.map((type) => h('label', { class: 'segmented__item' },
       h('input', {
         class: 'choice__input', type: 'radio', name: 'scheduleType', value: type, checked: type === form.type,
-        onchange: () => { form.type = type; renderDetails(); },
+        onchange: () => { form.type = type; renderDetails(); renderCounter(); },
       }),
       h('span', { class: 'segmented__face' }, nl.form.scheduleTypes[type]))));
 
@@ -129,13 +136,41 @@ async function mount(root, id) {
     }
   }
 
+  // --- teller (alleen bij elke dag / vaste dagen) -----------------------------------------
+  const counterBox = h('fieldset', { class: 'field' });
+  const counterAllowed = () => form.type === 'daily' || form.type === 'weekdays';
+
+  function renderCounter() {
+    if (!counterAllowed()) {
+      fill(counterBox, h('legend', { class: 'field__label' }, nl.form.counter), h('p', { class: 'field__hint' }, nl.form.counterOnlyDaily));
+      return;
+    }
+    fill(counterBox,
+      h('legend', { class: 'field__label' }, nl.form.counter),
+      h('label', { class: 'switch' },
+        h('input', { id: 'counterOn', type: 'checkbox', checked: form.counterOn, onchange: (e) => { form.counterOn = e.target.checked; renderCounter(); } }),
+        h('span', null, nl.form.counterToggle)),
+      form.counterOn
+        ? h('div', { class: 'subfields' },
+          h('p', { class: 'field__hint' }, nl.form.counterHint),
+          h('label', { class: 'field__label', for: 'counterUnit' }, nl.form.counterUnit),
+          h('input', { id: 'counterUnit', class: 'input', type: 'text', maxlength: COUNTER_UNIT_MAX + 10, value: form.unit, placeholder: nl.form.counterUnitPlaceholder, 'aria-describedby': 'err-counterUnit', oninput: (e) => { form.unit = e.target.value; } }),
+          errorFor('counterUnit'),
+          h('label', { class: 'field__label', for: 'counterTarget' }, nl.form.counterTarget),
+          h('input', { id: 'counterTarget', class: 'input input--number', type: 'number', inputmode: 'numeric', min: 1, max: COUNTER_MAX, value: form.target, 'aria-describedby': 'err-counterTarget', oninput: (e) => { form.target = e.target.value; } }),
+          errorFor('counterTarget'))
+        : null,
+      errorFor('counter'));
+  }
+  renderCounter();
+
   // --- overige velden ---------------------------------------------------------------------
   const daypart = h('select', { id: 'daypart', class: 'input', 'aria-describedby': 'err-daypart' },
-    ...DAYPARTS.map((d) => h('option', { value: d, selected: d === (existing?.daypart ?? 'anytime') }, nl.dayparts[d])));
+    ...DAYPARTS.map((d) => h('option', { value: d, selected: d === (base.daypart ?? 'anytime') }, nl.dayparts[d])));
   const startDate = h('input', { id: 'startDate', class: 'input', type: 'date', value: existing?.startDate ?? today, disabled: started, 'aria-describedby': 'err-startDate hint-startDate' });
-  const cue = h('input', { id: 'cue', class: 'input', type: 'text', maxlength: TEXT_MAX + 20, value: existing?.cue ?? '', placeholder: nl.form.cuePlaceholder, 'aria-describedby': 'err-cue' });
-  const why = h('textarea', { id: 'why', class: 'input', rows: 2, maxlength: TEXT_MAX + 20, placeholder: nl.form.whyPlaceholder, 'aria-describedby': 'err-why' }, existing?.why ?? '');
-  const minimal = h('input', { id: 'minimalVersion', class: 'input', type: 'text', maxlength: TEXT_MAX + 20, value: existing?.minimalVersion ?? '', placeholder: nl.form.minimalPlaceholder, 'aria-describedby': 'err-minimalVersion' });
+  const cue = h('input', { id: 'cue', class: 'input', type: 'text', maxlength: TEXT_MAX + 20, value: base.cue ?? '', placeholder: nl.form.cuePlaceholder, 'aria-describedby': 'err-cue' });
+  const why = h('textarea', { id: 'why', class: 'input', rows: 2, maxlength: TEXT_MAX + 20, placeholder: nl.form.whyPlaceholder, 'aria-describedby': 'err-why' }, base.why ?? '');
+  const minimal = h('input', { id: 'minimalVersion', class: 'input', type: 'text', maxlength: TEXT_MAX + 20, value: base.minimalVersion ?? '', placeholder: nl.form.minimalPlaceholder, 'aria-describedby': 'err-minimalVersion' });
 
   const formError = h('p', { class: 'field__error', role: 'alert', hidden: true });
   const radio = (groupName) => root.querySelector(`input[name="${groupName}"]:checked`)?.value ?? '';
@@ -149,6 +184,9 @@ async function mount(root, id) {
       name: name.value, icon: radio('icon'), color: radio('color'), daypart: daypart.value,
       startDate: started ? existing.startDate : startDate.value,
       cue: cue.value, why: why.value, minimalVersion: minimal.value, schedule: buildSchedule(),
+      counter: counterAllowed() && form.counterOn
+        ? { unit: form.unit, target: String(form.target).trim() === '' ? null : Number(form.target) }
+        : null,
     };
     const sortOrder = Math.max(-1, ...(await repo.listHabits()).map((x) => x.sortOrder ?? 0)) + 1;
     try {
@@ -164,7 +202,8 @@ async function mount(root, id) {
   }
 
   function showErrors(errors) {
-    const focusTargets = { name, icon: iconGroup, color: colorGroup, daypart, startDate, schedule: typeGroup, cue, why, minimalVersion: minimal };
+    const focusTargets = { name, icon: iconGroup, color: colorGroup, daypart, startDate, schedule: typeGroup, cue, why, minimalVersion: minimal,
+      counterUnit: counterBox.querySelector('#counterUnit'), counterTarget: counterBox.querySelector('#counterTarget'), counter: counterBox.querySelector('#counterOn') };
     let first = null;
     for (const { field: key, code, detail } of errors) {
       const message = nl.form.errors[key]?.[code] ?? detail ?? nl.app.loadError;
@@ -213,6 +252,10 @@ async function mount(root, id) {
     h('a', { class: 'back-link', href: '#/habits' }, `‹ ${nl.habits.title}`),
     h('h1', { class: 'page-title' }, existing ? nl.form.titleEdit : nl.form.titleNew),
     h('form', { class: 'form', novalidate: true, onsubmit: submit },
+      existing ? null : h('div', { class: 'templates' },
+        h('p', { class: 'field__label' }, nl.form.templates),
+        h('div', { class: 'choices' }, ...Object.entries(TEMPLATES).map(([key, template]) =>
+          h('a', { class: 'chip-link', href: `#/habits/new?template=${key}`, 'aria-current': key === templateKey ? 'true' : null }, `${template.icon} ${template.name}`)))),
       field(nl.form.name, name, { id: 'name', errorField: 'name' }),
       field(nl.form.icon, iconGroup, { group: true, errorField: 'icon' }),
       field(nl.form.color, colorGroup, { group: true, errorField: 'color' }),
@@ -221,6 +264,7 @@ async function mount(root, id) {
         typeGroup, details,
         started ? h('p', { class: 'field__hint' }, nl.form.changeHint) : null,
         errorFor('schedule')),
+      counterBox,
       field(nl.form.daypart, daypart, { id: 'daypart', errorField: 'daypart' }),
       field(nl.form.startDate, startDate, { id: 'startDate', errorField: 'startDate', hint: started ? nl.form.startDateLocked : null }),
       field(nl.form.cue, cue, { id: 'cue', errorField: 'cue' }),

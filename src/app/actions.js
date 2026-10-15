@@ -2,6 +2,7 @@
 // Elke handeling die je ongedaan wilt kunnen maken geeft { undo } terug.
 import { addDays, diffDays } from '../domain/dates.js';
 import { DEFAULT_GRADUATION_DAYS, PLAN_AHEAD_DAYS } from '../domain/constants.js';
+import { clampCounter, counterDoneValue, counterStatus } from '../domain/counter.js';
 import { canBackfill } from '../domain/rules.js';
 import { scheduleAt } from '../domain/schedule.js';
 
@@ -16,15 +17,32 @@ export class RuleError extends Error {
 // --- check-ins ------------------------------------------------------------------------------
 
 async function restoreCheckIn(repo, habitId, date, previous) {
-  if (previous) await repo.setCheckIn({ habitId, date, status: previous.status, note: previous.note });
+  if (previous) await repo.setCheckIn({ habitId, date, status: previous.status, note: previous.note, value: previous.value ?? null });
   else await repo.clearCheckIn(habitId, date);
 }
 
-export async function logCheckIn(repo, { habitId, date, status, note = null }, today) {
+export async function logCheckIn(repo, { habitId, date, status, note = null, value = null }, today) {
   if (!canBackfill(date, today)) throw new RuleError('backfill_window');
   const previous = await repo.getCheckIn(habitId, date);
-  await repo.setCheckIn({ habitId, date, status, note });
+  await repo.setCheckIn({ habitId, date, status, note, value });
   return { undo: () => restoreCheckIn(repo, habitId, date, previous) };
+}
+
+/**
+ * Teller omhoog of omlaag (bv. +1 glas water). De waarde hoort bij de datum, dus elke dag begint op 0.
+ * Op 0 komen we terug bij "niets gelogd"; de status volgt uit het doel (zie domain/counter.js).
+ * Geeft { undo, value, status } terug.
+ */
+export async function adjustCounter(repo, { habit, date, delta }, today) {
+  if (!habit.counter) throw new RuleError('not_a_counter');
+  if (!canBackfill(date, today)) throw new RuleError('backfill_window');
+  const previous = await repo.getCheckIn(habit.id, date);
+  const current = previous?.status === 'skipped' ? 0 : (previous?.value ?? (previous ? counterDoneValue(habit.counter) : 0));
+  const value = clampCounter(current + delta);
+  const status = counterStatus(value, habit.counter);
+  if (status === null) await repo.clearCheckIn(habit.id, date);
+  else await repo.setCheckIn({ habitId: habit.id, date, status, note: previous?.note ?? null, value });
+  return { undo: () => restoreCheckIn(repo, habit.id, date, previous), value, status };
 }
 
 export async function clearCheckIn(repo, { habitId, date }, today) {
@@ -78,6 +96,7 @@ export function applyHabitForm({ existing = null, values, today, sortOrder = 0 }
     cue: clean(values.cue),
     why: clean(values.why),
     minimalVersion: clean(values.minimalVersion),
+    counter: values.counter ? { unit: String(values.counter.unit ?? '').trim(), target: values.counter.target ?? null } : null,
   };
 
   if (!existing) {

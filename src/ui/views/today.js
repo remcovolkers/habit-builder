@@ -7,7 +7,8 @@ import { entryState, habitCard } from '../components/habit-card.js';
 import { poolCard } from '../components/pool-card.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
-import { clearCheckIn, logCheckIn, planHabit, RuleError, unplanHabit } from '../../app/actions.js';
+import { adjustCounter, clearCheckIn, logCheckIn, planHabit, RuleError, unplanHabit } from '../../app/actions.js';
+import { counterDoneValue } from '../../domain/counter.js';
 import { datesBetween, formatDateLong, relativeDayLabel } from '../../app/format.js';
 import { addDays, diffDays, isValidDate } from '../../domain/dates.js';
 import { BACKFILL_DAYS, PLAN_AHEAD_DAYS } from '../../domain/constants.js';
@@ -21,19 +22,24 @@ function selectedDate(query, today) {
   return offset >= -BACKFILL_DAYS && offset <= PLAN_AHEAD_DAYS ? wanted : today;
 }
 
-/** Voert een handeling uit, ververst het scherm en biedt "ongedaan maken" aan. */
-async function perform(action, message) {
+/**
+ * Voert een handeling uit, ververst het scherm en biedt "ongedaan maken" aan.
+ * Zonder message (bv. bij de teller) gebeurt het stil: het scherm zelf toont het resultaat.
+ */
+async function perform(action, message = null) {
   try {
     const { undo } = await action();
     notifyChanged();
-    showToast({
-      message,
-      actionLabel: nl.app.undo,
-      onAction: async () => {
-        await undo();
-        notifyChanged();
-      },
-    });
+    if (message) {
+      showToast({
+        message,
+        actionLabel: nl.app.undo,
+        onAction: async () => {
+          await undo();
+          notifyChanged();
+        },
+      });
+    }
   } catch (error) {
     if (!(error instanceof RuleError)) throw error;
     showToast({ message: error.code === 'plan_window' ? nl.today.toasts.planWindow : nl.today.toasts.backfillWindow });
@@ -54,7 +60,14 @@ function renderDay(view) {
   const { today } = state;
   const { repo } = state;
   const { date } = view;
-  const log = (habitId, status, note = null) => logCheckIn(repo, { habitId, date, status, note }, today);
+  const log = (habitId, status, note = null, value = null) => logCheckIn(repo, { habitId, date, status, note, value }, today);
+
+  // Tikken op +/− achter elkaar mogen elkaar niet inhalen: eerst klaar, dan de volgende.
+  let queue = Promise.resolve();
+  const adjust = (entry, delta) => {
+    queue = queue.then(() => perform(() => adjustCounter(repo, { habit: entry.habit, date, delta }, today)));
+    return queue;
+  };
 
   function toggle(entry) {
     const name = entry.habit.name;
@@ -69,8 +82,13 @@ function renderDay(view) {
     const logged = entryState(entry) !== 'open';
     const actions = [];
     if (view.canLog) {
-      actions.push({ label: nl.today.actions.done, variant: 'primary', onClick: () => perform(() => log(habit.id, 'done'), nl.today.toasts.done(habit.name)) });
-      if (habit.minimalVersion) {
+      const doneValue = habit.counter ? counterDoneValue(habit.counter, entry.valueToday ?? 0) : null;
+      actions.push({
+        label: habit.counter ? nl.today.actions.goalReached : nl.today.actions.done,
+        variant: 'primary',
+        onClick: () => perform(() => log(habit.id, 'done', null, doneValue), nl.today.toasts.done(habit.name)),
+      });
+      if (habit.minimalVersion && !habit.counter) {
         actions.push({ label: nl.today.actions.minimal(habit.minimalVersion), onClick: () => perform(() => log(habit.id, 'minimal'), nl.today.toasts.minimal(habit.name)) });
       }
       actions.push({
@@ -107,7 +125,7 @@ function renderDay(view) {
     });
   }
 
-  const cardOptions = { canLog: view.canLog, onToggle: toggle, onMore: more };
+  const cardOptions = { canLog: view.canLog, onToggle: toggle, onMore: more, onAdjust: adjust };
 
   return h('div', { class: 'today__inner' },
     header(view),

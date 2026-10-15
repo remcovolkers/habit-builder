@@ -243,3 +243,48 @@
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
+
+/* teller (bv. glazen water): − waarde + */
+.counter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.counter__button {
+  display: grid;
+  place-items: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.counter__button--plus {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.counter__button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.counter__value {
+  min-width: 1.75rem;
+  text-align: center;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.habit-card[data-state='partial'] .habit-card__meta {
+  color: var(--color-accent);
+  font-weight: 600;
+}
