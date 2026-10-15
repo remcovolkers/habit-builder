@@ -12,7 +12,8 @@ const CODE = /^\d{6,10}$/;
 export function loginView() {
   const root = h('div', { class: 'login' });
   let step = 'choose'; // 'choose' | 'code'
-  let email = '';
+  let email = ''; // wat er in het e-mailveld staat (ook als het nog niet verstuurd is)
+  let code = ''; // wat er in het codeveld staat: blijft behouden bij elke hertekening
   let busy = false;
   let error = null;
   let cooldown = 0;
@@ -28,8 +29,19 @@ export function loginView() {
       if (!root.isConnected) { clearInterval(timer); return; }
       cooldown -= 1;
       if (cooldown <= 0) clearInterval(timer);
-      render();
+      updateResend(); // alleen de knop, niet het hele scherm: anders verdwijnt wat je aan het typen bent
     }, 1000);
+  }
+
+  function resendLabel() {
+    return cooldown > 0 ? nl.login.resendIn(cooldown) : nl.login.resend;
+  }
+
+  function updateResend() {
+    const button = root.querySelector('#resendCode');
+    if (!button) return;
+    button.disabled = busy || cooldown > 0;
+    button.textContent = resendLabel();
   }
 
   async function run(task) {
@@ -51,11 +63,12 @@ export function loginView() {
 
   const sendCode = (event) => {
     event?.preventDefault();
-    const value = root.querySelector('#email')?.value.trim() ?? email;
+    const value = email.trim();
     return run(async () => {
       if (!EMAIL.test(value)) throw Object.assign(new Error('email'), { key: 'invalid_email' });
       email = value;
       await auth.sendEmailCode(email);
+      code = '';
       step = 'code';
       startCooldown();
     });
@@ -63,7 +76,7 @@ export function loginView() {
 
   const verify = (event) => {
     event.preventDefault();
-    const token = root.querySelector('#code')?.value.trim() ?? '';
+    const token = code.trim();
     return run(async () => {
       if (!CODE.test(token)) throw Object.assign(new Error('code'), { key: 'code_format' });
       await auth.verifyEmailCode(email, token);
@@ -81,6 +94,7 @@ export function loginView() {
           h('label', { class: 'field__label', for: 'email' }, nl.login.email),
           h('input', {
             id: 'email', class: 'input', type: 'email', inputmode: 'email', autocomplete: 'email', value: email,
+            oninput: (e) => { email = e.target.value; },
             placeholder: nl.login.emailPlaceholder, 'aria-describedby': 'login-error', 'aria-invalid': error === 'invalid_email' ? 'true' : null,
           })),
         h('button', { type: 'submit', id: 'sendCode', class: 'button button--primary button--block', disabled: busy }, nl.login.sendCode)),
@@ -95,14 +109,14 @@ export function loginView() {
           h('label', { class: 'field__label', for: 'code' }, nl.login.code),
           h('input', {
             id: 'code', class: 'input input--code', type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code',
-            maxlength: 10, 'aria-describedby': 'login-error code-hint', 'aria-invalid': error === 'invalid_code' || error === 'code_format' ? 'true' : null,
+            maxlength: 10, value: code, oninput: (e) => { code = e.target.value; }, 'aria-describedby': 'login-error code-hint', 'aria-invalid': error === 'invalid_code' || error === 'code_format' ? 'true' : null,
           }),
           h('p', { id: 'code-hint', class: 'field__hint' }, nl.login.codeHint)),
         h('button', { type: 'submit', id: 'verifyCode', class: 'button button--primary button--block', disabled: busy }, nl.login.verify)),
       h('div', { class: 'login__links' },
         h('button', { type: 'button', class: 'button button--ghost button--small', onclick: () => { step = 'choose'; error = null; render(); } }, nl.login.otherEmail),
         h('button', { type: 'button', id: 'resendCode', class: 'button button--ghost button--small', disabled: busy || cooldown > 0, onclick: () => sendCode() },
-          cooldown > 0 ? nl.login.resendIn(cooldown) : nl.login.resend)),
+          resendLabel())),
     ];
   }
 
