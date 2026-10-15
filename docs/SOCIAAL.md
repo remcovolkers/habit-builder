@@ -13,7 +13,7 @@ Wat het níét is: een sociaal netwerk. Geen feed, geen reacties, geen openbare 
 | # | Keuze | Besluit |
 |---|---|---|
 | S1 | Vrienden vinden | **Gebruikersnaam + uitnodigingslink.** Zoeken kan alleen op de *exacte* gebruikersnaam; niemand kan door gebruikers bladeren; e-mailadressen blijven altijd verborgen. |
-| S2 | Rangschikking | **Punten over de laatste 7 dagen**: een vast aantal punten per afgeronde taak (zie S6 en §4). Elke week een nieuwe kans, ook voor beginners. |
+| S2 | Rangschikking | **Punten over de laatste 7 dagen** (zie S6 en §4). Elke week een nieuwe kans, ook voor beginners. |
 | S3 | Wat vrienden zien | **Alleen cijfers en je naam.** Geen habit-namen, geen notities, geen cues, geen "vandaag gedaan". |
 | S4 | Reikwijdte eerste versie | **Vrienden + ranglijst, verder niets.** Verzoek en acceptatie, verwijderen, ranglijst (blokkeren is later bewust geschrapt, S10). Aanmoedigen, reacties en groepen later. |
 
@@ -22,8 +22,8 @@ Wat het níét is: een sociaal netwerk. Geen feed, geen reacties, geen openbare 
 | # | Besluit |
 |---|---|
 | S5 | **Weergavenaam = de naam uit Instellingen.** Bij het aanmaken van een account vragen we "Hoe wil je heten?" en leggen uit dat vrienden die naam zien. Je kiest zelf: je voornaam of iets verzonnens. Dezelfde naam gebruiken de begroeting op Vandaag en de ochtendmelding. Zo is er één naam en hoeft er verder niets bijgehouden te worden. |
-| S6 | **Een vast aantal punten per afgeronde taak** (besloten na de eerste meting, in plaats van een percentage). Een taak is één afgevinkte habit op één dag; flexibele habits doen precies hetzelfde mee als vaste. Het gaat om het aantal taken dat je afrondt, niet om wat er gepland stond, en je punten dalen nooit doordat het een nieuwe dag is (§4). |
-| S7 | **Wie 3+ dagen niets doet, verdwijnt uit de lijst** tot hij of zij het weer oppakt (§4.5). |
+| S6 | **Punten per afgeronde taak, met bonussen en minpunten** (besloten na de eerste meting). Een vast bedrag per taak (één afgevinkte habit op één dag; flexibele habits doen gelijk mee). Extra punten zolang een habit nog niet eigen is: meer in het begin, minder later. Extra punten voor het starten van een nieuwe habit. Minpunten voor wat je liet liggen: half zoveel als een taak oplevert, nooit onder nul. Een half gehaalde teller telt voor de helft (§4). |
+| S7 | **Wie 3+ dagen niets doet, verdwijnt uit de lijst** tot hij of zij het weer oppakt (§4.4). |
 | S8 | **Een uitnodigingslink maakt direct vrienden.** Zoeken op gebruikersnaam blijft een verzoek met acceptatie (zie V12). |
 | S9 | **Navigatie via Voortgang** (geen zesde tabblad). |
 | S10 | **Geen minimumleeftijd, geen blokkeerfunctie.** Dat pakken we aan als het nodig blijkt. Lastigvallen wordt klein gehouden met een rustige weigerregel (V13) en limieten (V18). |
@@ -76,7 +76,7 @@ Prio: M = moet, S = zou moeten, C = kan. Het ID-voorvoegsel is **V** (vrienden).
 | ID | Eis | Prio |
 |---|---|---|
 | V20 | De **ranglijst** toont jou en je geaccepteerde vrienden, gesorteerd op **weekpunten** (§4), met positie, naam, punten en reeks. Jij bent herkenbaar gemarkeerd (niet alleen met kleur). | M |
-| V22 | Een vriend die **3 dagen of langer niets heeft afgevinkt** verdwijnt automatisch uit de lijst, en komt terug zodra hij of zij weer iets afvinkt (§4.5). Jezelf zie je altijd. | M |
+| V22 | Een vriend die **3 dagen of langer niets heeft afgevinkt** verdwijnt automatisch uit de lijst, en komt terug zodra hij of zij weer iets afvinkt (§4.4). Jezelf zie je altijd. | M |
 | V23 | Zichtbare extra's per vriend, uitsluitend uit de gepubliceerde samenvatting: huidige langste **reeks** (dagen), aantal **actieve habits**. | S |
 | V24 | De ranglijst werkt **offline** met de laatst opgehaalde stand (duidelijk gemarkeerd als "stand van …"), en ververst bij openen en via een knop. | M |
 | V25 | Je eigen punten staan altijd **lokaal berekend** en zijn dus direct juist, ook voor ze gepubliceerd zijn. | M |
@@ -94,53 +94,64 @@ Blokkeren, een minimumleeftijd, aanmoedigen/knuffel-knop, reacties, groepen of u
 
 ## 4. De punten: domeinregels
 
-De ranglijst telt **punten**. Deze regels zijn puur en met tests gebouwd (`src/app/score.js`, `src/app/leaderboard.js`) en staan in één constantenbestand (`src/domain/constants.js`).
+De ranglijst telt **punten**, over de **laatste 7 dagen, vandaag meegerekend**. De regels zijn puur en met tests gebouwd (`src/app/score.js`, `src/app/leaderboard.js`) en alle bedragen staan in één constantenbestand (`src/domain/constants.js`).
 
-### 4.1 Definitie
-**Weekpunten** = aantal afgeronde taken in de **laatste 7 dagen, vandaag meegerekend**, × **10 punten**.
+### 4.1 Hoe de punten ontstaan
 
-- Een **taak** is één afgevinkte habit op één dag. `gedaan` en de minimale versie tellen; overslaan en een nog niet voltooide teller niet. Dezelfde habit telt hooguit één keer per dag.
-- Er is **geen noemer**: je krijgt punten voor wat je doet, niet voor wat er gepland stond. Flexibele habits (bijv. 2× per week) doen precies hetzelfde mee als vaste; als je ze allemaal op één dag afrondt, zijn dat die dag evenveel punten als verspreid over de week.
-- **Afvinken is meteen zichtbaar.** Je punten dalen nooit doordat het een nieuwe dag is, een dag niet gelukt is of je pauzeerde; ze dalen alleen doordat een oude dag uit het venster van 7 dagen schuift.
-- "Dag" volgt de dagwissel van de gebruiker (standaard 04:00): een check-in van 02:00 hoort bij de vorige dag.
-- De waarde 10 staat als `TASK_POINTS`, zodat de schaal later te veranderen is zonder iets anders aan te raken.
+| Wat | Punten | Constante |
+|---|---|---|
+| Een afgeronde taak (één afgevinkte habit op één dag; gedaan of minimale versie) | **+10** | `TASK_POINTS` |
+| Opbouwbonus, per taak, zolang de habit nog niet eigen is: de eerste 21 dagen | **+4** | `BUILD_BONUS_STARTING` |
+| Opbouwbonus, per taak, vanaf dag 22 tot de ingeburgerd-grens (66 dagen, per habit instelbaar) | **+2** | `BUILD_BONUS_BUILDING` |
+| Startbonus, eenmalig bij de **eerste afgeronde taak** van een nieuwe habit (hoogstens 2 per venster) | **+10** | `START_BONUS`, `START_BONUS_MAX` |
+| Een gemiste dag (habit met vaste dagen) | **−5** | `MISS_PENALTY` |
+| Een flexibele habit waarvan een week/maand eindigt zonder dat het doel gehaald is: per ontbrekende keer | **−5** | idem |
+| Een teller die je half haalde (bijv. 5 van 8 glazen) | **+5** (de helft van een taak, plus de helft van de opbouwbonus), geen minpunten | `PARTIAL_FRACTION` |
 
-### 4.2 Wat dit wel en niet eerlijk maakt
-- **Voordeel:** het is simpel en uit te leggen. Flexibele habits en vaste habits tellen gelijk, een slechte dag kost niets, pauze en ziekte kosten geen plek, en beginners hebben meteen punten.
-- **Nadeel (bewust aanvaard):** wie meer habits heeft, kan meer punten halen. Met 3 habits is het maximum per week 210; met 15 habits is dat 1050. De ranglijst beloont dus ook *hoeveel* je aanpakt, niet alleen hoe trouw je bent. Dat past bij "het aantal taken dat je afrondt". Wie dat later te scheef vindt, kan een verfijning kiezen (zie §4.7).
+**Totaal** = taken + opbouwbonus + startbonus − minpunten, **nooit onder nul**.
+
+### 4.2 Regels in detail
+- **Taak:** dezelfde habit telt hooguit één keer per dag. Overslaan levert niets op en kost niets. Flexibele habits (bijv. 2× per week) doen precies hetzelfde mee als vaste: alles op één dag afronden geeft evenveel basispunten als verspreid over de week.
+- **Opbouwbonus:** de leeftijd van de habit op de dag van de taak (actieve dagen, gepauzeerde dagen tellen niet mee). De bonus stopt zodra je de habit **ingeburgerd verklaart** (voor taken vanaf die dag) of de ingeburgerd-grens van de habit is bereikt, ook als je hem niet verklaart. Zo beloont de bonus de fase waarin een habit nog moeite kost; daarna levert hij gewoon de basispunten op.
+- **Startbonus:** pas bij de eerste afgeronde taak, dus niet bij aanmaken. Het plafond van 2 per venster en de minpunten voor de dagen daarna houden het aanmaken en weggooien van habits onaantrekkelijk (zie §4.7).
+- **Minpunten:** alleen voor dagen die **voorbij** zijn; vandaag kost nooit iets. De aftrek komt dus als een dag sluit (met de dagwissel van de gebruiker, standaard 04:00). Overslaan, pauze en een half gehaalde teller kosten niets. Een flexibele habit krijgt de aftrek pas als zijn week of maand eindigt, per ontbrekende keer. Een afgeronde dag die je **terugwerkend invult** (tot 14 dagen terug) levert de punten op en neemt de aftrek weg.
+- **Gearchiveerde habits** krijgen geen minpunten meer; taken die je ervoor deed blijven tellen.
+- **Dag** volgt de dagwissel van de gebruiker: een check-in van 02:00 hoort bij de vorige dag.
 
 ### 4.3 Gelijke stand
 Gelijke punten: de langste reeks gaat voor, daarna de naam. Gelijke posities krijgen dezelfde rang ("1, 1, 3").
 
 ### 4.4 Wie is "actief"
-Je publiceert de datum van je **laatste afgevinkte dag** (`last_active`). Een vriend staat in de lijst zolang `last_active` binnen de laatste **3 dagen** valt (vandaag, gisteren of eergisteren, gerekend vanaf de dag van degene die kijkt). Daarna verdwijnt de vriend, en bij de eerstvolgende afvinkactie is hij of zij terug. Wie de app niet opent, publiceert niets en valt dus vanzelf af.
+Je publiceert de datum van je **laatste afgevinkte dag** (`last_active`; een half gehaalde teller telt mee). Een vriend staat in de lijst zolang `last_active` binnen de laatste **3 dagen** valt (vandaag, gisteren of eergisteren, gerekend vanaf de dag van degene die kijkt). Daarna verdwijnt de vriend, en bij de eerstvolgende afvinkactie is hij of zij terug. Wie de app niet opent, publiceert niets en valt dus vanzelf af.
 Je eigen regel staat er altijd. Nieuwe vrienden zonder enige activiteit verschijnen pas na hun eerste afvinkactie.
 
 ### 4.5 Reeks en habits (bijzaak)
 Naast de punten staan per persoon de **langste lopende reeks** (dagen, alleen habits met vaste dagen; een flexibele habit heeft weken als eenheid) en het **aantal actieve habits**. Een reeks breekt niet doordat vandaag nog open staat.
 
-### 4.6 Bekende zwakte (aanvaard)
-De punten worden **door de app van de gebruiker berekend en gepubliceerd**. Een vriend met kennis kan dus valsspelen, en iemand kan triviale habits toevoegen om punten te sprokkelen. Voor een kring van vrienden is dat aanvaardbaar: er valt niets te winnen. De server beperkt wel de **waardebereiken** (punten en aantallen binnen redelijke grenzen) en de update-frequentie. Wil je ooit strenger zijn, dan kan de server de punten afleiden uit de gesynchroniseerde check-ins (veel werk, past slecht bij "de server begrijpt de records niet").
+### 4.6 Jouw eigen opbouw van de punten
+De berekening levert naast het totaal een uitsplitsing (`breakdown`: taken, bonus, start, minpunten). Die laat de app **alleen jou** zien ("Waar komen mijn punten vandaan?"), zodat een daling 's nachts of een bonus niet als een raadsel voelt. Vrienden zien alleen het totaal.
 
-### 4.7 Meting op voorbeeldgegevens (S1)
+### 4.7 Bekende zwakten en meting
+**Aanvaard:** de punten worden door de app van de gebruiker berekend en gepubliceerd. Een vriend met kennis kan dus valsspelen. Voor een kring van vrienden is dat aanvaardbaar: er valt niets te winnen. De server beperkt wel de waardebereiken en de update-frequentie. Wil je ooit strenger zijn, dan kan de server de punten afleiden uit de gesynchroniseerde check-ins (veel werk).
 
-Weekpunten op 15 oktober met een jaar geschiedenis. Berekening: 0–15 ms.
+**Meting op voorbeeldgegevens** (15 oktober, jaar geschiedenis; berekening 0–30 ms):
 
-| Soort gebruiker | Taken | Punten |
+| Soort gebruiker | Alleen basis | Met bonussen en minpunten |
 |---|---|---|
-| 3 habits dagelijks, 90% gedaan | 19 | 190 |
-| 3 habits dagelijks, 50% gedaan | 11 | 110 |
-| 15 habits gemengd, 70% gedaan | 76 | 760 |
-| 15 habits gemengd, 40% gedaan | 47 | 470 |
-| alleen flexibele habits (2× en 3× per week) | 10 | 100 |
-| beginner, 1 habit, 8 dagen bezig | 4 | 40 |
-| beginner, 2 habits, 2 dagen bezig | 6 | 60 |
-| 5 dagen niets gedaan | 6 | 60 (staat niet meer in andermans lijst) |
+| 3 habits, 90%, al 200 dagen bezig | 190 | **185** |
+| 3 habits, 90%, 30 dagen bezig (opbouw) | 180 | **206** |
+| 3 habits, 50%, 30 dagen bezig | 90 | **58** |
+| 15 habits gemengd, 70%, 200 dagen | 750 | **655** |
+| 15 habits gemengd, 40%, 200 dagen | 480 | **305** |
+| starter: 2 habits, 5 dagen bezig, alles gedaan | 120 | **188** |
+| starter: 1 habit, 5 dagen bezig, 50% | 20 | **23** |
+| knoeier: elke dag een nieuwe habit, één keer afvinken | 70 | **43** |
 
-Wat opvalt: **wie 15 habits half doet (470) staat ruim boven wie 3 habits bijna perfect doet (190).** Dat is het gevolg van tellen per taak (§4.2). De eenvoud is er de reden voor; als het in de praktijk toch scheef voelt, zijn dit de verfijningen die we kunnen kiezen:
-- *Puntenplafond per dag* (bijvoorbeeld de eerste 5 taken van een dag): beperkt wat extra habits opleveren.
-- *Een tweede ranglijst op consistentie* (percentage gedaan), voor wie liever op trouw dan op volume wil kijken.
-- *Gewicht per habit* (een lastige habit meer punten): meer werk en meer uitleg; ik raad het niet aan.
+Wat opvalt:
+- **De minpunten verkleinen het voordeel van veel habits**: wie 15 habits half doet zakt van 480 naar 305. Het blijft meer dan de 185 van de trouwe gebruiker met 3 habits: wie meer aanpakt, scoort meer. Dat is bewust, maar het is de eerste knop om aan te draaien (bijvoorbeeld een plafond van punten per dag).
+- **Knoeien loont niet**: elke dag een nieuwe habit starten en weggooien levert 43 op, minder dan trouw één habit doen (70).
+- **De opbouwbonus is bescheiden** (ongeveer 20% in de eerste 21 dagen, 10% daarna) en verdwijnt zodra een habit eigen is. Een starter die in de eerste week alles doet, staat even hoog als een gevestigde gebruiker (188 tegen 185). Dat is de bedoeling van het "starten" belonen, en ook de knop als het te gul blijkt: `START_BONUS` en `BUILD_BONUS_STARTING`.
+- **Een slechte week doet pijn**: 50% gedaan geeft in de opbouwfase 58, onder het basisresultaat (90). Break-even ligt bij ongeveer een derde van de taken. Houd dit in de gaten: de app zegt elders dat één gemiste dag niets kapotmaakt, en dit is de plek waar die toon wordt getest.
 
 ## 5. Datamodel (voorstel, Supabase)
 
@@ -210,7 +221,7 @@ Besloten (S9): de ranglijst is bereikbaar vanaf **Voortgang** (een kaart "Rangli
 
 ### 7.2 Schermen
 1. **Uitleg + aanzetten** (bij eerste keer): wat vrienden zien, kies je gebruikersnaam, bevestig.
-2. **Ranglijst** (hoofdscherm): lijst met jou gemarkeerd, rang, naam, punten als getal én balk, reeks. Bovenaan wie je bent en je positie; onderaan "Vrienden toevoegen".
+2. **Ranglijst** (hoofdscherm): lijst met jou gemarkeerd, rang, naam, punten als getal én balk, reeks. Bovenaan wie je bent en je positie, met "Waar komen mijn punten vandaan?" (§4.6); onderaan "Vrienden toevoegen".
 3. **Vrienden toevoegen**: zoekveld (exacte naam) + "Deel uitnodigingslink"; resultaat "Stuur verzoek".
 4. **Verzoeken**: ontvangen (accepteren/weigeren) en verstuurd (intrekken), met een teller op de knop.
 5. **Vriendenlijst/beheer**: vrienden verwijderen, uitnodigingslinks intrekken.
@@ -223,7 +234,7 @@ Besloten (S9): de ranglijst is bereikbaar vanaf **Voortgang** (een kaart "Rangli
 - Zonder sociaal merkt de gebruiker niets: geen extra verzoeken, geen extra rekenwerk.
 
 ## 8. Niet-functioneel en kwaliteit
-- **Domein** (punten, venster, gelijke stand, actief-regel, dagwissel, flexibele habits) puur en met tests, inclusief de randgevallen uit PLAN §4.8 waar relevant. Eén bron voor constanten (10 punten per taak, 7 dagen, 3 dagen inactief, 50 vrienden, enz.).
+- **Domein** (punten, bonussen, minpunten, venster, gelijke stand, actief-regel, dagwissel, flexibele en teller-habits) puur en met tests, inclusief de randgevallen uit PLAN §4.8 waar relevant. Eén bron voor constanten (alle bedragen, 7 dagen, 3 dagen inactief, 50 vrienden, enz.).
 - **Server:** RLS-test uitgebreid (§5.2) in `supabase/tests/rls-check.mjs`, die in CI/`npm test` meedraait; migratie idempotent; functies met vaste `search_path`; geen service-sleutel nodig.
 - **Guardrails:** geen `innerHTML`, geen service-sleutel, `svh`-regels, tikvlakken blijven gelden.
 - **Browsertests** voor de flows (aanzetten, uitnodigen, accepteren, ranglijst, offline, weigeren) op telefoon- en desktopformaat. Dit is het natuurlijke moment om de browsertests eindelijk **in de repository en in CI** te zetten (nu alleen lokaal): sociaal is te riskant om zonder vangnet te bouwen. Zie ook WERKWIJZE.
@@ -234,7 +245,7 @@ Besloten (S9): de ranglijst is bereikbaar vanaf **Voortgang** (een kaart "Rangli
 Alle vragen uit het eerste concept zijn beantwoord (S5–S11 bovenaan). Wat overblijft is uitvoering, geen keuze meer:
 - **Testdatabase:** lokaal in Docker, volgens [DEV-OMGEVING.md](DEV-OMGEVING.md).
 - **Naam bij het aanmaken van een account** (S5): de huidige naamdialoog krijgt de uitleg dat vrienden de naam zien. Bestaande accounts krijgen de vraag eenmalig bij het aanzetten van sociaal.
-- **Het gevolg van S6/S7 in één zin:** je punten stijgen met elke taak die je afrondt en zakken alleen doordat een oude dag uit het venster van 7 dagen schuift; en wie 3 dagen stil is, zie je niet meer. Dat is de bedoeling.
+- **Het gevolg van S6/S7 in één zin:** je punten stijgen met elke taak, krijgen een extra duwtje zolang een habit nog nieuw is, en zakken met 5 voor elke gemiste dag (zodra die dag voorbij is); wie 3 dagen stil is, zie je niet meer. De uitsplitsing van je eigen punten laat zien waar het vandaan komt.
 
 ## 10. Mijlpalen en acceptatiecriteria (voorstel)
 
@@ -243,7 +254,7 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 | M | Inhoud | Klaar als… |
 |---|---|---|
 | **S0** | Dit document akkoord; besluiten S5–S11 genomen; de lokale testdatabase draait en de app kan er mee verbinden | besluiten ✔; testdatabase in uitvoering |
-| **S1** | Domein: weekpunten (10 per afgeronde taak), actief-regel (3 dagen), gelijke stand, tests. Plus de naamvraag bij het aanmaken van een account (S5) | ✔ klaar: de regels uit §4 hebben groene tests; de meting (§4.7) staat erin. |
+| **S1** | Domein: punten (basis, opbouwbonus, startbonus, minpunten, half gehaalde teller), actief-regel (3 dagen), gelijke stand, tests. Plus de naamvraag bij het aanmaken van een account (S5) | ✔ klaar: de regels uit §4 hebben groene tests; de meting (§4.7) staat erin. |
 | **S2** | Server: migratie 0003, functies, RLS-tests, DATAMODEL bijgewerkt | RLS-testscript bewijst: niet-vriend ziet niets, vriend ziet alleen de ranglijstvelden, weigeren met wachttijd, intrekken, verlopen, limieten en cascade werken. |
 | **S3** | Data-laag en publiceren: remote-client, samenvatting na sync, offline cache | Publiceren gebeurt op de achtergrond; uit = niets verzonden (testbaar). |
 | **S4** | UI: aanzetten, zoeken, link, verzoeken, ranglijst, lege toestanden, beide thema's, desktop | Browsertests groen op 360/390/412 px en desktop; a11y- en overflowrondes groen. |
@@ -255,8 +266,8 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 |---|---|---|
 | X1 | Gebruikerslijst afzoeken (enumeratie) of namen raden | exacte match, rate limit, uniform antwoord, geen autocomplete |
 | X2 | Lastigvallen via verzoeken | stille weigering met wachttijd, limieten, intrekken, geen vrije tekst; blokkeren later als het nodig blijkt |
-| X3 | Valsspelen met de punten (of triviale habits toevoegen) | aanvaard binnen vrienden; bereikcontroles; reeks en habit-aantal zichtbaar |
-| X4 | Ranglijst demotiveert (altijd laatste staan), of wie veel habits heeft wint altijd | schuivend venster van 7 dagen, wie stil is valt weg, uit te zetten; verfijningen in §4.7 als het scheef voelt |
+| X3 | Valsspelen met de punten (of triviale habits toevoegen) | aanvaard binnen vrienden; plafond op startbonussen; minpunten maken knoeien onaantrekkelijk; reeks en habit-aantal zichtbaar |
+| X4 | Ranglijst demotiveert (minpunten, altijd laatste staan) of wie veel habits heeft wint altijd | minpunten half zo groot als een taak en nooit onder nul; schuivend venster van 7 dagen; wie stil is valt weg; uit te zetten; knoppen in de constanten (§4.7) |
 | X5 | Productiedata raakt vermengd met testen | lokale testdatabase (S11); migratie additief |
 | X6 | Privacyverklaring loopt achter op de feature | S5 is een voorwaarde voor release |
 | X7 | Ontwikkelwerk groeit uit tot "sociaal netwerk" | §3.5 houdt scope klein; aanmoedigen/groepen later apart |
