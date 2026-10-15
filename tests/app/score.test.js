@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { buildBonus, buildScoreSummary, scoreWindow } from '../../src/app/score.js';
 import { addDays } from '../../src/domain/dates.js';
 import {
-  BUILD_BONUS_BUILDING, BUILD_BONUS_STARTING, MISS_PENALTY, START_BONUS, START_BONUS_MAX, TASK_POINTS,
+  BUILD_BONUS_BUILDING, BUILD_BONUS_STARTING, MISS_GRACE, MISS_PENALTY, START_BONUS, START_BONUS_MAX, TASK_POINTS,
 } from '../../src/domain/constants.js';
 
 const TODAY = '2026-10-15'; // donderdag; het venster is 9 t/m 15 oktober
@@ -75,10 +75,63 @@ test('zonder habits: nul punten en een lege samenvatting', () => {
 
 // ---- minpunten -----------------------------------------------------------------------------------------------------------
 
-test('een gemiste dag kost minpunten', () => {
+test('een enkele gemiste dag kost niets: een misser is toegestaan', () => {
+  assert.equal(MISS_GRACE, 1);
   const s = summary({ habits: [habit('a')], checkIns: [early('a'), ...without(WEEK, '2026-10-12').map((d) => done('a', d))] });
+  assert.equal(s.breakdown.penalty, 0);
+  assert.equal(s.points, 6 * TASK_POINTS);
+});
+
+test('twee dagen achter elkaar missen kost minpunten, vanaf de tweede', () => {
+  const s = summary({ habits: [habit('a')], checkIns: [early('a'), ...without(WEEK, '2026-10-11', '2026-10-12').map((d) => done('a', d))] });
+  assert.equal(s.breakdown.penalty, MISS_PENALTY); // de 11e is gratis, de 12e kost
+  assert.equal(s.points, 5 * TASK_POINTS - MISS_PENALTY);
+});
+
+test('een rij van drie missers kost twee keer; elke misser die direct op een misser volgt telt', () => {
+  const s = summary({ habits: [habit('a')], checkIns: [early('a'), ...without(WEEK, '2026-10-11', '2026-10-12', '2026-10-13').map((d) => done('a', d))] });
+  assert.equal(s.breakdown.penalty, 2 * MISS_PENALTY);
+});
+
+test('na een afgeronde dag is de misser weer gratis: misser, gedaan, misser kost niets', () => {
+  const s = summary({ habits: [habit('a')], checkIns: [early('a'), ...without(WEEK, '2026-10-10', '2026-10-12').map((d) => done('a', d))] });
+  assert.equal(s.breakdown.penalty, 0);
+});
+
+test('gedaan, misser, misser, gedaan, misser, misser: elke rij kost één keer', () => {
+  const s = summary({ habits: [habit('a')], checkIns: [early('a'), done('a', '2026-10-09'), done('a', '2026-10-12'), done('a', TODAY)] });
+  // 10, 11 gemist (11 kost), 12 gedaan, 13, 14 gemist (14 kost)
+  assert.equal(s.breakdown.penalty, 2 * MISS_PENALTY);
+});
+
+test('een misser vlak voor het venster telt mee als "de vorige keer"', () => {
+  // de 8e en de 9e gemist: de 9e is de tweede achter elkaar en kost
+  const s = summary({ habits: [habit('a')], checkIns: [early('a'), done('a', '2026-10-07'), ...days('2026-10-10', TODAY).map((d) => done('a', d))] });
   assert.equal(s.breakdown.penalty, MISS_PENALTY);
-  assert.equal(s.points, 6 * TASK_POINTS - MISS_PENALTY);
+  // de 8e wel gedaan, de 9e gemist: gratis
+  const lone = summary({ habits: [habit('a')], checkIns: [early('a'), done('a', '2026-10-08'), ...days('2026-10-10', TODAY).map((d) => done('a', d))] });
+  assert.equal(lone.breakdown.penalty, 0);
+});
+
+test('overslaan tussen twee missers maakt ze niet los van elkaar: het onderbreekt de rij niet', () => {
+  const s = summary({ habits: [habit('a')], checkIns: [early('a'), done('a', '2026-10-11', 'skipped'), ...without(WEEK, '2026-10-10', '2026-10-11', '2026-10-12').map((d) => done('a', d))] });
+  assert.equal(s.breakdown.penalty, MISS_PENALTY); // 10 gemist (gratis), 11 overgeslagen, 12 gemist (kost)
+});
+
+test('de rij loopt per eenheid van de habit: bij vaste weekdagen zijn dat de geplande dagen, niet de dagen op de kalender', () => {
+  const h = habit('w', { type: 'weekdays', weekdays: [0, 2, 4] }); // ma, wo, vr
+  // in het venster: vr 9, ma 12, wo 14. Vr gedaan, ma en wo gemist: twee geplande dagen achter elkaar
+  const s = summary({ habits: [h], checkIns: [early('w'), done('w', '2026-10-09')] });
+  assert.equal(s.breakdown.penalty, MISS_PENALTY);
+  // alleen ma gemist: gratis
+  const lone = summary({ habits: [h], checkIns: [early('w'), done('w', '2026-10-09'), done('w', '2026-10-14')] });
+  assert.equal(lone.breakdown.penalty, 0);
+});
+
+test('de ruimte geldt per habit: een misser bij twee verschillende habits op dezelfde dag kost niets', () => {
+  const habits = [habit('a'), habit('b')];
+  const checkIns = habits.flatMap((h) => [early(h.id), ...without(WEEK, '2026-10-12').map((d) => done(h.id, d))]);
+  assert.equal(summary({ habits, checkIns }).breakdown.penalty, 0);
 });
 
 test('vandaag kost nooit minpunten: de dag is nog niet voorbij', () => {
@@ -88,9 +141,10 @@ test('vandaag kost nooit minpunten: de dag is nog niet voorbij', () => {
 });
 
 test('de minpunten van een dag komen pas als die dag voorbij is, en een nieuwe dag laat de rest staan', () => {
-  const state = { habits: [habit('a')], checkIns: [early('a'), ...days('2026-10-09', '2026-10-14').map((d) => done('a', d))] };
-  assert.equal(summary(state, '2026-10-15').points, 60); // de 15e is nog open
-  assert.equal(summary(state, '2026-10-16').points, 5 * TASK_POINTS - MISS_PENALTY); // de 15e is gemist; de 9e schuift eruit
+  // 9 t/m 13 gedaan, de 14e en 15e niet
+  const state = { habits: [habit('a')], checkIns: [early('a'), ...days('2026-10-09', '2026-10-13').map((d) => done('a', d))] };
+  assert.equal(summary(state, '2026-10-15').points, 50); // de 14e is de eerste misser (gratis), de 15e is nog open
+  assert.equal(summary(state, '2026-10-16').points, 4 * TASK_POINTS - MISS_PENALTY); // de 15e is nu de tweede misser; de 9e schuift eruit
 });
 
 test('overslaan en pauze kosten niets', () => {
@@ -104,7 +158,7 @@ test('overslaan en pauze kosten niets', () => {
 });
 
 test('terugwerkend invullen herstelt de minpunten: de gemiste dag levert punten op en kost niets meer', () => {
-  const state = { habits: [habit('a')], checkIns: [early('a'), ...without(WEEK, '2026-10-12').map((d) => done('a', d))] };
+  const state = { habits: [habit('a')], checkIns: [early('a'), ...without(WEEK, '2026-10-11', '2026-10-12').map((d) => done('a', d))] };
   const fixed = { ...state, checkIns: [...state.checkIns, done('a', '2026-10-12')] };
   assert.equal(summary(fixed).points - summary(state).points, TASK_POINTS + MISS_PENALTY);
 });
@@ -128,6 +182,14 @@ test('een flexibele habit kost minpunten als de week eindigt zonder dat het doel
 test('een flexibele habit krijgt voor de lopende week nog niets te verwijten', () => {
   const s = summary({ habits: [habit('f', FLEX)], checkIns: [early('f'), done('f', '2026-10-05'), done('f', '2026-10-06')] });
   assert.equal(s.breakdown.penalty, 0); // vorige week gehaald, deze week loopt nog
+});
+
+test('een flexibele habit: een enkele gemiste week is gratis, twee weken achter elkaar niet', () => {
+  // de week 5 t/m 11 oktober eindigt in het venster. De week ervoor (28 sep t/m 4 okt) was gehaald: deze misser is de eerste
+  const previousMet = [early('f'), done('f', '2026-09-29'), done('f', '2026-09-30')];
+  assert.equal(summary({ habits: [habit('f', FLEX)], checkIns: previousMet }).breakdown.penalty, 0);
+  // ook die week gemist: twee weken achter elkaar, en het tekort van de tweede kost
+  assert.equal(summary({ habits: [habit('f', FLEX)], checkIns: [early('f')] }).breakdown.penalty, 2 * MISS_PENALTY);
 });
 
 test('een gearchiveerde habit levert geen minpunten meer op, zijn taken tellen wel', () => {
@@ -213,11 +275,11 @@ test('een habit die al eerder is afgevinkt geeft geen startbonus meer', () => {
   assert.equal(s.breakdown.start, 0);
 });
 
-test('elke dag een nieuwe habit starten en één keer afvinken loont niet: de gemiste dagen trekken het af', () => {
+test('elke dag een nieuwe habit starten en één keer afvinken loont niet: de gemiste dagen na de eerste misser trekken het af', () => {
   const farm = WEEK.map((d, i) => habit(`farm${i}`, ALL_DAYS, { startDate: d }));
   const s = summary({ habits: farm, checkIns: farm.map((h, i) => done(h.id, WEEK[i])) });
   const honest = summary({ habits: [habit('a')], checkIns: [early('a'), ...WEEK.map((d) => done('a', d))] });
-  assert.equal(s.breakdown.penalty, 15 * MISS_PENALTY);
+  assert.equal(s.breakdown.penalty, 10 * MISS_PENALTY); // per habit is de eerste misser gratis, de rest kost
   assert.ok(s.points < honest.points, `${s.points} moet lager zijn dan ${honest.points}`);
 });
 

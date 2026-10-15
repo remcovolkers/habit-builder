@@ -55,6 +55,8 @@ export const START_BONUS = 10;
 export const START_BONUS_MAX = 2;
 /** Aftrek per gemiste dag (of per ontbrekende keer bij een flexibele habit). Half zoveel als een taak oplevert. */
 export const MISS_PENALTY = 5;
+/** Per habit zijn de eerste MISS_GRACE missers van een rij gratis: een enkele misser kost niets, nooit twee keer achter elkaar. */
+export const MISS_GRACE = 1;
 /** Een teller die je half haalde levert deze fractie van een taak op en kost geen minpunten. */
 export const PARTIAL_FRACTION = 0.5;
 export const SOCIAL_ACTIVE_DAYS = 3;

@@ -4,11 +4,13 @@
 //   + TASK_POINTS per afgeronde taak (één afgevinkte habit op één dag; een teller die je half haalde telt voor de helft)
 //   + opbouwbonus per taak zolang de habit nog niet eigen is: meer in de eerste 21 dagen, minder tot de ingeburgerd-grens (66)
 //   + startbonus voor een nieuwe habit bij de eerste afgeronde taak (hoogstens START_BONUS_MAX per venster)
-//   − MISS_PENALTY per gemiste dag (vaste dagen) of per ontbrekende keer als een week/maand eindigt (flexibele habits)
+//   − MISS_PENALTY per gemiste dag (vaste dagen) of per ontbrekende keer als een week/maand eindigt (flexibele habits),
+//     maar pas vanaf de tweede keer achter elkaar: een enkele misser per habit is gratis (MISS_GRACE). Nooit twee keer achter elkaar.
 // De minpunten tellen alleen voor dagen die voorbij zijn, nooit voor vandaag; overslaan, pauze en een half gehaalde teller kosten
-// niets. Het totaal gaat nooit onder nul. Terugwerkend invullen (tot 14 dagen) herstelt dus ook de minpunten.
+// niets en onderbreken een rij missers niet (net als bij de reeks); een afgeronde dag of een half gehaalde teller wel.
+// Het totaal gaat nooit onder nul. Terugwerkend invullen (tot 14 dagen) herstelt dus ook de minpunten.
 import {
-  BUILD_BONUS_BUILDING, BUILD_BONUS_STARTING, DEFAULT_GRADUATION_DAYS, MISS_PENALTY, PARTIAL_FRACTION, PHASE_STARTING_UNTIL_DAY,
+  BUILD_BONUS_BUILDING, BUILD_BONUS_STARTING, DEFAULT_GRADUATION_DAYS, MISS_GRACE, MISS_PENALTY, PARTIAL_FRACTION, PHASE_STARTING_UNTIL_DAY,
   SCORE_WINDOW_DAYS, START_BONUS, START_BONUS_MAX, TASK_POINTS,
 } from '../domain/constants.js';
 import { addDays } from '../domain/dates.js';
@@ -38,18 +40,26 @@ export function buildBonus({ habit, pauses, date }) {
 const taskValue = (bonus, status) => (status === 'partial' ? Math.floor(((TASK_POINTS + bonus) * PARTIAL_FRACTION)) : TASK_POINTS + bonus);
 
 /**
- * Minpunten van één habit binnen het venster. Een afgesloten eenheid die gemist is telt als één miss per ontbrekende keer.
- * Een dag met een half gehaalde teller (partial) is niet gemist.
+ * Minpunten van één habit binnen het venster, in aantallen missers. Een afgesloten eenheid die gemist is
+ * telt als één misser in de rij en kost, als hij niet gratis is, een aftrek per ontbrekende keer. Per habit is de eerste misser van een
+ * rij gratis (MISS_GRACE); elke misser die er direct op volgt kost.
+ * Een rij loopt door zolang er niets is afgerond: overslaan, pauze en een nog lopende eenheid onderbreken hem niet, een afgeronde
+ * eenheid of een dag met een half gehaalde teller (partial) wel. De rij begint niet bij het venster: een miss vlak voor de
+ * eerste dag van het venster telt mee als "de vorige keer".
  */
 function missesIn({ units, checkIns }, first, today) {
   const partialDates = new Set(checkIns.filter((c) => c.status === 'partial').map((c) => c.date));
+  let run = 0;
   let misses = 0;
   for (const unit of units) {
-    if (unit.status !== 'missed' || unit.end < first || unit.end >= today) continue;
-    if (unit.kind === 'day') {
-      if (!partialDates.has(unit.end)) misses += 1;
-    } else {
-      misses += Math.max(1, (unit.target ?? 1) - (unit.count ?? 0));
+    const partial = unit.kind === 'day' && partialDates.has(unit.end);
+    if (unit.status === 'done' || unit.status === 'minimal' || partial) {
+      run = 0;
+    } else if (unit.status === 'missed' && unit.end < today) {
+      // één eenheid is één misser in de rij, ook als er meer keren ontbreken; kost hij, dan per ontbrekende keer
+      const missing = unit.kind === 'day' ? 1 : Math.max(1, (unit.target ?? 1) - (unit.count ?? 0));
+      run += 1;
+      if (unit.end >= first && run > MISS_GRACE) misses += missing;
     }
   }
   return misses;

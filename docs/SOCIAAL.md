@@ -22,7 +22,7 @@ Wat het níét is: een sociaal netwerk. Geen feed, geen reacties, geen openbare 
 | # | Besluit |
 |---|---|
 | S5 | **Weergavenaam = de naam uit Instellingen.** Bij het aanmaken van een account vragen we "Hoe wil je heten?" en leggen uit dat vrienden die naam zien. Je kiest zelf: je voornaam of iets verzonnens. Dezelfde naam gebruiken de begroeting op Vandaag en de ochtendmelding. Zo is er één naam en hoeft er verder niets bijgehouden te worden. |
-| S6 | **Punten per afgeronde taak, met bonussen en minpunten** (besloten na de eerste meting). Een vast bedrag per taak (één afgevinkte habit op één dag; flexibele habits doen gelijk mee). Extra punten zolang een habit nog niet eigen is: meer in het begin, minder later. Extra punten voor het starten van een nieuwe habit. Minpunten voor wat je liet liggen: half zoveel als een taak oplevert, nooit onder nul. Een half gehaalde teller telt voor de helft (§4). |
+| S6 | **Punten per afgeronde taak, met bonussen en minpunten** (besloten na de eerste meting). Een vast bedrag per taak (één afgevinkte habit op één dag; flexibele habits doen gelijk mee). Extra punten zolang een habit nog niet eigen is: meer in het begin, minder later. Extra punten voor het starten van een nieuwe habit. Minpunten voor wat je liet liggen, half zoveel als een taak oplevert, nooit onder nul, en **een enkele misser per habit is gratis: nooit twee keer achter elkaar**. Een half gehaalde teller telt voor de helft (§4). |
 | S7 | **Wie 3+ dagen niets doet, verdwijnt uit de lijst** tot hij of zij het weer oppakt (§4.4). |
 | S8 | **Een uitnodigingslink maakt direct vrienden.** Zoeken op gebruikersnaam blijft een verzoek met acceptatie (zie V12). |
 | S9 | **Navigatie via Voortgang** (geen zesde tabblad). |
@@ -104,8 +104,8 @@ De ranglijst telt **punten**, over de **laatste 7 dagen, vandaag meegerekend**. 
 | Opbouwbonus, per taak, zolang de habit nog niet eigen is: de eerste 21 dagen | **+4** | `BUILD_BONUS_STARTING` |
 | Opbouwbonus, per taak, vanaf dag 22 tot de ingeburgerd-grens (66 dagen, per habit instelbaar) | **+2** | `BUILD_BONUS_BUILDING` |
 | Startbonus, eenmalig bij de **eerste afgeronde taak** van een nieuwe habit (hoogstens 2 per venster) | **+10** | `START_BONUS`, `START_BONUS_MAX` |
-| Een gemiste dag (habit met vaste dagen) | **−5** | `MISS_PENALTY` |
-| Een flexibele habit waarvan een week/maand eindigt zonder dat het doel gehaald is: per ontbrekende keer | **−5** | idem |
+| Een gemiste dag (habit met vaste dagen) die **direct op een gemiste dag volgt**; de eerste misser van een rij is gratis | **−5** | `MISS_PENALTY`, `MISS_GRACE` |
+| Een flexibele habit waarvan een week/maand eindigt zonder dat het doel gehaald is, **als de vorige week/maand ook gemist was**: per ontbrekende keer | **−5** | idem |
 | Een teller die je half haalde (bijv. 5 van 8 glazen) | **+5** (de helft van een taak, plus de helft van de opbouwbonus), geen minpunten | `PARTIAL_FRACTION` |
 
 **Totaal** = taken + opbouwbonus + startbonus − minpunten, **nooit onder nul**.
@@ -113,8 +113,10 @@ De ranglijst telt **punten**, over de **laatste 7 dagen, vandaag meegerekend**. 
 ### 4.2 Regels in detail
 - **Taak:** dezelfde habit telt hooguit één keer per dag. Overslaan levert niets op en kost niets. Flexibele habits (bijv. 2× per week) doen precies hetzelfde mee als vaste: alles op één dag afronden geeft evenveel basispunten als verspreid over de week.
 - **Opbouwbonus:** de leeftijd van de habit op de dag van de taak (actieve dagen, gepauzeerde dagen tellen niet mee). De bonus stopt zodra je de habit **ingeburgerd verklaart** (voor taken vanaf die dag) of de ingeburgerd-grens van de habit is bereikt, ook als je hem niet verklaart. Zo beloont de bonus de fase waarin een habit nog moeite kost; daarna levert hij gewoon de basispunten op.
-- **Startbonus:** pas bij de eerste afgeronde taak, dus niet bij aanmaken. Het plafond van 2 per venster en de minpunten voor de dagen daarna houden het aanmaken en weggooien van habits onaantrekkelijk (zie §4.7).
-- **Minpunten:** alleen voor dagen die **voorbij** zijn; vandaag kost nooit iets. De aftrek komt dus als een dag sluit (met de dagwissel van de gebruiker, standaard 04:00). Overslaan, pauze en een half gehaalde teller kosten niets. Een flexibele habit krijgt de aftrek pas als zijn week of maand eindigt, per ontbrekende keer. Een afgeronde dag die je **terugwerkend invult** (tot 14 dagen terug) levert de punten op en neemt de aftrek weg.
+- **Startbonus:** pas bij de eerste afgeronde taak, dus niet bij aanmaken. Het plafond van 2 per venster en de minpunten voor de dagen daarna beperken het aanmaken en weggooien van habits (zie §4.7 voor hoe sterk).
+- **Minpunten en de eerste misser gratis:** alleen voor dagen die **voorbij** zijn; vandaag kost nooit iets. Per habit is een **enkele misser gratis** (`MISS_GRACE = 1`): je mag een dag missen zonder dat het je iets kost, maar **nooit twee keer achter elkaar**. Bij een rij van n missers is de eerste gratis en kosten de overige n − 1 elk 5. "Achter elkaar" gaat per eenheid van de habit: bij een habit voor maandag, woensdag en vrijdag zijn een gemiste maandag en een gemiste woensdag twee achter elkaar, ook al ligt er een dag tussen. Een afgeronde dag of een half gehaalde teller maakt de rij weer schoon (de volgende misser is weer gratis). Overslaan, pauze en een nog lopende eenheid breken de rij niet af en tellen niet als misser, net als bij de reeks. Een misser vlak vóór het venster telt mee als "de vorige keer". De regel geldt per habit: een misser bij twee verschillende habits op dezelfde dag kost niets.
+- **Flexibele habits:** een gemiste week of maand is één misser in de rij. Een enkele gemiste week is gratis; mist een week direct na een gemiste week, dan kost het tekort van die tweede week 5 per ontbrekende keer. De aftrek komt pas als de week of maand eindigt.
+- **Overig:** overslaan, pauze en een half gehaalde teller kosten niets. Een afgeronde dag die je **terugwerkend invult** (tot 14 dagen terug) levert de punten op en neemt de aftrek weg.
 - **Gearchiveerde habits** krijgen geen minpunten meer; taken die je ervoor deed blijven tellen.
 - **Dag** volgt de dagwissel van de gebruiker: een check-in van 02:00 hoort bij de vorige dag.
 
@@ -138,20 +140,21 @@ De berekening levert naast het totaal een uitsplitsing (`breakdown`: taken, bonu
 
 | Soort gebruiker | Alleen basis | Met bonussen en minpunten |
 |---|---|---|
-| 3 habits, 90%, al 200 dagen bezig | 190 | **185** |
-| 3 habits, 90%, 30 dagen bezig (opbouw) | 180 | **206** |
-| 3 habits, 50%, 30 dagen bezig | 90 | **58** |
-| 15 habits gemengd, 70%, 200 dagen | 750 | **655** |
-| 15 habits gemengd, 40%, 200 dagen | 480 | **305** |
+| 3 habits, 90%, al 200 dagen bezig | 190 | **190** |
+| 3 habits, 90%, 30 dagen bezig (opbouw) | 180 | **216** |
+| 3 habits, 50%, 30 dagen bezig | 90 | **78** |
+| 15 habits gemengd, 70%, 200 dagen | 750 | **725** |
+| 15 habits gemengd, 40%, 200 dagen | 480 | **365** |
 | starter: 2 habits, 5 dagen bezig, alles gedaan | 120 | **188** |
-| starter: 1 habit, 5 dagen bezig, 50% | 20 | **23** |
-| knoeier: elke dag een nieuwe habit, één keer afvinken | 70 | **43** |
+| starter: 1 habit, 5 dagen bezig, 50% | 20 | **28** |
+| knoeier: elke dag een nieuwe habit, één keer afvinken | 70 | **68** |
 
 Wat opvalt:
-- **De minpunten verkleinen het voordeel van veel habits**: wie 15 habits half doet zakt van 480 naar 305. Het blijft meer dan de 185 van de trouwe gebruiker met 3 habits: wie meer aanpakt, scoort meer. Dat is bewust, maar het is de eerste knop om aan te draaien (bijvoorbeeld een plafond van punten per dag).
-- **Knoeien loont niet**: elke dag een nieuwe habit starten en weggooien levert 43 op, minder dan trouw één habit doen (70).
-- **De opbouwbonus is bescheiden** (ongeveer 20% in de eerste 21 dagen, 10% daarna) en verdwijnt zodra een habit eigen is. Een starter die in de eerste week alles doet, staat even hoog als een gevestigde gebruiker (188 tegen 185). Dat is de bedoeling van het "starten" belonen, en ook de knop als het te gul blijkt: `START_BONUS` en `BUILD_BONUS_STARTING`.
-- **Een slechte week doet pijn**: 50% gedaan geeft in de opbouwfase 58, onder het basisresultaat (90). Break-even ligt bij ongeveer een derde van de taken. Houd dit in de gaten: de app zegt elders dat één gemiste dag niets kapotmaakt, en dit is de plek waar die toon wordt getest.
+- **Wie trouw is, merkt de minpunten niet.** Met een gratis eerste misser staat iemand die 90% haalt op 190 (de aftrek is nul). Een gewone slechte dag kost niets; pas een rij missers wordt voelbaar.
+- **Een slechte periode doet nog wel pijn**: 50% gedaan in de opbouwfase geeft 78, onder het basisresultaat (90). Wie zijn habit vaak twee dagen op rij laat liggen, verliest punten.
+- **Veel habits blijven voordeel geven**: 15 habits half doen (365) staat ruim boven 3 habits bijna perfect (190). Dat volgt uit tellen per taak (§4.2) en is de eerste knop om aan te draaien (bijvoorbeeld een plafond van punten per dag).
+- **Knoeien is niet meer afgeschrikt, alleen niet meer lonend**: elke dag een nieuwe habit starten en één keer afvinken levert 68 op, evenveel als trouw één habit doen (70). De gratis eerste misser haalt een deel van de afschrikking weg. Wil je dat strenger, dan helpt `START_BONUS_MAX = 1` of de startbonus pas bij de derde afgeronde taak.
+- **De opbouwbonus is bescheiden** (ongeveer 20% in de eerste 21 dagen, 10% daarna) en verdwijnt zodra een habit eigen is. Een starter die in de eerste week alles doet staat net zo hoog als een gevestigde gebruiker (188 tegen 190). Dat is de bedoeling van het "starten" belonen; `START_BONUS` en `BUILD_BONUS_STARTING` zijn de knoppen.
 
 ## 5. Datamodel (voorstel, Supabase)
 
@@ -245,7 +248,7 @@ Besloten (S9): de ranglijst is bereikbaar vanaf **Voortgang** (een kaart "Rangli
 Alle vragen uit het eerste concept zijn beantwoord (S5–S11 bovenaan). Wat overblijft is uitvoering, geen keuze meer:
 - **Testdatabase:** lokaal in Docker, volgens [DEV-OMGEVING.md](DEV-OMGEVING.md).
 - **Naam bij het aanmaken van een account** (S5): de huidige naamdialoog krijgt de uitleg dat vrienden de naam zien. Bestaande accounts krijgen de vraag eenmalig bij het aanzetten van sociaal.
-- **Het gevolg van S6/S7 in één zin:** je punten stijgen met elke taak, krijgen een extra duwtje zolang een habit nog nieuw is, en zakken met 5 voor elke gemiste dag (zodra die dag voorbij is); wie 3 dagen stil is, zie je niet meer. De uitsplitsing van je eigen punten laat zien waar het vandaan komt.
+- **Het gevolg van S6/S7 in één zin:** je punten stijgen met elke taak, krijgen een extra duwtje zolang een habit nog nieuw is, en zakken pas als je een habit twee keer achter elkaar laat liggen (dan met 5 per extra misser); wie 3 dagen stil is, zie je niet meer. De uitsplitsing van je eigen punten laat zien waar het vandaan komt.
 
 ## 10. Mijlpalen en acceptatiecriteria (voorstel)
 
@@ -267,7 +270,7 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 | X1 | Gebruikerslijst afzoeken (enumeratie) of namen raden | exacte match, rate limit, uniform antwoord, geen autocomplete |
 | X2 | Lastigvallen via verzoeken | stille weigering met wachttijd, limieten, intrekken, geen vrije tekst; blokkeren later als het nodig blijkt |
 | X3 | Valsspelen met de punten (of triviale habits toevoegen) | aanvaard binnen vrienden; plafond op startbonussen; minpunten maken knoeien onaantrekkelijk; reeks en habit-aantal zichtbaar |
-| X4 | Ranglijst demotiveert (minpunten, altijd laatste staan) of wie veel habits heeft wint altijd | minpunten half zo groot als een taak en nooit onder nul; schuivend venster van 7 dagen; wie stil is valt weg; uit te zetten; knoppen in de constanten (§4.7) |
+| X4 | Ranglijst demotiveert (minpunten, altijd laatste staan) of wie veel habits heeft wint altijd | een enkele misser is gratis (nooit twee achter elkaar); minpunten half zo groot als een taak en nooit onder nul; schuivend venster van 7 dagen; wie stil is valt weg; uit te zetten; knoppen in de constanten (§4.7) |
 | X5 | Productiedata raakt vermengd met testen | lokale testdatabase (S11); migratie additief |
 | X6 | Privacyverklaring loopt achter op de feature | S5 is een voorwaarde voor release |
 | X7 | Ontwikkelwerk groeit uit tot "sociaal netwerk" | §3.5 houdt scope klein; aanmoedigen/groepen later apart |
