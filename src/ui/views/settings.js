@@ -1,4 +1,4 @@
-import { h } from '../dom.js';
+import { fill, h } from '../dom.js';
 import { reloadSettings, saveSettings, state } from '../state.js';
 import { openDialog } from '../components/dialog.js';
 import { accountCard } from '../components/account-card.js';
@@ -12,6 +12,8 @@ import { ValidationError } from '../../data/repository.js';
 import { parseImport } from '../../app/backup.js';
 import { MAX_DAY_START_HOUR } from '../../domain/constants.js';
 import { nl } from '../../content/nl.js';
+import { config } from '../../config.js';
+import { createTapCounter, isDev, onDevChanged, setDev } from '../dev.js';
 
 function timeZones() {
   const zones = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : [];
@@ -109,6 +111,39 @@ function legalSection() {
     h('div', { class: 'stack' }, link('PRIVACY.md', l.privacy), link('VOORWAARDEN.md', l.terms)));
 }
 
+/**
+ * De versieregel onderaan. Zeven keer tikken zet de ontwikkelaarsopties aan of uit (zoals op Android); anderen zien alleen een versienummer.
+ */
+function versionLine() {
+  const tap = createTapCounter();
+  const hint = h('p', { class: 'field__hint version__hint', role: 'status', 'aria-live': 'polite' });
+  const dev = h('div', { class: 'version__dev' });
+  const renderDev = () => {
+    fill(dev, isDev()
+      ? h('div', { class: 'stack' },
+        h('p', { class: 'field__hint', id: 'devOn' }, nl.settings.dev.on),
+        h('button', { type: 'button', id: 'devOff', class: 'button button--ghost button--block', onclick: () => { setDev(false); showToast({ message: nl.settings.dev.off }); } }, nl.settings.dev.turnOff))
+      : null);
+  };
+  renderDev();
+  const stop = onDevChanged(() => (dev.isConnected ? renderDev() : stop()));
+  return h('section', { class: 'section version' },
+    h('button', {
+      type: 'button', id: 'versionLine', class: 'version__button',
+      onclick: () => {
+        const result = tap();
+        if (result.toggled) {
+          hint.textContent = '';
+          showToast({ message: isDev() ? nl.settings.dev.on : nl.settings.dev.off });
+        } else {
+          hint.textContent = result.left === null ? '' : nl.settings.dev.tapsLeft(result.left);
+        }
+      },
+    }, nl.settings.dev.version(config.appVersion)),
+    hint,
+    dev);
+}
+
 export function settingsView() {
   const { settings } = state;
   const errorEl = (id) => h('p', { id, class: 'field__error', role: 'alert', hidden: true });
@@ -153,5 +188,6 @@ export function settingsView() {
         h('p', { id: 'hint-day', class: 'field__hint' }, nl.settings.dayStartHint), errorEls.dayStartHour),
       h('button', { type: 'submit', class: 'button button--primary button--block' }, nl.settings.save)),
     backupSection(),
-    legalSection())));
+    legalSection(),
+    versionLine())));
 }

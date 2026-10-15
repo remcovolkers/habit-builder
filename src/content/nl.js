@@ -232,6 +232,14 @@ export const nl = {
   },
 
   settings: {
+    dev: {
+      version: (version) => `Habit Builder · versie ${version}`,
+      tapsLeft: (n) => `Nog ${n} ${n === 1 ? 'tik' : 'tikken'} voor ontwikkelaarsopties`,
+      on: 'Ontwikkelaarsopties staan aan',
+      off: 'Ontwikkelaarsopties staan uit',
+      title: 'Ontwikkelaar',
+      turnOff: 'Ontwikkelaarsopties uitzetten',
+    },
     title: 'Instellingen',
     legal: {
       title: 'Privacy en voorwaarden',
@@ -408,6 +416,7 @@ export const nl = {
     status: (time) => `Aan: elke dag rond ${time}.`,
     test: 'Stuur een testmelding',
     testSent: 'Testmelding verstuurd. Die komt zo binnen.',
+    devTitle: 'Ontwikkelaar: meldingen testen',
     testDelayed: 'Testmelding over 15 seconden',
     testDelayedSent: 'Gepland. Sluit nu de app en vergrendel je scherm: de melding komt over ongeveer 15 seconden.',
     battery: {

@@ -13,6 +13,7 @@ import { achievementsView } from './ui/views/achievements.js';
 import { loginView } from './ui/views/login.js';
 import { initAccount } from './ui/account.js';
 import { initReminders } from './ui/reminders.js';
+import { setDev } from './ui/dev.js';
 import { startPwa } from './pwa.js';
 import { mountUpdateBanner } from './ui/components/update-banner.js';
 import { celebrateAchievements } from './ui/components/achievement.js';
@@ -77,6 +78,15 @@ if (isTheme(linkedTheme)) {
   if (state.settings.theme !== linkedTheme) await saveSettings({ theme: linkedTheme });
   const url = new URL(location.href);
   url.searchParams.delete('theme');
+  history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+// ?dev=1 zet de ontwikkelaarsopties aan, ?dev=0 uit (daarna uit de adresbalk gehaald)
+const linkedDev = new URLSearchParams(location.search).get('dev');
+if (linkedDev === '1' || linkedDev === '0') {
+  setDev(linkedDev === '1');
+  const url = new URL(location.href);
+  url.searchParams.delete('dev');
   history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
 }
 

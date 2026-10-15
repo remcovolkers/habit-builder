@@ -5,6 +5,7 @@ import { state } from '../state.js';
 import { openDialog } from './dialog.js';
 import { timePicker } from './time-picker.js';
 import { pwa } from '../../pwa.js';
+import { isDev, onDevChanged } from '../dev.js';
 import { isAndroid } from '../../app/reminder.js';
 import { nl } from '../../content/nl.js';
 
@@ -95,6 +96,33 @@ export function reminderCard() {
     pushLog.textContent = r.lastPush.detail(clock(log.sent), clock(log.received), late);
   }
 
+  /** Testmeldingen en de logregel: alleen met ontwikkelaarsopties aan (zie dev.js). */
+  function devTools() {
+    if (!isDev()) return null;
+    return h('div', { class: 'reminder-card__dev', id: 'devTools' },
+      h('p', { class: 'kicker' }, r.devTitle),
+      h('div', { class: 'stack' },
+        h('button', {
+          type: 'button', id: 'testReminder', class: 'button button--secondary button--block', disabled: busy,
+          onclick: () => guarded(async () => {
+            say('');
+            const result = await testReminder();
+            if (result.ok) say(r.testSent);
+            else say(r.testFailed[result.reason] ?? r.testFailed.unknown, true);
+          }),
+        }, r.test),
+        h('button', {
+          type: 'button', id: 'testReminderDelayed', class: 'button button--ghost button--block', disabled: busy,
+          onclick: () => guarded(async () => {
+            say('');
+            const result = await testReminder({ delaySeconds: 15 });
+            if (result.ok) say(r.testDelayedSent);
+            else say(r.testFailed[result.reason] ?? r.testFailed.unknown, true);
+          }),
+        }, r.testDelayed),
+        pushLog));
+  }
+
   function timeField(input) {
     return h('div', { class: 'field' },
       h('span', { class: 'field__label', id: 'reminderTimeLabel' }, r.time),
@@ -137,24 +165,6 @@ export function reminderCard() {
         timeField(input),
         h('div', { class: 'stack' },
           h('button', {
-            type: 'button', id: 'testReminder', class: 'button button--secondary button--block', disabled: busy,
-            onclick: () => guarded(async () => {
-              say('');
-              const result = await testReminder();
-              if (result.ok) say(r.testSent);
-              else say(r.testFailed[result.reason] ?? r.testFailed.unknown, true);
-            }),
-          }, r.test),
-          h('button', {
-            type: 'button', id: 'testReminderDelayed', class: 'button button--ghost button--block', disabled: busy,
-            onclick: () => guarded(async () => {
-              say('');
-              const result = await testReminder({ delaySeconds: 15 });
-              if (result.ok) say(r.testDelayedSent);
-              else say(r.testFailed[result.reason] ?? r.testFailed.unknown, true);
-            }),
-          }, r.testDelayed),
-          h('button', {
             type: 'button', id: 'disableReminder', class: 'button button--ghost button--block', disabled: busy,
             onclick: () => guarded(async () => {
               await disableReminder();
@@ -162,9 +172,9 @@ export function reminderCard() {
               showToast({ message: r.disabled });
             }),
           }, r.disable),
-          message,
-          pushLog),
-        batteryDetails(false));
+          message),
+        batteryDetails(false),
+        devTools());
       showPushLog();
       return;
     }
@@ -194,6 +204,7 @@ export function reminderCard() {
   }
 
   const stop = onRemindersChanged(() => (root.isConnected ? render() : stop()));
+  const stopDev = onDevChanged(() => (root.isConnected ? render() : stopDev()));
   render();
   return root;
 }
