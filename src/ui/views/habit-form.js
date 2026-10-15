@@ -5,9 +5,7 @@ import { openDialog } from '../components/dialog.js';
 import { stepper } from '../components/stepper.js';
 import { nl } from '../../content/nl.js';
 import { ValidationError } from '../../data/repository.js';
-import {
-  applyHabitForm, archiveHabit, pauseHabit, resumeHabit, unarchiveHabit,
-} from '../../app/actions.js';
+import { applyHabitForm } from '../../app/actions.js';
 import { DAYPARTS, HABIT_COLORS, NAME_MAX, TEXT_MAX } from '../../domain/habit.js';
 import { ALL_WEEKDAYS, WORKDAYS } from '../../domain/schedule.js';
 import { currentSchedule } from './habits.js';
@@ -41,8 +39,6 @@ async function mount(root, id, templateKey = null) {
   }
   const preset = existing ? null : (TEMPLATES[templateKey] ?? null);
   const base = existing ?? preset ?? {};
-  const pauses = existing ? await repo.listPauses(existing.id) : [];
-  const openPause = pauses.find((p) => p.to == null) ?? null;
   const started = existing !== null && existing.startDate <= today;
 
   // --- beginwaarden -----------------------------------------------------------------------
@@ -197,7 +193,7 @@ async function mount(root, id, templateKey = null) {
     }
     notifyChanged();
     showToast({ message: nl.app.saved });
-    location.hash = '#/habits';
+    location.hash = existing ? `#/habits/${encodeURIComponent(existing.id)}` : '#/habits';
   }
 
   function showErrors(errors) {
@@ -216,39 +212,31 @@ async function mount(root, id, templateKey = null) {
   }
 
   // --- acties voor een bestaande habit ----------------------------------------------------
-  const act = (fn, message, { stay = true } = {}) => async () => {
+  const act = (fn, message) => async () => {
     await fn();
     notifyChanged();
     showToast({ message });
-    if (stay) await mount(root, id);
-    else location.hash = '#/habits';
+    location.hash = '#/habits';
   };
 
   const extra = existing
     ? h('section', { class: 'section' },
       h('h2', { class: 'section__title' }, nl.form.more),
-      h('div', { class: 'stack' },
-        existing.status === 'archived'
-          ? h('button', { type: 'button', class: 'button button--secondary', onclick: act(() => unarchiveHabit(repo, existing, today), nl.form.toasts.unarchived) }, nl.form.unarchive)
-          : [
-            openPause
-              ? h('button', { type: 'button', class: 'button button--secondary', onclick: act(() => resumeHabit(repo, existing.id, today), nl.form.toasts.resumed) }, nl.form.resume)
-              : h('button', { type: 'button', class: 'button button--secondary', onclick: act(() => pauseHabit(repo, existing.id, today), nl.form.toasts.paused) }, nl.form.pause),
-            h('button', { type: 'button', class: 'button button--secondary', onclick: act(() => archiveHabit(repo, existing, today), nl.form.toasts.archived, { stay: false }) }, nl.form.archive),
-          ],
-        h('button', {
-          type: 'button',
-          class: 'button button--danger',
-          onclick: () => openDialog({
-            title: nl.form.deleteHabit,
-            description: nl.form.confirmDelete(existing.name),
-            actions: [{ label: nl.app.delete, variant: 'danger', onClick: act(() => repo.deleteHabit(existing.id), nl.form.toasts.deleted, { stay: false }) }],
-          }),
-        }, nl.form.deleteHabit)))
+      h('button', {
+        type: 'button',
+        id: 'deleteHabit',
+        class: 'button button--danger button--block',
+        onclick: () => openDialog({
+          title: nl.form.deleteHabit,
+          description: nl.form.confirmDelete(existing.name),
+          actions: [{ label: nl.app.delete, variant: 'danger', onClick: act(() => repo.deleteHabit(existing.id), nl.form.toasts.deleted) }],
+        }),
+      }, nl.form.deleteHabit))
     : null;
 
+  const backHref = existing ? `#/habits/${encodeURIComponent(existing.id)}` : '#/habits';
   fill(root, 
-    h('a', { class: 'back-link', href: '#/habits' }, `‹ ${nl.habits.title}`),
+    h('a', { class: 'back-link', href: backHref }, `‹ ${existing ? existing.name : nl.habits.title}`),
     h('h1', { class: 'page-title' }, existing ? nl.form.titleEdit : nl.form.titleNew),
     h('form', { class: 'form', novalidate: true, onsubmit: submit },
       existing ? null : h('div', { class: 'templates' },
@@ -272,6 +260,6 @@ async function mount(root, id, templateKey = null) {
       formError,
       h('div', { class: 'form__actions' },
         h('button', { type: 'submit', class: 'button button--primary' }, nl.form.submit),
-        h('a', { class: 'button button--ghost', href: '#/habits' }, nl.app.cancel))),
+        h('a', { class: 'button button--ghost', href: backHref }, nl.app.cancel))),
     extra);
 }

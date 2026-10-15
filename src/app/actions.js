@@ -1,6 +1,6 @@
 // Handelingen van de gebruiker: domeinregels toepassen en daarna opslaan via de repository.
 // Elke handeling die je ongedaan wilt kunnen maken geeft { undo } terug.
-import { addDays, diffDays } from '../domain/dates.js';
+import { addDays, diffDays, startOfWeek } from '../domain/dates.js';
 import { DEFAULT_GRADUATION_DAYS, PLAN_AHEAD_DAYS } from '../domain/constants.js';
 import { clampCounter, counterDoneValue, counterStatus } from '../domain/counter.js';
 import { canBackfill } from '../domain/rules.js';
@@ -122,6 +122,30 @@ export function applyHabitForm({ existing = null, values, today, sortOrder = 0 }
   const inForce = scheduleAt(kept, today);
   next.schedules = sameSchedule(inForce, values.schedule) ? kept : [...kept, { effectiveFrom: today, schedule: values.schedule }];
   return next;
+}
+
+// --- ingeburgerd, automatisme, review ------------------------------------------------------------
+
+/** De gebruiker bevestigt: deze habit is van mij. Alleen voor lopende habits. */
+export async function graduateHabit(repo, habit, today) {
+  if (habit.status !== 'active') throw new RuleError('not_active');
+  return repo.saveHabit({ ...habit, status: 'graduated', graduatedAt: today, maintenance: false });
+}
+
+/** Ingeburgerd maar toch blijven volgen ("onderhoud"). */
+export async function setMaintenance(repo, habit, maintenance) {
+  if (habit.status !== 'graduated') throw new RuleError('not_graduated');
+  return repo.saveHabit({ ...habit, maintenance: Boolean(maintenance) });
+}
+
+/** Automatisme-cijfer (1–5) voor de huidige week; opnieuw geven overschrijft. */
+export async function rateAutomaticity(repo, { habitId, score }, today) {
+  return repo.setRating({ habitId, weekStart: startOfWeek(today), score });
+}
+
+/** Review van de huidige week (opnieuw opslaan overschrijft). */
+export async function saveWeeklyReview(repo, { wentWell, adjust }, today) {
+  return repo.saveReview({ weekStart: startOfWeek(today), wentWell, adjust });
 }
 
 // --- pauzeren, archiveren -----------------------------------------------------------------------

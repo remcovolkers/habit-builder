@@ -1,6 +1,6 @@
 // Opslag in het geheugen. Gebruikt in tests en als vangnet wanneer IndexedDB niet beschikbaar is
 // (bv. sommige privévensters). Zelfde interface als idb-store.js.
-export const COLLECTIONS = Object.freeze(['settings', 'habits', 'checkIns', 'pauses', 'dayPlans']);
+export const COLLECTIONS = Object.freeze(['settings', 'habits', 'checkIns', 'pauses', 'dayPlans', 'achievements', 'ratings', 'reviews']);
 
 export function createMemoryStore() {
   const data = new Map(COLLECTIONS.map((name) => [name, new Map()]));

@@ -28,8 +28,9 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | M2 lokale UI (habits, Vandaag, stapel, backfill, undo) | klaar |
 | Teller-habits (bv. 8 glazen water) en sjablonen | klaar |
 | M6 (deels) Moda-design op de bestaande schermen, lokale fonts | klaar |
-| M3 statistieken, fases, ingeburgerd-flow, achievements, review, export/import | volgende |
-| M4 Supabase, auth, sync | open |
+| M3 detailpagina (sterkte, fases, heatmap), tips, ingeburgerd-flow, achievements, automatisme, review, export/import | klaar |
+| M4 voorbereiding: IndexedDB-migratie v1 naar v2 getest | klaar |
+| M4 Supabase, auth, sync | volgende |
 | M5 PWA (manifest, service worker, offline) | open |
 | M7 ochtendherinnering (Web Push) | open |
 

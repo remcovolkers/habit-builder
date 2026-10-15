@@ -31,6 +31,13 @@ export async function saveSettings(patch) {
   notifyChanged();
 }
 
+/** Na een import of andere ingreep die de instellingen kan hebben vervangen. */
+export async function reloadSettings() {
+  state.settings = await state.repo.getSettings();
+  recomputeToday();
+  notifyChanged();
+}
+
 export const notifyChanged = () => events.dispatchEvent(new Event('changed'));
 
 /** Geeft een functie terug om het luisteren te stoppen. */

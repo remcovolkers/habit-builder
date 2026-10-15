@@ -1,11 +1,16 @@
 import { startRouter } from './router.js';
 import { fill, h } from './ui/dom.js';
-import { initState, state } from './ui/state.js';
+import { initState, notifyChanged, onChanged, state } from './ui/state.js';
 import { openRepository } from './data/index.js';
 import { placeholderView } from './ui/views/placeholder.js';
 import { todayView } from './ui/views/today.js';
 import { habitsView } from './ui/views/habits.js';
 import { habitFormView } from './ui/views/habit-form.js';
+import { habitDetailView } from './ui/views/habit-detail.js';
+import { statsView } from './ui/views/stats.js';
+import { achievementsView } from './ui/views/achievements.js';
+import { celebrateAchievements } from './ui/components/achievement.js';
+import { checkAchievements } from './app/achievement-runner.js';
 import { settingsView } from './ui/views/settings.js';
 import { icon } from './ui/svg.js';
 import { nl } from './content/nl.js';
@@ -22,9 +27,10 @@ const routes = [
   { path: '/today', render: (ctx) => todayView(ctx) },
   { path: '/habits', render: () => habitsView() },
   { path: '/habits/new', render: ({ query }) => habitFormView({ id: null, template: query.template ?? null }) },
-  { path: '/habits/:id', render: ({ params }) => habitFormView({ id: params.id }) },
-  { path: '/stats', render: () => placeholderView(nl.views.stats) },
-  { path: '/achievements', render: () => placeholderView(nl.views.achievements) },
+  { path: '/habits/:id/edit', render: ({ params }) => habitFormView({ id: params.id }) },
+  { path: '/habits/:id', render: ({ params }) => habitDetailView({ id: params.id }) },
+  { path: '/stats', render: () => statsView() },
+  { path: '/achievements', render: () => achievementsView() },
   { path: '/settings', render: () => settingsView() },
 ];
 
@@ -55,6 +61,22 @@ await initState(repo);
 if (repo.storeKind === 'memory') {
   outlet.parentNode.insertBefore(h('p', { class: 'banner banner--warning', role: 'alert' }, nl.app.memoryWarning), outlet);
 }
+
+// Na elke wijziging: zijn er nieuwe prestaties? Ze worden één voor één verwerkt en blijven bewaard.
+let achievementQueue = Promise.resolve();
+function checkForAchievements() {
+  achievementQueue = achievementQueue
+    .then(async () => {
+      const fresh = await checkAchievements(state.repo, state.today);
+      if (fresh.length > 0) {
+        celebrateAchievements(fresh, await state.repo.listHabits());
+        notifyChanged(); // zodat de prestatiepagina meteen klopt (de volgende controle vindt niets nieuws)
+      }
+    })
+    .catch((error) => console.error('prestaties controleren mislukt', error));
+}
+onChanged(checkForAchievements);
+checkForAchievements();
 
 startRouter({
   routes,

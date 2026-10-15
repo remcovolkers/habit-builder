@@ -426,3 +426,8 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }
+
+/* kaart waarvan de inhoud zelf de padding regelt (bv. een volledig klikbare rij) */
+.card--flush {
+  padding: 0;
+}

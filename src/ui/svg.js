@@ -14,6 +14,7 @@ const ICONS = {
   back: [['path', { d: 'M15 5l-7 7 7 7' }]],
   next: [['path', { d: 'M9 5l7 7-7 7' }]],
   close: [['path', { d: 'M6 6l12 12M18 6L6 18' }]],
+  edit: [['path', { d: 'M4 20h4L19 9l-4-4L4 16v4z' }]],
 };
 
 /** icon('check', { strokeWidth: 3 }) -> <svg aria-hidden> */

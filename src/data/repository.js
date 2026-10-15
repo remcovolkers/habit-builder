@@ -7,11 +7,18 @@
 //   listCheckIns(habitId?) / getCheckIn(habitId, date) / setCheckIn({habitId,date,status,note?}) / clearCheckIn(habitId, date)
 //   listPauses(habitId?) / addPause({habitId,from,to?}) / updatePause(id, patch) / removePause(id)
 //   listDayPlans() / setDayPlan({habitId,date}) / clearDayPlan(habitId, date)
-//   snapshot() -> { settings, habits, checkIns, pauses, dayPlans }  (alles wat de schermen nodig hebben)
+//   listAchievements() / unlockAchievement({key, habitId?, date})
+//   listRatings(habitId?) / setRating({habitId, weekStart, score})   (automatisme 1–5, per week)
+//   listReviews() / getReview(weekStart) / saveReview({weekStart, wentWell, adjust})
+//   replaceAll(data)  (import: vervangt alles)
+//   snapshot() -> { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews }
 import { COUNTER_MAX } from '../domain/counter.js';
 import { isValidDate } from '../domain/dates.js';
 import { CHECK_IN_STATUSES, validateHabit } from '../domain/habit.js';
 import { defaultSettings, validateSettings } from '../app/settings.js';
+import { COLLECTIONS } from './memory-store.js';
+
+export const REVIEW_TEXT_MAX = 1000;
 
 export class ValidationError extends Error {
   constructor(errors) {
@@ -142,16 +149,84 @@ export function createRepository({
       return softDelete('dayPlans', `${habitId}|${date}`);
     },
 
+    // --- prestaties ---------------------------------------------------------------------------
+    async listAchievements() {
+      return liveList('achievements');
+    },
+    async unlockAchievement({ key, habitId = null, date }) {
+      if (!key || !isValidDate(date)) throw new ValidationError([{ field: 'achievement', code: 'invalid' }]);
+      const id = `${key}|${habitId ?? ''}`;
+      const existing = await store.get('achievements', id);
+      if (existing && live(existing)) return existing; // eenmaal ontgrendeld blijft zo
+      return upsert('achievements', { id, key, habitId, date });
+    },
+
+    // --- automatisme-cijfer per week ------------------------------------------------------------
+    async listRatings(habitId) {
+      const all = await liveList('ratings');
+      return habitId === undefined ? all : all.filter((r) => r.habitId === habitId);
+    },
+    async setRating({ habitId, weekStart, score }) {
+      const errors = [];
+      if (!habitId) errors.push({ field: 'habitId', code: 'required' });
+      if (!isValidDate(weekStart)) errors.push({ field: 'weekStart', code: 'invalid' });
+      if (!(Number.isInteger(score) && score >= 1 && score <= 5)) errors.push({ field: 'score', code: 'invalid' });
+      if (errors.length > 0) throw new ValidationError(errors);
+      return upsert('ratings', { id: `${habitId}|${weekStart}`, habitId, weekStart, score });
+    },
+
+    // --- wekelijkse review ----------------------------------------------------------------------
+    async listReviews() {
+      return (await liveList('reviews')).sort((a, b) => (a.weekStart < b.weekStart ? 1 : -1));
+    },
+    async getReview(weekStart) {
+      const review = await store.get('reviews', weekStart);
+      return review && live(review) ? review : null;
+    },
+    async saveReview({ weekStart, wentWell = '', adjust = '' }) {
+      const errors = [];
+      if (!isValidDate(weekStart)) errors.push({ field: 'weekStart', code: 'invalid' });
+      for (const [field, value] of [['wentWell', wentWell], ['adjust', adjust]]) {
+        if (typeof value !== 'string' || value.length > REVIEW_TEXT_MAX) errors.push({ field, code: 'too_long' });
+      }
+      if (errors.length > 0) throw new ValidationError(errors);
+      return upsert('reviews', { id: weekStart, weekStart, wentWell: wentWell.trim(), adjust: adjust.trim() });
+    },
+
+    // --- import: alles vervangen ----------------------------------------------------------------
+    async replaceAll(data) {
+      const stamp = now();
+      const sets = {
+        settings: data.settings ? [{ ...data.settings, id: 'user' }] : [],
+        habits: data.habits,
+        checkIns: data.checkIns,
+        pauses: data.pauses,
+        dayPlans: data.dayPlans,
+        achievements: data.achievements,
+        ratings: data.ratings,
+        reviews: data.reviews,
+      };
+      for (const collection of COLLECTIONS) {
+        await store.clear(collection);
+        for (const record of sets[collection] ?? []) {
+          await store.put(collection, { ...record, createdAt: record.createdAt ?? stamp, updatedAt: stamp, deletedAt: null });
+        }
+      }
+    },
+
     // --- alles voor de schermen -------------------------------------------------------------
     async snapshot() {
-      const [settings, habits, checkIns, pauses, dayPlans] = await Promise.all([
+      const [settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews] = await Promise.all([
         this.getSettings(),
         this.listHabits(),
         this.listCheckIns(),
         this.listPauses(),
         this.listDayPlans(),
+        this.listAchievements(),
+        this.listRatings(),
+        this.listReviews(),
       ]);
-      return { settings, habits, checkIns, pauses, dayPlans };
+      return { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews };
     },
   };
 }
