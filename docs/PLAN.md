@@ -1,6 +1,6 @@
 # Habit Builder – Plan & Requirements
 
-Status: **versie 1.0** (tag `v1.0`) · Bijgewerkt: 2026-10-16 (de eerste versie was een concept van 2026-10-15). Werkwijze voor het vervolg: [WERKWIJZE.md](WERKWIJZE.md)
+Status: **versie 1.0** (tag `v1.0`) · Bijgewerkt: 2026-10-16 (de eerste versie was een concept van 2026-10-15). Werkwijze voor het vervolg: [WERKWIJZE.md](WERKWIJZE.md). Vervolgfeature in voorbereiding: vrienden en ranglijst, zie [SOCIAAL.md](SOCIAAL.md) (heft D5 en "sociale functies buiten scope" op voor dat onderdeel)
 
 ## 1. Doel en scope
 
