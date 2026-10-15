@@ -46,4 +46,4 @@ check('delete_my_account is niet aan te roepen zonder in te loggen', [401, 403, 
 
 const failed = results.filter((ok) => !ok).length;
 console.log(`\n${results.length - failed}/${results.length} geslaagd`);
-process.exit(failed ? 1 : 0);
+process.exitCode = failed ? 1 : 0; // geen process.exit: op Windows crasht dat soms terwijl verbindingen nog sluiten

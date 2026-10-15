@@ -20,7 +20,7 @@ const environments = Object.freeze({
     // De lokale Supabase (`npm run db:start`). {host} wordt de host waarop je de app opent, zodat het ook vanaf je telefoon werkt.
     // De sleutel is de publieke standaardsleutel van de lokale stack (`npm run db:status`); leeg = nog niet ingevuld, dan geldt productie.
     supabaseUrl: 'http://{host}:54321',
-    supabasePublishableKey: '',
+    supabasePublishableKey: 'sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH',
     // Het ontwikkelproject heeft geen herinnering-functie: de knop blijft daar verborgen.
     vapidPublicKey: '',
   }),
