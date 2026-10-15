@@ -28,6 +28,12 @@ Je hebt dit al eens gedaan voor Crusaders. Maak voor deze app een **eigen OAuth-
    - Vul app-naam ("Habit Builder"), je e-mailadres als support- en contactadres in.
    - Scopes: alleen de standaardscopes (`email`, `profile`, `openid`). Meer is niet nodig.
    - **Belangrijk:** zet de publicatiestatus op **In productie** ("Publish app"). Blijft het op "Testing", dan kunnen alleen handmatig toegevoegde testgebruikers inloggen, dus je vrienden en familie niet. Met alleen de basisscopes is er geen verificatie van Google nodig.
+   **Branding-pagina, wat er echt nodig is:**
+   - App-naam `Habit Builder`, support-e-mail en contact-e-mail.
+   - **Géén logo uploaden.** Met een logo eist Google verificatie zodra de app in productie gaat (dagen werk). Zonder logo en met alleen de basisscopes niet.
+   - App-domein: homepage `https://github.com/remcovolkers/habit-builder`, privacybeleid `https://github.com/remcovolkers/habit-builder/blob/main/docs/PRIVACY.md`, voorwaarden `https://github.com/remcovolkers/habit-builder/blob/main/docs/VOORWAARDEN.md`.
+   - Geautoriseerd domein: `github.com`.
+   - Opslaan, daarna op de Doelgroep-pagina **Publish app**. Lukt publiceren niet, dan kan de app in "Testing" blijven en voeg je onder **Test users** de Google-adressen van je gebruikers toe (maximaal 100).
 3. **Credentials → Create credentials → OAuth client ID**
    - Type: **Web application**, naam bijvoorbeeld "Habit Builder (Supabase)".
    - **Authorized redirect URIs:** `https://rbsqafttotdaakpwtjmh.supabase.co/auth/v1/callback`

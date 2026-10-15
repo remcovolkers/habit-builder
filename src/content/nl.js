@@ -343,6 +343,9 @@ export const nl = {
     resend: 'Stuur opnieuw',
     resendIn: (s) => `Opnieuw sturen kan over ${s}s`,
     privacy: 'We bewaren alleen je e-mailadres en je habit-gegevens. Geen tracking, geen advertenties.',
+    privacyLink: 'Privacyverklaring',
+    termsLink: 'Voorwaarden',
+    legalBase: 'https://github.com/remcovolkers/habit-builder/blob/main/docs',
     back: 'Terug naar instellingen',
     alreadyIn: 'Je bent al ingelogd.',
     errors: {

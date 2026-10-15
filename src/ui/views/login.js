@@ -120,7 +120,11 @@ export function loginView() {
       h('p', { class: 'muted login__intro' }, nl.login.intro),
       h('div', { class: 'login__body' }, ...(step === 'choose' ? chooseStep() : codeStep())),
       h('p', { id: 'login-error', class: 'field__error', role: 'alert', hidden: error === null }, error ? errorText(error) : ''),
-      h('p', { class: 'xs muted login__privacy' }, icon('check'), nl.login.privacy));
+      h('p', { class: 'xs muted login__privacy' }, icon('check'), nl.login.privacy),
+      h('p', { class: 'xs login__legal' },
+        h('a', { href: `${nl.login.legalBase}/PRIVACY.md`, target: '_blank', rel: 'noopener noreferrer' }, nl.login.privacyLink),
+        ' · ',
+        h('a', { href: `${nl.login.legalBase}/VOORWAARDEN.md`, target: '_blank', rel: 'noopener noreferrer' }, nl.login.termsLink)));
     const focus = step === 'code' ? '#code' : null;
     if (focus && !busy) root.querySelector(focus)?.focus();
   }
