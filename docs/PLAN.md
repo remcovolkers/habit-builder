@@ -1,6 +1,6 @@
 # Habit Builder – Plan & Requirements
 
-Status: **versie 1** · Bijgewerkt: 2026-10-16 (de eerste versie was een concept van 2026-10-15)
+Status: **versie 1.0** (tag `v1.0`) · Bijgewerkt: 2026-10-16 (de eerste versie was een concept van 2026-10-15). Werkwijze voor het vervolg: [WERKWIJZE.md](WERKWIJZE.md)
 
 ## 1. Doel en scope
 
@@ -34,7 +34,7 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | IndexedDB-migraties (v1 naar v2 naar v3) getest | klaar |
 | M4 Supabase, auth (Google + e-mailcode), sync, keepalive | klaar en op het echte project getest |
 | M5 PWA: manifest, icoon, offline start, updatemelding, installatieknop | klaar |
-| M7 ochtendherinnering (Web Push): server ingericht, de testmelding komt aan op een echte telefoon. De melding op het ingestelde tijdstip via de planning moet nog één keer in het echt gezien worden | bijna klaar |
+| M7 ochtendherinnering (Web Push): server ingericht, geplande melding en testmelding komen aan op een echte telefoon (Android); batterij-uitleg en ontwikkelaarsopties voor het testen | klaar |
 | FAB, lege toestanden, weekstrook, week-/maandoverzicht, notities, herstelmoment, volgorde van habits, privacylink in de app | klaar |
 
 ## Dekking van de eisen (stand versie 1)
@@ -68,7 +68,7 @@ De IDs verwijzen naar §3. "Klaar" = gebouwd en met tests of een browsertest afg
 | F32 export en import | klaar | |
 | F33 account verwijderen | klaar | |
 | F34 instellingen | klaar | dagwissel en tijdzone in Instellingen; de herinneringstijd per apparaat in de herinneringskaart |
-| F35 ochtendherinnering | bijna klaar | zie M7 hierboven |
+| F35 ochtendherinnering | klaar | Android en desktop; iOS bewust later |
 | F36 installeerbaar | klaar | |
 
 ## 2. Gewoontetheorie die in het product zit

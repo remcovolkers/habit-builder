@@ -2,7 +2,8 @@ name: Test & deploy
 
 on:
   push:
-    branches: [main]
+    # main rolt uit; develop en feature-branches krijgen alleen de tests (zie docs/WERKWIJZE.md)
+    branches: [main, develop, 'feature/**', 'hotfix/**']
   pull_request:
   workflow_dispatch:
 
@@ -10,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: pages
+  group: ${{ github.workflow }}-${{ github.ref }} # uitrollen op main loopt achter elkaar; tests op andere branches wachten daar niet op
   cancel-in-progress: false
 
 jobs:
