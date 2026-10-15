@@ -36,8 +36,7 @@ const check = (name, ok, detail = '') => {
   results.push({ name, ok });
   console.log(`${ok ? 'OK  ' : 'FAIL'} ${name}${ok ? '' : `  -> ${detail}`}`);
   // op GitHub Actions: een annotatie, zodat de reden ook zonder het volledige logboek te lezen is
-  if (!ok && process.env.GITHUB_ACTIONS) console.log(`::error title=Browsercontrole mislukt::${name} -> ${String(detail).replace(/[
-%]+/g, ' ').slice(0, 600)}`);
+  if (!ok && process.env.GITHUB_ACTIONS) console.log(`::error title=Browsercontrole mislukt::${name} -> ${String(detail).replace(/[\r\n%]+/g, ' ').slice(0, 600)}`);
 };
 
 // ---- de server kant: andere gebruikers via de API ----------------------------------------------------------------------------------
