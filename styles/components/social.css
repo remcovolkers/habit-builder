@@ -306,6 +306,17 @@
   color: var(--color-text-muted);
 }
 
+/* de regels voor de ranglijst staan in een kaart: iets meer lucht en leesbare regels */
+.rules--board {
+  margin-top: var(--space-3);
+  color: var(--color-text);
+}
+
+.card + .card.breakdown,
+.breakdown + .breakdown {
+  margin-top: var(--space-3);
+}
+
 /* ---- profiel en uitzetten (Beheren) ---- */
 .profile {
   display: grid;
@@ -520,4 +531,13 @@
 .friends h1,
 .friends h2 {
   hyphens: auto;
+}
+
+/* de regels zijn een opsomming: met opsommingstekens zijn het losse, leesbare punten */
+.rules {
+  list-style: disc;
+}
+
+.rules li::marker {
+  color: var(--color-accent);
 }

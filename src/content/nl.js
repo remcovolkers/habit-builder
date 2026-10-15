@@ -45,6 +45,8 @@ export const nl = {
   today: {
     ringCaption: 'gedaan',
     sectionCount: (done, total) => `${done} van ${total}`,
+    sideDone: 'Vandaag',
+    sideTip: 'Tip',
     celebrateTitle: 'Alles gedaan vandaag',
     celebrateText: 'Rust lekker uit. Morgen staat je pad weer klaar.',
     previousDay: 'Vorige dag',
@@ -612,6 +614,16 @@ export const nl = {
       hidden: 'Vrienden die 3 dagen niets hebben afgevinkt staan er even niet bij. Zodra ze weer beginnen zie je ze terug.',
       aloneTitle: 'Je staat hier nog alleen',
       aloneText: 'Voeg een vriend toe of deel een uitnodigingslink om te zien hoe je het doet.',
+    },
+    rules: {
+      title: 'Wie staat er op de ranglijst?',
+      items: ({ activeDays }) => [
+        'Jij staat er zelf altijd op, ook als je nog geen punten hebt.',
+        `Een vriend staat er zodra jullie vrienden zijn, hij of zij zelf meedoet en in de laatste ${activeDays} dagen (vandaag, gisteren of eergisteren) minstens één taak heeft afgevinkt. Een half gehaalde teller telt ook.`,
+        'Er is geen minimum aantal taken: één afgevinkte taak is genoeg om op de lijst te komen.',
+        `Vink je ${activeDays} dagen lang niets af, dan verdwijn je even van de lijst van je vrienden. Zodra je weer iets afvinkt, sta je er meteen weer. Overslaan en pauzeren tellen niet als afvinken, dus wie op vakantie pauzeert, valt na ${activeDays} dagen even weg.`,
+        'Je punten gaan over de laatste 7 dagen. Hoe ze ontstaan zie je onder "Waar komen mijn punten vandaan?".',
+      ],
     },
     requests: {
       title: 'Verzoeken',

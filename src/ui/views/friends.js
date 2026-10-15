@@ -5,7 +5,7 @@ import { social, socialApp } from '../social-app.js';
 import { socialLive } from '../social-view.js';
 import { emptyState } from '../components/empty-state.js';
 import { leaderboardList } from '../components/leaderboard.js';
-import { breakdownCard, onboardingForm, pendingInviteBanner, reasonText, sharingSummary } from '../components/social-parts.js';
+import { breakdownCard, onboardingForm, pendingInviteBanner, reasonText, rulesCard, rulesList, sharingSummary } from '../components/social-parts.js';
 import { showToast } from '../components/toast.js';
 import { nl } from '../../content/nl.js';
 
@@ -66,7 +66,8 @@ function boardPage() {
       social.board.length > 0 ? leaderboardList(social.board) : null,
       hasFriends ? null : emptyState({ art: 'friends', title: f.board.aloneTitle, text: f.board.aloneText, cta: { href: '#/vrienden/toevoegen', label: f.actions.add }, compact: true }),
       hasFriends ? h('p', { class: 'xs muted' }, f.board.hidden) : null),
-    breakdownCard(social.summary));
+    breakdownCard(social.summary),
+    rulesCard());
 }
 
 function introPage(form) {
@@ -76,6 +77,7 @@ function introPage(form) {
     h('section', { class: 'card' },
       h('p', { class: 'friends__lead' }, f.intro.lead),
       sharingSummary()),
+    h('section', { class: 'card', id: 'rulesIntro' }, h('h2', { class: 'section__title' }, f.rules.title), rulesList()),
     h('section', { class: 'card' }, form));
 }
 

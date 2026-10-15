@@ -3,7 +3,7 @@ import { h } from '../dom.js';
 import { account } from '../account.js';
 import { social, socialApp } from '../social-app.js';
 import { socialLive } from '../social-view.js';
-import { onboardingForm, reasonText, sharingSummary } from '../components/social-parts.js';
+import { onboardingForm, reasonText, rulesList, sharingSummary } from '../components/social-parts.js';
 import { parseInviteHash } from '../../app/social.js';
 import { nl } from '../../content/nl.js';
 
@@ -58,6 +58,7 @@ export function friendsInviteView({ code: raw }) {
     if (social.status === 'off') {
       return h('div', { class: 'detail' }, header,
         h('section', { class: 'card' }, h('p', { class: 'friends__lead' }, f.intro.forInvite), sharingSummary()),
+        h('section', { class: 'card' }, h('h2', { class: 'section__title' }, f.rules.title), rulesList()),
         h('section', { class: 'card' }, (form ??= onboardingForm())));
     }
     if (ui.phase === 'done') {

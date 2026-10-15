@@ -5,12 +5,25 @@ import { saveSettings, state } from '../state.js';
 import { socialApp } from '../social-app.js';
 import { describeBreakdown, suggestUsername, validateUsername } from '../../app/social.js';
 import { DISPLAY_NAME_MAX } from '../../app/settings.js';
-import { MISS_PENALTY, START_BONUS_MAX, TASK_POINTS } from '../../domain/constants.js';
+import { MISS_PENALTY, SOCIAL_ACTIVE_DAYS, START_BONUS_MAX, TASK_POINTS } from '../../domain/constants.js';
 import { nl } from '../../content/nl.js';
 
 export const reasonText = (reason) => nl.friends.errors[reason] ?? nl.friends.errors.unknown;
 
 const signed = (n) => (n < 0 ? `−${Math.abs(n)}` : `+${n}`);
+
+/** De regels voor wie er op de ranglijst staat, als lijst. */
+export const rulesList = () => h('ul', { class: 'rules rules--board' },
+  ...nl.friends.rules.items({ activeDays: SOCIAL_ACTIVE_DAYS }).map((rule) => h('li', null, rule)));
+
+let rulesOpen = false;
+
+/** "Wie staat er op de ranglijst?": een uitklapkaart op de ranglijst (blijft open of dicht over hertekeningen). */
+export function rulesCard() {
+  return h('details', { class: 'card card--quiet breakdown', id: 'rules', open: rulesOpen, ontoggle: (event) => { rulesOpen = event.target.open; } },
+    h('summary', { class: 'section__title breakdown__summary' }, nl.friends.rules.title),
+    rulesList());
+}
 
 let breakdownOpen = false; // blijft dicht of open over hertekeningen (bijvoorbeeld als een verversing klaar is)
 
