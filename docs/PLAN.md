@@ -1,6 +1,6 @@
 # Habit Builder – Plan & Requirements
 
-Status: **versie 1.0** (tag `v1.0`) · Bijgewerkt: 2026-10-16 (de eerste versie was een concept van 2026-10-15). Werkwijze voor het vervolg: [WERKWIJZE.md](WERKWIJZE.md). Vervolgfeature in voorbereiding: vrienden en ranglijst, zie [SOCIAAL.md](SOCIAAL.md) (heft D5 en "sociale functies buiten scope" op voor dat onderdeel)
+Status: **versie 1.1** (tag `v1.1`: vrienden en ranglijst; daarvoor `v1.0`) · Werkwijze: [WERKWIJZE.md](WERKWIJZE.md). Vrienden en ranglijst: [SOCIAAL.md](SOCIAAL.md) (heft D5 en "sociale functies buiten scope" op voor dat onderdeel)
 
 ## 1. Doel en scope
 
@@ -36,7 +36,7 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | M5 PWA: manifest, icoon, offline start, updatemelding, installatieknop | klaar |
 | M7 ochtendherinnering (Web Push): server ingericht, geplande melding en testmelding komen aan op een echte telefoon (Android); batterij-uitleg en ontwikkelaarsopties voor het testen | klaar |
 | FAB, lege toestanden, weekstrook, week-/maandoverzicht, notities, herstelmoment, volgorde van habits, privacylink in de app | klaar |
-| Vrienden en ranglijst (S1–S5, [SOCIAAL.md](SOCIAAL.md)): punten, server, data-laag, schermen, privacyverklaring en voorwaarden | klaar op `feature/vrienden`; nog niet uitgerold (release 1.1: [RELEASE-v1.1.md](RELEASE-v1.1.md)) |
+| Vrienden en ranglijst (S1–S5, [SOCIAAL.md](SOCIAAL.md)): punten, server, data-laag, schermen, privacyverklaring en voorwaarden | klaar, versie 1.1 ([RELEASE-v1.1.md](RELEASE-v1.1.md)) |
 
 ## Dekking van de eisen (stand versie 1)
 
