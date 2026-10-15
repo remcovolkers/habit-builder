@@ -1,10 +1,17 @@
 // Controleert de ECHTE Supabase (zonder in te loggen) nadat supabase/migrations/0001_init.sql is uitgevoerd.
-// Gebruik: node tools/live-check.mjs
+// Gebruik: node tools/live-check.mjs          (productie)
+//          node tools/live-check.mjs --dev    (het ontwikkelproject, zie docs/DEV-OMGEVING.md)
 // Wat het bewijst: de migratie staat erop, ping() werkt voor iedereen, en een niet-ingelogde bezoeker kan niets
 // lezen, schrijven of verwijderen. (Dat gebruikers elkaars data niet zien is gecontroleerd in supabase/tests.)
-import { config } from '../src/config.js';
+import { config, pickEnvironment } from '../src/config.js';
 
-const { supabaseUrl: url, supabasePublishableKey: key } = config;
+const target = process.argv.includes('--dev') ? pickEnvironment('localhost') : config;
+if (process.argv.includes('--dev') && target.environment !== 'development') {
+  console.error('Het ontwikkelproject is nog niet ingevuld in src/config.js (zie docs/DEV-OMGEVING.md).');
+  process.exit(2);
+}
+console.log(`Omgeving: ${target.environment} (${target.supabaseUrl})\n`);
+const { supabaseUrl: url, supabasePublishableKey: key } = target;
 const headers = { apikey: key, 'Content-Type': 'application/json' };
 const results = [];
 const check = (name, ok, detail = '') => {
@@ -37,6 +44,23 @@ check('zonder in te loggen is verwijderen geweigerd of een no-op', [401, 403, 20
 const del = await call('/rest/v1/rpc/delete_my_account', { method: 'POST', body: '{}' });
 check('delete_my_account is niet aan te roepen zonder in te loggen', [401, 403, 404].includes(del.status) || (del.body && del.body.code === '42501'), `${del.status} ${JSON.stringify(del.body)}`);
 
+// Vrienden en ranglijst (migratie 0003): zonder in te loggen is niets bruikbaar. Is de migratie er nog niet, dan staat dat erbij (geen fout:
+// de app kent dan de status "unavailable"); is hij er wel, dan moet alles dicht zijn.
+const social = await call('/rest/v1/rpc/social_find', { method: 'POST', body: JSON.stringify({ p_username: 'test' }) });
+if ([404].includes(social.status) || social.body?.code === 'PGRST202') {
+  console.log('--   vrienden en ranglijst: migratie 0003 is hier nog niet uitgevoerd (de app blijft dan stil)');
+} else {
+  check('vrienden: zonder in te loggen is social_find niet aan te roepen', [401, 403].includes(social.status) || social.body?.code === '42501', `${social.status} ${JSON.stringify(social.body)}`);
+  for (const fn of ['leaderboard', 'friend_list', 'invite_create', 'social_me']) {
+    const r = await call(`/rest/v1/rpc/${fn}`, { method: 'POST', body: '{}' });
+    check(`vrienden: zonder in te loggen is ${fn} niet aan te roepen`, [401, 403].includes(r.status) || r.body?.code === '42501', `${r.status} ${JSON.stringify(r.body)}`);
+  }
+  for (const table of ['social_profiles', 'friendships', 'invite_codes', 'score_summaries', 'social_rate']) {
+    const r = await call(`/rest/v1/${table}?select=*&limit=1`);
+    check(`vrienden: de tabel ${table} is zonder in te loggen niet te lezen`, [401, 403].includes(r.status) || (r.status === 200 && Array.isArray(r.body) && r.body.length === 0), `${r.status} ${JSON.stringify(r.body)}`);
+  }
+}
+
 const failed = results.filter((ok) => !ok).length;
 console.log(`\n${results.length - failed}/${results.length} geslaagd`);
-process.exit(failed ? 1 : 0);
+process.exitCode = failed ? 1 : 0; // geen process.exit: op Windows crasht dat soms terwijl verbindingen nog sluiten

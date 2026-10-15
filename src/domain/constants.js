@@ -39,3 +39,24 @@ export const PERFECT_WEEK_MIN_UNITS = 3;
 export const COMEBACK_GAP_DAYS = 7;
 export const ACTIVE_HABITS_ACHIEVEMENT = 3;
 export const REVIEW_STREAK_WEEKS = 4;
+
+/**
+ * Sociaal (docs/SOCIAAL.md §4). Punten over de laatste dagen (vandaag meegerekend):
+ * een vast bedrag per afgeronde taak, een bonus voor habits die nog niet eigen zijn, een bonus voor een nieuwe habit,
+ * en minpunten voor wat je liet liggen. Wie zo veel dagen niets afvinkt, verdwijnt uit andermans lijst.
+ */
+export const SCORE_WINDOW_DAYS = 7;
+export const TASK_POINTS = 10;
+/** Extra per taak zolang de habit nog niet eigen is: de eerste PHASE_STARTING_UNTIL_DAY dagen, daarna tot de ingeburgerd-grens. */
+export const BUILD_BONUS_STARTING = 4;
+export const BUILD_BONUS_BUILDING = 2;
+/** Eenmalig bij de eerste afgeronde taak van een nieuwe habit, hoogstens START_BONUS_MAX per venster (tegen aanmaken en weggooien). */
+export const START_BONUS = 10;
+export const START_BONUS_MAX = 3;
+/** Aftrek per gemiste dag (of per ontbrekende keer bij een flexibele habit). Half zoveel als een taak oplevert. */
+export const MISS_PENALTY = 5;
+/** Per habit zijn de eerste MISS_GRACE missers van een rij gratis: een enkele misser kost niets, nooit twee keer achter elkaar. */
+export const MISS_GRACE = 1;
+/** Een teller die je half haalde levert deze fractie van een taak op en kost geen minpunten. */
+export const PARTIAL_FRACTION = 0.5;
+export const SOCIAL_ACTIVE_DAYS = 3;

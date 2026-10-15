@@ -54,6 +54,21 @@ Eén rij per apparaat dat de herinnering aanheeft (`supabase/migrations/0002_pus
 
 `summary` is `{ "name": "Remco", "days": { "2026-10-16": [3, 2], … } }`: je voornaam en per dag van de komende week `[gepland, in de stapel]`. **De namen van habits staan er niet in.** De Edge Function `send-reminders` leest deze tabel (met de service-sleutel, buiten RLS om) en maakt er de tekst van de melding van.
 
+### Sociaal: vrienden en ranglijst (`supabase/migrations/0003_social.sql`)
+
+Zes tabellen die **voor niemand rechtstreeks toegankelijk zijn** (RLS aan, geen policies, alle rechten ingetrokken); alles loopt via `security definer`-functies die alleen ingelogde gebruikers mogen aanroepen. Ontwerp, regels en begrenzingen: [SOCIAAL.md](SOCIAAL.md) §5.
+
+| Tabel | Inhoud |
+|---|---|
+| `social_profiles` | gebruikersnaam (uniek), weergavenaam, aan/uit |
+| `social_blocked_terms` | woorden die niet in een gebruikersnaam mogen |
+| `friendships` | één rij per paar: `pending` / `accepted` / `declined`, wie het verzoek deed |
+| `invite_codes` | alleen de **hash** van een uitnodigingscode, met verloopdatum |
+| `score_summaries` | **jouw** samenvatting: `as_of`, `points`, `done`, `streak`, `active_habits`, `last_active` |
+| `social_rate` | tellers tegen raden en lastigvallen |
+
+Een vriend ziet van jou alleen je weergavenaam, gebruikersnaam en de samenvatting. **Nooit** je e-mailadres, habit-namen, notities, cues of check-ins. De samenvatting wordt door de app lokaal berekend en alleen gepubliceerd als sociaal aanstaat. Alles verdwijnt met `delete_my_account()` (cascade).
+
 ### Verwijderen
 
 `delete_my_account()` (SQL-functie, alleen voor ingelogde gebruikers) wist de gebruiker in `auth.users`; `records` en `push_subscriptions` verdwijnen mee (cascade).

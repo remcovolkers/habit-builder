@@ -1,0 +1,52 @@
+name: Integratie (lokale Supabase)
+
+# De sociale functies in het echt: een lokale Supabase (database, API en inloggen in Docker) en een echte browser.
+# Draait op develop en feature-branches en bij pull requests, niet op main (daar is `test` de poort naar productie).
+# Bewust een aparte workflow: hij kost enkele minuten (Docker-images downloaden) en is geen verplichte check; kijk bij een rode run
+# in het logboek of de schermafbeeldingen (artifact) wat er misging. Zie docs/DEV-OMGEVING.md.
+
+on:
+  push:
+    branches: [develop, 'feature/**']
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Lokale Supabase starten (migraties worden vanzelf toegepast)
+        run: npm run db:start
+      - name: De sociale functies via de echte API
+        run: npm run db:check-social
+      - name: De hele keten van de app (echte SDK, data-laag, besturing)
+        run: npm run db:check-app
+      - name: De schermen in een echte browser
+        run: npm run db:check-browser -- "${{ runner.temp }}/schermen"
+      - name: Schermafbeeldingen bewaren
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schermen
+          path: ${{ runner.temp }}/schermen
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Lokale Supabase stoppen
+        if: always()
+        run: npm run db:stop

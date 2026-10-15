@@ -5,6 +5,7 @@ import { showToast } from '../components/toast.js';
 import { nl } from '../../content/nl.js';
 import { emptyState } from '../components/empty-state.js';
 import { overviewSection } from '../components/overview.js';
+import { socialCard } from '../components/social-card.js';
 import { statsForHabit, streakSpan } from '../../app/habit-detail.js';
 import { saveWeeklyReview } from '../../app/actions.js';
 import { formatDateShort } from '../../app/format.js';
@@ -90,6 +91,7 @@ export function statsView() {
         h('h1', { class: 'page-title' }, nl.stats.title),
         h('div', { class: 'stats__columns' },
           h('div', { class: 'stats__main' },
+            socialCard(),
             habits.length === 0
               ? emptyState({ art: 'stats', title: nl.stats.emptyTitle, text: nl.stats.empty, cta: { href: '#/habits/new', label: nl.habits.new } })
               : h('div', { class: 'detail' },

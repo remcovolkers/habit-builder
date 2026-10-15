@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { allowLocalApi, hostnameFromHeader } from './dev-csp.mjs';
 
 // SERVE_ROOT: een andere map serveren (bv. _site, om de uitgerolde versie met service worker te proberen)
 const ROOT = process.env.SERVE_ROOT ? resolve(process.env.SERVE_ROOT) : resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -45,7 +46,9 @@ createServer(async (req, res) => {
       'Content-Type': MIME[extname(file)] ?? 'application/octet-stream',
       'Cache-Control': 'no-store',
     });
-    res.end(await readFile(file));
+    const body = await readFile(file);
+    // alleen index.html: de CSP laat hier ook de lokale Supabase toe (tools/dev-csp.mjs)
+    res.end(relative === 'index.html' ? allowLocalApi(body.toString('utf8'), hostnameFromHeader(req.headers.host)) : body);
   } catch {
     res.writeHead(404).end('Not found');
   }

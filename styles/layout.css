@@ -232,6 +232,12 @@
     margin-top: 0;
   }
 
+  /* de kaart onder de kopregel van de rechterkolom begint direct, net als de kaarten links onder hun kopregel */
+  .today__side-head + .section,
+  .today__side-head + .banner {
+    margin-top: 0;
+  }
+
   .today__side {
     position: sticky;
     top: var(--space-6);
