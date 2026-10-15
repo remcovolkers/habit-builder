@@ -21,7 +21,7 @@ Gevolgen:
 
 1. https://supabase.com/dashboard → **New project**.
 2. Naam: `habit-builder-dev`. Regio: dezelfde als het productieproject. Kies een sterk databasewachtwoord en bewaar het in je wachtwoordmanager (je hebt het zelden nodig).
-3. **Let op:** een gratis organisatie mag **2 actieve projecten** hebben. Heb je er al twee (bijvoorbeeld Habit Builder en Crusaders)? Dan kun je een ander project pauzeren, of een tweede (gratis) organisatie aanmaken en het testproject daar zetten. Zeg het als dit speelt, dan denk ik mee.
+3. **Let op:** de gratis limiet is **2 actieve projecten per organisatie** (volgens meerdere gidsen; niet bij Supabase zelf bevestigd). Heb je er in je huidige organisatie al twee? Maak dan een **tweede organisatie** aan (dashboard → organisatie-keuzemenu linksboven → **New organization**, type Free) en zet `habit-builder-dev` daarin. Een gepauzeerd project telt niet mee, maar pauzeer geen project dat moet blijven draaien. Weigert het dashboard dit toch, dan is de terugvaloptie een lokale Supabase met Docker (`supabase start`); die is niet ingericht op deze computer (Docker en WSL ontbreken) en vraagt ongeveer 2–3 GB aan downloads.
 
 ## Stap 2 – De database vullen
 
