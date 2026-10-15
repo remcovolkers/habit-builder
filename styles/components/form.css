@@ -468,6 +468,7 @@ select.input {
   color: var(--color-text-muted);
 }
 
-.reminder-card .field {
+.reminder-card .field,
+.reminder-card .stack {
   margin-top: var(--space-4);
 }
