@@ -1,10 +1,10 @@
-// De ranglijst (docs/SOCIAAL.md §4.3–4.5): wie erin staat, de volgorde en de rangen.
+// De ranglijst (docs/SOCIAAL.md §4.3–4.4): wie erin staat, de volgorde en de rangen.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildLeaderboard, isRecentlyActive } from '../../src/app/leaderboard.js';
 
 const TODAY = '2026-10-15';
-const entry = (userId, name, score, extra = {}) => ({ userId, name, score, planned: 10, done: 5, streak: 0, activeHabits: 3, lastActive: TODAY, ...extra });
+const entry = (userId, name, points, extra = {}) => ({ userId, name, points, done: points / 10, streak: 0, activeHabits: 3, lastActive: TODAY, ...extra });
 const board = (entries, meId = 'me') => buildLeaderboard({ entries, meId, today: TODAY });
 const names = (rows) => rows.map((r) => r.name);
 
@@ -28,45 +28,41 @@ test('jezelf staat er altijd in, ook als je zelf 3 dagen niets deed of nog niets
   const rows = board([entry('me', 'Ik', 40, { lastActive: '2026-10-01' }), entry('f', 'Femke', 90)]);
   assert.deepEqual(names(rows), ['Femke', 'Ik']);
   assert.equal(rows.find((r) => r.isMe).name, 'Ik');
-  assert.deepEqual(names(board([entry('me', 'Ik', null, { lastActive: null })])), ['Ik']);
+  assert.deepEqual(names(board([entry('me', 'Ik', 0, { lastActive: null })])), ['Ik']);
 });
 
 test('een vriend die nog nooit iets afvinkte, staat er niet in', () => {
-  assert.deepEqual(names(board([entry('me', 'Ik', 50), entry('f', 'Nieuw', null, { lastActive: null })])), ['Ik']);
+  assert.deepEqual(names(board([entry('me', 'Ik', 50), entry('f', 'Nieuw', 0, { lastActive: null })])), ['Ik']);
 });
 
-test('gesorteerd op score, hoogste eerst, met rang 1, 2, 3', () => {
+test('gesorteerd op punten, de meeste eerst, met rang 1, 2, 3', () => {
   const rows = board([entry('a', 'Anna', 60), entry('me', 'Ik', 90), entry('b', 'Bram', 75)]);
   assert.deepEqual(names(rows), ['Ik', 'Bram', 'Anna']);
   assert.deepEqual(rows.map((r) => r.rank), [1, 2, 3]);
-  assert.ok(rows.every((r) => r.status === 'ranked'));
 });
 
-test('gelijke score is gelijke rang en daarna slaat de telling een plek over ("1, 1, 3")', () => {
+test('gelijke punten is gelijke rang en daarna slaat de telling een plek over ("1, 1, 3")', () => {
   const rows = board([entry('a', 'Anna', 80), entry('b', 'Bram', 80), entry('c', 'Cor', 70), entry('d', 'Daan', 70), entry('e', 'Eef', 50)], 'a');
   assert.deepEqual(rows.map((r) => r.rank), [1, 1, 3, 3, 5]);
 });
 
-test('bij gelijke score gaat wie meer gepland had voor, dan de langste reeks, dan de naam', () => {
+test('bij gelijke punten gaat de langste reeks voor, dan de naam', () => {
   const rows = board([
-    entry('a', 'Zoë', 80, { planned: 10, streak: 2 }),
-    entry('b', 'Bram', 80, { planned: 20, streak: 0 }),
-    entry('c', 'Cor', 80, { planned: 10, streak: 5 }),
-    entry('d', 'Anna', 80, { planned: 10, streak: 5 }),
+    entry('a', 'Zoë', 80, { streak: 2 }),
+    entry('c', 'Cor', 80, { streak: 5 }),
+    entry('d', 'Anna', 80, { streak: 5 }),
   ], 'a');
-  assert.deepEqual(names(rows), ['Bram', 'Anna', 'Cor', 'Zoë']);
+  assert.deepEqual(names(rows), ['Anna', 'Cor', 'Zoë']);
 });
 
-test('wie te weinig had om te beoordelen staat onderaan zonder rang', () => {
-  const rows = board([entry('a', 'Anna', null), entry('me', 'Ik', 10), entry('b', 'Bram', 0)]);
-  assert.deepEqual(names(rows), ['Ik', 'Bram', 'Anna']); // 0% is een score; null niet
-  assert.deepEqual(rows.map((r) => r.rank), [1, 2, null]);
-  assert.equal(rows[2].status, 'too_little');
-  assert.equal(rows[2].score, null);
+test('nul punten is een gewone stand (onderaan), geen aparte soort', () => {
+  const rows = board([entry('a', 'Anna', 0), entry('me', 'Ik', 10), entry('b', 'Bram', 20)]);
+  assert.deepEqual(names(rows), ['Bram', 'Ik', 'Anna']);
+  assert.deepEqual(rows.map((r) => r.rank), [1, 2, 3]);
 });
 
 test('namen sorteren op Nederlandse volgorde (hoofdletters en accenten maken niet uit)', () => {
-  const rows = board([entry('a', 'émile', null), entry('b', 'Eva', null), entry('c', 'anna', null)], 'x');
+  const rows = board([entry('a', 'émile', 10), entry('b', 'Eva', 10), entry('c', 'anna', 10)], 'x');
   assert.deepEqual(names(rows), ['anna', 'émile', 'Eva']);
 });
 

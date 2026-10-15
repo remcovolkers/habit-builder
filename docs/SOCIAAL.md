@@ -13,7 +13,7 @@ Wat het níét is: een sociaal netwerk. Geen feed, geen reacties, geen openbare 
 | # | Keuze | Besluit |
 |---|---|---|
 | S1 | Vrienden vinden | **Gebruikersnaam + uitnodigingslink.** Zoeken kan alleen op de *exacte* gebruikersnaam; niemand kan door gebruikers bladeren; e-mailadressen blijven altijd verborgen. |
-| S2 | Rangschikking | **Score over de laatste 7 dagen** (percentage gedaan van wat gepland stond). Elke week een nieuwe kans, ook voor beginners. |
+| S2 | Rangschikking | **Punten over de laatste 7 dagen**: een vast aantal punten per afgeronde taak (zie S6 en §4). Elke week een nieuwe kans, ook voor beginners. |
 | S3 | Wat vrienden zien | **Alleen cijfers en je naam.** Geen habit-namen, geen notities, geen cues, geen "vandaag gedaan". |
 | S4 | Reikwijdte eerste versie | **Vrienden + ranglijst, verder niets.** Verzoek en acceptatie, verwijderen, ranglijst (blokkeren is later bewust geschrapt, S10). Aanmoedigen, reacties en groepen later. |
 
@@ -22,7 +22,7 @@ Wat het níét is: een sociaal netwerk. Geen feed, geen reacties, geen openbare 
 | # | Besluit |
 |---|---|
 | S5 | **Weergavenaam = de naam uit Instellingen.** Bij het aanmaken van een account vragen we "Hoe wil je heten?" en leggen uit dat vrienden die naam zien. Je kiest zelf: je voornaam of iets verzonnens. Dezelfde naam gebruiken de begroeting op Vandaag en de ochtendmelding. Zo is er één naam en hoeft er verder niets bijgehouden te worden. |
-| S6 | **Punten per dag.** Afvinken op een dag levert dat dag punten op, ook als een flexibele habit (bijv. 2× per week) over de hele periode nog niet af is. Je kunt dus elke dag punten verdienen (§4). |
+| S6 | **Een vast aantal punten per afgeronde taak** (besloten na de eerste meting, in plaats van een percentage). Een taak is één afgevinkte habit op één dag; flexibele habits doen precies hetzelfde mee als vaste. Het gaat om het aantal taken dat je afrondt, niet om wat er gepland stond, en je punten dalen nooit doordat het een nieuwe dag is (§4). |
 | S7 | **Wie 3+ dagen niets doet, verdwijnt uit de lijst** tot hij of zij het weer oppakt (§4.5). |
 | S8 | **Een uitnodigingslink maakt direct vrienden.** Zoeken op gebruikersnaam blijft een verzoek met acceptatie (zie V12). |
 | S9 | **Navigatie via Voortgang** (geen zesde tabblad). |
@@ -57,7 +57,7 @@ Prio: M = moet, S = zou moeten, C = kan. Het ID-voorvoegsel is **V** (vrienden).
 | V1 | Sociaal staat **standaard uit**. Je zet het zelf aan via een duidelijk scherm dat uitlegt wat vrienden zien (alleen naam en cijfers) en wat niet. | M |
 | V2 | Bij aanzetten kies je een **gebruikersnaam**: uniek, 3–20 tekens, kleine letters/cijfers/`_`/`.`, niet hoofdlettergevoelig, zonder aanstootgevende woorden uit een korte blokkadelijst. De naam kun je later wijzigen (hoogstens eens per 30 dagen). | M |
 | V3 | De **weergavenaam** op de ranglijst is de naam uit Instellingen (S5). Bij het aanmaken van een account vragen we die naam en zeggen dat vrienden hem zien. Bestaande accounts krijgen dezelfde vraag eenmalig bij het aanzetten van sociaal. Is de naam leeg, dan de gebruikersnaam. | M |
-| V4 | Je kunt sociaal **altijd uitzetten**: je verdwijnt uit de lijsten van anderen en je gepubliceerde score wordt gewist. Vriendschappen blijven bewaard maar zijn "gepauzeerd" tot je het weer aanzet (S: of je kiest ze ook te verwijderen). | M |
+| V4 | Je kunt sociaal **altijd uitzetten**: je verdwijnt uit de lijsten van anderen en je gepubliceerde punten worden gewist. Vriendschappen blijven bewaard maar zijn "gepauzeerd" tot je het weer aanzet (S: of je kiest ze ook te verwijderen). | M |
 | V5 | Zonder account of zonder verbinding is het scherm Vrienden bruikbaar in een nette, verklarende toestand (zie §7), nooit een lege fout. | M |
 
 ### 3.2 Vrienden zoeken en toevoegen
@@ -75,12 +75,11 @@ Prio: M = moet, S = zou moeten, C = kan. Het ID-voorvoegsel is **V** (vrienden).
 ### 3.3 Ranglijst
 | ID | Eis | Prio |
 |---|---|---|
-| V20 | De **ranglijst** toont jou en je geaccepteerde vrienden, gesorteerd op **weekscore** (§4), met positie, naam, score en reeks. Jij bent herkenbaar gemarkeerd (niet alleen met kleur). | M |
-| V21 | Een vriend met te weinig om te beoordelen (§4.3) staat onderaan met "nog te weinig gepland" in plaats van een misleidende 100% of 0%. | M |
+| V20 | De **ranglijst** toont jou en je geaccepteerde vrienden, gesorteerd op **weekpunten** (§4), met positie, naam, punten en reeks. Jij bent herkenbaar gemarkeerd (niet alleen met kleur). | M |
 | V22 | Een vriend die **3 dagen of langer niets heeft afgevinkt** verdwijnt automatisch uit de lijst, en komt terug zodra hij of zij weer iets afvinkt (§4.5). Jezelf zie je altijd. | M |
 | V23 | Zichtbare extra's per vriend, uitsluitend uit de gepubliceerde samenvatting: huidige langste **reeks** (dagen), aantal **actieve habits**. | S |
 | V24 | De ranglijst werkt **offline** met de laatst opgehaalde stand (duidelijk gemarkeerd als "stand van …"), en ververst bij openen en via een knop. | M |
-| V25 | De eigen score staat altijd **lokaal berekend** en is dus direct juist, ook voor je gepubliceerd wordt. | M |
+| V25 | Je eigen punten staan altijd **lokaal berekend** en zijn dus direct juist, ook voor ze gepubliceerd zijn. | M |
 | V26 | Terugkijken ("vorige week") is niet nodig in deze versie. | C |
 
 ### 3.4 Wat er gepubliceerd wordt
@@ -93,58 +92,55 @@ Prio: M = moet, S = zou moeten, C = kan. Het ID-voorvoegsel is **V** (vrienden).
 ### 3.5 Niet in deze versie
 Blokkeren, een minimumleeftijd, aanmoedigen/knuffel-knop, reacties, groepen of uitdagingen, publieke profielen, vrienden zoeken op e-mailadres of via contacten, pushmeldingen over vrienden, badges voor ranglijstposities, terugblik per week, vrienden uit een ander land of taal filteren.
 
-## 4. De score: domeinregels (het eerlijke hart)
+## 4. De punten: domeinregels
 
-De ranglijst staat of valt met een eerlijke maat. Deze regels worden, net als de rest van het domein, **puur en met tests** gebouwd (`src/domain` / `src/app`) en één keer vastgepind.
+De ranglijst telt **punten**. Deze regels zijn puur en met tests gebouwd (`src/app/score.js`, `src/app/leaderboard.js`) en staan in één constantenbestand (`src/domain/constants.js`).
 
-### 4.1 Definitie: punten per dag
-Per dag telt wat die dag op je lijst stond: **gedaan ÷ gepland**, zoals de weekstrook en het week-/maandoverzicht dat al per dag tonen (`buildDayView`: vaste habits van die dag plus meegenomen stapel-items; overgeslagen items tellen nergens). Een stapel-habit levert dus punten op de dag dat je hem afvinkt, niet pas als de week voorbij is (S6).
+### 4.1 Definitie
+**Weekpunten** = aantal afgeronde taken in de **laatste 7 dagen, vandaag meegerekend**, × **10 punten**.
 
-**Weekscore** = (som van gedaan) ÷ (som van gepland) over de **laatste 7 dagen, vandaag meegerekend**, als geheel getal 0–100.
+- Een **taak** is één afgevinkte habit op één dag. `gedaan` en de minimale versie tellen; overslaan en een nog niet voltooide teller niet. Dezelfde habit telt hooguit één keer per dag.
+- Er is **geen noemer**: je krijgt punten voor wat je doet, niet voor wat er gepland stond. Flexibele habits (bijv. 2× per week) doen precies hetzelfde mee als vaste; als je ze allemaal op één dag afrondt, zijn dat die dag evenveel punten als verspreid over de week.
+- **Afvinken is meteen zichtbaar.** Je punten dalen nooit doordat het een nieuwe dag is, een dag niet gelukt is of je pauzeerde; ze dalen alleen doordat een oude dag uit het venster van 7 dagen schuift.
+- "Dag" volgt de dagwissel van de gebruiker (standaard 04:00): een check-in van 02:00 hoort bij de vorige dag.
+- De waarde 10 staat als `TASK_POINTS`, zodat de schaal later te veranderen is zonder iets anders aan te raken.
 
-- `gedaan` en `minimaal` tellen als gedaan; `overgeslagen` telt nergens; gepauzeerde habits staan niet op de lijst.
-- **Vandaag telt alleen mee voor wat je gedaan hebt.** Afvinken is dus direct zichtbaar in je score, en je score daalt niet omdat het ochtend is. Pas als de dag voorbij is, telt wat je niet deed mee als gemist (de dag sluit met de dagwissel van de gebruiker, standaard 04:00). Gevolg: je score kan 's nachts een beetje zakken als je een dag onaf liet; dat is wat de score eerlijk maakt.
-- "Dag" volgt de dagwissel van de gebruiker; elke gebruiker rekent met de eigen dag en tijdzone.
+### 4.2 Wat dit wel en niet eerlijk maakt
+- **Voordeel:** het is simpel en uit te leggen. Flexibele habits en vaste habits tellen gelijk, een slechte dag kost niets, pauze en ziekte kosten geen plek, en beginners hebben meteen punten.
+- **Nadeel (bewust aanvaard):** wie meer habits heeft, kan meer punten halen. Met 3 habits is het maximum per week 210; met 15 habits is dat 1050. De ranglijst beloont dus ook *hoeveel* je aanpakt, niet alleen hoe trouw je bent. Dat past bij "het aantal taken dat je afrondt". Wie dat later te scheef vindt, kan een verfijning kiezen (zie §4.7).
 
-### 4.2 Waarom dit eerlijk is
-- Wie **3 habits** heeft en wie **15** concurreren op percentage, niet op aantal.
-- Pauze en overslaan kosten niets: vakantie of ziekte kost je geen plek.
-- Elke week een nieuwe kans: het venster schuift, een slechte dag is na zeven dagen weg.
-- Beginners doen meteen mee; er is geen reeks die je moet hebben (de reeks is bijzaak, V23).
-- Flexibele habits geven dezelfde beloning per dag als vaste habits.
+### 4.3 Gelijke stand
+Gelijke punten: de langste reeks gaat voor, daarna de naam. Gelijke posities krijgen dezelfde rang ("1, 1, 3").
 
-### 4.3 Te weinig om te beoordelen
-Een score telt alleen als er in het venster **minstens 3 geplande items** zijn. Anders staat er "nog te weinig gepland" en geen rang: één habit, één dag, 100% zegt niets.
-
-### 4.4 Gelijke stand
-Gelijke score: meer geplande items eerst (meer te verliezen gehad), daarna de langste reeks, daarna de naam alfabetisch. Gelijke posities mogen dezelfde rang krijgen ("1, 1, 3").
-
-### 4.5 Wie is "actief"
-Je publiceert de datum van je **laatste afgevinkte dag** (`last_active`). Een vriend staat in de lijst zolang `last_active` binnen de laatste **3 dagen** valt (vandaag, gisteren of eergisteren, gerekend vanaf de dag van degene die kijkt). Daarna verdwijnt de vriend, en bij de eerstvolgende afvinkactie is hij of zij terug. Dit vervangt het eerdere idee van een "verouderde" score: wie de app niet opent, publiceert niets en valt dus vanzelf af.
+### 4.4 Wie is "actief"
+Je publiceert de datum van je **laatste afgevinkte dag** (`last_active`). Een vriend staat in de lijst zolang `last_active` binnen de laatste **3 dagen** valt (vandaag, gisteren of eergisteren, gerekend vanaf de dag van degene die kijkt). Daarna verdwijnt de vriend, en bij de eerstvolgende afvinkactie is hij of zij terug. Wie de app niet opent, publiceert niets en valt dus vanzelf af.
 Je eigen regel staat er altijd. Nieuwe vrienden zonder enige activiteit verschijnen pas na hun eerste afvinkactie.
 
+### 4.5 Reeks en habits (bijzaak)
+Naast de punten staan per persoon de **langste lopende reeks** (dagen, alleen habits met vaste dagen; een flexibele habit heeft weken als eenheid) en het **aantal actieve habits**. Een reeks breekt niet doordat vandaag nog open staat.
+
 ### 4.6 Bekende zwakte (aanvaard)
-De score wordt **door de app van de gebruiker berekend en gepubliceerd**. Een vriend met kennis kan dus valsspelen. Voor een kring van vrienden is dat aanvaardbaar: er valt niets te winnen. De server beperkt wel de **waardebereiken** (score 0–100, aantallen ≤ 1000) en de update-frequentie. Een tweede zwakte: iemand met één habit haalt makkelijk 100%; dat wordt gemilderd doordat het aantal habits en de reeks zichtbaar zijn (V23). Wil je ooit strenger zijn, dan kan de server de score afleiden uit de gesynchroniseerde check-ins (veel werk, past slecht bij "de server begrijpt de records niet").
+De punten worden **door de app van de gebruiker berekend en gepubliceerd**. Een vriend met kennis kan dus valsspelen, en iemand kan triviale habits toevoegen om punten te sprokkelen. Voor een kring van vrienden is dat aanvaardbaar: er valt niets te winnen. De server beperkt wel de **waardebereiken** (punten en aantallen binnen redelijke grenzen) en de update-frequentie. Wil je ooit strenger zijn, dan kan de server de punten afleiden uit de gesynchroniseerde check-ins (veel werk, past slecht bij "de server begrijpt de records niet").
 
 ### 4.7 Meting op voorbeeldgegevens (S1)
 
-Weekscore op 15 oktober, vandaag nog niets afgevinkt, met een jaar geschiedenis. Berekening: 0–30 ms.
+Weekpunten op 15 oktober met een jaar geschiedenis. Berekening: 0–15 ms.
 
-| Soort gebruiker | Score | gedaan/gepland |
+| Soort gebruiker | Taken | Punten |
 |---|---|---|
-| 3 habits dagelijks, 90% gedaan | 95 | 19/20 |
-| 3 habits dagelijks, 50% gedaan | 55 | 11/20 |
-| 15 habits gemengd, 70% gedaan | 79 | 70/89 |
-| 15 habits gemengd, 40% gedaan | 57 | 45/79 |
-| alleen flexibele habits (2× en 3× per week), 60% | 91 | 10/11 |
-| beginner, 1 habit, 8 dagen bezig | 57 | 4/7 |
-| beginner, 2 habits, 2 dagen bezig | 100 | 6/6 |
-| 5 dagen niets gedaan | 33 | 6/18 (staat niet meer in andermans lijst) |
+| 3 habits dagelijks, 90% gedaan | 19 | 190 |
+| 3 habits dagelijks, 50% gedaan | 11 | 110 |
+| 15 habits gemengd, 70% gedaan | 76 | 760 |
+| 15 habits gemengd, 40% gedaan | 47 | 470 |
+| alleen flexibele habits (2× en 3× per week) | 10 | 100 |
+| beginner, 1 habit, 8 dagen bezig | 4 | 40 |
+| beginner, 2 habits, 2 dagen bezig | 6 | 60 |
+| 5 dagen niets gedaan | 6 | 60 (staat niet meer in andermans lijst) |
 
-Wat opvalt:
-- **Dagelijkse habits geven eerlijke uitkomsten.** 90% gedaan geeft 95, 50% geeft 55; het kleine verschil komt doordat vandaag alleen meetelt wat je deed.
-- **Flexibele habits trekken de score naar boven.** Een flexibele habit staat pas op je lijst als je hem meeneemt of afvinkt, dus je kunt hem bijna niet "missen". Wie vooral flexibele habits heeft, scoort daardoor makkelijk hoog (hierboven 91 bij 60% gedaan). Dit volgt uit S6 (punten op de dag dat je afvinkt) en is voor een kring van vrienden te verdragen. Het staat als **open punt** voor S4/later: een mogelijke verfijning is dat een afgesloten week met een niet-gehaald doel (bijv. 1 van de 2 keer) het tekort als gemist meetelt.
-- **Beginners** doen meteen mee: twee habits, twee dagen bezig, geeft al 100 (6 geplande items; minimum is 3).
+Wat opvalt: **wie 15 habits half doet (470) staat ruim boven wie 3 habits bijna perfect doet (190).** Dat is het gevolg van tellen per taak (§4.2). De eenvoud is er de reden voor; als het in de praktijk toch scheef voelt, zijn dit de verfijningen die we kunnen kiezen:
+- *Puntenplafond per dag* (bijvoorbeeld de eerste 5 taken van een dag): beperkt wat extra habits opleveren.
+- *Een tweede ranglijst op consistentie* (percentage gedaan), voor wie liever op trouw dan op volume wil kijken.
+- *Gewicht per habit* (een lastige habit meer punten): meer werk en meer uitleg; ik raad het niet aan.
 
 ## 5. Datamodel (voorstel, Supabase)
 
@@ -157,7 +153,7 @@ Alles is **additief**: een nieuwe migratie `0003_social.sql`; de bestaande tabel
 | `social_profiles` | `user_id` (pk, → `auth.users`, cascade), `username` (uniek, citext), `display_name` (≤ 30), `enabled`, `username_changed_at`, `created_at` | wie meedoet en onder welke naam |
 | `friendships` | `id`, `user_low`, `user_high` (altijd gesorteerd, uniek paar), `requested_by`, `status` (`pending`/`accepted`/`declined`), `created_at`, `responded_at` | één rij per paar, voorkomt dubbele of wederzijdse rijen; `declined` onthoudt een weigering voor de wachttijd van 30 dagen |
 | `invite_codes` | `code` (hash, uniek), `owner`, `expires_at`, `revoked_at` | uitnodigingslinks; de code zelf staat alleen in de link, in de database staat alleen een hash |
-| `score_summaries` | `user_id` (pk), `as_of` (datum), `score` (0–100), `planned`, `done`, `streak`, `active_habits`, `last_active` (datum), `updated_at` | de gepubliceerde samenvatting, één rij per gebruiker |
+| `score_summaries` | `user_id` (pk), `as_of` (datum), `points`, `done`, `streak`, `active_habits`, `last_active` (datum), `updated_at` | de gepubliceerde samenvatting, één rij per gebruiker |
 
 ### 5.2 Toegang (RLS en functies)
 Het principe: **tabellen zijn dicht, toegang loopt via een paar kleine `security definer`-functies** (met vaste `search_path`), zodat gebruikers nooit direct in andermans rijen kunnen kijken of door lijsten bladeren.
@@ -168,14 +164,14 @@ Het principe: **tabellen zijn dicht, toegang loopt via een paar kleine `security
 | `social_find(username)` | geeft hooguit **één** rij `{ id, display_name }` terug bij exacte match; negeert niet-ingeschakelden en wie een eerder verzoek van jou weigerde; begrensd (§6) |
 | `friend_request(user_id)` / `friend_respond(id, accept)` / `friend_remove(user_id)` | de vriendschapsstroom met alle controles (max. aantallen, wachttijd na weigering, geen jezelf) |
 | `invite_create()` / `invite_revoke(code)` / `invite_redeem(code)` | uitnodigingslinks |
-| `leaderboard()` | jouw samenvatting + die van **geaccepteerde** vrienden die sociaal aan hebben; zonder e-mailadres of andere velden. Het filteren op "3+ dagen niets gedaan" (§4.5) doet de app, met de dag van degene die kijkt |
+| `leaderboard()` | jouw samenvatting + die van **geaccepteerde** vrienden die sociaal aan hebben; zonder e-mailadres of andere velden. Het filteren op "3+ dagen niets gedaan" (§4.4) doet de app, met de dag van degene die kijkt |
 | `publish_summary(...)` | schrijft **jouw** `score_summaries`-rij, met bereikcontroles |
 
 Direct select/insert/update/delete op deze tabellen: **geen enkele policy voor `anon`**; voor `authenticated` alleen wat de functies nodig hebben (of niets, met alles via functies). Het RLS-testscript krijgt uitgebreid met: niet-vriend kan niets lezen, vriend leest alleen de ranglijstvelden, een geweigerd verzoek kan binnen 30 dagen niet opnieuw, `anon` kan niets, aantal-limieten werken, intrekken en verlopen werken, account verwijderen wist alles (cascade).
 
 ### 5.3 De samenvatting
 ```
-{ as_of: "2026-10-15", score: 82, planned: 28, done: 23, streak: 9, active_habits: 5, last_active: "2026-10-15" }
+{ as_of: "2026-10-15", points: 230, done: 23, streak: 9, active_habits: 5, last_active: "2026-10-15" }
 ```
 Alleen getallen en twee datums (`as_of`, `last_active`). Niets dat een habit identificeert. Het bestand `docs/DATAMODEL.md` wordt bijgewerkt met deze tabellen.
 
@@ -189,7 +185,7 @@ Het lokale deel is klein: de instelling "sociaal aan" (`settings`), een cache va
 |---|---|---|
 | gebruikersnaam | `social_profiles` | iedereen **die hem exact kent** (zoeken) |
 | weergavenaam | `social_profiles` | jouw geaccepteerde vrienden (en wie jouw verzoek kreeg) |
-| weekscore, reeks, aantal habits, laatst actief op | `score_summaries` | jouw geaccepteerde vrienden |
+| weekpunten, reeks, aantal habits, laatst actief op | `score_summaries` | jouw geaccepteerde vrienden |
 | wie er met wie bevriend is | `friendships` | alleen die twee |
 
 Zichtbaar voor niemand: e-mailadres, habit-namen, notities, cues, "waarom", individuele check-ins, tijdstippen.
@@ -214,11 +210,11 @@ Besloten (S9): de ranglijst is bereikbaar vanaf **Voortgang** (een kaart "Rangli
 
 ### 7.2 Schermen
 1. **Uitleg + aanzetten** (bij eerste keer): wat vrienden zien, kies je gebruikersnaam, bevestig.
-2. **Ranglijst** (hoofdscherm): lijst met jou gemarkeerd, rang, naam, score als getal én balk, reeks. Bovenaan wie je bent en je positie; onderaan "Vrienden toevoegen".
+2. **Ranglijst** (hoofdscherm): lijst met jou gemarkeerd, rang, naam, punten als getal én balk, reeks. Bovenaan wie je bent en je positie; onderaan "Vrienden toevoegen".
 3. **Vrienden toevoegen**: zoekveld (exacte naam) + "Deel uitnodigingslink"; resultaat "Stuur verzoek".
 4. **Verzoeken**: ontvangen (accepteren/weigeren) en verstuurd (intrekken), met een teller op de knop.
 5. **Vriendenlijst/beheer**: vrienden verwijderen, uitnodigingslinks intrekken.
-6. **Lege toestanden** (verplicht, zoals eerder): geen vrienden ("Nodig iemand uit"), alleen jij op de lijst (ook: "vrienden die even niets deden zie je weer zodra ze beginnen"), te weinig gepland, geen verbinding, niet ingelogd.
+6. **Lege toestanden** (verplicht, zoals eerder): geen vrienden ("Nodig iemand uit"), alleen jij op de lijst (ook: "vrienden die even niets deden zie je weer zodra ze beginnen"), geen verbinding, niet ingelogd.
 
 ### 7.3 Eisen aan de uitvoering
 - Alle teksten in `src/content/nl.js`; werkt in beide thema's (v0lky1, Mel) en op desktop (twee kolommen).
@@ -227,7 +223,7 @@ Besloten (S9): de ranglijst is bereikbaar vanaf **Voortgang** (een kaart "Rangli
 - Zonder sociaal merkt de gebruiker niets: geen extra verzoeken, geen extra rekenwerk.
 
 ## 8. Niet-functioneel en kwaliteit
-- **Domein** (score, venster, gelijke stand, te weinig data, dagwissel, pauze/overslaan, flexibele habits) puur en met tests, inclusief de randgevallen uit PLAN §4.8 waar relevant. Eén bron voor constanten (3 eenheden, 7 dagen, 3 dagen inactief, 50 vrienden, enz.).
+- **Domein** (punten, venster, gelijke stand, actief-regel, dagwissel, flexibele habits) puur en met tests, inclusief de randgevallen uit PLAN §4.8 waar relevant. Eén bron voor constanten (10 punten per taak, 7 dagen, 3 dagen inactief, 50 vrienden, enz.).
 - **Server:** RLS-test uitgebreid (§5.2) in `supabase/tests/rls-check.mjs`, die in CI/`npm test` meedraait; migratie idempotent; functies met vaste `search_path`; geen service-sleutel nodig.
 - **Guardrails:** geen `innerHTML`, geen service-sleutel, `svh`-regels, tikvlakken blijven gelden.
 - **Browsertests** voor de flows (aanzetten, uitnodigen, accepteren, ranglijst, offline, weigeren) op telefoon- en desktopformaat. Dit is het natuurlijke moment om de browsertests eindelijk **in de repository en in CI** te zetten (nu alleen lokaal): sociaal is te riskant om zonder vangnet te bouwen. Zie ook WERKWIJZE.
@@ -238,7 +234,7 @@ Besloten (S9): de ranglijst is bereikbaar vanaf **Voortgang** (een kaart "Rangli
 Alle vragen uit het eerste concept zijn beantwoord (S5–S11 bovenaan). Wat overblijft is uitvoering, geen keuze meer:
 - **Testdatabase:** lokaal in Docker, volgens [DEV-OMGEVING.md](DEV-OMGEVING.md).
 - **Naam bij het aanmaken van een account** (S5): de huidige naamdialoog krijgt de uitleg dat vrienden de naam zien. Bestaande accounts krijgen de vraag eenmalig bij het aanzetten van sociaal.
-- **Het gevolg van S6/S7 in één zin:** je score beweegt dagelijks (afvinken verhoogt hem meteen, een onaf gelaten dag drukt hem 's nachts), en wie 3 dagen stil is zie je niet meer; dat is de bedoeling.
+- **Het gevolg van S6/S7 in één zin:** je punten stijgen met elke taak die je afrondt en zakken alleen doordat een oude dag uit het venster van 7 dagen schuift; en wie 3 dagen stil is, zie je niet meer. Dat is de bedoeling.
 
 ## 10. Mijlpalen en acceptatiecriteria (voorstel)
 
@@ -247,7 +243,7 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 | M | Inhoud | Klaar als… |
 |---|---|---|
 | **S0** | Dit document akkoord; besluiten S5–S11 genomen; de lokale testdatabase draait en de app kan er mee verbinden | besluiten ✔; testdatabase in uitvoering |
-| **S1** | Domein: weekscore met punten per dag, actief-regel (3 dagen), gelijke stand, tests. Plus de naamvraag bij het aanmaken van een account (S5) | Alle regels uit §4 hebben groene tests; een meting op voorbeelddata is besproken. |
+| **S1** | Domein: weekpunten (10 per afgeronde taak), actief-regel (3 dagen), gelijke stand, tests. Plus de naamvraag bij het aanmaken van een account (S5) | ✔ klaar: de regels uit §4 hebben groene tests; de meting (§4.7) staat erin. |
 | **S2** | Server: migratie 0003, functies, RLS-tests, DATAMODEL bijgewerkt | RLS-testscript bewijst: niet-vriend ziet niets, vriend ziet alleen de ranglijstvelden, weigeren met wachttijd, intrekken, verlopen, limieten en cascade werken. |
 | **S3** | Data-laag en publiceren: remote-client, samenvatting na sync, offline cache | Publiceren gebeurt op de achtergrond; uit = niets verzonden (testbaar). |
 | **S4** | UI: aanzetten, zoeken, link, verzoeken, ranglijst, lege toestanden, beide thema's, desktop | Browsertests groen op 360/390/412 px en desktop; a11y- en overflowrondes groen. |
@@ -259,8 +255,8 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 |---|---|---|
 | X1 | Gebruikerslijst afzoeken (enumeratie) of namen raden | exacte match, rate limit, uniform antwoord, geen autocomplete |
 | X2 | Lastigvallen via verzoeken | stille weigering met wachttijd, limieten, intrekken, geen vrije tekst; blokkeren later als het nodig blijkt |
-| X3 | Valsspelen met de score | aanvaard binnen vrienden; bereikcontroles; reeks en habit-aantal zichtbaar |
-| X4 | Ranglijst demotiveert (altijd laatste staan) | schuivend venster van 7 dagen, percentage i.p.v. aantal, wie stil is valt weg, uit te zetten |
+| X3 | Valsspelen met de punten (of triviale habits toevoegen) | aanvaard binnen vrienden; bereikcontroles; reeks en habit-aantal zichtbaar |
+| X4 | Ranglijst demotiveert (altijd laatste staan), of wie veel habits heeft wint altijd | schuivend venster van 7 dagen, wie stil is valt weg, uit te zetten; verfijningen in §4.7 als het scheef voelt |
 | X5 | Productiedata raakt vermengd met testen | lokale testdatabase (S11); migratie additief |
 | X6 | Privacyverklaring loopt achter op de feature | S5 is een voorwaarde voor release |
 | X7 | Ontwikkelwerk groeit uit tot "sociaal netwerk" | §3.5 houdt scope klein; aanmoedigen/groepen later apart |
@@ -270,4 +266,4 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 ## 12. Volgende stappen
 
 1. Testdatabase lokaal starten: [DEV-OMGEVING.md](DEV-OMGEVING.md).
-2. S1 (het domein van de score) is klaar; daarna S2, de server: migratie 0003, functies en RLS-tests.
+2. S1 (het domein van de punten) is klaar; daarna S2, de server: migratie 0003, functies en RLS-tests.
