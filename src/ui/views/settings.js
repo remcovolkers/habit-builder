@@ -139,7 +139,7 @@ function versionLine() {
           hint.textContent = result.left === null ? '' : nl.settings.dev.tapsLeft(result.left);
         }
       },
-    }, nl.settings.dev.version(config.appVersion)),
+    }, nl.settings.dev.version(config.appVersion, config.environment)),
     hint,
     dev);
 }

@@ -233,7 +233,8 @@ export const nl = {
 
   settings: {
     dev: {
-      version: (version) => `Habit Builder · versie ${version}`,
+      version: (version, environment = 'production') =>
+        `Habit Builder · versie ${version}${environment === 'development' ? ' · testomgeving' : ''}`,
       tapsLeft: (n) => `Nog ${n} ${n === 1 ? 'tik' : 'tikken'} voor ontwikkelaarsopties`,
       on: 'Ontwikkelaarsopties staan aan',
       off: 'Ontwikkelaarsopties staan uit',

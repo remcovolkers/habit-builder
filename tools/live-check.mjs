@@ -1,10 +1,17 @@
 // Controleert de ECHTE Supabase (zonder in te loggen) nadat supabase/migrations/0001_init.sql is uitgevoerd.
-// Gebruik: node tools/live-check.mjs
+// Gebruik: node tools/live-check.mjs          (productie)
+//          node tools/live-check.mjs --dev    (het ontwikkelproject, zie docs/DEV-OMGEVING.md)
 // Wat het bewijst: de migratie staat erop, ping() werkt voor iedereen, en een niet-ingelogde bezoeker kan niets
 // lezen, schrijven of verwijderen. (Dat gebruikers elkaars data niet zien is gecontroleerd in supabase/tests.)
-import { config } from '../src/config.js';
+import { config, pickEnvironment } from '../src/config.js';
 
-const { supabaseUrl: url, supabasePublishableKey: key } = config;
+const target = process.argv.includes('--dev') ? pickEnvironment('localhost') : config;
+if (process.argv.includes('--dev') && target.environment !== 'development') {
+  console.error('Het ontwikkelproject is nog niet ingevuld in src/config.js (zie docs/DEV-OMGEVING.md).');
+  process.exit(2);
+}
+console.log(`Omgeving: ${target.environment} (${target.supabaseUrl})\n`);
+const { supabaseUrl: url, supabasePublishableKey: key } = target;
 const headers = { apikey: key, 'Content-Type': 'application/json' };
 const results = [];
 const check = (name, ok, detail = '') => {

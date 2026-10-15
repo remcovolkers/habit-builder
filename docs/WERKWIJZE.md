@@ -51,7 +51,7 @@ Pas daarna werkt "beschermen" ook echt: zonder deze regel is het een afspraak, m
 
 - Lokaal: `npm run serve` (http://localhost:5173) toont de branch waar je op staat. Voor een uitrol-achtige proef met service worker: `npm run stage` en `SERVE_ROOT=_site npm run serve`.
 - Op je telefoon kan dat via het IP-adres van je computer, of na een release. Een tweede publieke versie naast productie bestaat niet: GitHub Pages heeft één site per repository.
-- **Let op, de database is gedeeld.** Er is één Supabase-project en dat is productie. Een feature-versie die inlogt, praat dus met de échte gegevens. Probeer schrijf-acties daarom met een testaccount, of anoniem (dan blijft alles op je eigen apparaat).
+- **De database is gescheiden.** Alles wat niet op de productie-site draait (localhost, het IP-adres van je computer) praat met het **ontwikkelproject** (een tweede Supabase-project), niet met de echte gegevens. Zie [DEV-OMGEVING.md](DEV-OMGEVING.md). Zolang dat project niet is ingevuld in `src/config.js`, geldt het oude voorbehoud: probeer schrijf-acties dan met een testaccount, of anoniem.
 
 ## Wijzigingen aan de database (Supabase) zijn extra voorzichtig
 
@@ -62,7 +62,7 @@ Gebruikers draaien soms nog een oudere app-versie (de app-cache werkt pas bij na
 3. Migraties staan in `supabase/migrations/` (genummerd, herhaalbaar) en worden met de hand in de SQL-editor uitgevoerd; de RLS-controle in `supabase/tests/rls-check.mjs` draait mee.
 4. De Edge Function (`send-reminders`) wordt met de hand geplakt in het dashboard. Houd het bestand in de repo gelijk aan wat er live staat.
 
-Wil je ooit grotere schema-wijzigingen proberen zonder risico, dan is een tweede (gratis) Supabase-project voor ontwikkeling de nette oplossing; `src/config.js` wijst dan op dat project.
+Schema-wijzigingen worden **eerst op het ontwikkelproject** geprobeerd en pas bij de release op productie gezet (zie DEV-OMGEVING.md).
 
 ## Terugdraaien
 
