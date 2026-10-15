@@ -192,7 +192,14 @@ function renderDay(view, week) {
     : null;
 
   // Op mobiel onder elkaar; op desktop de dag links en de stapel (met zetje en feest) rechts.
-  const side = [poolSection, nudge, celebrate].filter(Boolean);
+  // Links begint elk dagdeel met een kopregel. Begint de rechterkolom met een kaart zonder kopregel (het feest of het zetje, als de stapel leeg is),
+  // dan krijgt die er op desktop ook een, zodat de eerste kaarten links en rechts op dezelfde hoogte staan.
+  const sideHead = !poolSection && (celebrate || nudge)
+    ? h('div', { class: 'section-head desktop-only today__side-head' },
+      h('h2', { class: 'section__title' }, celebrate ? nl.today.sideDone : nl.today.sideTip),
+      celebrate ? h('span', { class: 'xs muted' }, nl.today.sectionCount(view.progress.done, view.progress.total)) : null)
+    : null;
+  const side = [sideHead, poolSection, nudge, celebrate].filter(Boolean);
   return h('div', { class: 'today__inner' },
     header(view, week),
     banner(view),

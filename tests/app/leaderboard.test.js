@@ -77,3 +77,25 @@ test('de invoer wordt niet gewijzigd', () => {
   board(entries);
   assert.deepEqual(entries, copy);
 });
+
+// ---- de uitleg in de app klopt met de regel ------------------------------------------------------------------------------------
+
+import { nl } from '../../src/content/nl.js';
+import { SOCIAL_ACTIVE_DAYS } from '../../src/domain/constants.js';
+import { addDays } from '../../src/domain/dates.js';
+
+test('de uitleg "Wie staat er op de ranglijst?" noemt het aantal dagen uit de regel, en er is geen minimum aantal taken', () => {
+  const text = nl.friends.rules.items({ activeDays: SOCIAL_ACTIVE_DAYS }).join(' ');
+  assert.ok(text.includes(`${SOCIAL_ACTIVE_DAYS} dagen`), 'het aantal dagen staat in de tekst');
+  assert.ok(/geen minimum aantal taken/.test(text));
+  // en het gedrag: de laatste dag die nog meetelt is SOCIAL_ACTIVE_DAYS - 1 dagen geleden, een dag eerder valt eraf
+  assert.equal(isRecentlyActive(addDays(TODAY, -(SOCIAL_ACTIVE_DAYS - 1)), TODAY), true);
+  assert.equal(isRecentlyActive(addDays(TODAY, -SOCIAL_ACTIVE_DAYS), TODAY), false);
+});
+
+test('één afgevinkte taak is genoeg om op andermans lijst te komen: er is geen minimum aantal punten of taken', () => {
+  const one = entry('f', 'Femke', 10, { done: 1, lastActive: TODAY });
+  assert.deepEqual(names(board([entry('me', 'Ik', 50), one])), ['Ik', 'Femke']);
+  const zero = entry('g', 'Gijs', 0, { done: 1, lastActive: TODAY }); // wel iets afgevinkt, maar de minpunten brengen hem op 0
+  assert.ok(names(board([entry('me', 'Ik', 50), zero])).includes('Gijs'));
+});

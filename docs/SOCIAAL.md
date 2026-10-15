@@ -127,6 +127,8 @@ Gelijke punten: de langste reeks gaat voor, daarna de naam. Gelijke posities kri
 Je publiceert de datum van je **laatste afgevinkte dag** (`last_active`; een half gehaalde teller telt mee). Een vriend staat in de lijst zolang `last_active` binnen de laatste **3 dagen** valt (vandaag, gisteren of eergisteren, gerekend vanaf de dag van degene die kijkt). Daarna verdwijnt de vriend, en bij de eerstvolgende afvinkactie is hij of zij terug. Wie de app niet opent, publiceert niets en valt dus vanzelf af.
 Je eigen regel staat er altijd. Nieuwe vrienden zonder enige activiteit verschijnen pas na hun eerste afvinkactie.
 
+**Kort: wanneer sta je op andermans ranglijst?** Als jullie vrienden zijn, jij meedoet en je in de laatste 3 dagen (vandaag, gisteren of eergisteren) minstens één taak hebt afgevinkt, ook een half gehaalde teller. Er is **geen minimum aantal taken of punten**; één afgevinkte taak is genoeg. Overslaan en pauzeren tellen niet als afvinken. Deze uitleg staat in de app onder "Wie staat er op de ranglijst?" (op het aanmeldscherm en op de ranglijst) en volgt de constante `SOCIAL_ACTIVE_DAYS`; een test bewaakt dat tekst en regel gelijk blijven.
+
 ### 4.5 Reeks en habits (bijzaak)
 Naast de punten staan per persoon de **langste lopende reeks** (dagen, alleen habits met vaste dagen; een flexibele habit heeft weken als eenheid) en het **aantal actieve habits**. Een reeks breekt niet doordat vandaag nog open staat.
 

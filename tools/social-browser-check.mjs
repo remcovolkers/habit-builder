@@ -215,6 +215,7 @@ async function main() {
   await shot('stats-card-join');
   await goto('#/vrienden');
   await waitFor(`document.querySelector('#socialJoin')`, 'aanmelden');
+  check('aanmelden legt uit wie er op de ranglijst komt (geen minimum aantal taken, na 3 dagen niets weg)', /Wie staat er op de ranglijst/i.test(await appText()) && /geen minimum aantal taken/i.test(await appText()) && /3 dagen/.test(await appText()));
   check('aanmelden toont wat vrienden zien en wat privé blijft', /Dit zien je vrienden/i.test(await appText()) && /Dit blijft privé/i.test(await appText()));
   await overflow('aanmelden');
   await shot('intro');
@@ -252,6 +253,7 @@ async function main() {
   check('je eigen rij staat er met je lokale punten en is gemarkeerd', (await count('.board__row--me')) === 1 && /jij/.test(await text('.board__row--me')), await text('.board__row--me'));
   const myPoints = board1.board.find((r) => r[0] === 'Remco Test')[1];
   check('je eigen punten komen uit je habits (3 habits × 7 dagen + bonus + start)', myPoints >= 210, String(myPoints));
+  check('de ranglijst heeft een uitleg "Wie staat er op de ranglijst?" met de regels', (await count('#rules')) === 1 && /geen minimum aantal taken/i.test(await ev(`document.querySelector('#rules').textContent`)));
   check('de ranglijst werkt als geordende lijst met plek, naam en punten als tekst', (await ev(`document.querySelector('ol.board')?.tagName`)) === 'OL' && /Plek/.test(await ev(`document.querySelector('.board__rank').innerText`)));
   await overflow('ranglijst');
   await shot('board');
@@ -351,6 +353,14 @@ async function main() {
   await sleep(400);
   await overflow('ranglijst desktop');
   await shot('board-desktop');
+  // Vandaag op desktop met alles gedaan: de kaart rechts staat op dezelfde hoogte als de eerste kaart links (rechts krijgt een eigen kopregel)
+  await goto('#/today'); await sleep(500);
+  const tops = await ev(`(() => {
+    const top = (e) => (e ? Math.round(e.getBoundingClientRect().top + scrollY) : null);
+    return { left: top(document.querySelector('.today__main .habit-card')), right: top(document.querySelector('.today__side .celebrate')) };
+  })()`);
+  check('Vandaag op desktop: de kaart "alles gedaan" staat op dezelfde hoogte als de eerste habit links', tops.left !== null && tops.right !== null && Math.abs(tops.left - tops.right) <= 2, J(tops));
+  await shot('today-desktop');
   await goto('#/vrienden/toevoegen'); await sleep(300);
   await shot('add-desktop');
   await goto('#/stats'); await sleep(300);
