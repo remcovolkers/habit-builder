@@ -11,14 +11,28 @@
 }
 
 .today__hero {
+  --hero-ring: 5.25rem; /* de breedte van de voortgangsring; de titel krijgt de rest */
+  container-type: inline-size;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
 }
 
+.today__hero:not(:has(.ring)) {
+  --hero-ring: 0px;
+}
+
+.today__hero .ring {
+  --size: var(--hero-ring);
+}
+
+/* De begroeting ("Goedemiddag,") moet op één regel passen naast de ring, anders valt de komma naar de volgende regel.
+   De lettergrootte schaalt daarom mee met de ruimte: de langste begroeting is ongeveer 8,2 keer de lettergrootte breed (8,5 met marge). */
 .today__title {
-  font-size: var(--font-size-3xl);
+  flex: 1;
+  min-width: 0;
+  font-size: min(var(--font-size-3xl), calc((100cqw - var(--hero-ring) - var(--space-4)) / 8.5));
 }
 
 .today__back {

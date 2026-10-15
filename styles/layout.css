@@ -241,8 +241,11 @@
     font-size: var(--font-size-4xl);
   }
 
+  .today__hero {
+    --hero-ring: 6.5rem;
+  }
+
   .today__hero .ring {
-    --size: 6.5rem;
     --thick: 9px;
   }
 
