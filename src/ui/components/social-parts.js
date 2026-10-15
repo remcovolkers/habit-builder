@@ -107,7 +107,8 @@ export function onboardingForm({ onJoined = null } = {}) {
       h('label', { class: 'field__label', for: 'socialUsername' }, t.usernameLabel), userInput,
       h('p', { id: 'socialUserHint', class: 'field__hint' }, t.usernameHint), userError),
     submit,
-    h('p', { class: 'xs muted' }, t.offAnytime));
+    h('p', { class: 'xs muted' }, t.offAnytime, ' ',
+      h('a', { id: 'socialPrivacy', href: `${nl.login.legalBase}/PRIVACY.md`, target: '_blank', rel: 'noopener noreferrer' }, t.privacy)));
 }
 
 /** Wat vrienden wel en niet zien: twee korte lijsten. */

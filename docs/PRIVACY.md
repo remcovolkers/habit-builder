@@ -1,6 +1,6 @@
 # Privacyverklaring Habit Builder
 
-Laatst bijgewerkt: 16 oktober 2026 (ochtendherinnering toegevoegd)
+Laatst bijgewerkt: oktober 2026, bij versie 1.1 (vrienden en ranglijst toegevoegd)
 
 Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen bedrijf). Hij is verantwoordelijk voor de gegevens die je in de app invult. Contact: **remco.volkers1@gmail.com**.
 
@@ -8,6 +8,7 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 
 - Je habits blijven standaard **alleen op je eigen apparaat**.
 - Maak je een account, dan staat een kopie ook op een server, zodat je je gegevens op meer apparaten hebt en ze niet kwijtraken.
+- **Vrienden en de ranglijst staan standaard uit.** Alleen als je zelf meedoet, zien je vrienden je naam en je punten. Nooit je e-mailadres, de namen van je habits of je notities.
 - Er is **geen tracking, geen reclame en geen analyse**. Je gegevens worden niet verkocht of gedeeld met adverteerders.
 - Je kunt je gegevens altijd downloaden en je account en alle gegevens op de server zelf verwijderen, in de app onder Instellingen.
 
@@ -19,15 +20,26 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 
 **Met een account** komt daar bij:
 - je **e-mailadres** (bij inloggen met Google ook de naam en profielfoto-URL die Google meestuurt; de app gebruikt die niet);
-- een **kopie van de gegevens hierboven** op de server, gekoppeld aan jouw account en alleen voor jou leesbaar;
+- een **kopie van de gegevens hierboven** op de server, gekoppeld aan jouw account en alleen voor jou leesbaar, met als enige uitzondering wat je zelf deelt met vrienden (zie hieronder, en alleen als je meedoet);
 - technische gegevens die nodig zijn om in te loggen (een sessiesleutel in je browser);
 - **alleen als je de ochtendherinnering aanzet**, per apparaat: het adres waar je browser meldingen naartoe laat sturen (met de sleutels om die versleuteld te sturen), het tijdstip dat je koos, je tijdzone, je voornaam, en per dag van de komende week twee getallen: hoeveel gewoontes er gepland staan en hoeveel taken er in je stapel liggen. **De namen van je gewoontes horen daar niet bij.**
+
+**Alleen als je meedoet met vrienden en de ranglijst** (je zet dat zelf aan, en kunt het weer uitzetten):
+- je **gebruikersnaam** (3 tot 20 tekens, door jou gekozen) en je **weergavenaam**, dezelfde naam als in Instellingen en op Vandaag. Iedereen die je gebruikersnaam precies kent, kan je vinden en je een verzoek sturen. Er is geen lijst van gebruikers en er kan niet gezocht worden op een deel van een naam of op e-mailadres;
+- met wie je **bevriend** bent en welke **verzoeken** er open staan. Een geweigerd verzoek wordt onthouden (zonder dat de afzender het ziet) zodat dezelfde persoon je 30 dagen niet opnieuw kan vragen. Die notitie blijft staan tot een van jullie het account verwijdert;
+- je **uitnodigingslinks**: de database bewaart alleen een onleesbare versie van de code; de link verloopt na 7 dagen en je kunt hem intrekken;
+- een **samenvatting** die de app op je eigen apparaat berekent en bijwerkt zolang je meedoet: je punten van de laatste 7 dagen, het aantal afgeronde taken, je reeks in dagen, het aantal habits dat je doet, de dag waarop je voor het laatst iets afvinkte en de dag van de berekening. Dit is alles wat je vrienden van je habits te zien krijgen;
+- een korte **teller** van je zoek-, verzoek- en uitnodigingsacties, om raden en lastigvallen tegen te gaan. Rijen ouder dan twee dagen worden opgeruimd zodra je weer zo'n actie doet, en ze verdwijnen in elk geval met je account.
+
+**Wat je vrienden niet zien:** je e-mailadres, de namen van je habits, je cues, "waarom"-teksten, notities en reviews, wat je op welk tijdstip afvinkt, en je andere gegevens.
 
 Je habit-namen, cues, "waarom"-teksten, notities en reviews zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
 
 ## Waarvoor
 
 Uitsluitend om de app te laten werken: je habits tonen, je voortgang berekenen, je gegevens synchroniseren en je laten inloggen. De grondslag is dat dit nodig is om de dienst te leveren die jij vraagt (en voor de inlogmail: je eigen verzoek).
+
+De gegevens voor vrienden en de ranglijst gebruik ik alleen om die functie te laten werken: vrienden vinden en bevestigen, en jullie punten naast elkaar zetten. De grondslag is je **toestemming**: je zet het zelf aan en kunt het op elk moment uitzetten.
 
 ## Met wie gedeeld
 
@@ -38,6 +50,7 @@ Alleen met de diensten die de app laten draaien (verwerkers):
 | **Supabase** | opslag van je account en gegevens, en het inloggen |
 | **Google** | inloggen met Google, en het versturen van de inlogcode per e-mail (via Gmail) |
 | **GitHub** | het aanbieden van de app zelf (GitHub Pages); GitHub ziet daarbij je IP-adres zoals bij elke website |
+| **Je vrienden** (andere gebruikers van de app, alleen als je meedoet en zij door jou of door een uitnodigingslink als vriend zijn bevestigd) | zien je weergavenaam, gebruikersnaam en de samenvatting hierboven. Zij kunnen je niet vinden zonder je exacte gebruikersnaam of een link die jij deelde |
 | **De meldingsdienst van je browser** (bij Chrome en Android: Google, bij Edge: Microsoft, bij Firefox: Mozilla) | het afleveren van de ochtendmelding, alleen als je die aanzet. De inhoud is versleuteld; de dienst ziet dat er een melding voor jouw apparaat is, niet wat erin staat |
 
 Verder niemand, tenzij een wet dat afdwingt.
@@ -48,15 +61,17 @@ De app gebruikt geen tracking-cookies. Wel bewaart je browser lokale opslag (Ind
 
 ## Hoe lang
 
-Zolang je het apparaat of je account gebruikt. Verwijder je je account in de app, dan worden je account en alle bijbehorende gegevens direct van de server gewist. Kopieën in back-ups van de hostingdienst kunnen daarna nog kort bestaan. Gegevens op je eigen apparaat blijven staan tot je ze zelf wist.
+Zolang je het apparaat of je account gebruikt. Verwijder je je account in de app, dan worden je account en alle bijbehorende gegevens direct van de server gewist, ook je profiel, je vriendschappen, je uitnodigingen en je samenvatting.
+
+**Zet je vrienden en de ranglijst uit**, dan verdwijn je direct uit de lijsten en zoekresultaten van anderen, wordt je samenvatting gewist en worden je uitnodigingslinks ingetrokken. Je gebruikersnaam en je vriendschappen blijven bewaard (gepauzeerd, onzichtbaar voor anderen), zodat je ze terugkrijgt als je later weer meedoet. Wil je ook die kwijt, verwijder dan je account. Kopieën in back-ups van de hostingdienst kunnen daarna nog kort bestaan. Gegevens op je eigen apparaat blijven staan tot je ze zelf wist.
 
 ## Jouw rechten
 
-Je kunt inzage, correctie, overdracht (de back-up als JSON-bestand in Instellingen) en verwijdering vragen. Veel kun je zelf in de app. Voor de rest mail je het contactadres hierboven. Ben je het niet eens met hoe ik met je gegevens omga, dan kun je een klacht indienen bij de **Autoriteit Persoonsgegevens** (autoriteitpersoonsgegevens.nl).
+Je kunt inzage, correctie, overdracht (de back-up als JSON-bestand in Instellingen) en verwijdering vragen. Veel kun je zelf in de app (zoals je naam wijzigen, vrienden verwijderen, een verzoek weigeren of intrekken, en vrienden uitzetten). Voor de rest mail je het contactadres hierboven. Ben je het niet eens met hoe ik met je gegevens omga, dan kun je een klacht indienen bij de **Autoriteit Persoonsgegevens** (autoriteitpersoonsgegevens.nl).
 
 ## Beveiliging
 
-Verkeer loopt via HTTPS. Op de server kan elke gebruiker alleen zijn eigen gegevens lezen of wijzigen (beveiliging per rij in de database). Het is een hobbyproject: er is geen garantie dat het nooit misgaat, daarom raad ik aan af en toe een back-up te downloaden.
+Verkeer loopt via HTTPS. Op de server kan elke gebruiker alleen zijn eigen gegevens lezen of wijzigen (beveiliging per rij in de database). De tabellen voor vrienden en de ranglijst zijn voor niemand rechtstreeks te lezen: alles loopt via een paar vaste functies, die je alleen de gegevens geven die hierboven staan. Een vriend ziet je samenvatting pas nadat jullie wederzijds bevriend zijn. Het is een hobbyproject: er is geen garantie dat het nooit misgaat, daarom raad ik aan af en toe een back-up te downloaden.
 
 ## Wijzigingen
 

@@ -594,6 +594,7 @@ export const nl = {
       usernameHint: 'Vrienden vinden je met deze naam, precies zoals je hem typt. 3 tot 20 tekens: letters, cijfers, _ en een punt.',
       submit: 'Meedoen',
       offAnytime: 'Je kunt dit altijd weer uitzetten onder Beheren.',
+      privacy: 'Lees precies wat er wordt bewaard in de privacyverklaring',
       joined: 'Je doet mee',
       forInvite: 'Je bent uitgenodigd door een vriend. Doe eerst zelf mee, dan word je meteen vrienden.',
     },
