@@ -2,6 +2,7 @@ import { h } from '../dom.js';
 import { reloadSettings, saveSettings, state } from '../state.js';
 import { openDialog } from '../components/dialog.js';
 import { accountCard } from '../components/account-card.js';
+import { installCard } from '../components/install-card.js';
 import { downloadBackup } from '../download.js';
 import { showToast } from '../components/toast.js';
 import { ValidationError } from '../../data/repository.js';
@@ -95,6 +96,7 @@ export function settingsView() {
   return h('div', null,
     h('h1', { class: 'page-title' }, nl.settings.title),
     accountCard(),
+    installCard(),
     h('form', { class: 'form', novalidate: true, onsubmit: submit },
       h('div', { class: 'field' },
         h('label', { class: 'field__label', for: 'timezone' }, nl.settings.timezone), tz, errorEls.timezone),

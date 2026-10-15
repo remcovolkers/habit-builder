@@ -405,3 +405,7 @@ select.input {
 .account-card__name b {
   flex: 1;
 }
+
+.install-card {
+  margin-bottom: var(--space-8);
+}

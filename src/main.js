@@ -11,6 +11,8 @@ import { statsView } from './ui/views/stats.js';
 import { achievementsView } from './ui/views/achievements.js';
 import { loginView } from './ui/views/login.js';
 import { initAccount } from './ui/account.js';
+import { startPwa } from './pwa.js';
+import { mountUpdateBanner } from './ui/components/update-banner.js';
 import { celebrateAchievements } from './ui/components/achievement.js';
 import { checkAchievements } from './app/achievement-runner.js';
 import { settingsView } from './ui/views/settings.js';
@@ -83,6 +85,10 @@ checkForAchievements();
 
 // Account: alleen actief als er een sessie is (of we terugkomen van Google); een mislukte start blokkeert de app nooit.
 initAccount().catch((error) => console.warn('account starten mislukt', error));
+
+// PWA: service worker (offline + updates). Mislukt dit, dan werkt de app gewoon online verder.
+mountUpdateBanner();
+startPwa().catch((error) => console.warn('PWA starten mislukt', error));
 
 startRouter({
   routes,

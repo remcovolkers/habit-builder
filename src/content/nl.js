@@ -320,6 +320,16 @@ export const nl = {
     },
   },
 
+  pwa: {
+    updateAvailable: 'Er is een nieuwe versie van de app.',
+    update: 'Vernieuwen',
+    later: 'Later',
+    installTitle: 'App installeren',
+    installText: 'Zet Habit Builder op je beginscherm: sneller openen en het werkt ook zonder internet.',
+    install: 'Installeren',
+    iosText: 'Tik in Safari op de knop Delen en kies "Zet op beginscherm". Daarna werkt de app ook zonder internet.',
+  },
+
   login: {
     title: 'Inloggen',
     kicker: 'Account',

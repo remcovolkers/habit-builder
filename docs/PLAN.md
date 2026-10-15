@@ -30,8 +30,8 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | M6 (deels) Moda-design op de bestaande schermen, lokale fonts | klaar |
 | M3 detailpagina (sterkte, fases, heatmap), tips, ingeburgerd-flow, achievements, automatisme, review, export/import | klaar |
 | IndexedDB-migraties (v1 naar v2 naar v3) getest | klaar |
-| M4 Supabase, auth (Google + e-mailcode), sync, keepalive | gebouwd; wacht op jouw Supabase-configuratie (zie docs/M4-SETUP.md) |
-| M5 PWA (manifest, service worker, offline) | open |
+| M4 Supabase, auth (Google + e-mailcode), sync, keepalive | klaar en op het echte project getest |
+| M5 PWA: manifest, icoon, offline start, updatemelding, installatieknop | klaar |
 | M7 ochtendherinnering (Web Push) | open |
 
 ## 2. Gewoontetheorie die in het product zit
