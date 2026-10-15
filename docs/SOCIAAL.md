@@ -201,8 +201,28 @@ Het principe: **tabellen zijn dicht, toegang loopt via kleine `security definer`
 ```
 Alleen getallen en twee datums (`as_of`, `last_active`). Niets dat een habit identificeert. Zie ook [DATAMODEL.md](DATAMODEL.md).
 
-### 5.4 Lokaal
-Het lokale deel is klein: de instelling "sociaal aan" (`settings`), een cache van de laatst opgehaalde ranglijst en vriendenlijst (alleen om offline te tonen) en een onthouden uitnodigingscode. De sociale gegevens **gaan niet door de sync-motor**: ze zijn niet van jou alleen en kennen andere conflictregels. De app praat er rechtstreeks met de server over, met een nette offline-toestand.
+### 5.4 In de app (gebouwd in S3)
+
+De sociale kant gaat **niet door de sync-motor** (het is niet van jou alleen en kent andere regels). Ze zit in drie lagen, naast de bestaande:
+
+| Laag | Bestand | Doet |
+|---|---|---|
+| puur | `src/app/social.js` | gebruikersnaam controleren en voorstellen, uitnodigingslinks bouwen en lezen, serverrijen omzetten, je eigen cijfers in de ranglijst zetten |
+| data | `src/data/social-remote.js` | de serverfuncties aanroepen en fouten omzetten naar stabiele codes (`SocialError`) |
+| data | `src/data/social-cache.js` | de laatst opgehaalde vrienden en ranglijst in `localStorage` (per gebruiker; een ander account ziet ze nooit) en een onthouden uitnodigingscode |
+| besturing | `src/ui/social.js` (`createSocial`), bedraad in `src/ui/social-app.js` | de status, ophalen, publiceren en alle acties; zonder scherm te testen |
+
+**Status** voor de schermen (S4): `signed-out` · `unknown` (ingelogd, nog niets bekend) · `off` · `on` · `unavailable` (de server kent sociaal nog niet).
+
+**Afspraken in de code:**
+- **Wie sociaal niet gebruikt merkt er niets van:** zonder cache gaat er *niets* over het netwerk en wordt er niets berekend, tot de gebruiker het scherm opent. Dan wordt alleen het profiel opgevraagd; doet je niet mee, dan is dat alles. (Getest.)
+- **Meedoen:** dan staat de status in de cache en werkt de app vrienden en ranglijst op de achtergrond bij en publiceert hij je samenvatting: bij opstarten, bij elke wijziging in je habits (na 1,5 s, alleen als er iets veranderd is) en als je de app weer opent.
+- **Offline:** de cache blijft staan, gemarkeerd als `stale`. Een mislukte publicatie wordt later opnieuw geprobeerd.
+- **Je eigen punten** zijn altijd lokaal berekend en gaan voor op wat de server van jou heeft (V25).
+- **De naam uit Instellingen** wordt voor het publiceren bij je vrienden bijgewerkt (S5).
+- **Uitloggen of account verwijderen** wist de cache en een onthouden uitnodiging; van account wisselen laat de cache van het andere account ongemoeid maar ongezien.
+- **Release-volgorde:** kent de server de functies nog niet (migratie 0003 niet uitgevoerd op productie), dan wordt de status `unavailable` en blijft de app stil. De app kan dus veilig vóór of na de migratie worden uitgerold.
+- **Acties** (`enable`, `disable`, `find`, `request`, `respond`, `cancel`, `remove`, `createInvite`, `invites`, `revokeInvite`, `redeemInvite`) geven `{ ok: true, … }` of `{ ok: false, reason }` en gooien nooit. De redenen zijn de servercodes uit §5.2 plus `offline`, `signed-out`, `invalid` (uitnodiging) en de naamredenen `empty`, `too_short`, `too_long`, `invalid_chars`.
 
 ## 6. Privacy, veiligheid en AVG
 
@@ -271,7 +291,7 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 | **S0** | Dit document akkoord; besluiten S5–S11 genomen; de lokale testdatabase draait en de app kan er mee verbinden | besluiten ✔; testdatabase in uitvoering |
 | **S1** | Domein: punten (basis, opbouwbonus, startbonus, minpunten, half gehaalde teller), actief-regel (3 dagen), gelijke stand, tests. Plus de naamvraag bij het aanmaken van een account (S5) | ✔ klaar: de regels uit §4 hebben groene tests; de meting (§4.7) staat erin. |
 | **S2** | Server: migratie 0003, functies, tests, DATAMODEL bijgewerkt | ✔ klaar: niet-vriend ziet niets, vriend ziet alleen de ranglijstvelden, weigeren/intrekken/verlopen/limieten/cascade werken (32 tests op Postgres, 96 controles via de API). **Nog niet op productie gezet**: dat gebeurt bij de release. |
-| **S3** | Data-laag en publiceren: remote-client, samenvatting na sync, offline cache | Publiceren gebeurt op de achtergrond; uit = niets verzonden (testbaar). |
+| **S3** | Data-laag en publiceren: remote-client, samenvatting na sync, offline cache | ✔ klaar: publiceren op de achtergrond; uit = niets verzonden (getest, 66 nieuwe tests); de hele keten ook getest met de echte SDK tegen de lokale Supabase (`npm run db:check-app`, 29 controles) |
 | **S4** | UI: aanzetten, zoeken, link, verzoeken, ranglijst, lege toestanden, beide thema's, desktop | Browsertests groen op 360/390/412 px en desktop; a11y- en overflowrondes groen. |
 | **S5** | Privacyverklaring, voorwaarden, in-app uitleg, PLAN en DATAMODEL bijgewerkt, browsertests in CI | Release-checklist uit WERKWIJZE doorlopen; test op twee echte telefoons; release `v1.1`. |
 
@@ -292,4 +312,4 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 ## 12. Volgende stappen
 
 1. Testdatabase lokaal starten: [DEV-OMGEVING.md](DEV-OMGEVING.md).
-2. S1 (de punten) en S2 (de server) zijn klaar; daarna S3: de data-laag in de app (aanzetten, vrienden en ranglijst ophalen, de samenvatting publiceren).
+2. S1 (de punten), S2 (de server) en S3 (de data-laag in de app) zijn klaar; daarna S4: de schermen (aanzetten, vrienden zoeken en toevoegen, verzoeken, ranglijst, uitnodigingslink, lege toestanden) en de route `#/vrienden`.
