@@ -3,6 +3,7 @@ import { reloadSettings, saveSettings, state } from '../state.js';
 import { openDialog } from '../components/dialog.js';
 import { accountCard } from '../components/account-card.js';
 import { installCard } from '../components/install-card.js';
+import { THEMES, THEME_IDS, themeFor } from '../../app/themes.js';
 import { downloadBackup } from '../download.js';
 import { showToast } from '../components/toast.js';
 import { ValidationError } from '../../data/repository.js';
@@ -66,6 +67,32 @@ function backupSection() {
       message));
 }
 
+/** Kies het thema: twee kaarten met kleurstalen. De keuze geldt direct en synchroniseert mee naar andere apparaten. */
+function themeSection() {
+  const current = themeFor(state.settings.theme).id;
+  return h('fieldset', { class: 'section themes' },
+    h('legend', { class: 'section__title' }, nl.settings.theme.title),
+    h('p', { class: 'section__hint' }, nl.settings.theme.hint),
+    h('div', { class: 'theme-options', role: 'radiogroup' },
+      ...THEME_IDS.map((id) => {
+        const theme = THEMES[id];
+        const swatches = theme.swatches.map((color) => {
+          const dot = h('i', { class: 'theme-option__swatch' });
+          dot.style.background = color;
+          return dot;
+        });
+        return h('label', { class: 'theme-option', dataset: { theme: id } },
+          h('input', {
+            class: 'choice__input', type: 'radio', name: 'theme', value: id, checked: id === current,
+            onchange: () => saveSettings({ theme: id }),
+          }),
+          h('span', { class: 'theme-option__face' },
+            h('span', { class: 'theme-option__swatches' }, ...swatches),
+            h('span', { class: 'theme-option__name' }, theme.name),
+            h('span', { class: 'theme-option__desc' }, theme.description)));
+      })));
+}
+
 export function settingsView() {
   const { settings } = state;
   const errorEl = (id) => h('p', { id, class: 'field__error', role: 'alert', hidden: true });
@@ -97,6 +124,7 @@ export function settingsView() {
     h('h1', { class: 'page-title' }, nl.settings.title),
     accountCard(),
     installCard(),
+    themeSection(),
     h('form', { class: 'form', novalidate: true, onsubmit: submit },
       h('div', { class: 'field' },
         h('label', { class: 'field__label', for: 'timezone' }, nl.settings.timezone), tz, errorEls.timezone),

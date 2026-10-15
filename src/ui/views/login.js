@@ -1,6 +1,7 @@
 import { fill, h } from '../dom.js';
 import { account, activate, afterLogin } from '../account.js';
 import { icon } from '../svg.js';
+import { mascot } from '../components/mascot.js';
 import { nl } from '../../content/nl.js';
 import * as auth from '../../data/auth.js';
 
@@ -129,6 +130,7 @@ export function loginView() {
     }
     fill(root,
       h('a', { class: 'back-link', href: '#/settings' }, `‹ ${nl.login.back}`),
+      mascot('login', 'login__mascot'),
       h('p', { class: 'kicker' }, nl.login.kicker),
       h('h1', { class: 'page-title' }, nl.login.title),
       h('p', { class: 'muted login__intro' }, nl.login.intro),

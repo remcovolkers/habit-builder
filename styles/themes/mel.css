@@ -1,0 +1,83 @@
+/* Mel Theme · Pokémon: geel op een blauwe nacht. Ontwerp: moda-themes/habit-builder-pokemon-moda-files.
+   De illustraties (themes/mel/pokemon) worden via src/app/themes.js aan plekken in de app gekoppeld. */
+:root[data-theme='mel'] {
+  color-scheme: dark;
+
+  --accent-rgb: 255 203 5;
+  --accent-tint-rgb: 255 227 110;
+  --danger-rgb: 255 127 115;
+  --warning-rgb: 255 182 72;
+  --surface-rgb: 34 48 122;
+  --chrome-rgb: 18 26 78;
+
+  /* merk */
+  --color-accent: #ffcb05;
+  --color-accent-tint: #ffe36e;
+  --color-accent-deep: #c79a00;
+  --color-accent-10: rgb(var(--accent-rgb) / 0.10);
+  --color-accent-16: rgb(var(--accent-rgb) / 0.16);
+  --color-accent-22: rgb(var(--accent-rgb) / 0.22);
+  --color-accent-50: rgb(var(--accent-rgb) / 0.50);
+  --color-on-accent: #1a1206;
+
+  /* achtergrond: middelpunt, midden en rand van de blauwe gradient */
+  --color-bg-1: #2a75bb;
+  --color-bg-2: #16205a;
+  --color-bg-3: #0c1238;
+  --color-surface: rgb(var(--surface-rgb) / 0.82);
+  --color-surface-solid: #22307a;
+  --color-elevated: #2b3a8c;
+  --color-scrim: rgba(10, 14, 46, 0.72);
+  --hero-bg: linear-gradient(160deg, rgb(var(--accent-rgb) / 0.14) 0%, rgba(28, 40, 110, 0.9) 60%);
+
+  /* tekst (iets lichter dan de ontwerpwaarden voor voldoende contrast op blauw) */
+  --color-text: #e4e9f2;
+  --color-text-muted: #aebbea;
+  --color-text-faint: #8d9bdc;
+
+  /* lijnen */
+  --color-border: rgb(var(--accent-rgb) / 0.50);
+  --color-hairline: rgba(255, 255, 255, 0.10);
+  --color-hairline-strong: rgba(255, 255, 255, 0.16);
+
+  /* status */
+  --color-danger: #ff9086; /* iets lichter dan het ontwerp (#ee1515): dat is op blauw onleesbaar */
+  --color-danger-12: rgb(var(--danger-rgb) / 0.14);
+  --color-warning: #ffb648;
+  --color-warning-12: rgb(var(--warning-rgb) / 0.14);
+  --color-paused: #8f9bd6;
+  --color-paused-16: rgba(143, 155, 214, 0.18);
+
+  /* habit-palet (c1–c8) */
+  --habit-c1: #ffcb05;
+  --habit-c2: #3fa9f5;
+  --habit-c3: #78c850;
+  --habit-c4: #e8d36a;
+  --habit-c5: #ffb648;
+  --habit-c6: #ff5a4e;
+  --habit-c7: #e79bc4;
+  --habit-c8: #c3b8a5;
+
+  /* gloed en focus */
+  --shadow-glow: 0 0 18px rgb(var(--accent-rgb) / 0.30);
+  --shadow-glow-soft: 0 0 12px rgb(var(--accent-rgb) / 0.14);
+  --ring-focus: 0 0 0 3px rgb(var(--accent-rgb) / 0.32);
+  --ring-error: 0 0 0 3px rgb(var(--danger-rgb) / 0.28);
+}
+
+/* de bos-decoratie (blaadjes) wordt hier "Poké Balls" en lichtpuntjes worden sterretjes */
+:root[data-theme='mel'] .leaf {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background:
+    radial-gradient(circle at 50% 50%, #fff 0 18%, #222 19% 27%, transparent 28%),
+    linear-gradient(to bottom, #ee1515 0 44%, #222 44% 56%, #f3f3f3 56%);
+  opacity: 0.12;
+}
+
+:root[data-theme='mel'] .mote {
+  background: var(--color-accent-tint);
+  box-shadow: 0 0 10px var(--color-accent);
+  opacity: 0.3;
+}

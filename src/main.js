@@ -1,6 +1,7 @@
 import { startRouter } from './router.js';
 import { fill, h } from './ui/dom.js';
-import { initState, notifyChanged, onChanged, state } from './ui/state.js';
+import { initState, notifyChanged, onChanged, saveSettings, state } from './ui/state.js';
+import { isTheme } from './app/themes.js';
 import { openRepository } from './data/index.js';
 import { placeholderView } from './ui/views/placeholder.js';
 import { todayView } from './ui/views/today.js';
@@ -62,6 +63,15 @@ fill(outlet, h('p', { class: 'muted' }, nl.app.loading));
 
 const repo = await openRepository();
 await initState(repo);
+
+// Een gedeelde link zoals .../habit-builder/?theme=mel wordt een blijvende keuze en daarna uit de adresbalk gehaald.
+const linkedTheme = new URLSearchParams(location.search).get('theme');
+if (isTheme(linkedTheme)) {
+  if (state.settings.theme !== linkedTheme) await saveSettings({ theme: linkedTheme });
+  const url = new URL(location.href);
+  url.searchParams.delete('theme');
+  history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+}
 
 if (repo.storeKind === 'memory') {
   outlet.parentNode.insertBefore(h('p', { class: 'banner banner--warning', role: 'alert' }, nl.app.memoryWarning), outlet);

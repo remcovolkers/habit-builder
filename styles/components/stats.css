@@ -218,11 +218,11 @@
 .cell--done {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  box-shadow: 0 0 8px rgba(41, 255, 185, 0.3);
+  box-shadow: 0 0 8px rgb(var(--accent-rgb) / 0.3);
 }
 
 .cell--minimal {
-  background: linear-gradient(135deg, var(--color-accent) 50%, rgba(41, 255, 185, 0.2) 50%);
+  background: linear-gradient(135deg, var(--color-accent) 50%, rgb(var(--accent-rgb) / 0.2) 50%);
   border-color: var(--color-accent-50);
 }
 
@@ -238,7 +238,7 @@
 
 .cell--missed {
   background: var(--color-danger-12);
-  border-color: rgba(255, 107, 107, 0.5);
+  border-color: rgb(var(--danger-rgb) / 0.5);
 }
 
 .cell--none {
@@ -454,7 +454,7 @@
   place-items: center;
   width: 4rem;
   height: 4rem;
-  background: radial-gradient(circle at 35% 30%, var(--color-accent-tint), var(--color-accent) 60%, #0e8f68);
+  background: radial-gradient(circle at 35% 30%, var(--color-accent-tint), var(--color-accent) 60%, var(--color-accent-deep));
   border: 2px solid #fff;
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-glow);

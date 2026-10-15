@@ -1,6 +1,7 @@
 import { h } from '../dom.js';
 import { openDialog } from './dialog.js';
 import { nl } from '../../content/nl.js';
+import { mascot } from './mascot.js';
 import { ACHIEVEMENT_INFO } from '../../content/achievements.js';
 
 /** Eén medaille. sub = ondertitel (bv. de habit waarvoor je hem haalde). */
@@ -20,7 +21,9 @@ export function celebrateAchievements(fresh, habits) {
   if (medals.length === 0) return;
   openDialog({
     title: medals.length === 1 ? nl.achievements.celebrateTitle : nl.achievements.celebrateTitleMany(medals.length),
-    content: h('ul', { class: 'achievements celebrate-list', 'aria-label': nl.achievements.title }, ...medals),
+    content: h('div', null,
+      mascot('achievement', 'celebrate-mascot'),
+      h('ul', { class: 'achievements celebrate-list', 'aria-label': nl.achievements.title }, ...medals)),
     actions: [{ label: nl.achievements.celebrateClose, variant: 'primary' }],
     cancelLabel: null,
   });

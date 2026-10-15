@@ -1,0 +1,56 @@
+/* Illustraties van een thema (zie src/app/themes.js). Altijd decoratief; de grootte regelt de plek waar ze staan. */
+.mascot {
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.35));
+}
+
+/* feestkaart: de mascotte vervangt het emoji-bosje */
+.celebrate .mascot {
+  width: 7.5rem;
+  height: 7.5rem;
+  margin-inline: auto;
+}
+
+/* lege schermen: een vriendelijke gast boven de tekst */
+.empty .mascot {
+  width: 9rem;
+  height: 9rem;
+}
+
+/* de fase van een habit, rechtsboven in de hero-kaart */
+.card--hero {
+  position: relative;
+}
+
+.hero__mascot {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.hero__top {
+  padding-right: 5rem; /* ruimte voor de mascotte, zodat een lange naam er niet onder loopt */
+}
+
+.login__mascot {
+  width: 8rem;
+  height: 8rem;
+  margin-inline: auto;
+}
+
+.brand__logo.is-mascot {
+  object-fit: contain;
+}
+
+/* prestatie-viering */
+.celebrate-mascot {
+  width: 6rem;
+  height: 6rem;
+  margin: 0 auto var(--space-2);
+}

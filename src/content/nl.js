@@ -201,12 +201,14 @@ export const nl = {
 
   settings: {
     title: 'Instellingen',
+    theme: { title: 'Uiterlijk', hint: 'Kies hoe de app eruitziet. Dit geldt voor al je apparaten.', current: 'Huidig thema' },
     timezone: 'Tijdzone',
     dayStart: 'Een nieuwe dag begint om',
     dayStartHint: 'Alles wat je vóór dit uur doet, telt nog mee voor de vorige dag.',
     dayStartOption: (hour) => `${String(hour).padStart(2, '0')}:00${hour === 0 ? ' (middernacht)' : ''}`,
     save: 'Instellingen opslaan',
     errors: {
+      theme: { invalid: 'Dit thema bestaat niet.' },
       timezone: { invalid: 'Kies een geldige tijdzone.' },
       dayStartHour: { invalid: 'Kies een uur tussen 00:00 en 06:00.' },
     },

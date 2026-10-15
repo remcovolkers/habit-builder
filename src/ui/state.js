@@ -1,6 +1,7 @@
 // Gedeelde app-status: de repository, de instellingen en de huidige "vandaag" (met dagwissel).
 // Schermen luisteren naar 'changed' om opnieuw te laden na elke wijziging of dagwissel.
 import { todayFor } from '../domain/dates.js';
+import { applyTheme } from './theme.js';
 
 const events = new EventTarget();
 
@@ -16,6 +17,7 @@ function recomputeToday(now = new Date()) {
 export async function initState(repo) {
   state.repo = repo;
   state.settings = await repo.getSettings();
+  applyTheme(state.settings.theme);
   recomputeToday();
 
   // Blijft de app over de dagwissel heen openstaan, dan verspringt "vandaag" vanzelf.
@@ -27,6 +29,7 @@ export async function initState(repo) {
 
 export async function saveSettings(patch) {
   state.settings = await state.repo.saveSettings(patch);
+  applyTheme(state.settings.theme);
   recomputeToday();
   notifyChanged();
 }
@@ -34,6 +37,7 @@ export async function saveSettings(patch) {
 /** Na een import of andere ingreep die de instellingen kan hebben vervangen. */
 export async function reloadSettings() {
   state.settings = await state.repo.getSettings();
+  applyTheme(state.settings.theme);
   recomputeToday();
   notifyChanged();
 }

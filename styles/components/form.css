@@ -409,3 +409,61 @@ select.input {
 .install-card {
   margin-bottom: var(--space-8);
 }
+
+/* themakeuze */
+.themes {
+  margin: var(--space-6) 0 var(--space-8);
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.theme-options {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.theme-option {
+  position: relative;
+  display: block;
+}
+
+.theme-option__face {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-card);
+}
+
+.theme-option .choice__input:checked + .theme-option__face {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.theme-option .choice__input:focus-visible + .theme-option__face {
+  box-shadow: var(--ring-focus);
+}
+
+.theme-option__swatches {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.theme-option__swatch {
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-full);
+}
+
+.theme-option__name {
+  font-weight: var(--font-weight-bold);
+}
+
+.theme-option__desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}

@@ -16,8 +16,11 @@
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <script src="src/theme-boot.js"></script>
   <link rel="stylesheet" href="styles/fonts.css">
   <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/themes/v0lky1.css">
+  <link rel="stylesheet" href="styles/themes/mel.css">
   <link rel="stylesheet" href="styles/base.css">
   <link rel="stylesheet" href="styles/components/nav.css">
   <link rel="stylesheet" href="styles/components/button.css">
@@ -27,6 +30,7 @@
   <link rel="stylesheet" href="styles/components/stats.css">
   <link rel="stylesheet" href="styles/components/dialog.css">
   <link rel="stylesheet" href="styles/components/toast.css">
+  <link rel="stylesheet" href="styles/components/mascot.css">
   <link rel="stylesheet" href="styles/views/placeholder.css">
   <link rel="stylesheet" href="styles/views/today.css">
 </head>
@@ -36,8 +40,14 @@
     <i class="mote mote--1"></i><i class="mote mote--2"></i><i class="mote mote--3"></i>
   </div>
   <div class="app">
+    <aside class="sidebar">
+      <a class="brand" href="#/today" aria-label="Habit Builder, naar Vandaag">
+        <img class="brand__logo" src="icons/icon.svg" alt="" width="40" height="40">
+        <span class="brand__name">Habit Builder</span>
+      </a>
+      <nav class="tabbar" aria-label="Hoofdnavigatie" id="tabbar"></nav>
+    </aside>
     <main id="app" class="app__main" tabindex="-1"></main>
-    <nav class="tabbar" aria-label="Hoofdnavigatie" id="tabbar"></nav>
   </div>
   <noscript>Habit Builder heeft JavaScript nodig.</noscript>
   <script type="module" src="src/main.js"></script>

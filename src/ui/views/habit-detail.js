@@ -4,6 +4,7 @@ import { notifyChanged, state } from '../state.js';
 import { showToast } from '../components/toast.js';
 import { openDialog } from '../components/dialog.js';
 import { icon } from '../svg.js';
+import { mascot } from '../components/mascot.js';
 import { nl } from '../../content/nl.js';
 import { TIPS } from '../../content/tips.js';
 import { buildHabitDetail } from '../../app/habit-detail.js';
@@ -178,6 +179,7 @@ function renderDetail(detail) {
 
     h('div', { class: 'detail' },
       h('section', { class: 'card card--hero' },
+        mascot(`phase.${phaseKey}`, 'hero__mascot'),
         h('div', { class: 'hero__top' },
           h('span', { class: 'habit-card__icon', dataset: { color: habit.color }, 'aria-hidden': 'true' }, habit.icon),
           h('div', null,

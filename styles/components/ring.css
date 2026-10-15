@@ -17,10 +17,10 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: conic-gradient(from 0deg, rgba(41, 255, 185, 0.35), var(--color-accent) calc(var(--p) * 1%), var(--color-hairline) 0);
+  background: conic-gradient(from 0deg, rgb(var(--accent-rgb) / 0.35), var(--color-accent) calc(var(--p) * 1%), var(--color-hairline) 0);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--thick)), #000 calc(100% - var(--thick) + 1px));
   mask: radial-gradient(farthest-side, transparent calc(100% - var(--thick)), #000 calc(100% - var(--thick) + 1px));
-  filter: drop-shadow(0 0 6px rgba(41, 255, 185, 0.35));
+  filter: drop-shadow(0 0 6px rgb(var(--accent-rgb) / 0.35));
 }
 
 .ring__head {

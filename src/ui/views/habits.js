@@ -3,6 +3,7 @@ import { liveView } from '../live.js';
 import { notifyChanged, state } from '../state.js';
 import { showToast } from '../components/toast.js';
 import { nl } from '../../content/nl.js';
+import { mascot } from '../components/mascot.js';
 import { formatDateShort, formatSchedule } from '../../app/format.js';
 import { pauseAll, resumeAll } from '../../app/actions.js';
 import { scheduleAt } from '../../domain/schedule.js';
@@ -70,7 +71,7 @@ export function habitsView() {
             },
           }, allPaused ? nl.habits.resumeAll : nl.habits.pauseAll)
           : null,
-        habits.length === 0 ? h('p', { class: 'muted' }, nl.habits.empty) : null,
+        habits.length === 0 ? h('div', { class: 'empty' }, mascot('empty'), h('p', null, nl.habits.empty)) : null,
         section('active'),
         section('paused'),
         section('planned'),

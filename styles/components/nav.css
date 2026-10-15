@@ -6,7 +6,7 @@
   grid-template-columns: repeat(5, 1fr);
   min-height: calc(var(--size-tabbar) + var(--safe-bottom));
   padding: 6px var(--space-2) var(--safe-bottom);
-  background: rgba(12, 16, 15, 0.88);
+  background: rgb(var(--chrome-rgb) / 0.88);
   backdrop-filter: blur(14px);
   border-top: 1px solid var(--color-hairline);
 }
@@ -31,5 +31,14 @@
 
 .tabbar__item[aria-current='page'] {
   color: var(--color-accent);
-  filter: drop-shadow(0 0 8px rgba(41, 255, 185, 0.45));
+  filter: drop-shadow(0 0 8px rgb(var(--accent-rgb) / 0.45));
+}
+
+/* op mobiel zijn de zijbalk en het merk er niet: alleen de tabbalk onderin */
+.sidebar {
+  display: contents;
+}
+
+.brand {
+  display: none;
 }

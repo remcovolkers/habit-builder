@@ -7,7 +7,7 @@ import { writeServiceWorker } from './lib/pwa.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const OUT = join(ROOT, '_site');
-const PUBLISH = ['index.html', 'manifest.webmanifest', 'src', 'styles', 'vendor', 'icons', 'fonts'];
+const PUBLISH = ['index.html', 'manifest.webmanifest', 'src', 'styles', 'vendor', 'icons', 'fonts', 'themes'];
 
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT);

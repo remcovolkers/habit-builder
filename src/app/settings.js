@@ -1,10 +1,11 @@
 // Gebruikersinstellingen: standaardwaarden en validatie (pure logica).
 import { DEFAULT_DAY_START_HOUR, MAX_DAY_START_HOUR } from '../domain/constants.js';
+import { DEFAULT_THEME, isTheme } from './themes.js';
 
 export const DISPLAY_NAME_MAX = 30;
 
 export function defaultSettings(timezone) {
-  return { id: 'user', timezone, dayStartHour: DEFAULT_DAY_START_HOUR, displayName: '', nameAsked: false };
+  return { id: 'user', timezone, dayStartHour: DEFAULT_DAY_START_HOUR, displayName: '', nameAsked: false, theme: DEFAULT_THEME };
 }
 
 /**
@@ -39,6 +40,7 @@ export function validateSettings(settings) {
   if (!isValidTimeZone(settings.timezone)) errors.push({ field: 'timezone', code: 'invalid' });
   const hour = settings.dayStartHour;
   if (!Number.isInteger(hour) || hour < 0 || hour > MAX_DAY_START_HOUR) errors.push({ field: 'dayStartHour', code: 'invalid' });
+  if (settings.theme != null && !isTheme(settings.theme)) errors.push({ field: 'theme', code: 'invalid' });
   if (settings.displayName != null && String(settings.displayName).trim().length > DISPLAY_NAME_MAX) {
     errors.push({ field: 'displayName', code: 'too_long' });
   }

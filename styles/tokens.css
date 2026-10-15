@@ -1,54 +1,7 @@
-/* Design tokens, overgenomen uit het Moda-ontwerp (habit-builder-moda-files/assets/theme.css).
-   Alleen donker. Component- en view-CSS gebruikt uitsluitend deze variabelen. */
+/* Structurele design tokens: gelden voor élk thema (typografie, ruimte, vorm, maten, beweging).
+   Kleuren, achtergrond en gloed staan per thema in styles/themes/<naam>.css.
+   Component- en view-CSS gebruikt uitsluitend deze variabelen. */
 :root {
-  color-scheme: dark;
-
-  /* kleur · merk */
-  --color-accent: #29ffb9;
-  --color-accent-tint: #8fffdc;
-  --color-accent-10: rgba(41, 255, 185, 0.10);
-  --color-accent-16: rgba(41, 255, 185, 0.16);
-  --color-accent-22: rgba(41, 255, 185, 0.22);
-  --color-accent-50: rgba(41, 255, 185, 0.50);
-  --color-on-accent: #06140f;
-
-  /* kleur · achtergrond */
-  --color-bg-1: #10221d;
-  --color-bg-2: #0c1513;
-  --color-bg-3: #090c0c;
-  --color-surface: rgba(24, 24, 26, 0.82);
-  --color-surface-solid: #18181a;
-  --color-elevated: #1c1c1f;
-  --color-scrim: rgba(4, 8, 7, 0.72);
-
-  /* kleur · tekst */
-  --color-text: #e4e9f2;
-  --color-text-muted: #8d919a;
-  --color-text-faint: #5d616a;
-
-  /* kleur · lijnen */
-  --color-border: rgba(41, 255, 185, 0.50);
-  --color-hairline: rgba(255, 255, 255, 0.08);
-  --color-hairline-strong: rgba(255, 255, 255, 0.14);
-
-  /* kleur · status */
-  --color-danger: #ff6b6b;
-  --color-danger-12: rgba(255, 107, 107, 0.12);
-  --color-warning: #ffb547;
-  --color-warning-12: rgba(255, 181, 71, 0.12);
-  --color-paused: #6f7480;
-  --color-paused-16: rgba(111, 116, 128, 0.16);
-
-  /* kleur · habit-palet (c1–c8, zie HABIT_COLORS) */
-  --habit-c1: #29ffb9;
-  --habit-c2: #2ed3c6;
-  --habit-c3: #5cc8ff;
-  --habit-c4: #b6f25c;
-  --habit-c5: #ffc857;
-  --habit-c6: #ff8a7a;
-  --habit-c7: #ff7eb6;
-  --habit-c8: #d9c7a3;
-
   /* typografie */
   --font-display: "Chakra Petch", "Manrope", sans-serif;
   --font-body: "Manrope", system-ui, sans-serif;
@@ -95,16 +48,14 @@
   --size-tap: 2.75rem;
   --size-check: 3rem;
   --size-tabbar: 4rem;
+  --size-sidebar: 15.5rem;
   --content-max: 40rem;
+  --content-wide: 72rem;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
-  /* schaduw en gloed */
-  --shadow-glow: 0 0 18px rgba(41, 255, 185, 0.22);
-  --shadow-glow-soft: 0 0 12px rgba(41, 255, 185, 0.12);
+  /* schaduw (neutraal) */
   --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.5);
-  --ring-focus: 0 0 0 3px rgba(41, 255, 185, 0.28);
-  --ring-error: 0 0 0 3px rgba(255, 107, 107, 0.22);
 
   /* beweging */
   --duration-fast: 150ms;

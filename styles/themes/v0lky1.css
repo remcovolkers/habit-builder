@@ -1,0 +1,68 @@
+/* v0lky1 Theme · donker bos, neon-munt. Ontwerp: moda-themes/habit-builder-moda-files.
+   Dit is ook het standaardthema (geldt zolang er geen data-theme gezet is). */
+:root,
+:root[data-theme='v0lky1'] {
+  color-scheme: dark;
+
+  /* rgb-drieluiken: voor kleuren met een eigen doorzichtigheid, bv. rgb(var(--accent-rgb) / 0.3) */
+  --accent-rgb: 41 255 185;
+  --accent-tint-rgb: 143 255 220;
+  --danger-rgb: 255 107 107;
+  --warning-rgb: 255 181 71;
+  --surface-rgb: 24 24 26;
+  --chrome-rgb: 12 16 15;
+
+  /* merk */
+  --color-accent: #29ffb9;
+  --color-accent-tint: #8fffdc;
+  --color-accent-deep: #0e8f68;
+  --color-accent-10: rgb(var(--accent-rgb) / 0.10);
+  --color-accent-16: rgb(var(--accent-rgb) / 0.16);
+  --color-accent-22: rgb(var(--accent-rgb) / 0.22);
+  --color-accent-50: rgb(var(--accent-rgb) / 0.50);
+  --color-on-accent: #06140f;
+
+  /* achtergrond */
+  --color-bg-1: #10221d;
+  --color-bg-2: #0c1513;
+  --color-bg-3: #090c0c;
+  --color-surface: rgb(var(--surface-rgb) / 0.82);
+  --color-surface-solid: #18181a;
+  --color-elevated: #1c1c1f;
+  --color-scrim: rgba(4, 8, 7, 0.72);
+  --hero-bg: var(--color-surface);
+
+  /* tekst */
+  --color-text: #e4e9f2;
+  --color-text-muted: #8d919a;
+  --color-text-faint: #6c717b; /* iets lichter dan het ontwerp (#5d616a): dat haalde 3:1 niet */
+
+  /* lijnen */
+  --color-border: rgb(var(--accent-rgb) / 0.50);
+  --color-hairline: rgba(255, 255, 255, 0.08);
+  --color-hairline-strong: rgba(255, 255, 255, 0.14);
+
+  /* status */
+  --color-danger: #ff6b6b;
+  --color-danger-12: rgb(var(--danger-rgb) / 0.12);
+  --color-warning: #ffb547;
+  --color-warning-12: rgb(var(--warning-rgb) / 0.12);
+  --color-paused: #6f7480;
+  --color-paused-16: rgba(111, 116, 128, 0.16);
+
+  /* habit-palet (c1–c8, zie HABIT_COLORS) */
+  --habit-c1: #29ffb9;
+  --habit-c2: #2ed3c6;
+  --habit-c3: #5cc8ff;
+  --habit-c4: #b6f25c;
+  --habit-c5: #ffc857;
+  --habit-c6: #ff8a7a;
+  --habit-c7: #ff7eb6;
+  --habit-c8: #d9c7a3;
+
+  /* gloed en focus */
+  --shadow-glow: 0 0 18px rgb(var(--accent-rgb) / 0.22);
+  --shadow-glow-soft: 0 0 12px rgb(var(--accent-rgb) / 0.12);
+  --ring-focus: 0 0 0 3px rgb(var(--accent-rgb) / 0.28);
+  --ring-error: 0 0 0 3px rgb(var(--danger-rgb) / 0.22);
+}

@@ -35,7 +35,7 @@
 .button--danger {
   background: var(--color-danger-12);
   color: var(--color-danger);
-  border-color: rgba(255, 107, 107, 0.45);
+  border-color: rgb(var(--danger-rgb) / 0.45);
 }
 
 .button--block {

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Habit Builder – Pokémon componenten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Manrope:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="components.css"></head>
+<body>
+<p class="kicker">Habit Builder · Design system</p>
+<h1 class="page-title">COMPONENTEN</h1>
+<div class="grid">
+<section class="panel"><p class="kicker">Buttons</p>
+<button class="btn btn--primary">Primair</button><button class="btn btn--secondary">Secundair</button><button class="btn btn--ghost">Ghost</button><button class="btn btn--danger">Verwijderen</button><button class="btn" disabled>Uitgeschakeld</button>
+<p class="kicker">Check button</p><div class="checks"><button class="check"></button><button class="check check--done">✓</button><button class="check check--missed">×</button></div>
+<p class="kicker">Fase badges</p><div class="badges"><span class="badge">OPSTARTEN</span><span class="badge badge--active">OPBOUW</span><span class="badge badge--done">INGEBURGERD</span></div></section>
+<section class="panel"><p class="kicker">Habit card</p>
+<div class="habit-card"><div class="habit-card__body"><p class="habit-card__title">10 minuten lezen</p><p class="muted">Na het ontbijt</p></div><button class="check"></button></div>
+<p class="kicker">Segmented · chips</p><div class="segmented"><button>Week</button><button class="is-active">Maand</button><button>Jaar</button></div>
+<div class="badges"><button class="chip chip--active">Actief</button><button class="chip">Chip</button></div>
+<p class="kicker">Inputs</p><input class="input" placeholder="Standaard"><input class="input input--error" placeholder="Fout"></section>
+<section class="panel"><p class="kicker">Toast</p><div class="toast"><span class="toast__dot"></span>Hardlopen afgevinkt<span class="toast__action">Herstel</span></div>
+<p class="kicker">Bottom sheet</p><div class="sheet"><p class="sheet__title">HABIT PAUZEREN?</p><p class="muted">Je reeks blijft bewaard tot je weer start.</p><button class="btn btn--primary">Pauzeren</button><button class="btn btn--ghost">Annuleren</button></div>
+<p class="kicker">Meter</p><p class="stat">72%</p><div class="meter"><div class="meter__fill"></div></div>
+<p class="kicker">Tab bar</p><nav class="tabbar"><span class="is-active">Vandaag</span><span>Habits</span><span>Voortg.</span><span>Prest.</span><span>Instell.</span></nav></section>
+<section class="panel"><p class="kicker">Kleuren</p><div class="swatches"><span class="swatch s-accent"></span><span class="swatch s-tint"></span><span class="swatch s-warn"></span><span class="swatch s-danger"></span><span class="swatch s-info"></span><span class="swatch s-success"></span><span class="swatch s-surface"></span><span class="swatch s-edge"></span><span class="swatch s-text"></span><span class="swatch s-muted"></span></div></section>
+</div></body></html>

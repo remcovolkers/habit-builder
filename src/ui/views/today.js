@@ -7,6 +7,7 @@ import { entryState, habitCard } from '../components/habit-card.js';
 import { poolCard } from '../components/pool-card.js';
 import { ring } from '../components/ring.js';
 import { icon } from '../svg.js';
+import { mascot } from '../components/mascot.js';
 import { account, dismissNudge, nudgeDismissed, nudgeElement } from '../account.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
@@ -168,7 +169,7 @@ function renderDay(view) {
       : null,
     allDone
       ? h('section', { class: 'section celebrate', role: 'status' },
-        h('div', { class: 'celebrate__emoji', 'aria-hidden': 'true' }, '🌿'),
+        mascot('celebrate') ?? h('div', { class: 'celebrate__emoji', 'aria-hidden': 'true' }, '🌿'),
         h('h2', { class: 'celebrate__title' }, nl.today.celebrateTitle),
         h('p', { class: 'celebrate__text' }, nl.today.celebrateText))
       : null);
@@ -209,6 +210,7 @@ function banner(view) {
 
 function emptyState(view) {
   return h('div', { class: 'empty' },
+    mascot('empty'),
     h('p', null, view.hasHabits ? nl.today.empty : nl.today.noHabits),
     view.hasHabits ? null : h('a', { class: 'button button--primary', href: '#/habits/new' }, nl.today.createFirst));
 }

@@ -43,7 +43,7 @@ test('validateHabit: schema-fouten komen met detail; schema mag niet na de start
 });
 
 test('instellingen: standaard dagwissel is 04:00', () => {
-  assert.deepEqual(defaultSettings('Europe/Amsterdam'), { id: 'user', timezone: 'Europe/Amsterdam', dayStartHour: 4, displayName: '', nameAsked: false });
+  assert.deepEqual(defaultSettings('Europe/Amsterdam'), { id: 'user', timezone: 'Europe/Amsterdam', dayStartHour: 4, displayName: '', nameAsked: false, theme: 'v0lky1' });
 });
 
 test('naamvoorstel uit de gegevens van de inlogdienst: voornaam, anders eerste woord, anders leeg', () => {
