@@ -1,0 +1,64 @@
+/* Zwevende actieknop (FAB): "nieuwe habit" op mobiel en tablet. Op desktop staat er een gewone knop in de pagina. */
+.fab {
+  position: fixed;
+  right: var(--space-5);
+  bottom: calc(var(--size-tabbar) + var(--safe-bottom) + var(--space-4));
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: 3.5rem;
+  height: 3.5rem;
+  background: var(--color-accent);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+  color: var(--color-on-accent);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-extra);
+  text-decoration: none;
+  transition: transform var(--duration-fast) var(--ease-out), filter var(--duration-fast);
+}
+
+.fab svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.fab--extended {
+  padding: 0 var(--space-5) 0 var(--space-4);
+}
+
+.fab:active {
+  transform: scale(0.94);
+}
+
+/* de lijst eindigt boven de knop, zodat het laatste item nooit eronder verdwijnt */
+@media (max-width: 959px) {
+  .app__main:has(.fab) {
+    padding-bottom: calc(var(--size-tabbar) + var(--safe-bottom) + 8rem);
+  }
+}
+
+@media (min-width: 960px) {
+  .fab {
+    display: none;
+  }
+}
+
+@media (hover: hover) {
+  .fab:hover {
+    filter: brightness(1.08);
+  }
+}
+
+/* alleen tonen als er geen zwevende knop is (desktop) */
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  .desktop-only {
+    display: inline-flex;
+  }
+}

@@ -52,8 +52,12 @@ export const nl = {
     futureBanner: 'Je plant vooruit. Afvinken kan pas op de dag zelf.',
     lockedBanner: 'Deze dag is te lang geleden om nog aan te passen.',
     empty: 'Er staat niets gepland voor deze dag.',
-    noHabits: 'Je hebt nog geen habits. Maak je eerste gewoonte aan.',
+    noHabitsTitle: 'Begin klein',
+    noHabits: 'Je hebt nog geen habits. Eén gewoonte is genoeg om te starten; uitbreiden kan altijd.',
     createFirst: 'Eerste habit maken',
+    restTitle: 'Een rustige dag',
+    nothingTitle: 'Niets gepland',
+    seeHabits: 'Bekijk je habits',
     allDone: 'Alles gedaan voor deze dag. Goed bezig!',
     check: (name) => `Afvinken: ${name}`,
     uncheck: (name) => `Afvinken ongedaan maken: ${name}`,
@@ -103,10 +107,15 @@ export const nl = {
     },
   },
 
+  empty: {
+    startWith: 'Begin met een voorbeeld:',
+  },
+
   habits: {
     title: 'Habits',
     new: 'Nieuwe habit',
-    empty: 'Nog geen habits.',
+    emptyTitle: 'Nog geen habits',
+    empty: 'Hier komen al je gewoontes te staan: actief, gepauzeerd en ingeburgerd. Begin met één.',
     pauseAll: 'Pauzeer alles',
     resumeAll: 'Hervat alles',
     pausedAll: 'Alle habits gepauzeerd',
@@ -272,6 +281,7 @@ export const nl = {
 
   stats: {
     title: 'Voortgang',
+    emptyTitle: 'Nog niets te zien',
     empty: 'Zodra je een paar dagen bezig bent, zie je hier hoe sterk je gewoontes worden.',
     summary: { week: 'Gedaan, laatste 7 dagen', graduated: 'Ingeburgerd', active: 'Actieve habits' },
     strength: 'Sterkte',
@@ -299,7 +309,8 @@ export const nl = {
     celebrateTitle: 'Nieuwe prestatie!',
     celebrateTitleMany: (n) => `${n} nieuwe prestaties!`,
     celebrateClose: 'Mooi!',
-    empty: 'Je eerste prestatie is één check-in verwijderd.',
+    emptyTitle: 'Je eerste prestatie komt eraan',
+    empty: 'Vink je eerste habit af en je eerste prestatie is binnen.',
   },
 
   backup: {

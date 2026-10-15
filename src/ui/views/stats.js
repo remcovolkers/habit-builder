@@ -3,6 +3,7 @@ import { liveView } from '../live.js';
 import { notifyChanged, state } from '../state.js';
 import { showToast } from '../components/toast.js';
 import { nl } from '../../content/nl.js';
+import { emptyState } from '../components/empty-state.js';
 import { statsForHabit, streakSpan } from '../../app/habit-detail.js';
 import { saveWeeklyReview } from '../../app/actions.js';
 import { formatDateShort } from '../../app/format.js';
@@ -89,7 +90,7 @@ export function statsView() {
         h('div', { class: 'stats__columns' },
           h('div', { class: 'stats__main' },
             habits.length === 0
-              ? h('p', { class: 'muted' }, nl.stats.empty)
+              ? emptyState({ art: 'stats', title: nl.stats.emptyTitle, text: nl.stats.empty, cta: { href: '#/habits/new', label: nl.habits.new } })
               : h('div', { class: 'detail' },
                 h('section', { class: 'tiles' },
                   h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.week), h('span', { class: 'tile__value' }, String(doneLastWeek))),

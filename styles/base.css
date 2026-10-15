@@ -254,14 +254,6 @@ summary.section__title {
   text-align: center;
 }
 
-.empty {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-4);
-  margin-top: var(--space-8);
-  color: var(--color-text-muted);
-}
-
 .facts {
   margin-top: var(--space-8);
   font-size: var(--font-size-sm);

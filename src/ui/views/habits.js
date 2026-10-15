@@ -3,7 +3,8 @@ import { liveView } from '../live.js';
 import { notifyChanged, state } from '../state.js';
 import { showToast } from '../components/toast.js';
 import { nl } from '../../content/nl.js';
-import { mascot } from '../components/mascot.js';
+import { emptyState } from '../components/empty-state.js';
+import { fab } from '../components/fab.js';
 import { formatDateShort, formatSchedule } from '../../app/format.js';
 import { pauseAll, resumeAll } from '../../app/actions.js';
 import { scheduleAt } from '../../domain/schedule.js';
@@ -59,7 +60,7 @@ export function habitsView() {
       return h('div', null,
         h('header', { class: 'page-header' },
           h('h1', { class: 'page-title' }, nl.habits.title),
-          h('a', { class: 'button button--primary', href: '#/habits/new' }, nl.habits.new)),
+          h('a', { class: 'button button--primary desktop-only', href: '#/habits/new' }, nl.habits.new)),
         running.length > 0
           ? h('button', {
             type: 'button',
@@ -71,12 +72,17 @@ export function habitsView() {
             },
           }, allPaused ? nl.habits.resumeAll : nl.habits.pauseAll)
           : null,
-        habits.length === 0 ? h('div', { class: 'empty' }, mascot('empty'), h('p', null, nl.habits.empty)) : null,
+        habits.length === 0
+          ? emptyState({
+            art: 'habits', title: nl.habits.emptyTitle, text: nl.habits.empty, starters: true, // de actie staat al in de kop (desktop) en in de zwevende knop (mobiel)
+          })
+          : null,
         section('active'),
         section('paused'),
         section('planned'),
         section('graduated', { collapsed: true }),
-        section('archived', { collapsed: true }));
+        section('archived', { collapsed: true }),
+        fab({ href: '#/habits/new', label: habits.length === 0 ? nl.today.createFirst : nl.habits.new, extended: habits.length === 0 }));
     },
   });
 }

@@ -8,6 +8,8 @@ import { poolCard } from '../components/pool-card.js';
 import { ring } from '../components/ring.js';
 import { icon } from '../svg.js';
 import { mascot } from '../components/mascot.js';
+import { emptyState } from '../components/empty-state.js';
+import { fab } from '../components/fab.js';
 import { account, dismissNudge, nudgeDismissed, nudgeElement } from '../account.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
@@ -178,10 +180,11 @@ function renderDay(view) {
   return h('div', { class: 'today__inner' },
     header(view),
     banner(view),
-    view.groups.length === 0 && view.pool.length === 0 ? emptyState(view) : null,
+    view.groups.length === 0 && view.pool.length === 0 ? todayEmpty(view) : null,
     h('div', { class: 'today__columns' },
       h('div', { class: 'today__main' }, ...groupSections),
-      side.length > 0 ? h('div', { class: 'today__side' }, ...side) : null));
+      side.length > 0 ? h('div', { class: 'today__side' }, ...side) : null),
+    fab({ href: '#/habits/new', label: view.hasHabits ? nl.habits.new : nl.today.createFirst, extended: !view.hasHabits }));
 }
 
 function dayLink(date, label, symbol, enabled) {
@@ -217,9 +220,15 @@ function banner(view) {
   return null;
 }
 
-function emptyState(view) {
-  return h('div', { class: 'empty' },
-    mascot('empty'),
-    h('p', null, view.hasHabits ? nl.today.empty : nl.today.noHabits),
-    view.hasHabits ? null : h('a', { class: 'button button--primary', href: '#/habits/new' }, nl.today.createFirst));
+function todayEmpty(view) {
+  if (!view.hasHabits) {
+    return emptyState({
+      art: 'sprout', title: nl.today.noHabitsTitle, text: nl.today.noHabits, starters: true,
+      cta: { href: '#/habits/new', label: nl.today.createFirst, desktopOnly: true },
+    });
+  }
+  return emptyState({
+    art: 'moon', title: view.mode === 'today' ? nl.today.restTitle : nl.today.nothingTitle, text: nl.today.empty,
+    secondary: { href: '#/habits', label: nl.today.seeHabits },
+  });
 }

@@ -15,6 +15,9 @@ const ICONS = {
   next: [['path', { d: 'M9 5l7 7-7 7' }]],
   close: [['path', { d: 'M6 6l12 12M18 6L6 18' }]],
   edit: [['path', { d: 'M4 20h4L19 9l-4-4L4 16v4z' }]],
+  plus: [['path', { d: 'M12 5v14M5 12h14' }]],
+  sprout: [['path', { d: 'M12 21v-9' }], ['path', { d: 'M12 14c0-4-3-6.5-7.5-6.5C4.5 11.5 7.5 14 12 14z' }], ['path', { d: 'M12 11.5c0-3.5 2.5-6 7-6 0 4-2.5 6-7 6z' }]],
+  moon: [['path', { d: 'M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z' }]],
 };
 
 /** icon('check', { strokeWidth: 3 }) -> <svg aria-hidden> */

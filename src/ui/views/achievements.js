@@ -3,6 +3,7 @@ import { liveView } from '../live.js';
 import { state } from '../state.js';
 import { achievementMedal } from '../components/achievement.js';
 import { nl } from '../../content/nl.js';
+import { emptyState } from '../components/empty-state.js';
 import { ACHIEVEMENT_INFO } from '../../content/achievements.js';
 import { ACHIEVEMENT_KEYS } from '../../domain/achievements.js';
 import { formatDateShort } from '../../app/format.js';
@@ -32,7 +33,9 @@ export function achievementsView() {
         h('div', { class: 'page-header' },
           h('h1', { class: 'page-title' }, nl.achievements.title),
           h('span', { class: 'kicker' }, nl.achievements.count(reached.length, keys.length))),
-        reached.length === 0 ? h('p', { class: 'muted section__hint' }, nl.achievements.empty) : null,
+        reached.length === 0
+          ? emptyState({ art: 'achievements', slot: 'achievement', title: nl.achievements.emptyTitle, text: nl.achievements.empty, secondary: { href: '#/today', label: nl.nav.today } })
+          : null,
         h('ul', { class: 'achievements' }, ...keys.map(medal)));
     },
   });

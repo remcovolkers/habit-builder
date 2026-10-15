@@ -5,6 +5,7 @@ import { showToast } from '../components/toast.js';
 import { openDialog } from '../components/dialog.js';
 import { icon } from '../svg.js';
 import { mascot } from '../components/mascot.js';
+import { emptyState } from '../components/empty-state.js';
 import { nl } from '../../content/nl.js';
 import { TIPS } from '../../content/tips.js';
 import { buildHabitDetail } from '../../app/habit-detail.js';
@@ -245,6 +246,6 @@ export function habitDetailView({ id }) {
     },
     render: (detail) => detail
       ? renderDetail(detail)
-      : h('div', { class: 'empty' }, h('p', null, nl.form.notFound), h('a', { class: 'button button--ghost', href: '#/habits' }, nl.habits.title)),
+      : emptyState({ art: 'habits', title: nl.form.notFound, secondary: { href: '#/habits', label: nl.habits.title } }),
   });
 }
