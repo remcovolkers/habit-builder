@@ -123,8 +123,10 @@ textarea {
   padding-bottom: calc(var(--size-tabbar) + var(--safe-bottom) + var(--space-12));
 }
 
-.app__main:focus {
+.app__main:focus,
+.app__main:focus-visible {
   outline: none;
+  box-shadow: none; /* de pagina krijgt na een routewissel focus; een ring om het hele werkvlak helpt niemand */
 }
 
 /* typografie */

@@ -122,9 +122,12 @@ export function settingsView() {
 
   return h('div', null,
     h('h1', { class: 'page-title' }, nl.settings.title),
-    accountCard(),
-    installCard(),
-    themeSection(),
+    h('div', { class: 'settings__columns' },
+     h('div', { class: 'settings__col' },
+      accountCard(),
+      installCard(),
+      themeSection()),
+     h('div', { class: 'settings__col' },
     h('form', { class: 'form', novalidate: true, onsubmit: submit },
       h('div', { class: 'field' },
         h('label', { class: 'field__label', for: 'timezone' }, nl.settings.timezone), tz, errorEls.timezone),
@@ -132,5 +135,5 @@ export function settingsView() {
         h('label', { class: 'field__label', for: 'dayStartHour' }, nl.settings.dayStart), hour,
         h('p', { id: 'hint-day', class: 'field__hint' }, nl.settings.dayStartHint), errorEls.dayStartHour),
       h('button', { type: 'submit', class: 'button button--primary button--block' }, nl.settings.save)),
-    backupSection());
+    backupSection())));
 }

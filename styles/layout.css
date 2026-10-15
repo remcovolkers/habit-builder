@@ -1,0 +1,309 @@
+/* Responsieve indeling. Mobiel eerst: alles hierboven is de telefoon-indeling en die blijft zoals ze is.
+   Hier komt er ruimte bij:
+     ≥ 720px   tablet: bredere inhoud, dialogen in het midden, rasters met meer kolommen
+     ≥ 960px   desktop: zijbalk in plaats van de tabbalk, twee kolommen op de grote schermen
+   Alles loopt via de themavariabelen, dus elk thema werkt op elk formaat. */
+
+/* ---- kolomgroepen: op mobiel gewoon onder elkaar (zelfde ritme als voorheen) ---- */
+.today__columns,
+.stats__columns,
+.settings__columns {
+  display: block;
+}
+
+.detail--grid > * + * {
+  margin-top: var(--space-5); /* mobiel: hoofd- en zijkolom onder elkaar */
+}
+
+.detail__primary > * + *,
+.detail__secondary > * + * {
+  margin-top: var(--space-5);
+}
+
+.heat {
+  max-width: 34rem;
+}
+
+/* =========================================================================================
+   Tablet
+   ========================================================================================= */
+@media (min-width: 720px) {
+  .app__main {
+    --content-max: 46rem;
+  }
+
+  .habits .card-list {
+    grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  }
+
+  .achievements {
+    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  }
+
+  .habit-form,
+  .login {
+    max-width: 40rem;
+    margin-inline: auto;
+  }
+
+  /* dialogen: een venster in het midden in plaats van een lade onderaan */
+  .dialog {
+    inset: 0;
+    margin: auto;
+    width: min(32rem, calc(100vw - 2 * var(--space-6)));
+    padding: var(--space-6);
+    border: 1px solid var(--color-hairline-strong);
+    border-radius: var(--radius-hero);
+    box-shadow: var(--shadow-card);
+  }
+
+  .dialog::before {
+    display: none;
+  }
+
+  .toast-region,
+  .update-region {
+    justify-items: center;
+  }
+}
+
+/* =========================================================================================
+   Aanwijzers (muis): zachte reactie bij hoveren, alleen waar dat bestaat
+   ========================================================================================= */
+@media (hover: hover) {
+  .habit-card,
+  .pool-card,
+  .habit-row,
+  .tile,
+  .card {
+    transition: transform var(--duration-fast) var(--ease-out), border-color var(--duration-fast), box-shadow var(--duration-fast);
+  }
+
+  .habit-row:hover,
+  .habit-card:hover,
+  .pool-card:hover {
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-glow);
+  }
+
+  .habit-row:hover {
+    transform: translateY(-1px);
+  }
+
+  .button:not(:disabled):hover {
+    filter: brightness(1.1);
+  }
+
+  .check:not(:disabled):hover,
+  .counter__button:not(:disabled):hover,
+  .icon-button:hover,
+  .habit-card__more:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .check[data-state='done']:hover,
+  .counter__button--plus:hover {
+    color: var(--color-on-accent);
+    filter: brightness(1.08);
+  }
+
+  .choice__face:hover,
+  .segmented__face:hover,
+  .theme-option__face:hover {
+    border-color: var(--color-accent-50);
+  }
+}
+
+/* =========================================================================================
+   Desktop
+   ========================================================================================= */
+@media (min-width: 960px) {
+  .app {
+    display: grid;
+    grid-template-columns: var(--size-sidebar) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  /* zijbalk met merk en navigatie, altijd in beeld */
+  .sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    height: 100dvh;
+    padding: var(--space-6) var(--space-4);
+    background: rgb(var(--chrome-rgb) / 0.62);
+    backdrop-filter: blur(14px);
+    border-right: 1px solid var(--color-hairline);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-2);
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .brand__logo {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-button);
+  }
+
+  .brand__name {
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--letter-spacing-display);
+    text-transform: uppercase;
+  }
+
+  .tabbar {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-height: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    backdrop-filter: none;
+  }
+
+  .tabbar__item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--space-3);
+    min-height: 3rem;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-button);
+    font-size: var(--font-size-md);
+  }
+
+  .tabbar__item svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .tabbar__item:hover {
+    background: var(--color-accent-10);
+    color: var(--color-text);
+  }
+
+  .tabbar__item[aria-current='page'] {
+    background: var(--color-accent-16);
+    box-shadow: inset 0 0 0 1px var(--color-accent-50);
+    color: var(--color-accent);
+    filter: none;
+  }
+
+  .app__main {
+    max-width: var(--content-wide);
+    padding: var(--space-10) var(--space-10) var(--space-12);
+  }
+
+  .page-title {
+    font-size: var(--font-size-4xl);
+  }
+
+  /* meldingen staan in het midden van het werkvlak, naast de zijbalk */
+  .toast-region,
+  .update-region {
+    inset: auto var(--space-6) var(--space-6) calc(var(--size-sidebar) + var(--space-6));
+  }
+
+  /* Vandaag: de dag links, de stapel (met zetje en feest) rechts */
+  .today__columns {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(19rem, 2fr);
+    gap: var(--space-8);
+    align-items: start;
+    margin-top: var(--space-6);
+  }
+
+  .today__main > .section:first-child,
+  .today__side > .section:first-child {
+    margin-top: 0;
+  }
+
+  .today__side {
+    position: sticky;
+    top: var(--space-6);
+  }
+
+  .today__title {
+    font-size: var(--font-size-4xl);
+  }
+
+  .today__hero .ring {
+    --size: 6.5rem;
+    --thick: 9px;
+  }
+
+  .today__hero .ring__value {
+    font-size: var(--font-size-3xl);
+  }
+
+  /* habit-detail: hero, tegels en heatmap links; het "werk" rechts */
+  .detail--grid {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: var(--space-6);
+    align-items: start;
+  }
+
+  .detail--grid > * + * {
+    margin-top: 0;
+  }
+
+  .hero__name {
+    font-size: var(--font-size-3xl);
+  }
+
+  /* voortgang: overzicht links, wekelijkse review rechts */
+  .stats__columns {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(19rem, 2fr);
+    gap: var(--space-8);
+    align-items: start;
+  }
+
+  .stats__side {
+    margin-top: 0;
+  }
+
+  /* instellingen: twee kolommen */
+  .settings__columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-10);
+    align-items: start;
+  }
+
+  .settings__col > .section:first-child,
+  .settings__col > .form:first-child {
+    margin-top: 0;
+  }
+
+  .achievements {
+    grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+    gap: var(--space-6) var(--space-4);
+  }
+
+  .habits .card-list {
+    grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr));
+  }
+}
+
+/* heel grote schermen: de inhoud wordt niet breder, maar er komt meer lucht omheen */
+@media (min-width: 1500px) {
+  .app__main {
+    padding-inline: var(--space-12);
+  }
+}

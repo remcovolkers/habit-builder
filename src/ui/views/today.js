@@ -138,41 +138,50 @@ function renderDay(view) {
   const allDone = view.progress.total > 0 && view.progress.done === view.progress.total;
   const poolPeriod = view.pool.every((e) => e.span === 'week') ? nl.today.pool.thisWeek : nl.today.pool.thisPeriod;
 
+  const groupSections = view.groups.map((group) => {
+    const { done, total } = tally(group.entries);
+    return h('section', { class: 'section', 'aria-labelledby': `dp-${group.daypart}` },
+      h('div', { class: 'section-head' },
+        h('h2', { id: `dp-${group.daypart}`, class: 'section__title' }, nl.dayparts[group.daypart]),
+        h('span', { class: 'xs muted' }, nl.today.sectionCount(done, total))),
+      h('ul', { class: 'card-list' }, ...group.entries.map((entry) => habitCard(entry, cardOptions))));
+  });
+
+  const poolSection = view.pool.length > 0
+    ? h('section', { class: 'section', 'aria-labelledby': 'pool-title' },
+      h('div', { class: 'section-head' },
+        h('h2', { id: 'pool-title', class: 'section__title' }, nl.today.pool.title),
+        h('span', { class: 'kicker' }, poolPeriod)),
+      h('p', { class: 'section__hint' }, nl.today.pool.hint),
+      h('ul', { class: 'card-list' }, ...view.pool.map((entry) =>
+        poolCard(entry, {
+          date, today, canLog: view.canLog, canPlan: view.canPlan,
+          onPlan: (e) => planOnDay(e, date),
+          onPlanOther: planOther,
+          onDoneNow: (e) => perform(() => log(e.habitId, 'done'), nl.today.toasts.done(e.habit.name)),
+        }))))
+    : null;
+
+  const nudge = account.status === 'anonymous' && view.hasHabits && view.mode === 'today' && !nudgeDismissed()
+    ? nudgeElement((event) => { dismissNudge(); event.target.closest('.nudge').remove(); })
+    : null;
+
+  const celebrate = allDone
+    ? h('section', { class: 'section celebrate', role: 'status' },
+      mascot('celebrate') ?? h('div', { class: 'celebrate__emoji', 'aria-hidden': 'true' }, '🌿'),
+      h('h2', { class: 'celebrate__title' }, nl.today.celebrateTitle),
+      h('p', { class: 'celebrate__text' }, nl.today.celebrateText))
+    : null;
+
+  // Op mobiel onder elkaar; op desktop de dag links en de stapel (met zetje en feest) rechts.
+  const side = [poolSection, nudge, celebrate].filter(Boolean);
   return h('div', { class: 'today__inner' },
     header(view),
     banner(view),
     view.groups.length === 0 && view.pool.length === 0 ? emptyState(view) : null,
-    ...view.groups.map((group) => {
-      const { done, total } = tally(group.entries);
-      return h('section', { class: 'section', 'aria-labelledby': `dp-${group.daypart}` },
-        h('div', { class: 'section-head' },
-          h('h2', { id: `dp-${group.daypart}`, class: 'section__title' }, nl.dayparts[group.daypart]),
-          h('span', { class: 'xs muted' }, nl.today.sectionCount(done, total))),
-        h('ul', { class: 'card-list' }, ...group.entries.map((entry) => habitCard(entry, cardOptions))));
-    }),
-    view.pool.length > 0
-      ? h('section', { class: 'section', 'aria-labelledby': 'pool-title' },
-        h('div', { class: 'section-head' },
-          h('h2', { id: 'pool-title', class: 'section__title' }, nl.today.pool.title),
-          h('span', { class: 'kicker' }, poolPeriod)),
-        h('p', { class: 'section__hint' }, nl.today.pool.hint),
-        h('ul', { class: 'card-list' }, ...view.pool.map((entry) =>
-          poolCard(entry, {
-            date, today, canLog: view.canLog, canPlan: view.canPlan,
-            onPlan: (e) => planOnDay(e, date),
-            onPlanOther: planOther,
-            onDoneNow: (e) => perform(() => log(e.habitId, 'done'), nl.today.toasts.done(e.habit.name)),
-          }))))
-      : null,
-    account.status === 'anonymous' && view.hasHabits && view.mode === 'today' && !nudgeDismissed()
-      ? nudgeElement((event) => { dismissNudge(); event.target.closest('.nudge').remove(); })
-      : null,
-    allDone
-      ? h('section', { class: 'section celebrate', role: 'status' },
-        mascot('celebrate') ?? h('div', { class: 'celebrate__emoji', 'aria-hidden': 'true' }, '🌿'),
-        h('h2', { class: 'celebrate__title' }, nl.today.celebrateTitle),
-        h('p', { class: 'celebrate__text' }, nl.today.celebrateText))
-      : null);
+    h('div', { class: 'today__columns' },
+      h('div', { class: 'today__main' }, ...groupSections),
+      side.length > 0 ? h('div', { class: 'today__side' }, ...side) : null));
 }
 
 function dayLink(date, label, symbol, enabled) {

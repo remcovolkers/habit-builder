@@ -27,6 +27,3 @@
   font-weight: var(--font-weight-bold);
 }
 
-.today__inner > .section:first-of-type {
-  margin-top: var(--space-6);
-}

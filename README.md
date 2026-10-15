@@ -23,9 +23,9 @@ npm run stage   # kopieert de publiceerbare bestanden naar _site/ en vult de ser
 | `src/data/` | Opslag: repository-interface, IndexedDB, Supabase-adapter, sync. |
 | `src/ui/` | Views en componenten. Alleen via `ui/dom.js`, nooit `innerHTML`. |
 | `src/content/` | Teksten (`nl.js`), tips en achievement-definities. |
-| `styles/` | `tokens.css` (structuur), `themes/` (kleuren per thema) plus component- en view-CSS. |
+| `styles/` | `tokens.css` (structuur), `themes/` (kleuren per thema), component- en view-CSS en `layout.css` (tablet- en desktopindeling; mobiel eerst). |
 | `fonts/` | Lokale lettertypen (Manrope, Chakra Petch); zie `fonts/README.md`. |
-| `moda-themes/` | De Moda-ontwerpen per thema, als referentie (niet gepubliceerd). |
+| `moda-themes/` | De Moda-ontwerpen, één map per thema-id (`v0lky1`, `mel`), als referentie (niet gepubliceerd). |
 | `styles/themes/`, `themes/` | Kleuren per thema en de illustraties; zie `docs/THEMES.md`. |
 | `sw.js`, `manifest.webmanifest`, `icons/` | PWA: offline werken, installeren en iconen. `sw.js` is een sjabloon; `npm run stage` vult de bestandslijst en een versie-id in (zie `tools/lib/pwa.mjs`). |
 | `vendor/` | Vastgepinde externe code (supabase-js, als één bestand gebundeld); zie `vendor/README.md`. |

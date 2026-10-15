@@ -177,7 +177,8 @@ function renderDetail(detail) {
       h('span', { class: 'kicker' }, nl.detail.kicker),
       h('a', { class: 'icon-button', href: `#/habits/${encodeURIComponent(habit.id)}/edit`, 'aria-label': nl.detail.edit }, icon('edit'))),
 
-    h('div', { class: 'detail' },
+    h('div', { class: 'detail detail--grid' },
+     h('div', { class: 'detail__primary' },
       h('section', { class: 'card card--hero' },
         mascot(`phase.${phaseKey}`, 'hero__mascot'),
         h('div', { class: 'hero__top' },
@@ -203,7 +204,8 @@ function renderDetail(detail) {
         tile(nl.detail.tiles.total, String(stats.totalDone), '×',
           h('span', { class: 'tile__hint' }, nl.detail.totalSince(formatDateShort(habit.startDate))))),
 
-      heatmapCard(detail),
+      heatmapCard(detail)),
+     h('div', { class: 'detail__secondary' },
       graduationCard(detail),
       automaticityCard(detail),
 
@@ -230,7 +232,7 @@ function renderDetail(detail) {
                 : act(() => pauseHabit(state.repo, habit.id, today), nl.form.toasts.paused),
             }, detail.pausedNow ? nl.detail.actions.resume : nl.detail.actions.pause),
             h('button', { type: 'button', class: 'button button--danger', onclick: act(() => archiveHabit(state.repo, habit, today), nl.form.toasts.archived) }, nl.detail.actions.archive),
-          ])));
+          ]))));
 }
 
 export function habitDetailView({ id }) {

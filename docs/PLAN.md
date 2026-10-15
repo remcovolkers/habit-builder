@@ -29,6 +29,7 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | Teller-habits (bv. 8 glazen water) en sjablonen | klaar |
 | M6 (deels) Moda-design op de bestaande schermen, lokale fonts | klaar |
 | Thema's: v0lky1 Theme en Mel Theme (Pokémon), kiesbaar in Instellingen | klaar |
+| Desktopweergave: zijbalk en twee kolommen vanaf 960px, tablet vanaf 720px, mobiel ongewijzigd (`styles/layout.css`) | klaar |
 | M3 detailpagina (sterkte, fases, heatmap), tips, ingeburgerd-flow, achievements, automatisme, review, export/import | klaar |
 | IndexedDB-migraties (v1 naar v2 naar v3) getest | klaar |
 | M4 Supabase, auth (Google + e-mailcode), sync, keepalive | klaar en op het echte project getest |

@@ -13,7 +13,7 @@ Een thema delen kan met een link: `https://remcovolkers.github.io/habit-builder/
 
 | Onderdeel | Plek |
 |---|---|
-| Ontwerpbronnen van Moda (alleen referentie, niet gepubliceerd) | `moda-themes/<ontwerpmap>/` |
+| Ontwerpbronnen van Moda (alleen referentie, niet gepubliceerd) | `moda-themes/<thema-id>/` (zelfde naam als het thema, bv. `v0lky1`, `mel`) |
 | Register: id, naam, themakleur, kleurstalen, illustraties per plek | `src/app/themes.js` |
 | Kleuren, achtergrond, gloed (alle tokens) | `styles/themes/<id>.css`, gekozen via `data-theme` op `<html>` |
 | Structuur: typografie, ruimte, vorm, maten | `styles/tokens.css` (voor alle thema's gelijk) |

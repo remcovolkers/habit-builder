@@ -86,15 +86,17 @@ export function statsView() {
 
       return h('div', null,
         h('h1', { class: 'page-title' }, nl.stats.title),
-        habits.length === 0
-          ? h('p', { class: 'muted' }, nl.stats.empty)
-          : h('div', { class: 'detail' },
-            h('section', { class: 'tiles' },
-              h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.week), h('span', { class: 'tile__value' }, String(doneLastWeek))),
-              h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.graduated), h('span', { class: 'tile__value' }, String(graduated)),
-                h('span', { class: 'tile__hint' }, `${active} ${nl.stats.summary.active.toLowerCase()}`))),
-            h('ul', { class: 'card-list' }, ...habits.map((habit) => overviewRow(habit, snapshot, today)))),
-        h('div', { class: 'section' }, reviewCard(snapshot, today)));
+        h('div', { class: 'stats__columns' },
+          h('div', { class: 'stats__main' },
+            habits.length === 0
+              ? h('p', { class: 'muted' }, nl.stats.empty)
+              : h('div', { class: 'detail' },
+                h('section', { class: 'tiles' },
+                  h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.week), h('span', { class: 'tile__value' }, String(doneLastWeek))),
+                  h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.graduated), h('span', { class: 'tile__value' }, String(graduated)),
+                    h('span', { class: 'tile__hint' }, `${active} ${nl.stats.summary.active.toLowerCase()}`))),
+                h('ul', { class: 'card-list stats__list' }, ...habits.map((habit) => overviewRow(habit, snapshot, today))))),
+          h('div', { class: 'stats__side section' }, reviewCard(snapshot, today))));
     },
   });
 }
