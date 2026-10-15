@@ -156,38 +156,50 @@ Wat opvalt:
 - **Knoeien loont een beetje**: elke dag een nieuwe habit starten en één keer afvinken levert 78 op, iets meer dan trouw één habit doen (70). De drie startbonussen en de gratis eerste misser zijn daar de oorzaak van. Besloten: eerst de praktijk afwachten. Wil je dat strenger, dan helpt een lagere `START_BONUS_MAX` of de startbonus pas bij de derde afgeronde taak.
 - **De opbouwbonus is bescheiden** (ongeveer 20% in de eerste 21 dagen, 10% daarna) en verdwijnt zodra een habit eigen is. Een starter die in de eerste week alles doet staat net zo hoog als een gevestigde gebruiker (188 tegen 190). Dat is de bedoeling van het "starten" belonen; `START_BONUS` en `BUILD_BONUS_STARTING` zijn de knoppen.
 
-## 5. Datamodel (voorstel, Supabase)
+## 5. Datamodel (gebouwd in S2, Supabase)
 
 Alles is **additief**: een nieuwe migratie `0003_social.sql`; de bestaande tabellen en de huidige productie-app blijven ongemoeid (zie "Werkwijze: database"). Geen `records`-wijzigingen: het sociale deel leeft in eigen tabellen, zodat sociaal uit te zetten en op te ruimen is zonder de sync te raken.
 
 ### 5.1 Tabellen
 
+Allemaal in `supabase/migrations/0003_social.sql`. Elke tabel heeft RLS aan, **geen enkele policy** en alle rechten ingetrokken voor `anon` en `authenticated`: rechtstreeks lezen of schrijven kan niet.
+
 | Tabel | Kolommen (kern) | Doel |
 |---|---|---|
-| `social_profiles` | `user_id` (pk, → `auth.users`, cascade), `username` (uniek, citext), `display_name` (≤ 30), `enabled`, `username_changed_at`, `created_at` | wie meedoet en onder welke naam |
-| `friendships` | `id`, `user_low`, `user_high` (altijd gesorteerd, uniek paar), `requested_by`, `status` (`pending`/`accepted`/`declined`), `created_at`, `responded_at` | één rij per paar, voorkomt dubbele of wederzijdse rijen; `declined` onthoudt een weigering voor de wachttijd van 30 dagen |
-| `invite_codes` | `code` (hash, uniek), `owner`, `expires_at`, `revoked_at` | uitnodigingslinks; de code zelf staat alleen in de link, in de database staat alleen een hash |
-| `score_summaries` | `user_id` (pk), `as_of` (datum), `points`, `done`, `streak`, `active_habits`, `last_active` (datum), `updated_at` | de gepubliceerde samenvatting, één rij per gebruiker |
+| `social_profiles` | `user_id` (pk, → `auth.users`, cascade), `username` (uniek, 3–20 tekens `a-z 0-9 _ .`), `display_name` (≤ 30), `enabled`, `username_changed_at` | wie meedoet en onder welke naam |
+| `social_blocked_terms` | `term` | woorden die niet in een gebruikersnaam mogen (`admin`, `support`, `habitbuilder`, …); aan te vullen met een insert |
+| `friendships` | `id`, `user_low`, `user_high` (altijd gesorteerd, uniek paar), `requested_by`, `status` (`pending`/`accepted`/`declined`), `created_at`, `responded_at` | één rij per paar; `declined` onthoudt een weigering voor de wachttijd van 30 dagen |
+| `invite_codes` | `id`, `owner`, `code_hash` (sha256, uniek), `expires_at` (7 dagen), `revoked_at` | uitnodigingslinks; de code zelf staat alleen in de link |
+| `score_summaries` | `user_id` (pk), `as_of`, `points`, `done`, `streak`, `active_habits`, `last_active`, `updated_at` | de gepubliceerde samenvatting, één rij per gebruiker |
+| `social_rate` | `user_id`, `action`, `at` | telt zoek-, verzoek-, uitnodig-, inwissel- en publicatieacties tegen raden en lastigvallen (oude rijen worden vanzelf opgeruimd) |
 
-### 5.2 Toegang (RLS en functies)
-Het principe: **tabellen zijn dicht, toegang loopt via een paar kleine `security definer`-functies** (met vaste `search_path`), zodat gebruikers nooit direct in andermans rijen kunnen kijken of door lijsten bladeren.
+### 5.2 Toegang: alleen via functies
+Het principe: **tabellen zijn dicht, toegang loopt via kleine `security definer`-functies** (met vaste `search_path`), uitsluitend aan te roepen door ingelogde gebruikers. Zo kan niemand rechtstreeks in andermans rijen kijken of door lijsten bladeren. Vier hulpfuncties (`social_uid`, `social_require_enabled`, `social_rate_use`, `social_friend_count`) zijn voor niemand aan te roepen.
 
-| Functie | Doet |
-|---|---|
-| `social_enable(username, display_name)` / `social_disable()` | aan- en uitzetten, valideren, uniekheid |
-| `social_find(username)` | geeft hooguit **één** rij `{ id, display_name }` terug bij exacte match; negeert niet-ingeschakelden en wie een eerder verzoek van jou weigerde; begrensd (§6) |
-| `friend_request(user_id)` / `friend_respond(id, accept)` / `friend_remove(user_id)` | de vriendschapsstroom met alle controles (max. aantallen, wachttijd na weigering, geen jezelf) |
-| `invite_create()` / `invite_revoke(code)` / `invite_redeem(code)` | uitnodigingslinks |
-| `leaderboard()` | jouw samenvatting + die van **geaccepteerde** vrienden die sociaal aan hebben; zonder e-mailadres of andere velden. Het filteren op "3+ dagen niets gedaan" (§4.4) doet de app, met de dag van degene die kijkt |
-| `publish_summary(...)` | schrijft **jouw** `score_summaries`-rij, met bereikcontroles |
+| Functie | Doet | Begrenzing |
+|---|---|---|
+| `social_enable(username, display_name)` | zet sociaal aan of werkt je naam bij; gebruikersnaam wordt kleine letters | naam wisselen hoogstens eens per 30 dagen |
+| `social_disable()` | zet uit: uit lijsten en zoekresultaten, samenvatting gewist, uitnodigingen ingetrokken; vriendschappen blijven bewaard | |
+| `social_me()` | je eigen profiel of `null` | |
+| `social_find(username)` | **exacte** naam, hooguit één rij `{ id, username, display_name, relation }`; negeert jezelf, wie sociaal uit heeft en wie een eerder verzoek van jou weigerde | 20 per uur |
+| `friend_request(user_id)` | stuurt een verzoek; vraagt de ander jou al, dan meteen vrienden | 10 per dag, 20 openstaand, 50 vrienden |
+| `friend_respond(user_id, accept)` | beantwoordt een verzoek aan jou; weigeren is stil | 50 vrienden (ook die van de afzender) |
+| `friend_cancel(user_id)` / `friend_remove(user_id)` | eigen verzoek intrekken / vriend verwijderen (wederzijds) | |
+| `friend_list()` | vrienden, binnenkomende en uitgaande verzoeken (alleen mensen die sociaal aan hebben; geweigerd staat er niet in) | |
+| `invite_create()` / `invite_list()` / `invite_revoke(id)` | uitnodigingslink maken (de code komt één keer terug, 64 tekens), eigen actieve links zien, intrekken | 10 per dag, 5 tegelijk actief |
+| `invite_redeem(code)` | wisselt een code in: direct vrienden. Een ongeldige, verlopen of ingetrokken code geeft altijd `{"status":"invalid"}` en **geen fout**, zodat elke poging meetelt | 20 per uur |
+| `publish_summary(...)` | schrijft **jouw** samenvatting; de server bewaakt de bereiken (punten 0–100 000, datum binnen ±2 dagen, enz.) | 60 per uur |
+| `leaderboard()` | jouw samenvatting en die van **geaccepteerde** vrienden die sociaal aan hebben; geen e-mail of andere velden. Het wegfilteren van wie 3 dagen niets deed (§4.4) doet de app | |
 
-Direct select/insert/update/delete op deze tabellen: **geen enkele policy voor `anon`**; voor `authenticated` alleen wat de functies nodig hebben (of niets, met alles via functies). Het RLS-testscript krijgt uitgebreid met: niet-vriend kan niets lezen, vriend leest alleen de ranglijstvelden, een geweigerd verzoek kan binnen 30 dagen niet opnieuw, `anon` kan niets, aantal-limieten werken, intrekken en verlopen werken, account verwijderen wist alles (cascade).
+**Fouten** zijn stabiele codes in de melding, zodat de app ze naar tekst kan vertalen: `not_authenticated`, `not_enabled`, `invalid_username`, `invalid_display_name`, `username_taken`, `username_not_allowed`, `username_change_too_soon`, `not_found`, `friend_limit`, `pending_limit`, `invite_limit`, `too_many_requests`, `invalid_summary`. Een geweigerd verzoek geeft `not_found`, precies zoals een onbekende gebruiker, zodat de afzender niets van de weigering merkt.
+
+**Getest** (zie §8): `tests/server/social.test.js` (32 tests op een echte Postgres, in `npm test` en in CI) en `tools/social-check.mjs` (96 controles via de echte API van de lokale Supabase, `npm run db:check-social`). Ze bewijzen onder meer dat anon niets kan, dat de tabellen en hulpfuncties ook ingelogd dicht zijn, dat een niet-vriend niets ziet, dat raden en zoeken begrensd zijn (ook mislukte pogingen tellen mee), dat een weigering onzichtbaar blijft en dat het verwijderen van een account alles meeneemt.
 
 ### 5.3 De samenvatting
 ```
 { as_of: "2026-10-15", points: 230, done: 23, streak: 9, active_habits: 5, last_active: "2026-10-15" }
 ```
-Alleen getallen en twee datums (`as_of`, `last_active`). Niets dat een habit identificeert. Het bestand `docs/DATAMODEL.md` wordt bijgewerkt met deze tabellen.
+Alleen getallen en twee datums (`as_of`, `last_active`). Niets dat een habit identificeert. Zie ook [DATAMODEL.md](DATAMODEL.md).
 
 ### 5.4 Lokaal
 Het lokale deel is klein: de instelling "sociaal aan" (`settings`), een cache van de laatst opgehaalde ranglijst en vriendenlijst (alleen om offline te tonen) en een onthouden uitnodigingscode. De sociale gegevens **gaan niet door de sync-motor**: ze zijn niet van jou alleen en kennen andere conflictregels. De app praat er rechtstreeks met de server over, met een nette offline-toestand.
@@ -238,7 +250,7 @@ Besloten (S9): de ranglijst is bereikbaar vanaf **Voortgang** (een kaart "Rangli
 
 ## 8. Niet-functioneel en kwaliteit
 - **Domein** (punten, bonussen, minpunten, venster, gelijke stand, actief-regel, dagwissel, flexibele en teller-habits) puur en met tests, inclusief de randgevallen uit PLAN §4.8 waar relevant. Eén bron voor constanten (alle bedragen, 7 dagen, 3 dagen inactief, 50 vrienden, enz.).
-- **Server:** RLS-test uitgebreid (§5.2) in `supabase/tests/rls-check.mjs`, die in CI/`npm test` meedraait; migratie idempotent; functies met vaste `search_path`; geen service-sleutel nodig.
+- **Server:** de sociale tabellen en functies hebben eigen tests op een echte Postgres (`tests/server/social.test.js`, draait in `npm test` en in CI) en een controle via de echte API (`tools/social-check.mjs`); migratie idempotent; functies met vaste `search_path`; geen service-sleutel nodig.
 - **Guardrails:** geen `innerHTML`, geen service-sleutel, `svh`-regels, tikvlakken blijven gelden.
 - **Browsertests** voor de flows (aanzetten, uitnodigen, accepteren, ranglijst, offline, weigeren) op telefoon- en desktopformaat. Dit is het natuurlijke moment om de browsertests eindelijk **in de repository en in CI** te zetten (nu alleen lokaal): sociaal is te riskant om zonder vangnet te bouwen. Zie ook WERKWIJZE.
 - **Achterwaarts compatibel:** de oude app (zonder sociaal) werkt ongewijzigd naast de nieuwe tabellen.
@@ -258,7 +270,7 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 |---|---|---|
 | **S0** | Dit document akkoord; besluiten S5–S11 genomen; de lokale testdatabase draait en de app kan er mee verbinden | besluiten ✔; testdatabase in uitvoering |
 | **S1** | Domein: punten (basis, opbouwbonus, startbonus, minpunten, half gehaalde teller), actief-regel (3 dagen), gelijke stand, tests. Plus de naamvraag bij het aanmaken van een account (S5) | ✔ klaar: de regels uit §4 hebben groene tests; de meting (§4.7) staat erin. |
-| **S2** | Server: migratie 0003, functies, RLS-tests, DATAMODEL bijgewerkt | RLS-testscript bewijst: niet-vriend ziet niets, vriend ziet alleen de ranglijstvelden, weigeren met wachttijd, intrekken, verlopen, limieten en cascade werken. |
+| **S2** | Server: migratie 0003, functies, tests, DATAMODEL bijgewerkt | ✔ klaar: niet-vriend ziet niets, vriend ziet alleen de ranglijstvelden, weigeren/intrekken/verlopen/limieten/cascade werken (32 tests op Postgres, 96 controles via de API). **Nog niet op productie gezet**: dat gebeurt bij de release. |
 | **S3** | Data-laag en publiceren: remote-client, samenvatting na sync, offline cache | Publiceren gebeurt op de achtergrond; uit = niets verzonden (testbaar). |
 | **S4** | UI: aanzetten, zoeken, link, verzoeken, ranglijst, lege toestanden, beide thema's, desktop | Browsertests groen op 360/390/412 px en desktop; a11y- en overflowrondes groen. |
 | **S5** | Privacyverklaring, voorwaarden, in-app uitleg, PLAN en DATAMODEL bijgewerkt, browsertests in CI | Release-checklist uit WERKWIJZE doorlopen; test op twee echte telefoons; release `v1.1`. |
@@ -280,4 +292,4 @@ Alle werk op `feature/vrienden` (en korte `feature/*`-takken daarvan) → `devel
 ## 12. Volgende stappen
 
 1. Testdatabase lokaal starten: [DEV-OMGEVING.md](DEV-OMGEVING.md).
-2. S1 (het domein van de punten) is klaar; daarna S2, de server: migratie 0003, functies en RLS-tests.
+2. S1 (de punten) en S2 (de server) zijn klaar; daarna S3: de data-laag in de app (aanzetten, vrienden en ranglijst ophalen, de samenvatting publiceren).

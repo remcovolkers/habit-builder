@@ -40,6 +40,7 @@ Handig:
 | Commando | Doet |
 |---|---|
 | `npm run db:status` | adressen en sleutels |
+| `npm run db:check-social` | controleert de sociale functies via de echte API (maakt en ruimt testaccounts op) |
 | `npm run db:reset` | leegmaken en alle migraties opnieuw toepassen (schone lei) |
 | `npm run db:stop` | stoppen (de gegevens blijven bewaard) |
 | http://localhost:54323 | **Studio**: tabellen bekijken en SQL draaien |
@@ -66,7 +67,7 @@ Open http://localhost:5173/ → Instellingen → **Inloggen of account maken**, 
 ## Een wijziging aan de database uitrollen
 
 1. Schrijf de migratie (`supabase/migrations/000N_….sql`, **achterwaarts compatibel**, zie WERKWIJZE). De lokale database pakt hem op met `npm run db:reset` (of bij de eerstvolgende `db:start` op een schone database).
-2. Draai het RLS-testscript (`supabase/tests/rls-check.mjs`; het heeft PGlite nodig en staat daarom niet in `npm test`, zie de kop van het bestand). Dit nemen we voor de sociale feature op in de CI (milestone S2).
+2. Draai de tests: `npm test` bevat de server-tests op een echte Postgres (PGlite, `tests/server/`; `npm ci` installeert het). Voor een wijziging aan de sociale functies draait ook `npm run db:check-social` tegen de lokale Supabase (de echte API, 96 controles). `supabase/tests/rls-check.mjs` toetst de oudere tabellen (0001 en 0002).
 3. Test de app lokaal met twee accounts.
 4. Pas bij de release plak je dezelfde migratie in het **productieproject** (Supabase-dashboard → SQL Editor), vóórdat de nieuwe app uitgerold wordt.
 

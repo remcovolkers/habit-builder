@@ -59,7 +59,7 @@ Gebruikers draaien soms nog een oudere app-versie (de app-cache werkt pas bij na
 
 1. **Eerst uitbreiden**: nieuwe kolommen met een standaardwaarde, nieuwe tabellen, nieuwe functies. Daarna pas de app die ze gebruikt uitrollen.
 2. **Nooit in één stap hernoemen of verwijderen** wat de huidige productie-app nog gebruikt. Eerst de app uitrollen die het niet meer nodig heeft; in een latere release opruimen.
-3. Migraties staan in `supabase/migrations/` (genummerd, herhaalbaar) en worden met de hand in de SQL-editor uitgevoerd; de RLS-controle in `supabase/tests/rls-check.mjs` draait mee.
+3. Migraties staan in `supabase/migrations/` (genummerd, herhaalbaar) en worden met de hand in de SQL-editor uitgevoerd; lokaal pakt `npm run db:start` ze zelf op. De server-tests (`tests/server/`, Postgres in Node) draaien mee in `npm test` en in CI, en bewijzen onder meer dat een gebruiker nooit andermans gegevens ziet. Een migratie gaat **eerst lokaal** getest naar productie bij de release, vóórdat de nieuwe app wordt uitgerold.
 4. De Edge Function (`send-reminders`) wordt met de hand geplakt in het dashboard. Houd het bestand in de repo gelijk aan wat er live staat.
 
 Schema-wijzigingen worden **eerst op de lokale testdatabase** geprobeerd en pas bij de release op productie gezet (zie DEV-OMGEVING.md).
