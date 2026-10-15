@@ -2,6 +2,7 @@ import { h } from '../dom.js';
 import { reloadSettings, saveSettings, state } from '../state.js';
 import { openDialog } from '../components/dialog.js';
 import { accountCard } from '../components/account-card.js';
+import { account, onAccountChanged } from '../account.js';
 import { installCard } from '../components/install-card.js';
 import { reminderCard } from '../components/reminder-card.js';
 import { THEMES, THEME_IDS, themeFor } from '../../app/themes.js';
@@ -71,9 +72,13 @@ function backupSection() {
 /** Kies het thema: twee kaarten met kleurstalen. De keuze geldt direct en synchroniseert mee naar andere apparaten. */
 function themeSection() {
   const current = themeFor(state.settings.theme).id;
+  // het thema reist alleen mee naar andere apparaten als je bent ingelogd; de tekst volgt de inlogstatus
+  const hintText = () => (account.status === 'signed-in' ? nl.settings.theme.hint : nl.settings.theme.hintLocal);
+  const hint = h('p', { class: 'section__hint', id: 'themeHint' }, hintText());
+  const stop = onAccountChanged(() => (hint.isConnected ? (hint.textContent = hintText()) : stop()));
   return h('fieldset', { class: 'section themes' },
     h('legend', { class: 'section__title' }, nl.settings.theme.title),
-    h('p', { class: 'section__hint' }, nl.settings.theme.hint),
+    hint,
     h('div', { class: 'theme-options', role: 'radiogroup' },
       ...THEME_IDS.map((id) => {
         const theme = THEMES[id];

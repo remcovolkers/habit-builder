@@ -1,6 +1,6 @@
 # Thema's
 
-De app heeft twee thema's. De gebruiker kiest ze onder **Instellingen → Uiterlijk**; de keuze geldt direct, wordt bewaard en synchroniseert mee naar andere apparaten.
+De app heeft twee thema's. De gebruiker kiest ze onder **Instellingen → Uiterlijk**; de keuze geldt direct, wordt bewaard en synchroniseert mee naar andere apparaten als je bent ingelogd (zonder account geldt hij alleen op dit apparaat).
 
 | Thema | Naam in de app | Uiterlijk |
 |---|---|---|
