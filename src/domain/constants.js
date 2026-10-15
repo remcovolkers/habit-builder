@@ -39,3 +39,11 @@ export const PERFECT_WEEK_MIN_UNITS = 3;
 export const COMEBACK_GAP_DAYS = 7;
 export const ACTIVE_HABITS_ACHIEVEMENT = 3;
 export const REVIEW_STREAK_WEEKS = 4;
+
+/**
+ * Sociaal (docs/SOCIAAL.md §4). De weekscore is gedaan ÷ gepland per dag, opgeteld over de laatste dagen (vandaag meegerekend).
+ * Met minder geplande items is er niets eerlijks te zeggen. Wie zo veel dagen niets afvinkt, verdwijnt uit andermans lijst.
+ */
+export const SCORE_WINDOW_DAYS = 7;
+export const SCORE_MIN_PLANNED = 3;
+export const SOCIAL_ACTIVE_DAYS = 3;

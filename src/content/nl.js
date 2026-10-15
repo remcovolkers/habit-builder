@@ -529,8 +529,8 @@ export const nl = {
     switchUnsynced: (n) => `Let op: ${n} ${n === 1 ? 'wijziging' : 'wijzigingen'} van dat account zijn nog niet verstuurd.`,
     switchConfirm: 'Wissen en doorgaan',
     name: {
-      title: 'Hoe mogen we je noemen?',
-      text: 'We gebruiken je naam voor de begroeting op Vandaag. Je kunt dit later wijzigen onder Instellingen → Account.',
+      title: 'Hoe wil je heten?',
+      text: 'Deze naam zie je in de begroeting op Vandaag en zien je vrienden straks op de ranglijst. Neem je voornaam of verzin iets anders. Je kunt dit later wijzigen onder Instellingen → Account.',
       label: 'Je naam',
       save: 'Opslaan',
       skip: 'Overslaan',
