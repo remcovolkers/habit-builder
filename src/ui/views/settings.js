@@ -3,6 +3,7 @@ import { reloadSettings, saveSettings, state } from '../state.js';
 import { openDialog } from '../components/dialog.js';
 import { accountCard } from '../components/account-card.js';
 import { installCard } from '../components/install-card.js';
+import { reminderCard } from '../components/reminder-card.js';
 import { THEMES, THEME_IDS, themeFor } from '../../app/themes.js';
 import { downloadBackup } from '../download.js';
 import { showToast } from '../components/toast.js';
@@ -126,6 +127,7 @@ export function settingsView() {
      h('div', { class: 'settings__col' },
       accountCard(),
       installCard(),
+      reminderCard(),
       themeSection()),
      h('div', { class: 'settings__col' },
     h('form', { class: 'form', novalidate: true, onsubmit: submit },

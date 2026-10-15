@@ -1,0 +1,89 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { buildReminderSummary, validateReminderTime, REMINDER_DAYS, DEFAULT_REMINDER_TIME } from '../../src/app/reminder.js';
+import { validHabit, TODAY } from './helpers.js';
+
+const daily = { type: 'weekdays', weekdays: [0, 1, 2, 3, 4, 5, 6] };
+const habit = (id, schedule, over = {}) => validHabit({ id, name: id, schedules: [{ effectiveFrom: '2026-10-01', schedule }], ...over });
+const snapshot = (over = {}) => ({ habits: [], checkIns: [], pauses: [], dayPlans: [], ...over });
+const settings = { displayName: '  Remco ', timezone: 'Europe/Amsterdam', dayStartHour: 4 };
+
+test('tijdstip: HH:MM, en niet vóór het begin van je dag', () => {
+  assert.equal(DEFAULT_REMINDER_TIME, '08:00');
+  assert.equal(validateReminderTime('08:00', 4), null);
+  assert.equal(validateReminderTime('04:00', 4), null);
+  assert.equal(validateReminderTime('03:59', 4), 'before_day_start');
+  assert.equal(validateReminderTime('00:30', 0), null);
+  for (const bad of ['8:00', '24:00', '08:60', '', null, undefined, '08:00:00', 'ochtend']) assert.equal(validateReminderTime(bad, 4), 'invalid', String(bad));
+});
+
+test('samenvatting: een paar getallen per dag, voor vandaag en de week erna, met de voornaam', () => {
+  const summary = buildReminderSummary({ snapshot: snapshot({ habits: [habit('A', daily), habit('B', daily)] }), today: TODAY, settings });
+  assert.equal(summary.name, 'Remco');
+  assert.equal(Object.keys(summary.days).length, REMINDER_DAYS);
+  assert.deepEqual(Object.keys(summary.days)[0], TODAY);
+  assert.deepEqual(summary.days[TODAY], [2, 0]);
+  assert.deepEqual(summary.days['2026-10-21'], [2, 0]);
+});
+
+test('samenvatting: gedaan telt nog mee als gepland; een gewoonte die op vaste weekdagen valt telt alleen die dagen', () => {
+  const weekdaysOnly = { type: 'weekdays', weekdays: [0, 1, 2, 3, 4] }; // ma-vr; TODAY is donderdag, 17 okt is zaterdag... (zie hieronder)
+  const view = buildReminderSummary({
+    snapshot: snapshot({
+      habits: [habit('Werk', weekdaysOnly)],
+      checkIns: [{ habitId: 'Werk', date: TODAY, status: 'done' }],
+    }),
+    today: TODAY, settings,
+  });
+  assert.deepEqual(view.days[TODAY], [1, 0], 'vandaag gedaan, maar het stond wel gepland');
+  assert.deepEqual(view.days['2026-10-16'], [1, 0], 'vrijdag');
+  assert.deepEqual(view.days['2026-10-17'], [0, 0], 'zaterdag');
+  assert.deepEqual(view.days['2026-10-18'], [0, 0], 'zondag');
+  assert.deepEqual(view.days['2026-10-19'], [1, 0], 'maandag');
+});
+
+test('samenvatting: de stapel telt alleen taken waar nog iets aan moet gebeuren', () => {
+  const twice = { type: 'times_per_period', period: 'week', count: 2 };
+  const once = { type: 'times_per_period', period: 'week', count: 1 };
+  const summary = buildReminderSummary({
+    snapshot: snapshot({
+      habits: [habit('Hardlopen', twice), habit('Gitaar', once)],
+      checkIns: [{ habitId: 'Gitaar', date: '2026-10-13', status: 'done' }], // dinsdag: weekdoel van Gitaar gehaald
+    }),
+    today: TODAY, settings,
+  });
+  assert.deepEqual(summary.days[TODAY], [0, 1], 'alleen Hardlopen ligt nog in de stapel');
+});
+
+test('samenvatting: een gepauzeerde gewoonte telt niet mee', () => {
+  const summary = buildReminderSummary({
+    snapshot: snapshot({
+      habits: [habit('Water', daily)],
+      pauses: [{ id: 'p1', habitId: 'Water', from: '2026-10-10', to: null }],
+    }),
+    today: TODAY, settings,
+  });
+  assert.deepEqual(summary.days[TODAY], [0, 0]);
+});
+
+test('samenvatting: zonder gewoontes of naam geeft nullen en een lege naam, zonder fouten', () => {
+  const summary = buildReminderSummary({ snapshot: snapshot(), today: TODAY, settings: {} });
+  assert.equal(summary.name, '');
+  assert.ok(Object.values(summary.days).every((pair) => pair[0] === 0 && pair[1] === 0));
+});
+
+test('samenvatting: blijft klein genoeg voor de database (4000 tekens)', () => {
+  const habits = Array.from({ length: 40 }, (_, i) => habit(`h${i}`, daily));
+  const summary = buildReminderSummary({ snapshot: snapshot({ habits }), today: TODAY, settings: { displayName: 'x'.repeat(100) } });
+  assert.ok(JSON.stringify(summary).length < 600);
+  assert.equal(summary.name.length, 30);
+});
+
+test('base64UrlToBytes: zet een VAPID-sleutel om naar 65 bytes die met 0x04 beginnen', async () => {
+  const { base64UrlToBytes } = await import('../../src/app/reminder.js');
+  const key = 'BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8';
+  const bytes = base64UrlToBytes(key);
+  assert.equal(bytes.length, 65);
+  assert.equal(bytes[0], 4);
+  assert.equal(Buffer.from(bytes).toString('base64url'), key);
+});

@@ -1,6 +1,6 @@
 # Privacyverklaring Habit Builder
 
-Laatst bijgewerkt: 15 oktober 2026
+Laatst bijgewerkt: 16 oktober 2026 (ochtendherinnering toegevoegd)
 
 Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen bedrijf). Hij is verantwoordelijk voor de gegevens die je in de app invult. Contact: **remco.volkers1@gmail.com**.
 
@@ -20,7 +20,8 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 **Met een account** komt daar bij:
 - je **e-mailadres** (bij inloggen met Google ook de naam en profielfoto-URL die Google meestuurt; de app gebruikt die niet);
 - een **kopie van de gegevens hierboven** op de server, gekoppeld aan jouw account en alleen voor jou leesbaar;
-- technische gegevens die nodig zijn om in te loggen (een sessiesleutel in je browser).
+- technische gegevens die nodig zijn om in te loggen (een sessiesleutel in je browser);
+- **alleen als je de ochtendherinnering aanzet**, per apparaat: het adres waar je browser meldingen naartoe laat sturen (met de sleutels om die versleuteld te sturen), het tijdstip dat je koos, je tijdzone, je voornaam, en per dag van de komende week twee getallen: hoeveel gewoontes er gepland staan en hoeveel taken er in je stapel liggen. **De namen van je gewoontes horen daar niet bij.**
 
 Je habit-namen, cues, "waarom"-teksten, notities en reviews zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
 
@@ -37,6 +38,7 @@ Alleen met de diensten die de app laten draaien (verwerkers):
 | **Supabase** | opslag van je account en gegevens, en het inloggen |
 | **Google** | inloggen met Google, en het versturen van de inlogcode per e-mail (via Gmail) |
 | **GitHub** | het aanbieden van de app zelf (GitHub Pages); GitHub ziet daarbij je IP-adres zoals bij elke website |
+| **De meldingsdienst van je browser** (bij Chrome en Android: Google, bij Edge: Microsoft, bij Firefox: Mozilla) | het afleveren van de ochtendmelding, alleen als je die aanzet. De inhoud is versleuteld; de dienst ziet dat er een melding voor jouw apparaat is, niet wat erin staat |
 
 Verder niemand, tenzij een wet dat afdwingt.
 

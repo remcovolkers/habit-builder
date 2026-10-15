@@ -27,6 +27,22 @@ export function onAccountChanged(listener) {
   return () => events.removeEventListener('account', listener);
 }
 
+// Onderdelen die iets moeten opruimen vóór uitloggen of account verwijderen (bv. de herinnering van dit apparaat).
+const beforeLeave = new Set();
+export function onBeforeLeave(handler) {
+  beforeLeave.add(handler);
+  return () => beforeLeave.delete(handler);
+}
+async function runBeforeLeave() {
+  for (const handler of beforeLeave) {
+    try {
+      await handler();
+    } catch (error) {
+      console.warn('opruimen mislukt', error);
+    }
+  }
+}
+
 let engine = null;
 let started = false;
 let debounce = null;
@@ -201,6 +217,7 @@ export async function prepareSignOut() {
 
 export async function signOut() {
   const store = state.repo.store;
+  await runBeforeLeave(); // nog ingelogd: dan kan de server-kant van de herinnering netjes weg
   await wipeLocalData(store);
   await auth.signOutLocal();
   detach();
@@ -209,7 +226,8 @@ export async function signOut() {
 }
 
 export async function deleteAccount() {
-  await auth.deleteMyAccount();
+  await auth.deleteMyAccount(); // de rijen op de server verdwijnen mee (cascade)
+  await runBeforeLeave();
   await unlinkAccount(state.repo.store); // de data op dit apparaat blijft, maar is weer "anoniem"
   detach();
   notifyChanged();

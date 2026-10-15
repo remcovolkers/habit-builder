@@ -332,6 +332,42 @@ export const nl = {
     iosText: 'Tik in Safari op de knop Delen en kies "Zet op beginscherm". Daarna werkt de app ook zonder internet.',
   },
 
+  reminder: {
+    title: 'Ochtendherinnering',
+    hint: 'Elke ochtend een melding met wat er die dag op je lijst staat. Je stelt dit per apparaat in.',
+    privacy: 'De melding komt van onze server. Die kent je voornaam, je tijdstip en tijdzone, en per dag hoeveel gewoontes er gepland staan. De namen van je gewoontes blijven bij jou.',
+    time: 'Tijdstip',
+    timeErrors: {
+      invalid: 'Kies een tijd, bijvoorbeeld 08:00.',
+      before_day_start: (hour) => `Kies een tijd vanaf ${String(hour).padStart(2, '0')}:00; daarvoor is het nog de vorige dag.`,
+    },
+    timeSaved: 'Tijdstip opgeslagen.',
+    enable: 'Herinnering aanzetten',
+    disable: 'Herinnering uitzetten',
+    status: (time) => `Aan: elke dag rond ${time}.`,
+    test: 'Stuur een testmelding',
+    testSent: 'Testmelding verstuurd. Die komt zo binnen.',
+    testFailed: {
+      not_deployed: 'De herinnering is nog niet klaargezet op de server (de functie ontbreekt).',
+      not_configured: 'De server mist nog instellingen voor de herinnering.',
+      no_device: 'Dit apparaat staat niet (meer) bij de server. Zet de herinnering uit en weer aan.',
+      push_failed: 'De server kon de melding niet afleveren. Probeer het zo nog eens.',
+      unknown: 'De testmelding is niet gelukt. Ben je online?',
+    },
+    enabled: 'Herinnering staat aan.',
+    disabled: 'Herinnering staat uit.',
+    errors: {
+      denied: 'Meldingen zijn geblokkeerd voor deze app. Zet ze aan in de instellingen van je browser of telefoon en probeer het opnieuw.',
+      failed: 'Aanzetten is niet gelukt. Probeer het later nog eens.',
+      offline: 'Je bent offline. Probeer het opnieuw zodra je internet hebt.',
+    },
+    unavailable: {
+      unsupported: 'Deze browser kan geen meldingen sturen. Op Android werkt het in Chrome.',
+      signedOut: 'Log in om de ochtendherinnering te gebruiken; de melding wordt vanaf de server verstuurd.',
+      denied: 'Meldingen zijn geblokkeerd voor deze app. Zet ze aan in de instellingen van je browser of telefoon.',
+    },
+  },
+
   login: {
     title: 'Inloggen',
     kicker: 'Account',

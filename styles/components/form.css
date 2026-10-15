@@ -467,3 +467,7 @@ select.input {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }
+
+.reminder-card .field {
+  margin-top: var(--space-4);
+}

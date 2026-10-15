@@ -34,7 +34,7 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | IndexedDB-migraties (v1 naar v2 naar v3) getest | klaar |
 | M4 Supabase, auth (Google + e-mailcode), sync, keepalive | klaar en op het echte project getest |
 | M5 PWA: manifest, icoon, offline start, updatemelding, installatieknop | klaar |
-| M7 ochtendherinnering (Web Push) | open |
+| M7 ochtendherinnering (Web Push): code, tests en stappenplan klaar; wacht op de server-inrichting (`docs/M7-SETUP.md`) en een test op een echte telefoon | in uitvoering |
 
 ## 2. Gewoontetheorie die in het product zit
 

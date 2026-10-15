@@ -53,7 +53,18 @@ test('R3: de service-role key staat nergens in de repo', () => {
       try { return walk(join(ROOT, d)); } catch { return []; }
     })
     .filter((f) => !f.endsWith('guardrails.test.js'));
-  const offenders = files.filter((f) => /service_role|sb_secret_/i.test(readFileSync(f, 'utf8')));
+  // De Edge Function leest de sleutel uit de omgeving van de server; alleen de NAAM van die variabele mag in de repo staan.
+  const offenders = files.filter((f) => /service_role|sb_secret_/i.test(readFileSync(f, 'utf8').replaceAll('SUPABASE_SERVICE_ROLE_KEY', '')));
+  assert.deepEqual(offenders.map((f) => relative(ROOT, f)), []);
+});
+
+test('R3: de naam van de service-sleutel komt alleen voor in de Edge Function, haar tests en de documentatie — nooit in de app', () => {
+  const clientSide = ['src', 'tools', 'styles', 'vendor']
+    .flatMap((d) => {
+      try { return walk(join(ROOT, d)); } catch { return []; }
+    })
+    .concat(join(ROOT, 'index.html'), join(ROOT, 'sw.js'), join(ROOT, 'manifest.webmanifest'));
+  const offenders = clientSide.filter((f) => readFileSync(f, 'utf8').includes('SUPABASE_SERVICE_ROLE_KEY'));
   assert.deepEqual(offenders.map((f) => relative(ROOT, f)), []);
 });
 

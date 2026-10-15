@@ -58,3 +58,42 @@ async function respond(request) {
     return Response.error();
   }
 }
+
+// ---- Ochtendherinnering (Web Push) -------------------------------------------------------------------------------
+// De server stuurt een versleuteld bericht { title, body, url }. Elke push móét een zichtbare melding opleveren
+// (userVisibleOnly): ook als het bericht onleesbaar is, tonen we de algemene tekst.
+const REMINDER_TAG = 'morning-reminder';
+
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+  const text = (value, fallback) => (typeof value === 'string' && value.trim() !== '' ? value.slice(0, 200) : fallback);
+  event.waitUntil(self.registration.showNotification(text(data.title, 'Habit Builder'), {
+    body: text(data.body, 'Bekijk wat er vandaag op je lijst staat.'),
+    icon: 'icons/icon-192.png',
+    tag: REMINDER_TAG, // een nieuwe melding vervangt de vorige in plaats van te stapelen
+    lang: 'nl',
+    data: { url: typeof data.url === 'string' ? data.url : './#/today' },
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  // alleen adressen binnen de app: een bericht mag nooit naar een andere site sturen
+  const target = new URL(event.notification.data?.url ?? './#/today', self.registration.scope);
+  const inApp = target.origin === self.location.origin ? target.href : new URL('./#/today', self.registration.scope).href;
+  event.waitUntil((async () => {
+    const open = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const existing = open.find((client) => new URL(client.url).origin === self.location.origin);
+    if (existing) {
+      await existing.focus();
+      if ('navigate' in existing) await existing.navigate(inApp).catch(() => {});
+      return;
+    }
+    await self.clients.openWindow(inApp);
+  })());
+});
