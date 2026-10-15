@@ -1,6 +1,6 @@
 # Sociaal: vrienden en ranglijst – analyse en requirements
 
-Status: **gebouwd, versie 1.1** · ontworpen 2026-10-15 · branch `feature/vrienden` · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
+Status: **gebouwd, versie 1.1** · ontworpen 2026-10-15 · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
 
 ## 1. Doel
 
