@@ -14,14 +14,30 @@
   box-shadow: var(--shadow-sheet);
 }
 
-.dialog::before {
+.dialog {
+  touch-action: pan-y; /* scrollen kan, naar de zijkant slepen niet; het handvat en de titel hieronder regelen het slepen zelf */
+}
+
+/* het handvat bovenaan: een streepje, met een ruime tikzone om het blad aan naar beneden te slepen */
+.dialog__grab {
+  display: grid;
+  place-items: center;
+  height: 1.75rem;
+  margin: calc(-1 * var(--space-2)) 0 var(--space-1);
+  touch-action: none;
+  cursor: grab;
+}
+
+.dialog__grab::before {
   content: "";
-  display: block;
   width: 2.5rem;
   height: 4px;
-  margin: 0 auto var(--space-4);
   background: var(--color-hairline-strong);
   border-radius: var(--radius-full);
+}
+
+.dialog__title {
+  touch-action: none; /* ook aan de titel is het blad naar beneden te slepen */
 }
 
 .dialog::backdrop {

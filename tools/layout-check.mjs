@@ -166,6 +166,46 @@ async function main() {
     const after = await ev(`({ closed: !document.querySelector('dialog'), label: document.querySelector('#iconTrigger').getAttribute('aria-label'), focus: document.activeElement?.id })`);
     check(`${label}: kiezen sluit het blad, zet het icoon en geeft de focus terug aan de knop`, after.closed && /Gitaar spelen/.test(after.label) && after.focus === 'iconTrigger', JSON.stringify(after));
   }
+  // het blad sluit door buiten het blad te tikken en door het aan het handvat naar beneden te slepen; een klein stukje slepen veert terug
+  const mouse = (type, x, y) => send('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mouseReleased' ? 0 : 1, clickCount: 1 });
+  const drag = async (x, y, dy) => {
+    await mouse('mousePressed', x, y);
+    for (let step = 1; step <= 8; step += 1) { await mouse('mouseMoved', x, y + (dy * step) / 8); await sleep(15); }
+    await mouse('mouseReleased', x, y + dy);
+    await sleep(500);
+  };
+  const openPicker = async () => {
+    await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
+    await nav('habits/new');
+    await ev(`document.querySelector('#iconTrigger').click()`);
+    await sleep(400);
+    return ev(`(() => { const d = document.querySelector('dialog.dialog--picker'); const g = d.querySelector('.dialog__grab').getBoundingClientRect(); const r = d.getBoundingClientRect(); return { x: Math.round(g.left + g.width / 2), y: Math.round(g.top + g.height / 2), top: Math.round(r.top), h: Math.round(r.height) }; })()`);
+  };
+  const pickerOpen = () => ev(`!!document.querySelector('dialog.dialog--picker[open]')`);
+  let at = await openPicker();
+  await mouse('mousePressed', 195, 12);
+  await mouse('mouseReleased', 195, 12);
+  await sleep(300);
+  check('het blad sluit door op het donkere vlak erbuiten te tikken', !(await pickerOpen()), JSON.stringify(at));
+  at = await openPicker();
+  await mouse('mousePressed', at.x, at.top + 200);
+  await mouse('mouseReleased', at.x, at.top + 200);
+  await sleep(300);
+  check('een tik op het blad zelf sluit het niet', await pickerOpen());
+  await drag(at.x, at.y, 40);
+  const back = await ev(`({ open: !!document.querySelector('dialog.dialog--picker[open]'), transform: document.querySelector('dialog.dialog--picker')?.style.transform })`);
+  check('een klein stukje naar beneden slepen veert terug', back.open && back.transform === '', JSON.stringify(back));
+  await drag(at.x, at.y, Math.round(at.h * 0.5));
+  check('ver naar beneden slepen aan het handvat sluit het blad', !(await pickerOpen()));
+  at = await openPicker();
+  const title = await ev(`(() => { const r = document.querySelector('dialog.dialog--picker .dialog__title').getBoundingClientRect(); return { x: Math.round(r.left + 20), y: Math.round(r.top + r.height / 2) }; })()`);
+  await drag(title.x, title.y, Math.round(at.h * 0.5));
+  check('slepen aan de titel sluit het blad ook', !(await pickerOpen()));
+  at = await openPicker();
+  const scroll = await ev(`(() => { const l = document.querySelector('.icon-picker__list'); return { scrollable: l.scrollHeight > l.clientHeight, grabTop: document.querySelector('.dialog__grab').getBoundingClientRect().top }; })()`);
+  await ev(`document.querySelector('.icon-picker__list').scrollTop = 600`);
+  const scrolled = await ev(`document.querySelector('.dialog__grab').getBoundingClientRect().top`);
+  check('de lijst scrolt in het blad en het handvat blijft op zijn plek', scroll.scrollable && Math.abs(scrolled - scroll.grabTop) < 1, JSON.stringify({ scroll, scrolled }));
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await nav('habits/new');
   await ev(`document.querySelector('#iconTrigger').click()`);

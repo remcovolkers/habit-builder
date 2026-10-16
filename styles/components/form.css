@@ -649,23 +649,36 @@ select.input {
   }
 }
 
-/* het blad met alle iconen: scrolt zelf, het zoekveld blijft bovenaan staan */
-.dialog--picker {
+/* het blad met alle iconen: handvat, titel en zoekveld blijven staan, de lijst met iconen scrolt */
+.dialog--picker[open] {
+  display: flex;
+  flex-direction: column;
   max-height: 88svh;
+  overflow: hidden;
+}
+
+.dialog--picker .icon-picker {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.icon-picker__list {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
 .dialog--picker .dialog__actions {
+  flex: none;
   margin-top: var(--space-3);
 }
 
 .icon-picker__search {
-  position: sticky;
-  top: calc(-1 * var(--space-3));
-  z-index: 1;
+  flex: none;
   padding-block: var(--space-2);
-  background: var(--color-elevated);
 }
 
 .icon-picker__group {
