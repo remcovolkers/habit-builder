@@ -7,7 +7,7 @@ export const MAX_ICON_BYTES = 6000;
 export const ALL_ICON_KEYS = Object.freeze([...ICONS.map((icon) => icon.key), ...UI_ICON_KEYS]);
 const KEYS = new Set(ALL_ICON_KEYS);
 const ORDER = new Map(ALL_ICON_KEYS.map((key, i) => [key, i]));
-const ROOT_SKIP = new Set(['id', 'xmlns', 'xmlns:xlink', 'viewbox', 'width', 'height', 'class', 'version', 'x', 'y', 'style']);
+const ROOT_SKIP = new Set(['id', 'preserveaspectratio', 'xmlns', 'xmlns:xlink', 'viewbox', 'width', 'height', 'class', 'version', 'x', 'y', 'style']);
 const COLOR_ATTRS = ['fill', 'stroke', 'stop-color', 'color', 'flood-color'];
 const OK_COLOR = /^(none|currentColor|inherit|transparent|var\(.+\))$/;
 
@@ -66,10 +66,18 @@ export function validateIconSvg(key, svg) {
   return [...new Set(problems)];
 }
 
-/** Haalt de iconen uit een HTML-pagina van Moda: elke `<svg id="icon-<sleutel>" …>…</svg>`. Geeft een Map sleutel → svg. */
+/**
+ * Haalt de iconen uit een HTML-pagina van Moda: elke `<svg id="icon-<sleutel>" …>…</svg>`, of een `<symbol id="icon-<sleutel>" …>…</symbol>`
+ * (dat wordt een svg met dezelfde kenmerken). Komt een sleutel vaker voor, dan wint de laatste. Geeft een Map sleutel → svg.
+ */
 export function extractIcons(html) {
   const found = new Map();
-  for (const match of String(html).matchAll(/<svg\b[^>]*\bid\s*=\s*"icon-([a-z0-9-]+)"[^>]*>[\s\S]*?<\/svg>/gi)) found.set(match[1], match[0]);
+  const text = String(html);
+  for (const match of text.matchAll(/<svg\b[^>]*\bid\s*=\s*"icon-([a-z0-9-]+)"[^>]*>[\s\S]*?<\/svg>/gi)) found.set(match[1], match[0]);
+  for (const match of text.matchAll(/<symbol\b([^>]*\bid\s*=\s*"icon-([a-z0-9-]+)"[^>]*)>([\s\S]*?)<\/symbol>/gi)) {
+    const attrs = Object.entries(attributesOf(match[1])).filter(([name]) => name !== 'id' && !name.startsWith('xmlns')).map(([name, value]) => ` ${name === 'viewbox' ? 'viewBox' : name}="${value}"`).join('');
+    found.set(match[2], `<svg id="icon-${match[2]}" xmlns="http://www.w3.org/2000/svg"${attrs}>${match[3]}</svg>`);
+  }
   return found;
 }
 

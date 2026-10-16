@@ -15,7 +15,7 @@ De set is **109 iconen**: 60 voor habits en 49 voor prestaties, tips en twee tek
 ## Werkwijze
 1. Open het Moda-gesprek waarin de eerste 12 zijn gemaakt (zo kent Moda de stijl al) en plak de **eerste prompt**. Staat dat gesprek er niet meer, plak hem dan in een nieuw gesprek en geef de bestaande `index.html` uit `moda-themes/icons/` erbij als voorbeeld.
 2. Keur de stijl van de batch goed of vraag bij. Plak daarna **batch 2, 3 en 4** in hetzelfde gesprek. Vier batches van ± 25 houden de stijl gelijk en de kwaliteit hoog.
-3. Zet wat Moda geeft in **`moda-themes/icons/`**: de HTML-pagina's (bijvoorbeeld `batch-1.html`) en/of de losse `<sleutel>.svg`-bestanden. Submappen mogen. Overschrijven mag: komt een sleutel in meer bestanden voor, dan wint het laatst gewijzigde.
+3. Download **één HTML-bestand per batch** (de prompts vragen daarom om precies één bestand, zonder losse iconen) en zet het in **`moda-themes/icons/`**, bijvoorbeeld als `batch-1.html`. Losse `<sleutel>.svg`-bestanden werken ook, maar zijn niet nodig. Submappen mogen. Overschrijven mag: komt een sleutel in meer bestanden voor, dan wint het laatst gewijzigde.
 4. Zeg het, of draai zelf `npm run icons:build`. Dat controleert elk icoon (viewBox, geen scripts, geen vaste kleuren, formaat), bouwt `icons/set.svg` en meldt welke sleutels nog ontbreken. Een icoon dat in de set staat vervangt direct de emoji in de app; wat ontbreekt blijft emoji tot het er is.
 5. Een nieuwe sleutel (bijvoorbeeld bij een nieuwe prestatie) voeg je toe in `src/content/icons.js` of `src/content/ui-icons.js` en in de tabellen hieronder; een test bewaakt dat ze gelijk blijven.
 
@@ -200,10 +200,12 @@ Draw these 22:
 - `vitamins`: a vitamin pill bottle or citrus slice
 - `no-smoking`: a cigarette crossed out
 
-## Deliverable
-1. **One self-contained HTML page** with all icons of this batch: a grid of tiles, each showing the icon at 24px and 40px with its key under it, on the dark card color and on a bright accent disc. Every icon is an inline `<svg id="icon-<key>" viewBox="0 0 24 24">`.
-2. If you can, also export **each icon as a separate file named `<key>.svg`** (for example `walk.svg`).
-3. Name every icon by its **key, exactly as listed**. The key is the contract with my code: do not rename, merge or skip keys. If a key makes no sense in this style, keep the key and draw the closest sensible idea.
+## Deliverable: ONE html file per batch, nothing else
+I will download a single file, so please give me **exactly one self-contained HTML file** for this batch (named `batch-N.html`), and **no separate icon files, no zip, no folder**. Inside that one file:
+1. **The icon sources, defined once each**, in a hidden container at the top of the body: `<div hidden>` with one `<svg id="icon-<key>" viewBox="0 0 24 24">...</svg>` per icon (key exactly as listed). This is the only place the real artwork lives; my build tool reads these elements.
+2. **The preview, using those definitions**: a grid of tiles that show every icon via `<svg><use href="#icon-<key>"/></svg>` (never a second copy of the artwork), at 24px and 40px with the key under it, on three surfaces: the dark theme card (`#18181a`, accent `#29ffb9`), the blue theme card (`#22307a`, accent `#ffcb05`), and a bright accent disc with a dark glyph (medal). Set the surface colors with CSS (`color` for the icon and `--icon-accent` for the accent) so the same SVG is seen in both themes.
+3. A short paragraph with the style rules used.
+Name every icon by its **key, exactly as listed**. The key is the contract with my code: do not rename, merge or skip keys. If a key makes no sense in this style, keep the key and draw the closest sensible idea.
 
 ---
 
@@ -211,7 +213,7 @@ Draw these 22:
 
 ---
 
-Approved. Now batch 2 of 4: **26 habit icons (part 2)**, in exactly the same style as the earlier icons (same stroke, same corner treatment, same one-accent rule, same optical size). Same technical rules and same deliverable as before; repeat 3 of the approved icons at the start of the page for comparison.
+Approved. Now batch 2 of 4: **26 habit icons (part 2)**, in exactly the same style as the earlier icons (same stroke, same corner treatment, same one-accent rule, same optical size). Same rules as before. Deliver **one single HTML file `batch-2.html`** (icons defined once in a hidden container as `<svg id="icon-<key>">`, preview tiles using `<use href="#icon-<key>">`, on the dark card, the blue card and the bright medal disc), no separate files; repeat 3 of the approved icons at the start of the preview for comparison.
 
 Draw these 26:
 - `brain`: a brain
@@ -249,7 +251,7 @@ Draw these 26:
 
 Approved. Now batch 3 of 4: **23 icons for achievements, tips and two signs**, in exactly the same style as the earlier icons (same stroke, same corner treatment, same one-accent rule, same optical size).
 
-This batch moves into the **medal context** described at the start (achievements are shown dark on a bright accent disc at about 36px; tips at 28px in the accent color; `ui-streak` at 16px inline; `ui-celebrate` at 40px). Show them in those contexts on the page. Same technical rules and same deliverable as before; repeat 3 of the approved icons at the start of the page for comparison.
+This batch moves into the **medal context** described at the start (achievements are shown dark on a bright accent disc at about 36px; tips at 28px in the accent color; `ui-streak` at 16px inline; `ui-celebrate` at 40px). Show them in those contexts on the page. Same rules as before. Deliver **one single HTML file `batch-3.html`** (icons defined once in a hidden container as `<svg id="icon-<key>">`, preview tiles using `<use href="#icon-<key>">`, on the dark card, the blue card and the bright medal disc), no separate files; repeat 3 of the approved icons at the start of the preview for comparison.
 
 Draw these 23:
 - `ach-first-checkin`: a seedling breaking through the soil, or a first footstep
@@ -284,7 +286,7 @@ Draw these 23:
 
 Approved. Now batch 4 of 4: **26 icons for the planned achievements**, in exactly the same style as the earlier icons (same stroke, same corner treatment, same one-accent rule, same optical size).
 
-Same medal context as batch 3. The `ach-done-*` and `ach-streak-*` keys are progressions: draw each series as one motif that grows. Same technical rules and same deliverable as before; repeat 3 of the approved icons at the start of the page for comparison.
+Same medal context as batch 3. The `ach-done-*` and `ach-streak-*` keys are progressions: draw each series as one motif that grows. Same rules as before. Deliver **one single HTML file `batch-4.html`** (icons defined once in a hidden container as `<svg id="icon-<key>">`, preview tiles using `<use href="#icon-<key>">`, on the dark card, the blue card and the bright medal disc), no separate files; repeat 3 of the approved icons at the start of the preview for comparison.
 
 Draw these 26:
 - `ach-done-10`: a check mark in a simple ring

@@ -162,12 +162,16 @@ test('validateIconSvg: keurt af wat niet in de set hoort', () => {
   bad(GOOD.replace('<path', `<path d="${'M0 0'.repeat(MAX_ICON_BYTES)}"/><path`), /te groot/);
 });
 
-test('extractIcons haalt <svg id="icon-sleutel"> uit de pagina van Moda', () => {
+test('extractIcons haalt <svg id="icon-sleutel"> en <symbol id="icon-sleutel"> uit de pagina van Moda', () => {
   const html = `<html><body><div><svg id="icon-water" viewBox="0 0 24 24"><path d="M1 1"/></svg><span>water</span></div>
-    <svg class="x" viewBox="0 0 24 24"><path d="M2 2"/></svg><svg id="icon-no-sugar" viewBox="0 0 24 24"><path d="M3 3"/></svg></body></html>`;
+    <svg class="x" viewBox="0 0 24 24"><path d="M2 2"/></svg><svg id="icon-no-sugar" viewBox="0 0 24 24"><path d="M3 3"/></svg>
+    <svg hidden><symbol id="icon-walk" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4"/></symbol></svg>
+    <svg><use href="#icon-walk"/></svg></body></html>`;
   const found = extractIcons(html);
-  assert.deepEqual([...found.keys()], ['water', 'no-sugar']);
+  assert.deepEqual([...found.keys()].sort(), ['no-sugar', 'walk', 'water']);
   assert.match(found.get('water'), /M1 1/);
+  assert.equal(found.get('walk'), '<svg id="icon-walk" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4"/></svg>');
+  assert.deepEqual(validateIconSvg('walk', found.get('walk')), []);
 });
 
 test('buildSprite: een symbol per icoon in de volgorde van de catalogus, met de tekenkenmerken van de svg', () => {
