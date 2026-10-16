@@ -13,7 +13,7 @@ Een thema delen kan met een link: `https://remcovolkers.github.io/habit-builder/
 
 | Onderdeel | Plek |
 |---|---|
-| Ontwerpbronnen van Moda | niet bewaard in de repository (de ontwerpen van `v0lky1` en `mel` staan in de git-geschiedenis, vóór het commit "moda-themes opgeruimd"); alleen de iconenbron staat er nog, in `moda-themes/icons/` |
+| Ontwerpbronnen van Moda | niet bewaard in de repository (de ontwerpen van `v0lky1` en `mel` staan in de git-geschiedenis, vóór het commit "moda-themes opgeruimd"); alleen de iconenbron staat er nog, in `docs/icons/` |
 | Register: id, naam, themakleur, kleurstalen, illustraties per plek | `src/app/themes.js` |
 | Kleuren, achtergrond, gloed (alle tokens) | `styles/themes/<id>.css`, gekozen via `data-theme` op `<html>` |
 | Structuur: typografie, ruimte, vorm, maten | `styles/tokens.css` (voor alle thema's gelijk) |
@@ -21,7 +21,7 @@ Een thema delen kan met een link: `https://remcovolkers.github.io/habit-builder/
 | Toepassen (kenmerk, browserkleur, logo) | `src/ui/theme.js` |
 | Illustratie voor een plek in het huidige thema | `src/ui/components/mascot.js` |
 | Illustraties zelf (gepubliceerd) | `themes/<id>/…` |
-| Iconen (habits, prestaties, tips): **één set voor alle thema's**, kleuren uit het thema | `icons/set.svg`, gebouwd uit `moda-themes/icons/` met `npm run icons:build`; zie [MODA-ICONS.md](MODA-ICONS.md) |
+| Iconen (habits, prestaties, tips): **één set voor alle thema's**, kleuren uit het thema | `icons/set.svg`, gebouwd uit `docs/icons/` met `npm run icons:build`; zie [MODA-ICONS.md](MODA-ICONS.md) |
 
 ## Een nieuw thema toevoegen
 

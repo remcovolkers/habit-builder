@@ -25,7 +25,7 @@ npm run stage   # kopieert de publiceerbare bestanden naar _site/ en vult de ser
 | `src/content/` | Teksten (`nl.js`), tips en achievement-definities. |
 | `styles/` | `tokens.css` (structuur), `themes/` (kleuren per thema), component- en view-CSS en `layout.css` (tablet- en desktopindeling; mobiel eerst). |
 | `fonts/` | Lokale lettertypen (Manrope, Chakra Petch); zie `fonts/README.md`. |
-| `moda-themes/icons/` | De bron van de iconenset van Moda (`icons-complete.html`, niet gepubliceerd); `npm run icons:build` maakt daar `icons/set.svg` van. |
+| `docs/icons/` | De bron van de iconenset van Moda (`icons-complete.html`, niet gepubliceerd, bij de prompt in `docs/MODA-ICONS.md`); `npm run icons:build` maakt daar `icons/set.svg` van. |
 | `styles/themes/`, `themes/` | Kleuren per thema en de illustraties; zie `docs/THEMES.md`. |
 | `sw.js`, `manifest.webmanifest`, `icons/` | PWA: offline werken, installeren en iconen. `sw.js` is een sjabloon; `npm run stage` vult de bestandslijst en een versie-id in (zie `tools/lib/pwa.mjs`). |
 | `vendor/` | Vastgepinde externe code (supabase-js, als één bestand gebundeld); zie `vendor/README.md`. |

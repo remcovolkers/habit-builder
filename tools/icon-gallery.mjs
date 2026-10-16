@@ -1,6 +1,6 @@
 // Maakt een voorbeeldpagina van de hele iconenset (icons/set.svg) in de stijl van de eerste voorbeeldpagina van Moda: per icoon
 // 24, 40 en 56 px op de kaart, op de pagina, als gekozen tegel (neon gloed) en op de 8 habitkleuren, en voor prestaties ook op de medaille.
-// Gebruik: npm run icons:gallery  ->  moda-themes/icons/galerij.html (niet in git: opnieuw te maken). Zonder Moda en zonder de app.
+// Gebruik: npm run icons:gallery  ->  docs/icons/galerij.html (niet in git: opnieuw te maken). Zonder Moda en zonder de app.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,7 +9,7 @@ import { UI_ICON_GROUPS } from '../src/content/ui-icons.js';
 import { ICON_SET_KEYS } from '../src/content/icon-set.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const OUT = join(ROOT, 'moda-themes', 'icons', 'galerij.html');
+const OUT = join(ROOT, 'docs', 'icons', 'galerij.html');
 const sprite = readFileSync(join(ROOT, 'icons', 'set.svg'), 'utf8').replace('<svg xmlns="http://www.w3.org/2000/svg">', '<svg xmlns="http://www.w3.org/2000/svg" class="defs" width="0" height="0" aria-hidden="true">');
 const HABIT_COLORS = ['#29ffb9', '#2ed3c6', '#5cc8ff', '#b6f25c', '#ffc857', '#ff8a7a', '#ff7eb6', '#d9c7a3'];
 

@@ -1,15 +1,15 @@
 // Bouwt de iconenset van de app uit wat Moda aanleverde: leest alle `<sleutel>.svg`-bestanden en alle HTML-pagina's met
-// `<svg id="icon-<sleutel>">` onder moda-themes/icons/ (ook in submappen), controleert elk icoon, schrijft icons/set.svg (één sprite voor alle
+// `<svg id="icon-<sleutel>">` onder docs/icons/ (ook in submappen), controleert elk icoon, schrijft icons/set.svg (één sprite voor alle
 // thema's) en src/content/icon-set.js (welke sleutels erin staan). Gebruik: npm run icons:build [map met Moda-bestanden]
 // Komt een sleutel in meer bestanden voor, dan wint het laatst gewijzigde bestand (een herziene versie). Een deel van de set is toegestaan:
-// wat ontbreekt toont de emoji. Bij een fout wordt niets geschreven.
+// de test "de iconenset is compleet" faalt dan tot alles er is. Bij een fout wordt niets geschreven.
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ALL_ICON_KEYS, buildSprite, extractIcons, iconSetModule, normalizeIconSvg, validateIconSvg } from './lib/icons.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const SOURCE = process.argv[2] ?? join(ROOT, 'moda-themes', 'icons');
+const SOURCE = process.argv[2] ?? join(ROOT, 'docs', 'icons');
 if (!existsSync(SOURCE) || !statSync(SOURCE).isDirectory()) {
   console.error(`Map niet gevonden: ${SOURCE}\nGebruik: npm run icons:build [map met de svg-bestanden en html-pagina's van Moda]`);
   process.exit(2);

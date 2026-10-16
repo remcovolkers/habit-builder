@@ -14,4 +14,4 @@ met de SVG ingesloten). De unit-tests controleren dat de afmetingen kloppen met 
 
 ## `set.svg`: de iconenset van de app
 
-Eén sprite met een `<symbol id="<sleutel>">` per icoon (habits, prestaties, tips), voor alle thema's. **Niet met de hand bewerken**: hij wordt gebouwd door `npm run icons:build` uit de bestanden van Moda in `moda-themes/icons/`, samen met `src/content/icon-set.js`. De kleuren komen uit het thema. Zie `docs/MODA-ICONS.md`.
+Eén sprite met een `<symbol id="<sleutel>">` per icoon (habits, prestaties, tips), voor alle thema's. **Niet met de hand bewerken**: hij wordt gebouwd door `npm run icons:build` uit de bestanden van Moda in `docs/icons/`, samen met `src/content/icon-set.js`. De kleuren komen uit het thema. Zie `docs/MODA-ICONS.md`.
