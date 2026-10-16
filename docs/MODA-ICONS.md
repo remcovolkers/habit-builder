@@ -12,6 +12,9 @@ De set is **109 iconen**: 60 voor habits en 49 voor prestaties, tips en twee tek
 | 3 | bestaande prestaties (12), tips (9) en twee tekens | 23 | "Batch 3" |
 | 4 | geplande prestaties (de regels in de app volgen nog) | 26 | "Batch 4" |
 
+## Alles in één keer
+Dat kan ook: één prompt voor alle 97 iconen (zie "Alles in één keer" onderaan). Je krijgt dan één bestand. Het risico is dat de stijl naar het einde toe wegzakt of dat Moda halverwege afkapt; de prompt vraagt daarom om te stoppen bij het laatste complete icoon en te melden wat ontbreekt. **Probeer het gerust:** `npm run icons:build` controleert alles en toont precies welke sleutels ontbreken of afgekeurd zijn, en dan vraag je alleen daarvoor een vervolg. De vier batches zijn de zekere route als het één keer niet lukt.
+
 ## Werkwijze
 1. Open het Moda-gesprek waarin de eerste 12 zijn gemaakt (zo kent Moda de stijl al) en plak de **eerste prompt**. Staat dat gesprek er niet meer, plak hem dan in een nieuw gesprek en geef de bestaande `index.html` uit `moda-themes/icons/` erbij als voorbeeld.
 2. Keur de stijl van de batch goed of vraag bij. Plak daarna **batch 2, 3 en 4** in hetzelfde gesprek. Vier batches van ± 25 houden de stijl gelijk en de kwaliteit hoog.
@@ -315,5 +318,143 @@ Draw these 26:
 - `ach-friends-5`: a group of five small figures
 - `ach-graduated-2`: two trees side by side
 - `ach-graduated-5`: a small forest of five trees
+
+---
+
+## Alles in één keer (één prompt)
+Alternatief voor de vier batches. Zie de toelichting bovenaan.
+
+---
+
+# Prompt for Moda: complete the Habit Builder icon set (everything in one go: 97 icons)
+
+Continue the **icon set** of Habit Builder in this project and finish it in one go.
+
+## Where the icons are used, and the colors
+Habit Builder is a Dutch habit-tracking PWA with **two color themes** (mint on near-black, and yellow on a blue night). **There is one icon set for all themes: the colors come from the theme through CSS**, so the SVG may only use `currentColor` and `var(--icon-accent, currentColor)`. Do not make theme-specific versions, and do not use any Pokémon character, Poké Ball or trademarked logo.
+- **Habit icons** (the first two batches): 24px inside a 44px rounded tile, in the picker, on habit cards and on the habit page. `currentColor` is the light text color; the accent is the habit's own color.
+- **Achievements** (`ach-*`): inside a **64px round medal filled with the theme's bright accent color**, shown at about 36px. The app sets the icon color to the **dark on-accent color**, so a glyph must read **dark on a bright disc**. Locked achievements are greyscale by CSS, so don't draw a locked version. Where keys form a progression (`ach-done-*`, `ach-streak-*`), draw one recognizable motif that grows.
+- **Tips** (`tip-*`): about 28px in the accent color on a dark card.
+- **`ui-streak`**: inline next to text at the size of the letters (16px), so it stays simple. **`ui-celebrate`**: 40px on the "all done today" card.
+
+## The existing style (match it exactly)
+You already drew 12 icons for this set (`water`, `book`, `run`, `meditate`, `sleep`, `strength`, `clean`, `phone`, `sprout`, `tooth`, `laptop`, `dog`). Draw every new icon with the same hand, so that all icons together look like one family:
+- viewBox 0 0 24 24, artwork inside 2–22. **Lines 1.75px, round caps and round joins, fill none.**
+- Shapes: rounded rectangles (rx 1–2), circles and soft curves; straight lines only at 0/45/90°.
+- Main lines in `currentColor`; secondary details (ground line, leaf lines, motion dashes) in `currentColor` with `stroke-opacity="0.4"`.
+- **Exactly one accent per icon**, in `var(--icon-accent, currentColor)`: either a leaf (the `0 100% 0 100%` shape: two quadratic curves between opposite corners, `fill-opacity="0.3"`), or a sparkle (four-pointed star with concave curves, `fill-opacity="0.3"`), or a rune line (tick, z-mark or small arcs, line only). The accent changes place from icon to icon.
+- No glow, filters, gradients or hex colors in the SVG. Set the accent with the attributes `stroke="var(--icon-accent, currentColor)"` and `fill="var(--icon-accent, currentColor)"` on the accent element, not in a `style` attribute.
+
+## All 97 icons to draw
+**Habit icons (48):**
+- `walk`: walking legs/figure, or a footprint trail
+- `bike`: a bicycle
+- `swim`: swimmer or goggles over waves
+- `yoga`: a person in a yoga pose (tree or lotus)
+- `stretch`: a figure stretching arms overhead
+- `posture`: straight spine / a seated figure with upright back
+- `salad`: a bowl of salad/greens
+- `fruit`: an apple or a few pieces of fruit
+- `no-sugar`: a sweet/candy crossed out
+- `tea`: a cup of tea with steam
+- `cook`: a pan or pot with a spoon
+- `meal-prep`: a lunch box or containers
+- `bed`: a bed with a pillow
+- `moon`: a crescent moon and a star
+- `sunrise`: a sun rising over a horizon
+- `sun`: a sun with rays
+- `breathe`: wind/breath curls or lungs
+- `cold-shower`: a shower head with drops (and a snowflake)
+- `floss`: floss between two teeth
+- `pill`: a capsule
+- `vitamins`: a vitamin pill bottle or citrus slice
+- `no-smoking`: a cigarette crossed out
+- `brain`: a brain
+- `study`: a graduation cap or notebook and pencil
+- `language`: two speech bubbles
+- `journal`: a closed notebook with a bookmark ribbon
+- `gratitude`: a heart in hands or a heart with a sparkle
+- `note`: a note/page with a pencil
+- `focus`: a target or crosshair
+- `screen-off`: a phone with a slash
+- `plan`: a calendar with a check
+- `laundry`: a laundry basket or a garment
+- `dishes`: a plate and a sponge or bubbles
+- `tidy`: a storage box or a tidy shelf
+- `plants`: a potted plant
+- `inbox`: a tray with an arrow into it
+- `budget`: a bar chart or a coin with a chart
+- `save-money`: a piggy bank or coin dropping into a jar
+- `guitar`: a guitar
+- `piano`: a few piano keys
+- `music`: music notes
+- `paint`: a paint palette with a brush
+- `draw`: a pencil drawing a line
+- `photo`: a camera
+- `write`: a hand writing / a fountain pen
+- `family`: two big and one small figure, or a house with a heart
+- `friends`: two figures side by side
+- `outdoors`: a tree and a path or a mountain
+
+**Achievements, tips and signs (49):**
+- `ach-first-checkin`: a seedling breaking through the soil, or a first footstep
+- `ach-days-7`: a small flame
+- `ach-days-21`: a young sprig with a few leaves
+- `ach-days-42`: a young tree
+- `ach-days-66`: a trophy or laurel wreath
+- `ach-days-100`: a cut gem / diamond
+- `ach-days-365`: a crown
+- `ach-perfect-week`: a star above seven small dots in a row
+- `ach-comeback`: a plant sprouting again from a cut stem, or a returning loop arrow
+- `ach-first-graduated`: a full-grown tree with roots
+- `ach-three-active`: three linked circles
+- `ach-review-streak-4`: a notebook with four tick marks
+- `tip-planned`: a calendar page with a small starting flag
+- `tip-start-small`: a small seedling
+- `tip-dip`: a rain cloud, or a valley in a line
+- `tip-cue`: a chain link, or an anchor point
+- `tip-identity`: a compass, or a figure with a star
+- `tip-automatic`: a sparkle, or a gear that turns by itself
+- `tip-never-miss-twice`: a knot of two ropes
+- `tip-maintain`: a tree with a watering can
+- `tip-paused`: a pause symbol
+- `ui-streak`: a flame; used inline next to text at the size of the letters (16px), so it must stay simple
+- `ui-celebrate`: a leaf with a few sparkles; shown big (40px) on the 'alles gedaan' card
+- `ach-done-10`: a check mark in a simple ring
+- `ach-done-50`: the same check mark, ring with a second ring
+- `ach-done-100`: the same check mark inside a laurel
+- `ach-done-500`: the same check mark inside a laurel with small wings
+- `ach-done-1000`: the same check mark, radiant, with rays and a crown (a clear progression of the same motif)
+- `ach-streak-7`: a short chain of links
+- `ach-streak-14`: a longer chain
+- `ach-streak-30`: a long chain forming a loop
+- `ach-perfect-weeks-4`: four small stars in a row under a crown
+- `ach-recover-5`: a shield with a bounce-back arrow
+- `ach-strong-return`: a line dipping then rising steeply
+- `ach-minimal-5`: a stopwatch with a small 2
+- `ach-minimal-first`: a single small stair step with a foot
+- `ach-counter-week`: a full glass or a full gauge
+- `ach-pause-resume`: a pause symbol turning into a play triangle
+- `ach-first-review`: a notebook with a pen
+- `ach-automaticity-4`: two interlocking gears
+- `ach-why-3`: a compass with a heart at the needle
+- `ach-all-dayparts`: an arc from a sun to a moon
+- `ach-five-active`: five circles arranged as a pentagon
+- `ach-all-done-10`: a fully ticked checklist with a sparkle
+- `ach-first-friend`: two figures with a small heart between them
+- `ach-first-invite`: an envelope with a spark
+- `ach-friends-5`: a group of five small figures
+- `ach-graduated-2`: two trees side by side
+- `ach-graduated-5`: a small forest of five trees
+
+## If you run out of space
+Do not shorten or simplify icons to fit. Draw complete icons in the order above, and if you cannot finish, stop after the last **complete** icon and tell me exactly which keys are still missing, so I can ask for those next.
+
+## Deliverable: ONE html file, nothing else
+I will download a single file, so please give me **exactly one self-contained HTML file** for all icons (named `icons-complete.html`), and **no separate icon files, no zip, no folder**. Inside that one file:
+1. **The icon sources, defined once each**, in a hidden container at the top of the body: `<div hidden>` with one `<svg id="icon-<key>" viewBox="0 0 24 24">...</svg>` per icon (key exactly as listed). This is the only place the real artwork lives; my build tool reads these elements.
+2. **The preview, using those definitions**: a grid of tiles that show every icon via `<svg><use href="#icon-<key>"/></svg>` (never a second copy of the artwork), at 24px and 40px with the key under it, on three surfaces: the dark theme card (`#18181a`, accent `#29ffb9`), the blue theme card (`#22307a`, accent `#ffcb05`), and a bright accent disc with a dark glyph (medal). Set the surface colors with CSS (`color` for the icon and `--icon-accent` for the accent) so the same SVG is seen in both themes.
+3. A short paragraph with the style rules used.
+Name every icon by its **key, exactly as listed**. The key is the contract with my code: do not rename, merge or skip keys. If a key makes no sense in this style, keep the key and draw the closest sensible idea.
 
 ---
