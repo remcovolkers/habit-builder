@@ -62,7 +62,7 @@ export function todayView({ query }) {
   const date = selectedDate(query, state.today);
 
   return liveView({
-    className: 'today',
+    className: 'today page',
     load: async () => {
       const snapshot = await state.repo.snapshot();
       return {
@@ -254,13 +254,13 @@ function renderDay(view, week, attention) {
       celebrate ? h('span', { class: 'xs muted' }, nl.today.sectionCount(view.progress.done, view.progress.total)) : null)
     : null;
   const side = [sideHead, poolSection, nudge, celebrate].filter(Boolean);
-  return h('div', { class: 'today__inner' },
+  return h('div', { class: 'today__inner page__frame' },
     header(view, week),
     banner(view),
     view.groups.length === 0 && view.pool.length === 0 ? todayEmpty(view) : null,
-    h('div', { class: 'today__columns' },
-      h('div', { class: 'today__main' }, attentionSection, ...groupSections),
-      side.length > 0 ? h('div', { class: 'today__side' }, ...side) : null),
+    h('div', { class: 'today__columns page__panes' },
+      h('div', { class: 'today__main page__pane' }, attentionSection, ...groupSections),
+      side.length > 0 ? h('div', { class: 'today__side page__pane' }, ...side) : null),
     fab({ href: '#/habits/new', label: nl.habits.new }));
 }
 

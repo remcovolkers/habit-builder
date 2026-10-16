@@ -41,6 +41,7 @@ export function attentionText(signal) {
 export function openReasonSheet({ habit, current = null, onSave, extras = [] }) {
   const s = nl.attention.sheet;
   let chosen = current?.reason ?? null;
+  const noteLabel = h('label', { class: 'field__label', for: 'reasonNote' }, chosen === 'other' ? s.noteOther : s.note);
   const error = h('p', { class: 'field__error', role: 'alert', hidden: true }, s.choose);
   const noteInput = h('input', { id: 'reasonNote', type: 'text', class: 'input', value: current?.note ?? '', placeholder: s.notePlaceholder });
   const note = () => noteInput.value.trim() || null;
@@ -49,7 +50,12 @@ export function openReasonSheet({ habit, current = null, onSave, extras = [] }) 
     ...SLIP_REASONS.map((code) => h('label', { class: 'choice' },
       h('input', {
         class: 'choice__input', type: 'radio', name: 'reason', value: code, checked: code === chosen,
-        onchange: () => { chosen = code; error.hidden = true; },
+        onchange: () => {
+          chosen = code;
+          error.hidden = true;
+          noteLabel.textContent = code === 'other' ? s.noteOther : s.note;
+          if (code === 'other') noteInput.focus(); // past geen van de redenen, dan is de toelichting de reden
+        },
       }),
       h('span', { class: 'choice__face choice__face--text choice__face--reason' }, reasonLabel(code)))));
 
@@ -58,7 +64,7 @@ export function openReasonSheet({ habit, current = null, onSave, extras = [] }) 
     description: s.description,
     content: h('div', { class: 'stack' },
       group,
-      h('div', { class: 'field' }, h('label', { class: 'field__label', for: 'reasonNote' }, s.note), noteInput, charCounter(noteInput, NOTE_MAX_LENGTH)),
+      h('div', { class: 'field' }, noteLabel, noteInput, charCounter(noteInput, NOTE_MAX_LENGTH)),
       error),
     actions: [
       {

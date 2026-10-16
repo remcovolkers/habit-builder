@@ -10,6 +10,10 @@
   width: var(--size);
   height: var(--size);
   border-radius: var(--radius-full);
+  /* de kop draait mee met de voortgang: de hoeken van zijn (onzichtbare) vierkant staan dan buiten de ring en maakten de pagina breder
+     dan het scherm. De gloed van het stipje past binnen de marge. */
+  overflow: clip;
+  overflow-clip-margin: 0.5rem;
 }
 
 .ring::before {

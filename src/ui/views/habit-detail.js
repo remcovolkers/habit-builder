@@ -194,14 +194,14 @@ function renderDetail(detail) {
   };
   const tip = TIPS[detail.tipKey];
 
-  return h('div', null,
+  return h('div', { class: 'page__frame' },
     h('div', { class: 'topbar' },
       h('a', { class: 'icon-button', href: '#/habits', 'aria-label': nl.detail.back }, icon('back')),
       h('span', { class: 'kicker' }, nl.detail.kicker),
       h('a', { class: 'icon-button', href: `#/habits/${encodeURIComponent(habit.id)}/edit`, 'aria-label': nl.detail.edit }, icon('edit'))),
 
-    h('div', { class: 'detail detail--grid' },
-     h('div', { class: 'detail__primary' },
+    h('div', { class: 'detail detail--grid page__panes' },
+     h('div', { class: 'detail__primary page__pane' },
       h('section', { class: 'card card--hero' },
         mascot(`phase.${phaseKey}`, 'hero__mascot'),
         h('div', { class: 'hero__top' },
@@ -228,7 +228,7 @@ function renderDetail(detail) {
           h('span', { class: 'tile__hint' }, nl.detail.totalSince(formatDateShort(habit.startDate))))),
 
       heatmapCard(detail)),
-     h('div', { class: 'detail__secondary' },
+     h('div', { class: 'detail__secondary page__pane' },
       graduationCard(detail),
       automaticityCard(detail),
       notesCard(detail),
@@ -261,7 +261,7 @@ function renderDetail(detail) {
 
 export function habitDetailView({ id }) {
   return liveView({
-    className: 'habit-detail',
+    className: 'habit-detail page',
     load: async () => {
       const snapshot = await state.repo.snapshot();
       const habit = snapshot.habits.find((x) => x.id === id) ?? null;

@@ -36,9 +36,11 @@ export function buildAttention({ snapshot, today, prepared = null }) {
   return items.sort((a, b) => ATTENTION_KINDS.indexOf(a.signal.kind) - ATTENTION_KINDS.indexOf(b.signal.kind) || habitOrder(a, b));
 }
 
-/** Op Vandaag alleen wat nog open staat en niet al op de kaart zelf staat: stil of mislukt (niet per dag). "Te laat" heeft zijn eigen blokje. */
-export const forToday = (items) => items.filter((item) => !item.handled
-  && (item.signal.kind === 'silent' || (item.signal.kind === 'failed' && item.signal.detail.span !== 'day')));
+/** Stil, of mislukt voor een week of maand (niet de gemiste dagen van een week: die horen in de weekreview). */
+const isLoud = (signal) => signal.kind === 'silent' || (signal.kind === 'failed' && signal.detail.span !== 'day');
+
+/** Op Vandaag alleen wat nog open staat en niet al op de kaart zelf staat. "Te laat" heeft zijn eigen blokje op de kaart. */
+export const forToday = (items) => items.filter((item) => !item.handled && isLoud(item.signal));
 
 /** Hoe vaak een taak waar niet op is gereageerd opnieuw in de ochtendmelding komt: op de dag dat het signaal begon en dan elke week. */
 export const NUDGE_EVERY_DAYS = 7;
@@ -49,7 +51,7 @@ export const NUDGE_EVERY_DAYS = 7;
  */
 export function nudgesOn({ snapshot, date, prepared = null }) {
   return buildAttention({ snapshot, today: date, prepared }).filter((item) => {
-    if (item.handled || !['late', 'silent', 'failed'].includes(item.signal.kind)) return false;
+    if (item.handled || !(item.signal.kind === 'late' || isLoud(item.signal))) return false;
     const age = diffDays(date, item.signal.episode);
     return age >= 0 && age % NUDGE_EVERY_DAYS === 0;
   }).length;

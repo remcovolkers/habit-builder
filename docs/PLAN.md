@@ -223,7 +223,7 @@ Eén detector (`src/domain/attention.js`) bepaalt per taak of hij om een reactie
 
 **Eén signaal per taak:** het belangrijkste dat nog geen reactie heeft; is alles beantwoord, dan het belangrijkste dat wel is beantwoord (zodat de review ook toont wat al is afgehandeld).
 
-**Reageren.** Een reactie is een reden met één tik: *Geen tijd, Vergeten, Geen zin, Druk of ziek, Ritme klopt niet*, met een optionele toelichting (record `reasons`, één per taak per dag). Een reactie dekt alle signalen die op of vóór die dag begonnen. Een signaal dat blijft bestaan komt terug: bij "stil" elke tussentijd opnieuw (15 dagen bij 2× per maand), een nieuw signaal (bijv. een mislukte maand) meteen.
+**Reageren.** Een reactie is een reden met één tik: *Geen tijd, Geen geld, Vergeten, Geen zin, Druk of ziek, Ritme klopt niet, Anders*, met een optionele toelichting (bij *Anders* is de toelichting de reden) (record `reasons`, één per taak per dag). Een reactie dekt alle signalen die op of vóór die dag begonnen. Een signaal dat blijft bestaan komt terug: bij "stil" elke tussentijd opnieuw (15 dagen bij 2× per maand), een nieuw signaal (bijv. een mislukte maand) meteen.
 
 **Drie plekken, steeds kort en neutraal:**
 - **Vandaag, "Even kijken":** stille en mislukte taken (niet per dag) die nog geen reactie hebben, met *Nu afvinken* en *Wat hield je tegen?*. "Te laat" heeft zijn eigen blokje op de kaart van de taak.

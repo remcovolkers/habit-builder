@@ -103,7 +103,7 @@ function reviewCard(snapshot, today) {
 
 export function statsView() {
   return liveView({
-    className: 'stats',
+    className: 'stats page',
     load: () => state.repo.snapshot(),
     render: (snapshot) => {
       const { today } = state;
@@ -113,21 +113,24 @@ export function statsView() {
       const graduated = snapshot.habits.filter((habit) => habit.status === 'graduated').length;
       const active = snapshot.habits.filter((habit) => habit.status === 'active' && isTracked(habit, today)).length;
 
-      return h('div', null,
+      return h('div', { class: 'page__frame' },
         h('h1', { class: 'page-title' }, nl.stats.title),
-        h('div', { class: 'stats__columns' },
-          h('div', { class: 'stats__main' },
-            socialCard(),
-            habits.length === 0
-              ? emptyState({ art: 'stats', title: nl.stats.emptyTitle, text: nl.stats.empty, cta: { href: '#/habits/new', label: nl.habits.new } })
-              : h('div', { class: 'detail' },
-                overviewSection(snapshot, today),
-                h('section', { class: 'tiles' },
-                  h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.week), h('span', { class: 'tile__value' }, String(doneLastWeek))),
-                  h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.graduated), h('span', { class: 'tile__value' }, String(graduated)),
-                    h('span', { class: 'tile__hint' }, `${active} ${nl.stats.summary.active.toLowerCase()}`))),
-                h('ul', { class: 'card-list stats__list' }, ...habits.map((habit) => overviewRow(habit, snapshot, today))))),
-          h('div', { class: 'stats__side section' }, reviewCard(snapshot, today))));
+        h('div', { class: 'stats__columns page__panes' },
+          // op desktop blijven de vriendenkaart en het overzicht (week of maand met de datumkeuze) staan; alleen de taken eronder scrollen
+          h('div', { class: 'stats__main page__col' },
+            h('div', { class: 'page__fixed' },
+              socialCard(),
+              habits.length === 0 ? null : overviewSection(snapshot, today)),
+            h('div', { class: 'page__scroll' },
+              habits.length === 0
+                ? emptyState({ art: 'stats', title: nl.stats.emptyTitle, text: nl.stats.empty, cta: { href: '#/habits/new', label: nl.habits.new } })
+                : h('div', { class: 'detail' },
+                  h('section', { class: 'tiles' },
+                    h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.week), h('span', { class: 'tile__value' }, String(doneLastWeek))),
+                    h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.graduated), h('span', { class: 'tile__value' }, String(graduated)),
+                      h('span', { class: 'tile__hint' }, `${active} ${nl.stats.summary.active.toLowerCase()}`))),
+                  h('ul', { class: 'card-list stats__list' }, ...habits.map((habit) => overviewRow(habit, snapshot, today)))))),
+          h('div', { class: 'stats__side page__pane section' }, reviewCard(snapshot, today))));
     },
   });
 }

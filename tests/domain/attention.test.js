@@ -153,3 +153,11 @@ test('het belangrijkste signaal staat voorop', () => {
   const both = signals(habit(perMonth(2), '2026-08-01'), checks(['2026-08-20']), '2026-10-05'); // sinds 20 aug niets: stil én mislukt
   assert.deepEqual(kinds(both), ['silent', 'failed']);
 });
+
+test('een half gehaalde teller is geen gemiste dag', () => {
+  const h = habit(daily, '2026-09-01');
+  const all = ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11', '2026-10-12', '2026-10-14'];
+  const done = checks(...all.map((d) => [d]), ['2026-10-13', 'partial']); // de 13e: 5 van 8 glazen
+  assert.deepEqual(signals(h, done, '2026-10-15'), []);
+  assert.deepEqual(kinds(signals(h, checks(...all.map((d) => [d])), '2026-10-15')), ['failed']); // zonder iets op de 13e wel
+});

@@ -159,15 +159,18 @@ export const nl = {
     change: 'Wijzig',
     reasons: {
       no_time: 'Geen tijd',
+      no_money: 'Geen geld',
       forgot: 'Vergeten',
       no_motivation: 'Geen zin',
       busy_sick: 'Druk of ziek',
       wrong_rhythm: 'Ritme klopt niet',
+      other: 'Anders',
     },
     sheet: {
       title: (name) => `${name}: wat hield je tegen?`,
       description: 'Kies wat het best past. Dan weet je later waar het misging.',
       note: 'Toelichting (optioneel)',
+      noteOther: 'Wat was het dan?',
       notePlaceholder: 'Bijvoorbeeld: gast over de vloer, griep, ander schema…',
       choose: 'Kies eerst een reden.',
       save: 'Reden opslaan',

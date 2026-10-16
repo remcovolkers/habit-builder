@@ -55,7 +55,7 @@ function row(habit, section, today, order = null) {
 
 export function habitsView() {
   return liveView({
-    className: 'habits',
+    className: 'habits page',
     load: async () => {
       const { habits, pauses } = await state.repo.snapshot();
       return { habits, pauses };
@@ -83,7 +83,7 @@ export function habitsView() {
       const canReorder = groups.active.length + groups.paused.length + groups.planned.length > 1 && ['active', 'paused', 'planned'].some((k) => groups[k].length > 1);
       if (!canReorder) reordering = false;
 
-      return h('div', null,
+      return h('div', { class: 'page__frame' },
         h('header', { class: 'page-header' },
           h('h1', { class: 'page-title' }, nl.habits.title),
           h('a', { class: 'button button--primary desktop-only', href: '#/habits/new' }, nl.habits.new)),
@@ -106,16 +106,18 @@ export function habitsView() {
             },
           }, allPaused ? nl.habits.resumeAll : nl.habits.pauseAll)
           : null,
-        habits.length === 0
-          ? emptyState({
-            art: 'habits', title: nl.habits.emptyTitle, text: nl.habits.empty, starters: true, // de actie staat al in de kop (desktop) en in de zwevende knop (mobiel)
-          })
-          : null,
-        section('active'),
-        section('paused'),
-        section('planned'),
-        section('graduated', { collapsed: true }),
-        section('archived', { collapsed: true }),
+        // de kop en de knoppen hierboven blijven staan, de lijsten scrollen (alleen op desktop; op de telefoon scrolt de pagina)
+        h('div', { class: 'page__scroll' },
+          habits.length === 0
+            ? emptyState({
+              art: 'habits', title: nl.habits.emptyTitle, text: nl.habits.empty, starters: true, // de actie staat al in de kop (desktop) en in de zwevende knop (mobiel)
+            })
+            : null,
+          section('active'),
+          section('paused'),
+          section('planned'),
+          section('graduated', { collapsed: true }),
+          section('archived', { collapsed: true })),
         fab({ href: '#/habits/new', label: nl.habits.new }));
     },
   });

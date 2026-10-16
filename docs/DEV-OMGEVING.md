@@ -62,6 +62,25 @@ Open http://localhost:5173/ → Instellingen → **Inloggen of account maken**, 
 
 **Op je telefoon** (zelfde wifi): `ipconfig` geeft het IPv4-adres van je computer, bijvoorbeeld `192.168.1.20`; open `http://192.168.1.20:5173/`. Windows vraagt eenmalig om toestemming voor de firewall; sta het toe voor privénetwerken. De poorten 5173 (app) en 54321 (database) moeten bereikbaar zijn. Via gewoon http werken de service worker en meldingen niet; inloggen, synchroniseren en de sociale functies wel.
 
+## Testaccounts: een gevuld en een leeg
+
+Voor functioneel testen zonder alles zelf aan te maken:
+
+```
+npm run dev:seed          # maakt (of herstelt) beide accounts
+npm run dev:code -- stub  # toont een inlogcode voor stub@example.com
+npm run dev:code -- leeg  # idem voor leeg@example.com
+```
+
+| Account | Inhoud |
+|---|---|
+| `leeg@example.com` | niets: het scherm van een nieuwe gebruiker (lege Vandaag, sjablonen, naam vragen) |
+| `stub@example.com` | twaalf habits, één voor elke toestand: ingeburgerd te bevestigen, opbouw, opstart, gemiste werkdag vorige week, **zeldzaam en stil** ("Even kijken"), **te laat**, stapel, ingeburgerd in onderhoud, gepauzeerd, gearchiveerd, gepland, een al beantwoorde stille taak; plus teller, automatisme-cijfer en twee reviews. Na het seeden staat per habit wat je ervan mag verwachten |
+
+De datums zijn relatief aan vandaag: draai `dev:seed` opnieuw voor verse gegevens (het account wordt dan weggegooid en opnieuw gevuld). Het script werkt alleen op de lokale stack (vaste adressen op 127.0.0.1) en raakt nooit productie. Inloggen: http://localhost:5173/ → Instellingen → Inloggen met het e-mailadres; de code haalt `dev:code` voor je uit het mailvenster. Gebruik per account een eigen browserprofiel of privévenster, want de app bewaart zijn gegevens ook in de browser. Staat je lokale database op een oudere migratie, dan meldt het script dat; `npm run db:reset` lost het op.
+
+De inhoud staat in `tools/lib/stub-data.mjs`; `tests/dev-stub.test.js` bewaakt dat elke toestand erin zit, op elke dag van het jaar.
+
 ## Controleren dat het goed staat
 
 GitHub draait dezelfde controles in de workflow **Integratie** (lokale Supabase in Docker plus een echte browser) op elke push naar `develop` en `feature/**`.

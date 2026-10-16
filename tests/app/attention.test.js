@@ -93,7 +93,7 @@ test('recordReason bewaart één reactie per taak per dag; opnieuw geven oversch
 
 test('recordReason weigert een onbekende reden, een foute datum en een te lange notitie', async () => {
   const { repo } = testRepo();
-  assert.deepEqual(SLIP_REASONS, ['no_time', 'forgot', 'no_motivation', 'busy_sick', 'wrong_rhythm']);
+  assert.deepEqual(SLIP_REASONS, ['no_time', 'no_money', 'forgot', 'no_motivation', 'busy_sick', 'wrong_rhythm', 'other']);
   await assert.rejects(() => recordReason(repo, { habitId: 'h', reason: 'geen-reden' }, TODAY), ValidationError);
   await assert.rejects(() => recordReason(repo, { habitId: 'h', reason: 'forgot' }, 'morgen'), ValidationError);
   await assert.rejects(() => recordReason(repo, { habitId: 'h', reason: 'forgot', note: 'x'.repeat(201) }, TODAY), ValidationError);
@@ -132,3 +132,13 @@ function addDaysIso(date, n) {
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 }
+
+test('de ochtendmelding telt gemiste dagen van een dagelijkse taak niet mee: die horen in de weekreview', () => {
+  const everyDay = { type: 'weekdays', weekdays: [0, 1, 2, 3, 4, 5, 6] };
+  const reading = habit('Lezen', everyDay, { startDate: '2026-09-01' });
+  const week = ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11', '2026-10-12', '2026-10-14'].map((d) => done('Lezen', d)); // alleen de 13e gemist
+  const s = snapshot({ habits: [reading], checkIns: week });
+  assert.equal(buildAttention({ snapshot: s, today: TODAY })[0].signal.kind, 'failed'); // de review ziet het
+  assert.equal(forToday(buildAttention({ snapshot: s, today: TODAY })).length, 0);
+  for (const date of ['2026-10-13', '2026-10-15', '2026-10-20', '2026-10-27']) assert.equal(nudgesOn({ snapshot: s, date }), 0, date);
+});

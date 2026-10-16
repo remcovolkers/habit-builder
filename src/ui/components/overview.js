@@ -3,23 +3,26 @@ import { fill, h } from '../dom.js';
 import { buildDayDetail, buildPeriodOverview } from '../../app/overview.js';
 import { formatDateLong, formatDateShort } from '../../app/format.js';
 import { nl } from '../../content/nl.js';
+import { openDialog } from './dialog.js';
 
-// Welke periode en welke dag je bekeek blijft staan als het scherm door een wijziging opnieuw wordt getekend.
-const chosen = { period: 'week', anchor: null, selected: null };
+// Welke periode je bekeek blijft staan als het scherm door een wijziging opnieuw wordt getekend.
+const chosen = { period: 'week', anchor: null };
 
-/** Het detail van de gekozen dag: per habit hoe het ging, met een link om het op Vandaag aan te passen. */
-function dayDetail(detail) {
+/** Het detail van een dag in een blad: per habit hoe het ging, met een knop om het op Vandaag aan te passen. */
+function openDayDialog(detail) {
   const o = nl.stats.overview.detail;
-  return h('section', { class: 'overview__detail', id: 'overviewDetail', 'aria-live': 'polite' },
-    h('h3', { class: 'overview__detail-title' }, formatDateLong(detail.date)),
-    h('ul', { class: 'overview__detail-list' }, ...detail.items.map((item) =>
+  openDialog({
+    title: formatDateLong(detail.date),
+    content: h('ul', { class: 'overview__detail-list' }, ...detail.items.map((item) =>
       h('li', { class: 'overview__detail-item', dataset: { color: item.color, state: item.state } },
         h('span', { class: 'overview__detail-icon', 'aria-hidden': 'true' }, habitIcon(item.icon)),
         h('span', { class: 'overview__detail-name' }, item.name),
         h('span', { class: 'overview__detail-state' }, o.states[item.state])))),
-    detail.editable
-      ? h('a', { class: 'button button--secondary button--block', href: `#/today?date=${detail.date}` }, o.open)
-      : null);
+    actions: detail.editable
+      ? [{ label: o.open, variant: 'primary', onClick: () => { location.hash = `#/today?date=${detail.date}`; } }]
+      : [],
+    cancelLabel: nl.app.close,
+  });
 }
 
 const periodLabel = (o) => (o.period === 'week'
@@ -43,7 +46,6 @@ export function overviewSection(snapshot, today) {
     const focusKey = active?.dataset?.focusKey ?? null;
     const fallbackKey = active?.dataset?.focusFallback ?? null;
     const data = buildPeriodOverview({ snapshot, today, period: chosen.period, anchor: chosen.anchor });
-    if (chosen.selected && !data.days.some((day) => day.inPeriod && day.date === chosen.selected)) chosen.selected = null; // de gekozen dag valt buiten de getoonde periode
     const go = (anchor) => { chosen.anchor = anchor; render(); };
     const step = (key, label, target, enabled, symbol) => h('button', {
       type: 'button', class: 'icon-button', dataset: { focusKey: key, focusFallback: key === 'prev' ? 'next' : 'prev' }, 'aria-label': label, disabled: !enabled, onclick: () => go(target.anchor),
@@ -83,13 +85,13 @@ export function overviewSection(snapshot, today) {
           ? h('button', {
             ...props,
             type: 'button',
-            'aria-pressed': String(day.date === chosen.selected),
-            dataset: { ...props.dataset, focusKey: `day:${day.date}`, selected: day.date === chosen.selected ? 'true' : null },
-            onclick: () => { chosen.selected = day.date === chosen.selected ? null : day.date; render(); },
+            'aria-haspopup': 'dialog',
+            dataset: { ...props.dataset, focusKey: `day:${day.date}` },
+            onclick: () => openDayDialog(buildDayDetail({ snapshot, date: day.date, today })),
           }, ...content)
           : h('span', props, ...content));
       })),
-      chosen.selected ? dayDetail(buildDayDetail({ snapshot, date: chosen.selected, today })) : null);
+    );
 
     const find = (key) => (key ? root.querySelector(`[data-focus-key="${CSS.escape(key)}"]`) : null);
     let target = find(focusKey);

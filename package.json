@@ -18,7 +18,10 @@
     "db:check-social": "node tools/social-check.mjs",
     "db:check-app": "node tools/social-app-check.mjs",
     "db:check-browser": "node tools/social-browser-check.mjs",
+    "dev:seed": "node tools/dev-accounts.mjs seed",
+    "dev:code": "node tools/dev-accounts.mjs code",
     "check:layout": "node tools/layout-check.mjs",
+    "audit:scroll": "node tools/scroll-audit.mjs",
     "icons:build": "node tools/build-icons.mjs",
     "icons:gallery": "node tools/icon-gallery.mjs"
   },

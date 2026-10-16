@@ -16,7 +16,7 @@ import { paceOn, scheduleOn } from './pace.js';
 import { isTracked } from './rules.js';
 import { computeUnits } from './units.js';
 
-export const SLIP_REASONS = Object.freeze(['no_time', 'forgot', 'no_motivation', 'busy_sick', 'wrong_rhythm']);
+export const SLIP_REASONS = Object.freeze(['no_time', 'no_money', 'forgot', 'no_motivation', 'busy_sick', 'wrong_rhythm', 'other']);
 export const ATTENTION_KINDS = Object.freeze(['late', 'silent', 'failed', 'behind']); // volgorde = belang
 
 const counts = (status) => status === 'done' || status === 'minimal';
@@ -51,6 +51,8 @@ export function attentionFor({ habit, checkIns = [], pauses = [], today }) {
 
   const units = computeUnits({ habit, checkIns, pauses, today });
   const habitId = habit.id;
+  // een half gehaalde teller (partial) is geleverd werk en geen misser, net als bij de punten
+  const partialDates = new Set(checkIns.filter((c) => c.status === 'partial').map((c) => c.date));
   const signals = [];
   const windowStart = addDays(startOfWeek(today), -FAILED_LOOKBACK_DAYS);
 
@@ -65,7 +67,7 @@ export function attentionFor({ habit, checkIns = [], pauses = [], today }) {
       const week = startOfWeek(unit.start);
       const entry = dayMisses.get(week) ?? { missed: 0, closed: 0, since: null };
       entry.closed += 1;
-      if (unit.status === 'missed') {
+      if (unit.status === 'missed' && !partialDates.has(unit.end)) {
         entry.missed += 1;
         entry.since = entry.since === null || unit.end > entry.since ? unit.end : entry.since;
       }

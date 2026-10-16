@@ -16,7 +16,7 @@ Eén object store per soort record. Alle records hebben `id`, `createdAt`, `upda
 | `achievements` | `sleutel\|habitId` | `key`, `habitId` (of `null`), `date`; eenmaal ontgrendeld blijft zo |
 | `ratings` | `habitId\|weekStart` | `habitId`, `weekStart`, `score` (1–5, automatisme) |
 | `reviews` | `weekStart` | `weekStart`, `wentWell`, `adjust` (wekelijkse review, max. 1000 tekens elk) |
-| `reasons` | `habitId\|datum` | `habitId`, `date` (de dag van de reactie), `reason` (`no_time`/`forgot`/`no_motivation`/`busy_sick`/`wrong_rhythm`), `note` (optioneel, max. 200 tekens): waarom een taak bleef liggen. Een reactie dekt de signalen die op of vóór die dag begonnen (PLAN §4.9) |
+| `reasons` | `habitId\|datum` | `habitId`, `date` (de dag van de reactie), `reason` (`no_time`/`no_money`/`forgot`/`no_motivation`/`busy_sick`/`wrong_rhythm`/`other`), `note` (optioneel, max. 200 tekens): waarom een taak bleef liggen. Een reactie dekt de signalen die op of vóór die dag begonnen (PLAN §4.9) |
 | `outbox` | `collectie\|id` | wat nog naar de server moet (met een `rev` die bij elke wijziging verandert) |
 | `meta` | `sync` | `userId`, `cursor` (laatste `seq` van de server), `lastSyncAt` |
 
