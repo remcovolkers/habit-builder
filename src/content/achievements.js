@@ -1,5 +1,6 @@
 // Namen en omschrijvingen van achievements. De regels staan in domain/achievements.js.
 import { MILESTONE_DAYS } from '../domain/constants.js';
+import { achievementIconKey } from './ui-icons.js';
 
 const MILESTONE_EMOJI = { 7: '🔥', 21: '🌿', 42: '🌲', 66: '🏆', 100: '💎', 365: '👑' };
 
@@ -15,7 +16,7 @@ const milestones = Object.fromEntries(
   ]),
 );
 
-export const ACHIEVEMENT_INFO = Object.freeze({
+const INFO = {
   first_checkin: { emoji: '🌱', title: 'Eerste stap', text: 'Je eerste check-in staat erin.', perHabit: false },
   ...milestones,
   perfect_week: { emoji: '🌟', title: 'Perfecte week', text: 'Een hele week waarin je alles hebt gedaan (minstens 3 dingen).', perHabit: false },
@@ -23,4 +24,10 @@ export const ACHIEVEMENT_INFO = Object.freeze({
   first_graduated: { emoji: '🌳', title: 'Ingeburgerd', text: 'Je eerste habit is echt van jou geworden.', perHabit: false },
   three_active: { emoji: '🎯', title: 'Drie tegelijk', text: 'Drie actieve habits tegelijk.', perHabit: false },
   review_streak_4: { emoji: '📓', title: 'Vier weken reflectie', text: 'Vier weken achter elkaar een wekelijkse review.', perHabit: false },
-});
+};
+
+// elke prestatie krijgt de sleutel van haar icoon (content/ui-icons.js); `emoji` is de terugval voor een thema zonder eigen set
+export const ACHIEVEMENT_INFO = Object.freeze(
+  Object.fromEntries(Object.entries(INFO).map(([key, info]) => [key, Object.freeze({ ...info, icon: achievementIconKey(key) })])),
+);
+

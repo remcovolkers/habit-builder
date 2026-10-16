@@ -1,5 +1,7 @@
 // Korte stukjes gewoontetheorie, getoond op de habit-detailpagina (zie app/tips.js voor wanneer welke).
-export const TIPS = Object.freeze({
+import { tipIconKey } from './ui-icons.js';
+
+const TIP_TEXTS = {
   planned: {
     emoji: '🗓',
     title: 'Bijna van start',
@@ -45,4 +47,10 @@ export const TIPS = Object.freeze({
     title: 'Gepauzeerd',
     text: 'Pauzeren telt niet als missen. Pak het weer op als het kan; begin dan klein.',
   },
-});
+};
+
+// elke tip krijgt de sleutel van haar icoon (content/ui-icons.js); `emoji` is de terugval voor een thema zonder eigen set
+export const TIPS = Object.freeze(
+  Object.fromEntries(Object.entries(TIP_TEXTS).map(([key, tip]) => [key, Object.freeze({ ...tip, icon: tipIconKey(key) })])),
+);
+

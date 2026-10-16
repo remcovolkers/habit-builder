@@ -55,11 +55,19 @@
 }
 
 /* de tekening van een thema (themes/<id>/icons.svg) in plaats van de emoji; het accent volgt de kleur van de habit */
-.habit-icon {
+.theme-icon {
   width: 1.5rem;
   height: 1.5rem;
   color: var(--color-text);
   --icon-accent: var(--habit-color, var(--color-accent));
+}
+
+/* in de lopende tekst, zo groot als de letters */
+.theme-icon--inline {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  color: inherit;
 }
 
 .habit-card__name,
@@ -417,6 +425,12 @@
 
 .celebrate__emoji {
   font-size: 2.125rem;
+}
+
+.celebrate__emoji .theme-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--color-accent);
 }
 
 .celebrate__title {

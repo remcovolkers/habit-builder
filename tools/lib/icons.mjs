@@ -1,10 +1,12 @@
 // Iconensets van thema's: controleren van losse SVG's (uit Moda) en samenvoegen tot één sprite per thema. Puur, zonder bestanden:
 // het lezen en schrijven doet tools/build-icons.mjs. Regels staan in docs/MODA-ICONS.md.
 import { ICONS } from '../../src/content/icons.js';
+import { UI_ICON_KEYS } from '../../src/content/ui-icons.js';
 
 export const MAX_ICON_BYTES = 6000;
-const KEYS = new Set(ICONS.map((icon) => icon.key));
-const ORDER = new Map(ICONS.map((icon, i) => [icon.key, i]));
+export const ALL_ICON_KEYS = Object.freeze([...ICONS.map((icon) => icon.key), ...UI_ICON_KEYS]);
+const KEYS = new Set(ALL_ICON_KEYS);
+const ORDER = new Map(ALL_ICON_KEYS.map((key, i) => [key, i]));
 const ROOT_SKIP = new Set(['id', 'xmlns', 'xmlns:xlink', 'viewbox', 'width', 'height', 'class', 'version', 'x', 'y', 'style']);
 const COLOR_ATTRS = ['fill', 'stroke', 'stop-color', 'color', 'flood-color'];
 const OK_COLOR = /^(none|currentColor|inherit|transparent|var\(.+\))$/;
@@ -40,7 +42,7 @@ export function normalizeIconSvg(svg) {
 /** Geeft een lijst problemen (leeg = goed) voor één icoon. */
 export function validateIconSvg(key, svg) {
   const problems = [];
-  if (!KEYS.has(key)) problems.push(`onbekende sleutel "${key}" (zie src/content/icons.js)`);
+  if (!KEYS.has(key)) problems.push(`onbekende sleutel "${key}" (zie src/content/icons.js en ui-icons.js)`);
   const text = String(svg ?? '');
   if (text.length > MAX_ICON_BYTES) problems.push(`te groot (${text.length} tekens, maximaal ${MAX_ICON_BYTES})`);
   const root = rootOf(text);

@@ -40,3 +40,6 @@ export function themeIconHref(themeId, emoji, themeKeys) {
   const key = iconKeyFor(emoji);
   return key && (themeKeys?.[themeId] ?? []).includes(key) ? `themes/${themeId}/icons.svg#${key}` : null;
 }
+
+/** Hetzelfde voor de iconen buiten de habits om (content/ui-icons.js): de href als het thema deze sleutel levert, anders null. */
+export const uiIconHref = (themeId, key, themeKeys) => ((themeKeys?.[themeId] ?? []).includes(key) ? `themes/${themeId}/icons.svg#${key}` : null);

@@ -1,6 +1,6 @@
 # Iconensets: wat je aan Moda vraagt
 
-Hoort bij [ITERATIE-1.2.md](ITERATIE-1.2.md) §6 (trap 2) en [MODA-PROMPT.md](MODA-PROMPT.md) (onderdeel "Icon sheet"). Elk thema krijgt een eigen set van **60 iconen** met dezelfde **sleutels**. De sleutel is het contract met de code (`habit.icon` wordt straks `icon:<sleutel>|<emoji>`); de emoji hieronder is de terugval voor oudere appversies, export en thema's zonder set. De 24 emoji die er nu zijn staan allemaal in de lijst.
+Hoort bij [ITERATIE-1.2.md](ITERATIE-1.2.md) §6 (trap 2) en [MODA-PROMPT.md](MODA-PROMPT.md) (onderdeel "Icon sheet"). Elk thema krijgt een eigen set van **60 habit-iconen en 49 iconen voor prestaties, tips en tekens** (zie onderaan), met voor elk thema dezelfde **sleutels**. De sleutel is het contract met de code (`habit.icon` wordt straks `icon:<sleutel>|<emoji>`); de emoji hieronder is de terugval voor oudere appversies, export en thema's zonder set. De 24 emoji die er nu zijn staan allemaal in de lijst.
 
 ## Werkwijze
 1. **Ronde 1, per thema: 12 iconen** om de stijl vast te leggen. Plak de prompt van dat thema (hieronder) in Moda. Doe de twee thema's in aparte gesprekken.
@@ -196,5 +196,164 @@ Approved. Now draw the **remaining 48 icons** in exactly the same style as the 1
 - **Werk en geld:** `budget` (a bar chart or a coin with a chart); `save-money` (a piggy bank or coin dropping into a jar)
 - **Creatief:** `guitar` (a guitar); `piano` (a few piano keys); `music` (music notes); `paint` (a paint palette with a brush); `draw` (a pencil drawing a line); `photo` (a camera); `write` (a hand writing / a fountain pen)
 - **Sociaal en natuur:** `family` (two big and one small figure, or a house with a heart); `friends` (two figures side by side); `outdoors` (a tree and a path or a mountain)
+
+---
+
+
+---
+
+# Tweede lijst: prestaties, tips en tekens in de app
+
+Naast de 60 habit-iconen gebruikt de app nog emoji voor **prestaties, tips en twee kleine tekens** (de vlam bij je reeks en het blaadje bij "alles gedaan"). Ook die komen uit de iconenset van het thema; samen met de habit-iconen is de app dan helemaal vrij van emoji van het toestel. Dat zijn **49 sleutels**, vastgelegd in `src/content/ui-icons.js`. De prestaties onder "gepland" hebben nog geen regel in de app ([ITERATIE-1.2.md](ITERATIE-1.2.md) §5); hun icoon wordt alvast gemaakt zodat Moda de set in één keer kan afmaken. Een prestatie `first_checkin` heet in de set `ach-first-checkin`.
+
+## De 49 sleutels
+| Sleutel | Nederlands | Wat tekenen |
+|---|---|---|
+| **Prestaties (bestaan al)** | | |
+| `ach-first-checkin` | Eerste stap | a seedling breaking through the soil, or a first footstep |
+| `ach-days-7` | 7 dagen | a small flame |
+| `ach-days-21` | 21 dagen | a young sprig with a few leaves |
+| `ach-days-42` | 42 dagen | a young tree |
+| `ach-days-66` | 66 dagen | a trophy or laurel wreath |
+| `ach-days-100` | 100 dagen | a cut gem / diamond |
+| `ach-days-365` | 365 dagen | a crown |
+| `ach-perfect-week` | Perfecte week | a star above seven small dots in a row |
+| `ach-comeback` | Comeback | a plant sprouting again from a cut stem, or a returning loop arrow |
+| `ach-first-graduated` | Ingeburgerd | a full-grown tree with roots |
+| `ach-three-active` | Drie tegelijk | three linked circles |
+| `ach-review-streak-4` | Vier weken reflectie | a notebook with four tick marks |
+| **Prestaties (gepland, regels volgen)** | | |
+| `ach-done-10` | 10 keer gedaan | a check mark in a simple ring |
+| `ach-done-50` | 50 keer gedaan | the same check mark, ring with a second ring |
+| `ach-done-100` | 100 keer gedaan | the same check mark inside a laurel |
+| `ach-done-500` | 500 keer gedaan | the same check mark inside a laurel with small wings |
+| `ach-done-1000` | 1000 keer gedaan | the same check mark, radiant, with rays and a crown (a clear progression of the same motif) |
+| `ach-streak-7` | Reeks van 7 | a short chain of links |
+| `ach-streak-14` | Reeks van 14 | a longer chain |
+| `ach-streak-30` | Reeks van 30 | a long chain forming a loop |
+| `ach-perfect-weeks-4` | 4 perfecte weken | four small stars in a row under a crown |
+| `ach-recover-5` | Nooit twee keer missen | a shield with a bounce-back arrow |
+| `ach-strong-return` | Sterk terug | a line dipping then rising steeply |
+| `ach-minimal-5` | Tweeminutenregel | a stopwatch with a small 2 |
+| `ach-minimal-first` | Kleine stap | a single small stair step with a foot |
+| `ach-counter-week` | Vol doel | a full glass or a full gauge |
+| `ach-pause-resume` | Pauzeren is oké | a pause symbol turning into a play triangle |
+| `ach-first-review` | Eerste review | a notebook with a pen |
+| `ach-automaticity-4` | Automatisme | two interlocking gears |
+| `ach-why-3` | Je waarom | a compass with a heart at the needle |
+| `ach-all-dayparts` | Hele dag | an arc from a sun to a moon |
+| `ach-five-active` | Vijf tegelijk | five circles arranged as a pentagon |
+| `ach-all-done-10` | Alles gedaan | a fully ticked checklist with a sparkle |
+| `ach-first-friend` | Samen sterker | two figures with a small heart between them |
+| `ach-first-invite` | Uitgenodigd | an envelope with a spark |
+| `ach-friends-5` | Vijf vrienden | a group of five small figures |
+| `ach-graduated-2` | Tweede ingeburgerd | two trees side by side |
+| `ach-graduated-5` | Vijfde ingeburgerd | a small forest of five trees |
+| **Tips** | | |
+| `tip-planned` | Bijna van start | a calendar page with a small starting flag |
+| `tip-start-small` | Begin klein | a small seedling |
+| `tip-dip` | De dip | a rain cloud, or a valley in a line |
+| `tip-cue` | De cue | a chain link, or an anchor point |
+| `tip-identity` | Identiteit | a compass, or a figure with a star |
+| `tip-automatic` | Automatisme | a sparkle, or a gear that turns by itself |
+| `tip-never-miss-twice` | Nooit twee keer missen | a knot of two ropes |
+| `tip-maintain` | Onderhouden | a tree with a watering can |
+| `tip-paused` | Pauze | a pause symbol |
+| **In de app** | | |
+| `ui-streak` | Reeks (klein, naast tekst) | a flame; used inline next to text at the size of the letters (16px), so it must stay simple |
+| `ui-celebrate` | Alles gedaan vandaag | a leaf with a few sparkles; shown big (40px) on the 'alles gedaan' card |
+
+## Prompt 3: v0lky1 Theme, tweede lijst (ronde 1)
+Plak dit in een nieuw gesprek (of hetzelfde als de habit-iconen, zodat Moda de stijl al kent).
+
+---
+
+# Prompt for Moda: icon sheet 2 (achievements, tips, signs), v0lky1 Theme
+
+Use the existing **Habit Builder – v0lky1 Theme** design in this project and the **habit icon set you already made for it** (same hand, same stroke, same accent logic). Now design the second icon list.
+
+## Where these icons are used
+Habit Builder is a Dutch habit-tracking PWA. This is the **second icon list** (the habit icons are done separately): achievements, tips and two small signs.
+- **Achievements (`ach-*`)** sit in a **64px round medal** filled with the theme's bright accent color (white ring, soft glow). The app sets the icon color to the **dark on-accent color**, so the glyph must read **dark on a bright disc**; it is shown at about 36px. Locked achievements are shown in greyscale by CSS, so don't draw a locked version.
+- **Tips (`tip-*`)** sit at about 28px in the accent color, on a dark card.
+- **`ui-streak`** is inline next to text, at the size of the letters (16px). **`ui-celebrate`** is shown at 40px on the "all done today" card.
+
+## Style
+Exactly the v0lky1 icon language of the habit icons: **line icons, 1.75px stroke, round caps and joins**, soft geometry, one small accent per icon (leaf, rune-like tick or sparkle) via `var(--icon-accent, currentColor)`. Because achievements sit on a bright mint disc, give them slightly more presence than the habit icons: a few filled areas at 25–35% opacity are welcome, but keep the same line language. Druid and forest motifs fit (leaves, runes, trees, roots).
+Colors for context: mint accent `#29ffb9`, on-accent dark `#06140f`, card surface `#18181a`, page background `#090c0c`.
+
+## Technical rules (must follow exactly)
+- Each icon is an inline **SVG with `viewBox="0 0 24 24"`**, no width/height attributes, no `<style>` blocks, no `<script>`, no external references, no raster images, no text, no filters or gradients.
+- Keep the artwork inside a **2px safe margin** (content between 2 and 22).
+- **Colors:** `currentColor` for the main strokes/fills and `var(--icon-accent, currentColor)` for one accent detail; `fill-opacity` / `stroke-opacity` between 0.25 and 0.4 for a softer second tone. Never hard-code a hex color. Put the accent on the element with the attributes `stroke="var(--icon-accent, currentColor)"` and `fill="var(--icon-accent, currentColor)"` (not in a `style` attribute).
+- One icon = one clear idea. Same optical size across the set.
+- Name every icon by its **key**, exactly as listed. The key is the contract with my code: do not rename, merge or skip keys. If a key makes no sense in this style, keep the key and draw the closest sensible idea.
+- Where several keys are a progression (the `ach-done-*` and `ach-streak-*` series), draw them as one recognizable motif that grows.
+
+## Round 1 (this prompt): 12 icons to lock the style
+- **Prestaties (bestaan al):** `ach-first-checkin` (a seedling breaking through the soil, or a first footstep); `ach-days-7` (a small flame); `ach-days-66` (a trophy or laurel wreath); `ach-perfect-week` (a star above seven small dots in a row); `ach-comeback` (a plant sprouting again from a cut stem, or a returning loop arrow)
+- **Prestaties (gepland, regels volgen):** `ach-done-100` (the same check mark inside a laurel); `ach-first-friend` (two figures with a small heart between them)
+- **Tips:** `tip-dip` (a rain cloud, or a valley in a line); `tip-identity` (a compass, or a figure with a star); `tip-never-miss-twice` (a knot of two ropes)
+- **In de app:** `ui-streak` (a flame; used inline next to text at the size of the letters (16px), so it must stay simple); `ui-celebrate` (a leaf with a few sparkles; shown big (40px) on the 'alles gedaan' card)
+
+## Deliverable
+1. **One self-contained HTML page** with all icons of this round: a grid of tiles, each showing the icon at 24px and 36px with its key under it, on a medal disc in the theme's accent color (for `ach-*`), on the dark card surface (for `tip-*` and `ui-*`), and in its greyscale locked state. Each icon is an inline `<svg id="icon-<key>" viewBox="0 0 24 24">`.
+2. If you can, also export **each icon as a separate `.svg` file** named `<key>.svg`.
+3. A short paragraph at the top with the style rules you used, so a later batch matches exactly.
+
+After I approve the style I will ask for the remaining 37 icons.
+
+---
+
+## Prompt 4: Mel Theme, tweede lijst (ronde 1)
+
+---
+
+# Prompt for Moda: icon sheet 2 (achievements, tips, signs), Mel Theme
+
+Use the existing **Habit Builder – Mel Theme** design in this project and the **habit icon set you already made for it** (same hand, same stroke, same accent logic). Now design the second icon list.
+
+## Where these icons are used
+Habit Builder is a Dutch habit-tracking PWA. This is the **second icon list** (the habit icons are done separately): achievements, tips and two small signs.
+- **Achievements (`ach-*`)** sit in a **64px round medal** filled with the theme's bright accent color (white ring, soft glow). The app sets the icon color to the **dark on-accent color**, so the glyph must read **dark on a bright disc**; it is shown at about 36px. Locked achievements are shown in greyscale by CSS, so don't draw a locked version.
+- **Tips (`tip-*`)** sit at about 28px in the accent color, on a dark card.
+- **`ui-streak`** is inline next to text, at the size of the letters (16px). **`ui-celebrate`** is shown at 40px on the "all done today" card.
+
+## Style
+Exactly the Mel icon language of the habit icons: **chunky, rounded, sticker-like, 2.25px stroke plus a 30–40% filled body, glossy highlight dot**, one small bright accent per icon via `var(--icon-accent, currentColor)`. Achievements sit on a yellow medal disc, so keep them bold and clear: think badges and trophies of a creature-collecting adventure game.
+**Do NOT draw any existing Pokémon character, the Poké Ball, or any trademarked logo or name.** Use generic adventure-game objects only (badges, stars, berries, potions, crowns, leaves).
+Colors for context: accent yellow `#ffcb05`, on-accent dark `#1a1206`, card surface `#22307a`, blue night background `#2a75bb` → `#16205a` → `#0c1238`.
+
+## Technical rules (must follow exactly)
+- Each icon is an inline **SVG with `viewBox="0 0 24 24"`**, no width/height attributes, no `<style>` blocks, no `<script>`, no external references, no raster images, no text, no filters or gradients.
+- Keep the artwork inside a **2px safe margin** (content between 2 and 22).
+- **Colors:** `currentColor` for the main strokes/fills and `var(--icon-accent, currentColor)` for one accent detail; `fill-opacity` / `stroke-opacity` between 0.25 and 0.4 for a softer second tone. Never hard-code a hex color. Put the accent on the element with the attributes `stroke="var(--icon-accent, currentColor)"` and `fill="var(--icon-accent, currentColor)"` (not in a `style` attribute).
+- One icon = one clear idea. Same optical size across the set.
+- Name every icon by its **key**, exactly as listed. The key is the contract with my code: do not rename, merge or skip keys. If a key makes no sense in this style, keep the key and draw the closest sensible idea.
+- Where several keys are a progression (the `ach-done-*` and `ach-streak-*` series), draw them as one recognizable motif that grows.
+
+## Round 1 (this prompt): 12 icons to lock the style
+- **Prestaties (bestaan al):** `ach-first-checkin` (a seedling breaking through the soil, or a first footstep); `ach-days-7` (a small flame); `ach-days-66` (a trophy or laurel wreath); `ach-perfect-week` (a star above seven small dots in a row); `ach-comeback` (a plant sprouting again from a cut stem, or a returning loop arrow)
+- **Prestaties (gepland, regels volgen):** `ach-done-100` (the same check mark inside a laurel); `ach-first-friend` (two figures with a small heart between them)
+- **Tips:** `tip-dip` (a rain cloud, or a valley in a line); `tip-identity` (a compass, or a figure with a star); `tip-never-miss-twice` (a knot of two ropes)
+- **In de app:** `ui-streak` (a flame; used inline next to text at the size of the letters (16px), so it must stay simple); `ui-celebrate` (a leaf with a few sparkles; shown big (40px) on the 'alles gedaan' card)
+
+## Deliverable
+1. **One self-contained HTML page** with all icons of this round: a grid of tiles, each showing the icon at 24px and 36px with its key under it, on a medal disc in the theme's accent color (for `ach-*`), on the dark card surface (for `tip-*` and `ui-*`), and in its greyscale locked state. Each icon is an inline `<svg id="icon-<key>" viewBox="0 0 24 24">`.
+2. If you can, also export **each icon as a separate `.svg` file** named `<key>.svg`.
+3. A short paragraph at the top with the style rules you used, so a later batch matches exactly.
+
+After I approve the style I will ask for the remaining 37 icons.
+
+---
+
+## Vervolgprompt tweede lijst (ronde 2, voor beide thema's)
+
+---
+
+Approved. Now draw the **remaining 37 icons** of this list in exactly the same style as the 12 you made. Same technical rules and deliverable, with the 12 approved icons repeated at the start of the sheet for comparison. Keys:
+- **Prestaties (bestaan al):** `ach-days-21` (a young sprig with a few leaves); `ach-days-42` (a young tree); `ach-days-100` (a cut gem / diamond); `ach-days-365` (a crown); `ach-first-graduated` (a full-grown tree with roots); `ach-three-active` (three linked circles); `ach-review-streak-4` (a notebook with four tick marks)
+- **Prestaties (gepland, regels volgen):** `ach-done-10` (a check mark in a simple ring); `ach-done-50` (the same check mark, ring with a second ring); `ach-done-500` (the same check mark inside a laurel with small wings); `ach-done-1000` (the same check mark, radiant, with rays and a crown (a clear progression of the same motif)); `ach-streak-7` (a short chain of links); `ach-streak-14` (a longer chain); `ach-streak-30` (a long chain forming a loop); `ach-perfect-weeks-4` (four small stars in a row under a crown); `ach-recover-5` (a shield with a bounce-back arrow); `ach-strong-return` (a line dipping then rising steeply); `ach-minimal-5` (a stopwatch with a small 2); `ach-minimal-first` (a single small stair step with a foot); `ach-counter-week` (a full glass or a full gauge); `ach-pause-resume` (a pause symbol turning into a play triangle); `ach-first-review` (a notebook with a pen); `ach-automaticity-4` (two interlocking gears); `ach-why-3` (a compass with a heart at the needle); `ach-all-dayparts` (an arc from a sun to a moon); `ach-five-active` (five circles arranged as a pentagon); `ach-all-done-10` (a fully ticked checklist with a sparkle); `ach-first-invite` (an envelope with a spark); `ach-friends-5` (a group of five small figures); `ach-graduated-2` (two trees side by side); `ach-graduated-5` (a small forest of five trees)
+- **Tips:** `tip-planned` (a calendar page with a small starting flag); `tip-start-small` (a small seedling); `tip-cue` (a chain link, or an anchor point); `tip-automatic` (a sparkle, or a gear that turns by itself); `tip-maintain` (a tree with a watering can); `tip-paused` (a pause symbol)
 
 ---

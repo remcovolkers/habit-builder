@@ -4,10 +4,14 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { ICON_GROUPS, ICONS } from '../../src/content/icons.js';
 import { THEME_ICON_KEYS } from '../../src/content/theme-icons.js';
-import { iconForEmoji, iconForKey, iconKeyFor, searchIcons, themeIconHref } from '../../src/app/icons.js';
+import { iconForEmoji, iconForKey, iconKeyFor, searchIcons, themeIconHref, uiIconHref } from '../../src/app/icons.js';
 import { THEME_IDS } from '../../src/app/themes.js';
+import { UI_ICON_GROUPS, UI_ICON_KEYS, achievementIconKey, tipIconKey } from '../../src/content/ui-icons.js';
+import { ACHIEVEMENT_INFO } from '../../src/content/achievements.js';
+import { ACHIEVEMENT_KEYS } from '../../src/domain/achievements.js';
+import { TIPS } from '../../src/content/tips.js';
 import { TEMPLATES } from '../../src/content/templates.js';
-import { buildSprite, extractIcons, MAX_ICON_BYTES, normalizeIconSvg, themeIconsModule, validateIconSvg } from '../../tools/lib/icons.mjs';
+import { ALL_ICON_KEYS, buildSprite, extractIcons, MAX_ICON_BYTES, normalizeIconSvg, themeIconsModule, validateIconSvg } from '../../tools/lib/icons.mjs';
 
 const read = (file) => readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
 const plain = (emoji) => emoji.replace(/️/g, '');
@@ -86,7 +90,7 @@ test('theme-icons.js: elk thema staat erin, met bestaande sleutels en een sprite
   assert.deepEqual(Object.keys(THEME_ICON_KEYS).sort(), [...THEME_IDS].sort());
   for (const [id, keys] of Object.entries(THEME_ICON_KEYS)) {
     assert.equal(new Set(keys).size, keys.length, `${id}: dubbele sleutel`);
-    for (const key of keys) assert.ok(iconForKey(key), `${id}: onbekende sleutel ${key}`);
+    for (const key of keys) assert.ok(iconForKey(key) || UI_ICON_KEYS.includes(key), `${id}: onbekende sleutel ${key}`);
     if (keys.length === 0) continue;
     const file = `themes/${id}/icons.svg`;
     assert.ok(existsSync(new URL(`../../${file}`, import.meta.url)), `${file} ontbreekt`);
@@ -94,6 +98,50 @@ test('theme-icons.js: elk thema staat erin, met bestaande sleutels en een sprite
     for (const key of keys) assert.ok(sprite.includes(`<symbol id="${key}"`), `${id}: ${key} staat niet in de sprite`);
     assert.deepEqual(validateIconSvg('water', `<svg viewBox="0 0 24 24">${sprite.match(/<symbol[\s\S]*?<\/symbol>/)[0]}</svg>`).filter((p) => /script|href/.test(p)), []);
   }
+});
+
+// ---- prestaties, tips en tekens in de app (content/ui-icons.js) ---------------------------------------------------------------------------
+
+test('ui-iconen: 49 unieke sleutels in kebab-case, zonder overlap met de habit-iconen', () => {
+  assert.equal(UI_ICON_KEYS.length, 49);
+  assert.equal(new Set(UI_ICON_KEYS).size, UI_ICON_KEYS.length);
+  for (const key of UI_ICON_KEYS) {
+    assert.match(key, /^(ach|tip|ui)(-[a-z0-9]+)+$/, key);
+    assert.equal(iconForKey(key), null, `${key} botst met een habit-icoon`);
+  }
+  assert.equal(new Set(ALL_ICON_KEYS).size, 60 + 49);
+});
+
+test('elke prestatie en elke tip in de app heeft een icoon in de lijst (de lijst loopt niet uit de pas)', () => {
+  for (const key of ACHIEVEMENT_KEYS) {
+    assert.ok(ACHIEVEMENT_INFO[key], `${key} heeft geen tekst`);
+    assert.equal(ACHIEVEMENT_INFO[key].icon, achievementIconKey(key));
+    assert.ok(UI_ICON_KEYS.includes(ACHIEVEMENT_INFO[key].icon), `${key}: icoon ${ACHIEVEMENT_INFO[key].icon} staat niet in content/ui-icons.js`);
+  }
+  for (const [key, tip] of Object.entries(TIPS)) {
+    assert.equal(tip.icon, tipIconKey(key));
+    assert.ok(UI_ICON_KEYS.includes(tip.icon), `tip ${key}: icoon ${tip.icon} ontbreekt`);
+  }
+  const used = new Set([...Object.values(ACHIEVEMENT_INFO), ...Object.values(TIPS)].map((x) => x.icon));
+  const planned = UI_ICON_GROUPS.find((g) => g.id === 'achievements-planned').keys;
+  for (const key of UI_ICON_KEYS.filter((k) => k.startsWith('ach-') || k.startsWith('tip-'))) {
+    assert.ok(used.has(key) || planned.includes(key), `${key} hoort bij niets: geen prestatie of tip, en niet als gepland gemarkeerd`);
+  }
+});
+
+test('docs/MODA-ICONS.md noemt ook precies de ui-sleutels', () => {
+  const doc = read('docs/MODA-ICONS.md');
+  const table = doc.slice(doc.indexOf('## De 49 sleutels'), doc.indexOf('## Prompt 3'));
+  const keys = [...table.matchAll(/^\| `([a-z0-9-]+)` \|/gm)].map((m) => m[1]);
+  assert.deepEqual([...keys].sort(), [...UI_ICON_KEYS].sort());
+});
+
+test('uiIconHref: alleen als het thema de sleutel levert', () => {
+  const keys = { mel: ['ach-days-7'], v0lky1: [] };
+  assert.equal(uiIconHref('mel', 'ach-days-7', keys), 'themes/mel/icons.svg#ach-days-7');
+  assert.equal(uiIconHref('mel', 'ach-days-21', keys), null);
+  assert.equal(uiIconHref('v0lky1', 'ach-days-7', keys), null);
+  assert.equal(uiIconHref('onbekend', 'ach-days-7', keys), null);
 });
 
 // ---- het gereedschap om een set van Moda in te lezen ---------------------------------------------------------------------------------------

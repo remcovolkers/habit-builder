@@ -356,6 +356,13 @@
   font-size: var(--font-size-xl);
 }
 
+.tip__icon .theme-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-accent);
+  --icon-accent: var(--color-text);
+}
+
 .tip__title {
   font-weight: var(--font-weight-bold);
   margin-top: var(--space-2);
@@ -455,6 +462,13 @@
   text-align: center;
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
+}
+
+.achv__medal .theme-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--color-on-accent); /* de medaille is een vlak in de accentkleur: het icoon staat er donker op */
+  --icon-accent: var(--color-on-accent);
 }
 
 .achv__medal {

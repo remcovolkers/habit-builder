@@ -156,7 +156,7 @@ select.input {
   font-size: 1.375rem;
 }
 
-.choice__face .habit-icon {
+.choice__face .theme-icon {
   color: var(--color-text);
   --icon-accent: var(--color-accent);
 }

@@ -208,6 +208,12 @@ Dat zijn ± 25 nieuwe, naast de 12 bestaande. De sociale groep leest het aantal 
 | I12 | **Gebouwd:** [MODA-ICONS.md](MODA-ICONS.md) met de 60 sleutels, de twee prompts (v0lky1, Mel) en de vervolgprompt; een test houdt de lijst gelijk aan de catalogus. | M |
 | I13 | **Gebouwd:** `npm run icons:build -- <thema> <map of Moda-HTML>` (`tools/build-icons.mjs`) controleert elk icoon (viewBox 0 0 24 24, geen scripts, stijlen, tekst, verlopen of vaste kleuren, ≤ 6 kB), schrijft de sprite en werkt `theme-icons.js` bij; bij één fout wordt niets geschreven. Een deel van de set mag (ronde 1). De sprite staat onder `themes/` en gaat dus mee in de offline-cache. | M |
 
+**Eindtoestand (besluit Remco, 2026-10-16): geen emoji van het toestel meer in de app.** Alles komt uit de iconenset van het thema. Dat zijn per thema **109 iconen**: de 60 habit-iconen en 49 voor prestaties (38, waarvan 26 nog zonder regel), tips (9) en twee tekens (`ui-streak`, `ui-celebrate`), zie [MODA-ICONS.md](MODA-ICONS.md). Er zijn drie overgangsmaatregelen die verdwijnen zodra beide thema's compleet zijn:
+1. de emoji-terugval in `habitIcon` en `uiIcon` (nu nodig zolang een thema een icoon nog mist);
+2. de `emoji`-velden in `content/achievements.js` en `content/tips.js` en in de sjablonen;
+3. de emoji in `content/icons.js` blijft als **sleutel in de opgeslagen data** (`habit.icon`), niet als weergave.
+Daarna komt er een test die een thema met een onvolledige set afkeurt, en een standaardicoon (`sprout`) voor een onbekende eigen emoji uit een oude habit of import.
+
 **Stand (2026-10-16): alles behalve de tekeningen zelf is gebouwd** (branch `feature/iconen`): catalogus, kiezer, weergave per thema met emoji-terugval, het inleesgereedschap en 14 tests; de weergave van een thema-sprite is in een echte browser gecontroleerd met een proeficoon (daarna weer verwijderd). Wat nog moet: Moda de sets laten maken (ronde 1 en 2), daarna `npm run icons:build` en per thema het uiterlijk afstellen (grootte, accentkleur, selectiering).
 
 **Besloten:** trap 1 en trap 2 allebei. Volgorde: trap 1 eerst (de catalogus met sleutels en de nieuwe kiezer; de sleutels uit `src/content/icons.js` zijn het contract met Moda). Daarna vraagt Remco Moda om de iconensheet per thema (zie `docs/MODA-PROMPT.md`, onderdeel "Icon sheet"); de aanpassing in de data (`icon:<sleutel>|<emoji>`) volgt zodra een eerste set binnen is, zodat de sleutels niet achteraf veranderen.

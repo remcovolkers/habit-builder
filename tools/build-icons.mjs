@@ -7,8 +7,7 @@ import { basename, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { THEME_IDS } from '../src/app/themes.js';
 import { THEME_ICON_KEYS } from '../src/content/theme-icons.js';
-import { ICONS } from '../src/content/icons.js';
-import { buildSprite, extractIcons, normalizeIconSvg, themeIconsModule, validateIconSvg } from './lib/icons.mjs';
+import { ALL_ICON_KEYS, buildSprite, extractIcons, normalizeIconSvg, themeIconsModule, validateIconSvg } from './lib/icons.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const [theme, source] = process.argv.slice(2);
@@ -45,8 +44,8 @@ if (failed) {
 const dir = join(ROOT, 'themes', theme);
 mkdirSync(dir, { recursive: true });
 writeFileSync(join(dir, 'icons.svg'), buildSprite(icons));
-const order = new Map(ICONS.map((icon, i) => [icon.key, i]));
+const order = new Map(ALL_ICON_KEYS.map((key, i) => [key, i]));
 const keys = [...icons.keys()].sort((a, b) => order.get(a) - order.get(b));
 writeFileSync(join(ROOT, 'src/content/theme-icons.js'), themeIconsModule({ ...THEME_ICON_KEYS, [theme]: keys }));
-const missing = ICONS.filter((icon) => !icons.has(icon.key)).map((icon) => icon.key);
+const missing = ALL_ICON_KEYS.filter((key) => !icons.has(key));
 console.log(`✓ ${keys.length} iconen in themes/${theme}/icons.svg; ${missing.length === 0 ? 'de set is volledig' : `${missing.length} ontbreken nog (dan toont de app de emoji): ${missing.join(', ')}`}`);
