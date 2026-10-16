@@ -6,3 +6,6 @@ _site/
 Thumbs.db
 supabase/.temp/
 supabase/.branches/
+
+# Moda-export van de iconen: lettertypen staan al in fonts/
+moda-themes/icons/**/fonts/

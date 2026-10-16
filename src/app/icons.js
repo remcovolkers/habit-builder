@@ -32,6 +32,9 @@ export function searchIcons(query) {
     .filter((group) => group.icons.length > 0);
 }
 
+/** Het icoon voor een emoji die niet in de catalogus staat. */
+export const DEFAULT_ICON_KEY = 'sprout';
+
 /** Waar de sprite met alle tekeningen staat; één set voor alle thema's (de kleuren komen uit het thema). */
 export const ICON_SET_PATH = 'icons/set.svg';
 

@@ -45,10 +45,10 @@ test('tips: na een gemiste eenheid wint "nooit twee keer missen" (behalve bij in
 });
 
 test('elke tip en elke prestatie heeft tekst', () => {
-  for (const [key, tip] of Object.entries(TIPS)) assert.ok(tip.title && tip.text && tip.emoji, key);
+  for (const [key, tip] of Object.entries(TIPS)) assert.ok(tip.title && tip.text && tip.icon, key);
   for (const key of ACHIEVEMENT_KEYS) {
     const info = ACHIEVEMENT_INFO[key];
-    assert.ok(info?.title && info.text && info.emoji, key);
+    assert.ok(info?.title && info.text && info.icon, key);
   }
 });
 

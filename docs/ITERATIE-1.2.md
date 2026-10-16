@@ -209,13 +209,13 @@ Dat zijn ± 25 nieuwe, naast de 12 bestaande. De sociale groep leest het aantal 
 | I13 | **Gebouwd:** `npm run icons:build` (`tools/build-icons.mjs`) leest alles onder `moda-themes/icons/` (svg-bestanden en HTML-pagina's van Moda, het laatst gewijzigde wint), controleert elk icoon (viewBox 0 0 24 24, geen scripts, stijlen, tekst, verlopen of vaste kleuren, ≤ 6 kB), zet Moda's accent-stijl om in kenmerken, schrijft `icons/set.svg` en `icon-set.js`, en meldt wat nog ontbreekt. Bij één fout wordt niets geschreven. De sprite staat onder `icons/` en gaat mee in de offline-cache. | M |
 | I14 | **Gebouwd:** prestaties, tips en twee tekens (`ui-streak`, `ui-celebrate`) komen ook uit de set (`content/ui-icons.js`, component `uiIcon`); een medaille toont het icoon donker op het accentvlak, een tip in de accentkleur. | M |
 
-**Eindtoestand (besluit Remco): geen emoji van het toestel meer in de app.** Drie overgangsmaatregelen verdwijnen zodra de set compleet is (109 van 109):
-1. de emoji-terugval in `habitIcon` en `uiIcon`;
-2. de `emoji`-velden in `content/achievements.js`, `content/tips.js` en in de sjablonen (`content/templates.js`);
-3. de emoji in `content/icons.js` blijft wel bestaan, als **sleutel in de opgeslagen data** (`habit.icon`), niet als weergave.
-Daarna komt er een test die een onvolledige set afkeurt, en een standaardicoon (`sprout`) voor een onbekende eigen emoji uit een oude habit of import.
+**Eindtoestand bereikt (2026-10-16): geen emoji van het toestel meer in de app.** De set is compleet (109 van 109, gemaakt met één Moda-prompt, zie [MODA-ICONS.md](MODA-ICONS.md)) en de overgangsmaatregelen zijn verwijderd:
+1. de emoji-terugval in `habitIcon` en `uiIcon` is weg; een onbekende eigen emoji (oude habit of import) krijgt het standaardicoon `sprout`, en dat wordt het ook als je zo'n habit opnieuw opslaat;
+2. de `emoji`-velden in `content/achievements.js` en `content/tips.js` zijn weg; de sjabloon-chips tonen het icoon uit de set;
+3. de emoji in `content/icons.js` en `content/templates.js` blijven alleen bestaan als **sleutel in de opgeslagen data** (`habit.icon`), niet als weergave.
+Drie tests bewaken dit: de set is compleet, er staat geen emoji meer in de code buiten die twee bestanden, en het standaardicoon staat in de set.
 
-**Stand (2026-10-16):** alles behalve de tekeningen is gebouwd. Klaar: 12 van de 109 (habit-iconen ronde 1, v0lky1-stijl). Nog te leveren door Moda: 97, in vier batches (zie [MODA-ICONS.md](MODA-ICONS.md)). De weergave is in een echte browser gecontroleerd in beide thema's (v0lky1 en Mel), ook met proeficonen voor prestatie, tip en teken (daarna weer verwijderd).
+**Gemeten in een echte browser** in beide thema's (v0lky1 en Mel): kaarten, kiezer, prestaties (behaald en vergrendeld), tips en de reeksvlam; geen zijwaarts scrollen op 320 px met tekst 200%.
 
 ## 7. Niet-functioneel (voor alles hierboven)
 - Alle teksten in `src/content/nl.js`; geen `innerHTML` (guardrail); `svh`; tikvlakken ≥ 44 px; geen pinch-zoom, dus lay-outs moeten robuust zijn bij grote tekst.

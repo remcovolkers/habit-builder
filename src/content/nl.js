@@ -166,7 +166,6 @@ export const nl = {
     iconSearch: 'Icoon zoeken',
     iconSearchPlaceholder: 'Zoek een icoon, bijvoorbeeld "water"',
     iconNone: 'Geen icoon gevonden. Probeer een ander woord.',
-    iconCurrent: 'Je huidige icoon',
     color: 'Kleur',
     schedule: 'Herhaling',
     scheduleTypes: {

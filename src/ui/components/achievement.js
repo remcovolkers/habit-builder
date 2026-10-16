@@ -8,7 +8,7 @@ import { ACHIEVEMENT_INFO } from '../../content/achievements.js';
 /** Eén medaille. sub = ondertitel (bv. de habit waarvoor je hem haalde). */
 export function achievementMedal({ info, sub = null, locked = false }) {
   return h('li', { class: `achv${locked ? ' achv--locked' : ''}`, dataset: { state: locked ? 'locked' : 'unlocked' } },
-    h('span', { class: 'achv__medal', 'aria-hidden': 'true' }, uiIcon(info.icon, info.emoji)),
+    h('span', { class: 'achv__medal', 'aria-hidden': 'true' }, uiIcon(info.icon)),
     h('span', { class: 'achv__title' }, info.title),
     sub ? h('span', { class: 'achv__sub' }, sub) : null);
 }

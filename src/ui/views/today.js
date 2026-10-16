@@ -188,7 +188,7 @@ function renderDay(view, week) {
 
   const celebrate = allDone
     ? h('section', { class: 'section celebrate', role: 'status' },
-      mascot('celebrate') ?? h('div', { class: 'celebrate__emoji', 'aria-hidden': 'true' }, uiIcon('ui-celebrate', '🌿')),
+      mascot('celebrate') ?? h('div', { class: 'celebrate__emoji', 'aria-hidden': 'true' }, uiIcon('ui-celebrate')),
       h('h2', { class: 'celebrate__title' }, nl.today.celebrateTitle),
       h('p', { class: 'celebrate__text' }, nl.today.celebrateText))
     : null;

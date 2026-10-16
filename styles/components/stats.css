@@ -501,6 +501,11 @@
   opacity: 0.6;
 }
 
+.achv--locked .achv__medal .theme-icon {
+  color: var(--color-text-muted); /* niet behaald: een lichte tekening op het donkere vlak; de greyscale en doorzichtigheid van de medaille doen de rest */
+  --icon-accent: var(--color-text-faint);
+}
+
 .celebrate-list {
   display: grid;
   gap: var(--space-4);

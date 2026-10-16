@@ -13,7 +13,7 @@ import { currentSchedule } from './habits.js';
 import { TEMPLATES } from '../../content/templates.js';
 import { COUNTER_MAX, COUNTER_UNIT_MAX } from '../../domain/counter.js';
 import { ICON_GROUPS, ICONS } from '../../content/icons.js';
-import { iconForEmoji, searchIcons } from '../../app/icons.js';
+import { DEFAULT_ICON_KEY, iconForEmoji, iconForKey, searchIcons } from '../../app/icons.js';
 import { habitIcon } from '../components/habit-icon.js';
 
 const TYPES = ['daily', 'weekdays', 'per_week', 'day_of_month', 'per_month'];
@@ -72,19 +72,16 @@ async function mount(root, id, templateKey = null) {
 
   // iconen: per onderwerp een uitklapbaar blok, met een zoekveld erboven. Het blok met je huidige icoon staat open.
   const known = iconForEmoji(base.icon);
-  const chosenIcon = known?.emoji ?? base.icon ?? ICONS[0].emoji;
-  const customIcon = base.icon && !known ? base.icon : null; // een eigen emoji uit een oudere versie of import blijft kiesbaar
+  // een onbekende emoji (oude versie of import) toont als het standaardicoon en wordt dat ook als je de habit opslaat
+  const chosenIcon = known?.emoji ?? (base.icon ? iconForKey(DEFAULT_ICON_KEY).emoji : ICONS[0].emoji);
   const tile = (emoji, name, key) => h('label', { class: 'choice', title: name, dataset: { icon: key } },
     h('input', { class: 'choice__input', type: 'radio', name: 'icon', value: emoji, checked: emoji === chosenIcon }),
     h('span', { class: 'choice__face' }, habitIcon(emoji), h('span', { class: 'visually-hidden' }, name)));
   const iconBlock = (id, label, tiles, open) => h('details', { class: 'icon-group', open, dataset: { group: id } },
     h('summary', { class: 'icon-group__name' }, label),
     h('div', { class: 'choices', role: 'radiogroup', 'aria-label': label }, ...tiles));
-  const iconBlocks = [
-    ...(customIcon ? [iconBlock('custom', nl.form.iconCurrent, [tile(customIcon, nl.form.iconCurrent, '')], true)] : []),
-    ...ICON_GROUPS.map((group) => iconBlock(group.id, group.label, group.icons.map((icon) => tile(icon.emoji, icon.name, icon.key)),
-      group.icons.some((icon) => icon.emoji === chosenIcon) || (!customIcon && !known && group === ICON_GROUPS[0]))),
-  ];
+  const iconBlocks = ICON_GROUPS.map((group) => iconBlock(group.id, group.label, group.icons.map((icon) => tile(icon.emoji, icon.name, icon.key)),
+    group.icons.some((icon) => icon.emoji === chosenIcon)));
   const iconNone = h('p', { class: 'field__hint', role: 'status', hidden: true }, nl.form.iconNone);
   const openBefore = new Map(); // welke blokken openstonden voor het zoeken, om ze na het wissen terug te zetten
   const iconSearch = h('input', {
@@ -99,7 +96,7 @@ async function mount(root, id, templateKey = null) {
         if (searching && !openBefore.has(block)) openBefore.set(block, block.open);
         let any = 0;
         for (const label of block.querySelectorAll('.choice')) {
-          const show = !searching || (label.dataset.icon !== '' && hits.has(label.dataset.icon));
+          const show = !searching || hits.has(label.dataset.icon);
           label.hidden = !show;
           if (show) any += 1;
         }
@@ -285,7 +282,7 @@ async function mount(root, id, templateKey = null) {
       existing ? null : h('div', { class: 'templates' },
         h('p', { class: 'field__label' }, nl.form.templates),
         h('div', { class: 'choices' }, ...Object.entries(TEMPLATES).map(([key, template]) =>
-          h('a', { class: 'chip-link', href: `#/habits/new?template=${key}`, 'aria-current': key === templateKey ? 'true' : null }, `${template.icon} ${template.name}`)))),
+          h('a', { class: 'chip-link', href: `#/habits/new?template=${key}`, 'aria-current': key === templateKey ? 'true' : null }, habitIcon(template.icon, 'theme-icon--inline'), ` ${template.name}`)))),
       field(nl.form.name, name, { id: 'name', errorField: 'name', max: NAME_MAX }),
       field(nl.form.icon, iconGroup, { group: true, errorField: 'icon' }),
       field(nl.form.color, colorGroup, { group: true, errorField: 'color' }),

@@ -1,10 +1,10 @@
 // De iconen van habits: de catalogus, zoeken, de koppeling met de thema-sets en de gereedschappen om een set van Moda in te lezen.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { ICON_GROUPS, ICONS } from '../../src/content/icons.js';
 import { ICON_SET_KEYS } from '../../src/content/icon-set.js';
-import { iconForEmoji, iconForKey, iconKeyFor, habitIconHref, searchIcons, uiIconHref } from '../../src/app/icons.js';
+import { DEFAULT_ICON_KEY, iconForEmoji, iconForKey, iconKeyFor, habitIconHref, searchIcons, uiIconHref } from '../../src/app/icons.js';
 import { UI_ICON_GROUPS, UI_ICON_KEYS, achievementIconKey, tipIconKey } from '../../src/content/ui-icons.js';
 import { ACHIEVEMENT_INFO } from '../../src/content/achievements.js';
 import { ACHIEVEMENT_KEYS } from '../../src/domain/achievements.js';
@@ -133,6 +133,29 @@ test('uiIconHref: alleen als de set de sleutel heeft', () => {
   assert.equal(uiIconHref('ach-days-7', ['ach-days-7']), 'icons/set.svg#ach-days-7');
   assert.equal(uiIconHref('ach-days-21', ['ach-days-7']), null);
   assert.equal(uiIconHref('ach-days-7', undefined), null);
+});
+
+test('de iconenset is compleet: elke sleutel van habits, prestaties, tips en tekens staat in de sprite (de app toont geen emoji van het toestel meer)', () => {
+  assert.deepEqual([...ICON_SET_KEYS].sort(), [...ALL_ICON_KEYS].sort(), 'npm run icons:build, en vraag Moda om wat ontbreekt (docs/MODA-ICONS.md)');
+});
+
+test('geen emoji van het toestel in de code: alleen content/icons.js en content/templates.js (opgeslagen als sleutel in de data) mogen ze bevatten', () => {
+  const allowed = new Set(['src/content/icons.js', 'src/content/templates.js']);
+  const found = [];
+  (function walk(dir) {
+    for (const name of readdirSync(new URL(`../../${dir}`, import.meta.url))) {
+      const path = `${dir}/${name}`;
+      if (statSync(new URL(`../../${path}`, import.meta.url)).isDirectory()) walk(path);
+      else if (path.endsWith('.js') && !allowed.has(path) && /\p{Extended_Pictographic}/u.test(read(path))) found.push(path);
+    }
+  }('src'));
+  assert.deepEqual(found, [], 'emoji in de weergave: gebruik een icoon uit de set (content/icons.js of ui-icons.js)');
+});
+
+test('een onbekende emoji krijgt het standaardicoon, dat in de set staat', () => {
+  assert.equal(iconKeyFor('🦄'), null);
+  assert.ok(iconForKey(DEFAULT_ICON_KEY));
+  assert.ok(ICON_SET_KEYS.includes(DEFAULT_ICON_KEY));
 });
 
 // ---- het gereedschap om een set van Moda in te lezen ---------------------------------------------------------------------------------------

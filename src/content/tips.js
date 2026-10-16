@@ -3,53 +3,44 @@ import { tipIconKey } from './ui-icons.js';
 
 const TIP_TEXTS = {
   planned: {
-    emoji: '🗓',
     title: 'Bijna van start',
     text: 'Zodra de startdatum aanbreekt, verschijnt deze habit bij Vandaag. Een vaste cue ("na het ontbijt") helpt om meteen goed te beginnen.',
   },
   start_small: {
-    emoji: '🌱',
     title: 'Begin klein',
     text: 'De eerste week gaat om herhalen, niet om presteren. Een kleine versie die je altijd volhoudt, wint van een groot plan dat je loslaat.',
   },
   dip: {
-    emoji: '🌧',
     title: 'Week 2–3 voelt vaak moeilijk',
     text: 'De beginmotivatie zakt weg en de gewoonte is nog niet automatisch. Dat hoort erbij. Houd het klein en blijf komen.',
   },
   cue: {
-    emoji: '🔗',
     title: 'Koppel het aan een moment',
     text: 'Gewoontes blijven hangen als ze aan een vaste cue hangen: "Na … doe ik …". Heb je er al een? Vul die in bij bewerken.',
   },
   identity: {
-    emoji: '🧭',
     title: 'Word wie je wilt zijn',
     text: 'Elke keer dat je het doet, stem je op de persoon die je wilt worden. Kijk naar je "waarom", niet alleen naar het resultaat.',
   },
   automatic: {
-    emoji: '✨',
     title: 'Bijna automatisch',
     text: 'Je zit dicht bij de 66 dagen. Let eens op: doe je dit al zonder erover na te denken? Geef het hieronder een cijfer.',
   },
   never_miss_twice: {
-    emoji: '🪢',
     title: 'Nooit twee keer missen',
     text: 'Eén gemiste dag is geen ramp, twee achter elkaar is het begin van stoppen. Pak de volgende keer gewoon weer op, ook met de minimale versie.',
   },
   maintain: {
-    emoji: '🌳',
     title: 'Ingeburgerd',
     text: 'Deze gewoonte is van jou. Je hoeft hem niet meer elke dag te volgen, maar je kunt hem in onderhoud laten staan als je wilt.',
   },
   paused: {
-    emoji: '⏸',
     title: 'Gepauzeerd',
     text: 'Pauzeren telt niet als missen. Pak het weer op als het kan; begin dan klein.',
   },
 };
 
-// elke tip krijgt de sleutel van haar icoon (content/ui-icons.js); `emoji` is de terugval voor een thema zonder eigen set
+// elke tip krijgt de sleutel van haar icoon (content/ui-icons.js)
 export const TIPS = Object.freeze(
   Object.fromEntries(Object.entries(TIP_TEXTS).map(([key, tip]) => [key, Object.freeze({ ...tip, icon: tipIconKey(key) })])),
 );

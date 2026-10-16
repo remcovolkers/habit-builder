@@ -96,7 +96,7 @@ export function buildSprite(icons) {
 export function iconSetModule(keys) {
   return `// Welke sleutels (content/icons.js en content/ui-icons.js) in de iconenset staan, icons/set.svg. Eén set voor alle thema's.
 // GEGENEREERD door \`npm run icons:build\` (tools/build-icons.mjs): niet met de hand aanpassen.
-// Een sleutel die hier niet staat, toont de emoji.
+// Elke sleutel hoort erin te staan: een test bewaakt dat de set compleet is.
 export const ICON_SET_KEYS = Object.freeze([${keys.map((key) => `'${key}'`).join(', ')}]);
 `;
 }
