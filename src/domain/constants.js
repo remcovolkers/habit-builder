@@ -59,6 +59,17 @@ export const COMEBACK_GAP_DAYS = 7;
 export const ACTIVE_HABITS_ACHIEVEMENT = 3;
 export const REVIEW_STREAK_WEEKS = 4;
 
+/** Achievements, ronde 1 (docs/ITERATIE-1.2.md §5): aantallen, volhouden, terugkomen, slimmer en ingeburgerd. */
+export const DONE_MILESTONES = [10, 50, 100, 500, 1000]; // keren gedaan, over alle habits samen
+export const STREAK_MILESTONES = [7, 14, 30]; // dagen achter elkaar bij één habit met vaste dagen
+export const PERFECT_WEEKS_RUN = 4; // perfecte weken achter elkaar
+export const RECOVERIES_ACHIEVEMENT = 5; // keer meteen terug na een gemiste eenheid
+export const MINIMAL_ACHIEVEMENT = 5; // keer de minimale versie gedaan
+export const COUNTER_FULL_DAYS = 7; // dagen achter elkaar het volle doel van een teller gehaald
+export const GRADUATED_MILESTONES = [2, 5]; // ingeburgerde habits
+/** "Sterk terug": binnen een venster van 14 dagen onder de 50% gehaald (dip), later weer op 80% of hoger. Minstens 4 eenheden in het venster, anders zegt een percentage niets. */
+export const STRONG_RETURN = Object.freeze({ windowDays: 14, dipBelow: 0.5, backAt: 0.8, minUnits: 4 });
+
 /**
  * Sociaal (docs/SOCIAAL.md §4). Punten over de laatste dagen (vandaag meegerekend):
  * een vast bedrag per afgeronde taak, een bonus voor habits die nog niet eigen zijn, een bonus voor een nieuwe habit,

@@ -135,6 +135,16 @@ Na `npm run dev:seed` heeft de stub zes vrienden en een uitnodigingslink. Gebrui
 9. Open dezelfde link nog eens: **"Jij en Remco (stub) waren al vrienden"**. Open hem als de stub zelf: "Dit is je eigen uitnodigingslink". Open een verzonnen link (`…/uitnodiging/` met 64 keer `f`): "Deze link werkt niet meer" met nog steeds de knop Account maken.
 10. Terug als de stub: de leeg-gebruiker staat in "Je vrienden" en de teller bij je link is **1 persoon**.
 
+## L. Prestaties (ronde 1 van §5)
+
+1. Open het gevulde account (`npm run dev:seed`, inloggen als stub). Bij de eerste keer openen na de update kan er één viering met meerdere medailles verschijnen ("n nieuwe prestaties!"): de stub haalt veel regels al. Sluit hem met *Mooi!*.
+2. **Prestaties** is nu per groep: *Aantallen, Volhouden, Terugkomen, Slimmer, Ingeburgerd, Reflectie, Verbreding*, elk met "x van y". Een medaille die nog niet behaald is toont hoe ver je bent, bijvoorbeeld **"199 van 500"** bij *500 keer gedaan*; de rest zegt "Nog niet behaald".
+3. Een medaille voor meerdere habits toont de eerste twee en "en 7 andere", niet een hele rij.
+4. Zelf uitproberen met het lege account (`leeg`): vink iets af tot 10 keer (*10 keer gedaan*), vul bij een habit een *minimale versie* in (*Kleine stap*, direct), pauzeer een habit, hef de pauze op en vink hem daarna af (*Pauzeren is oké*). *Vol doel* (een teller-habit, zeven dagen op rij het volle doel; een minimale versie of een half doel breekt de reeks) is lokaal alleen met een aangepaste datum te testen en wordt gedekt door de unit-tests.
+5. *Sterk terug*: een habit waarvan twee weken minder dan de helft gehaald is en die daarna weer op 80% komt. *Nooit twee keer missen*: vijf keer na een gemiste dag meteen weer gedaan. Beide zijn in de stub al gehaald (Terugkomen: 3 van 3).
+6. Controleer op 320 px met 200% tekst dat de pagina niet zijwaarts scrolt (`npm run check:layout` doet dat ook).
+7. Nieuwe prestaties zijn privé: ze staan niet op de ranglijst en niet in wat vrienden zien.
+
 ## Automatische controles
 
 ```

@@ -441,8 +441,10 @@ export const nl = {
     title: 'Prestaties',
     count: (n, total) => `${n} van ${total}`,
     locked: 'Nog niet behaald',
+    progress: (value, target) => `${value} van ${target}`,
     unlockedOn: (label) => `Behaald op ${label}`,
-    forHabits: (names) => names.join(', '),
+    // bij veel habits blijft het kort: de eerste twee en hoeveel er nog meer zijn
+    forHabits: (names) => (names.length <= 2 ? names.join(' en ') : `${names[0]}, ${names[1]} en ${names.length - 2} andere`),
     celebrateTitle: 'Nieuwe prestatie!',
     celebrateTitleMany: (n) => `${n} nieuwe prestaties!`,
     celebrateClose: 'Mooi!',
