@@ -121,6 +121,8 @@ select.input {
 }
 
 .choices--colors {
+  margin-top: var(--space-2); /* het label staat anders te dicht op de cirkels (en op de ring van de gekozen kleur) */
+  padding: 2px;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: var(--space-2);
