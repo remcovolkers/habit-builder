@@ -12,8 +12,11 @@ import { ALL_WEEKDAYS, WORKDAYS } from '../../domain/schedule.js';
 import { currentSchedule } from './habits.js';
 import { TEMPLATES } from '../../content/templates.js';
 import { COUNTER_MAX, COUNTER_UNIT_MAX } from '../../domain/counter.js';
+import { ICONS } from '../../content/icons.js';
+import { DEFAULT_ICON_KEY, iconForEmoji, iconForKey, searchIcons } from '../../app/icons.js';
+import { icon } from '../svg.js';
+import { habitIcon } from '../components/habit-icon.js';
 
-const ICONS = ['💧', '📖', '🏃', '🧘', '🥗', '😴', '💪', '🎸', '🧹', '📞', '✍️', '🚴', '🧠', '🌱', '☀️', '🦷', '💊', '🚭', '📝', '🎨', '🐕', '🧺', '💻', '🛌'];
 const TYPES = ['daily', 'weekdays', 'per_week', 'day_of_month', 'per_month'];
 
 function typeOf(schedule) {
@@ -58,22 +61,59 @@ async function mount(root, id, templateKey = null) {
   // --- hulpjes voor velden ----------------------------------------------------------------
   const errorEls = {};
   const errorFor = (field) => (errorEls[field] ??= h('p', { id: `err-${field}`, class: 'field__error', role: 'alert', hidden: true }));
-  const field = (label, control, { id: forId, hint = null, errorField = null, group = false, max = null } = {}) =>
+  const field = (label, control, { id: forId, hint = null, errorField = null, group = false, max = null, counterOf = null } = {}) =>
     h(group ? 'fieldset' : 'div', { class: 'field' },
       h(group ? 'legend' : 'label', { class: 'field__label', for: group ? null : forId }, label),
       control,
-      max ? charCounter(control, max) : null,
+      max ? charCounter(counterOf ?? control, max) : null,
       hint ? h('p', { class: 'field__hint', id: `hint-${errorField ?? forId}` }, hint) : null,
       errorField ? errorFor(errorField) : null);
 
   const name = h('input', { id: 'name', class: 'input', type: 'text', placeholder: nl.form.namePlaceholder, value: base.name ?? '', autocomplete: 'off', 'aria-describedby': 'err-name' });
 
-  const iconChoices = [...new Set([...(base.icon && !ICONS.includes(base.icon) ? [base.icon] : []), ...ICONS])];
-  const chosenIcon = base.icon ?? ICONS[0];
-  const iconGroup = h('div', { class: 'choices', role: 'radiogroup' },
-    ...iconChoices.map((icon) => h('label', { class: 'choice' },
-      h('input', { class: 'choice__input', type: 'radio', name: 'icon', value: icon, checked: icon === chosenIcon }),
-      h('span', { class: 'choice__face' }, icon))));
+  // icoon: een knop naast de naam met het gekozen icoon; die opent een blad met alle iconen per onderwerp, met zoeken
+  const known = iconForEmoji(base.icon);
+  // een onbekende emoji (oude versie of import) toont als het standaardicoon en wordt dat ook als je de habit opslaat
+  let chosenIcon = known?.emoji ?? (base.icon ? iconForKey(DEFAULT_ICON_KEY).emoji : ICONS[0].emoji);
+  const iconName = () => (iconForEmoji(chosenIcon) ?? iconForKey(DEFAULT_ICON_KEY)).name;
+  const iconTrigger = h('button', { type: 'button', id: 'iconTrigger', class: 'icon-trigger', 'aria-haspopup': 'dialog', onclick: () => openIconPicker() });
+  const drawTrigger = () => {
+    iconTrigger.setAttribute('aria-label', nl.form.iconChange(iconName()));
+    fill(iconTrigger, h('span', { class: 'icon-trigger__art' }, habitIcon(chosenIcon)), h('span', { class: 'icon-trigger__hint', 'aria-hidden': 'true' }, icon('edit')));
+  };
+  drawTrigger();
+
+  function openIconPicker() {
+    const search = h('input', {
+      id: 'iconSearch', class: 'input', type: 'search', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false',
+      'aria-label': nl.form.iconSearch, placeholder: nl.form.iconSearchPlaceholder, oninput: () => redraw(),
+    });
+    const list = h('div', { class: 'icon-picker__list' });
+    let picker = null;
+    const redraw = () => {
+      const groups = searchIcons(search.value);
+      fill(list,
+        groups.length === 0 ? h('p', { class: 'field__hint', role: 'status' }, nl.form.iconNone) : null,
+        ...groups.map((group) => h('section', { class: 'icon-picker__group', 'aria-label': group.label },
+          h('h3', { class: 'icon-picker__name' }, group.label),
+          h('div', { class: 'icon-picker__grid' }, ...group.icons.map((item) => h('button', {
+            type: 'button', class: 'icon-picker__tile', title: item.name, 'aria-label': item.name, 'aria-pressed': item.emoji === chosenIcon ? 'true' : 'false',
+            onclick: () => { chosenIcon = item.emoji; drawTrigger(); picker.close(); iconTrigger.focus(); },
+          }, habitIcon(item.emoji)))))));
+    };
+    redraw();
+    picker = openDialog({
+      title: nl.form.iconPickTitle,
+      content: h('div', { class: 'icon-picker' }, h('div', { class: 'icon-picker__search' }, search), list),
+      actions: [], cancelLabel: nl.app.close, className: 'dialog--picker',
+    });
+    // geen toetsenbord dat meteen omhoog springt: de focus gaat naar de titel, het zoekveld is één tik verder
+    const title = picker.dialog.querySelector('.dialog__title');
+    title.tabIndex = -1;
+    title.focus();
+    // het gekozen icoon in beeld brengen
+    picker.dialog.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'center' });
+  }
 
   const chosenColor = base.color ?? HABIT_COLORS[0];
   const colorGroup = h('div', { class: 'choices choices--colors', role: 'radiogroup' },
@@ -180,7 +220,7 @@ async function mount(root, id, templateKey = null) {
     for (const el of [formError, ...Object.values(errorEls)]) el.hidden = true;
 
     const values = {
-      name: name.value, icon: radio('icon'), color: radio('color'), daypart: radio('daypart'),
+      name: name.value, icon: chosenIcon, color: radio('color'), daypart: radio('daypart'),
       startDate: started ? existing.startDate : startDate.value,
       cue: cue.value, why: why.value, minimalVersion: minimal.value, schedule: buildSchedule(),
       counter: counterAllowed() && form.counterOn
@@ -201,7 +241,7 @@ async function mount(root, id, templateKey = null) {
   }
 
   function showErrors(errors) {
-    const focusTargets = { name, icon: iconGroup, color: colorGroup, daypart, startDate, schedule: typeGroup, cue, why, minimalVersion: minimal,
+    const focusTargets = { name, icon: iconTrigger, color: colorGroup, daypart, startDate, schedule: typeGroup, cue, why, minimalVersion: minimal,
       counterUnit: counterBox.querySelector('#counterUnit'), counterTarget: counterBox.querySelector('#counterTarget'), counter: counterBox.querySelector('#counterOn') };
     let first = null;
     for (const { field: key, code, detail } of errors) {
@@ -246,9 +286,9 @@ async function mount(root, id, templateKey = null) {
       existing ? null : h('div', { class: 'templates' },
         h('p', { class: 'field__label' }, nl.form.templates),
         h('div', { class: 'choices' }, ...Object.entries(TEMPLATES).map(([key, template]) =>
-          h('a', { class: 'chip-link', href: `#/habits/new?template=${key}`, 'aria-current': key === templateKey ? 'true' : null }, `${template.icon} ${template.name}`)))),
-      field(nl.form.name, name, { id: 'name', errorField: 'name', max: NAME_MAX }),
-      field(nl.form.icon, iconGroup, { group: true, errorField: 'icon' }),
+          h('a', { class: 'chip-link', href: `#/habits/new?template=${key}`, 'aria-current': key === templateKey ? 'true' : null }, habitIcon(template.icon, 'theme-icon--inline'), ` ${template.name}`)))),
+      field(nl.form.name, h('div', { class: 'name-row' }, iconTrigger, name), { id: 'name', errorField: 'name', max: NAME_MAX, counterOf: name }),
+      errorFor('icon'),
       field(nl.form.color, colorGroup, { group: true, errorField: 'color' }),
       h('fieldset', { class: 'field' },
         h('legend', { class: 'field__label' }, nl.form.schedule),

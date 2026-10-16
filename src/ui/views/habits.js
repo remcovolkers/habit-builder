@@ -1,3 +1,4 @@
+import { habitIcon } from '../components/habit-icon.js';
 import { h } from '../dom.js';
 import { liveView } from '../live.js';
 import { notifyChanged, state } from '../state.js';
@@ -44,7 +45,7 @@ function row(habit, section, today, order = null) {
   if (section === 'planned') meta.push(nl.habits.startsOn(formatDateShort(habit.startDate)));
   return h('li', { class: 'habit-row', dataset: { color: habit.color, section, reordering: order ? 'true' : null } },
     h('a', { class: 'habit-row__link', href: `#/habits/${encodeURIComponent(habit.id)}` },
-      h('span', { class: 'habit-row__icon', 'aria-hidden': 'true' }, habit.icon),
+      h('span', { class: 'habit-row__icon', 'aria-hidden': 'true' }, habitIcon(habit.icon)),
       h('span', { class: 'habit-row__body' },
         h('span', { class: 'habit-row__name' }, habit.name),
         h('span', { class: 'habit-row__meta' }, meta.join(' · '))),

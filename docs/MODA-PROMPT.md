@@ -64,6 +64,9 @@ Then: **Dagdeel** (Ochtend / Middag / Avond / Overdag), **Startdatum**, **Cue** 
 ## Component sheet
 One board with: buttons (primary, secondary, ghost, destructive, disabled), the check button in all states (open, gedaan, minimaal, overgeslagen, gepauzeerd, gemist), habit card, pool card (normal / at risk / satisfied), badges for the three phases, segmented control, chips, stepper, text input / textarea (default, focus, error), toast, dialog/bottom sheet, tab bar, progress ring, meter, heatmap cell states, achievement badge (locked / unlocked), and the color, type, radius and spacing scale.
 
+## Icons
+The habit, achievement and tip icons are **one icon set for all themes**, made separately: see `docs/MODA-ICONS.md`. A new theme does **not** need its own icons: the set takes its colors from the theme (`currentColor` and `var(--icon-accent)`). Do not design icons in this prompt.
+
 ## Deliverable
 Export as clean **HTML + CSS** if possible (CSS custom properties for every color, font size, radius and spacing value, no inline styles). Otherwise give me screenshots plus a complete list of the exact hex values, font sizes, line heights, radii, spacing and shadow values. Keep names generic (`--color-accent`, `--radius-card`) so I can map them to my own token file.
 

@@ -2,12 +2,13 @@ import { h } from '../dom.js';
 import { openDialog } from './dialog.js';
 import { nl } from '../../content/nl.js';
 import { mascot } from './mascot.js';
+import { uiIcon } from './habit-icon.js';
 import { ACHIEVEMENT_INFO } from '../../content/achievements.js';
 
 /** Eén medaille. sub = ondertitel (bv. de habit waarvoor je hem haalde). */
 export function achievementMedal({ info, sub = null, locked = false }) {
   return h('li', { class: `achv${locked ? ' achv--locked' : ''}`, dataset: { state: locked ? 'locked' : 'unlocked' } },
-    h('span', { class: 'achv__medal', 'aria-hidden': 'true' }, info.emoji),
+    h('span', { class: 'achv__medal', 'aria-hidden': 'true' }, uiIcon(info.icon)),
     h('span', { class: 'achv__title' }, info.title),
     sub ? h('span', { class: 'achv__sub' }, sub) : null);
 }

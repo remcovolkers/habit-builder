@@ -1,3 +1,4 @@
+import { habitIcon } from '../components/habit-icon.js';
 import { h } from '../dom.js';
 import { liveView } from '../live.js';
 import { notifyChanged, state } from '../state.js';
@@ -24,7 +25,7 @@ function overviewRow(habit, snapshot, today) {
   return h('li', { class: 'card card--flush', dataset: { color: habit.color } },
     h('a', { class: 'overview-row', href: `#/habits/${encodeURIComponent(habit.id)}` },
       h('div', { class: 'overview-row__top' },
-        h('span', { class: 'habit-card__icon', 'aria-hidden': 'true' }, habit.icon),
+        h('span', { class: 'habit-card__icon', 'aria-hidden': 'true' }, habitIcon(habit.icon)),
         h('span', { class: 'overview-row__name' }, habit.name),
         h('span', { class: `badge badge--phase badge--${stats.phase.phase}` }, nl.detail.phases[stats.phase.phase])),
       h('div', { class: 'meter', role: 'img', 'aria-label': `${nl.stats.strength} ${strength}%` }, fill),

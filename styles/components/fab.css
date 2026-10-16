@@ -14,7 +14,7 @@
   box-shadow: var(--shadow-card), var(--shadow-glow);
   color: var(--color-on-accent);
   text-decoration: none;
-  transition: transform var(--duration-fast) var(--ease-out), filter var(--duration-fast);
+  transition: transform var(--duration-fast) var(--ease-out), filter var(--duration-fast), opacity var(--duration-fast);
 }
 
 .fab svg {
@@ -26,12 +26,12 @@
   transform: scale(0.94);
 }
 
-/* een lijst eindigt boven de knop (knop 3,5rem + 1rem afstand tot de tabbalk + 1rem lucht), zodat het laatste item nooit eronder verdwijnt;
-   een lege pagina heeft die ruimte niet nodig (en hoort niet te scrollen) */
-@media (max-width: 959px) {
-  .app__main:has(.fab):not(:has(.empty)) {
-    padding-bottom: calc(var(--size-tabbar) + var(--safe-bottom) + 5.5rem);
-  }
+/* aan het einde van de pagina zou de knop over de laatste kaart vallen: dan schuift hij weg (zie fab.js) in plaats van dat er
+   scrollruimte onder de lijst wordt vrijgehouden. Hij blijft focusbaar; focus haalt hem terug. */
+.fab--away {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0.75rem) scale(0.9);
 }
 
 @media (min-width: 960px) {

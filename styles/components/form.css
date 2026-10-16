@@ -57,6 +57,8 @@
 
 .input {
   width: 100%;
+  min-width: 0; /* een datumveld heeft een eigen minimumbreedte; bij grote tekst op een smal scherm mag het krimpen */
+  max-width: 100%;
   min-height: 3rem;
   padding: var(--space-3) var(--space-4);
   background: var(--color-elevated);
@@ -119,6 +121,8 @@ select.input {
 }
 
 .choices--colors {
+  margin-top: var(--space-2); /* het label staat anders te dicht op de cirkels (en op de ring van de gekozen kleur) */
+  padding: 2px;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: var(--space-2);
@@ -158,6 +162,7 @@ select.input {
   border-color: var(--color-accent);
   box-shadow: var(--shadow-glow);
 }
+
 
 .choice__face--text {
   width: 100%;
@@ -225,7 +230,8 @@ select.input {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
-  white-space: nowrap;
+  text-align: center;
+  overflow-wrap: anywhere; /* bij grote tekst op een smal scherm mag het label afbreken in plaats van de pagina te verbreden */
 }
 
 .choice__input:checked + .segmented__face {
@@ -577,4 +583,151 @@ select.input {
   margin-top: var(--space-4);
   padding-top: var(--space-3);
   border-top: 1px dashed var(--color-hairline-strong);
+}
+
+/* naam met het icoon ervoor: een knop die de iconenkiezer opent */
+.name-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.name-row .input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.icon-trigger {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 3.5rem;
+  min-height: 3.5rem;
+  padding: 0;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-button);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.icon-trigger__art .theme-icon {
+  width: 2rem;
+  height: 2rem;
+  --icon-accent: var(--color-accent);
+}
+
+/* klein potloodje in de hoek: dit icoon is te veranderen */
+.icon-trigger__hint {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  display: grid;
+  place-items: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  background: var(--color-accent);
+  border-radius: var(--radius-full);
+  color: var(--color-on-accent);
+}
+
+.icon-trigger__hint svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.icon-trigger:focus-visible,
+.icon-picker__tile:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+
+@media (hover: hover) {
+  .icon-trigger:hover {
+    border-color: var(--color-accent-50);
+  }
+}
+
+/* het blad met alle iconen: handvat, titel en zoekveld blijven staan, de lijst met iconen scrolt */
+.dialog--picker[open] {
+  display: flex;
+  flex-direction: column;
+  max-height: 88svh;
+  overflow: hidden;
+}
+
+.dialog--picker .icon-picker {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.icon-picker__list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.dialog--picker .dialog__actions {
+  flex: none;
+  margin-top: var(--space-3);
+}
+
+.icon-picker__search {
+  flex: none;
+  padding-block: var(--space-2);
+}
+
+.icon-picker__group {
+  margin-top: var(--space-3);
+}
+
+.icon-picker__name {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-muted);
+}
+
+.icon-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.5rem, 1fr));
+  gap: var(--space-2);
+}
+
+.icon-picker__tile {
+  display: grid;
+  place-items: center;
+  min-height: 3.5rem;
+  padding: 0;
+  background: var(--color-surface-solid, var(--color-elevated));
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-button);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.icon-picker__tile .theme-icon {
+  width: 2.125rem;
+  height: 2.125rem;
+  --icon-accent: var(--color-accent);
+}
+
+/* het gekozen icoon: ring en neon gloed in de accentkleur van het thema */
+.icon-picker__tile[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.icon-picker__tile[aria-pressed='true'] .theme-icon {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-accent) 60%, transparent));
+}
+
+@media (hover: hover) {
+  .icon-picker__tile:hover {
+    border-color: var(--color-accent-50);
+  }
 }

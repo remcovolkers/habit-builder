@@ -1,4 +1,4 @@
-/* Mel Theme · Pokémon: geel op een blauwe nacht. Ontwerp: moda-themes/mel.
+/* Mel Theme · Pokémon: geel op een blauwe nacht. Ontworpen met Moda (het ontwerp zelf staat in de git-geschiedenis).
    De illustraties (themes/mel/pokemon) worden via src/app/themes.js aan plekken in de app gekoppeld. */
 :root[data-theme='mel'] {
   color-scheme: dark;

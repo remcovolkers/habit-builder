@@ -16,6 +16,17 @@
   gap: var(--space-3);
 }
 
+/* op de habit-pagina is het icoon groter dan op een kaart */
+.hero__top .habit-card__icon {
+  width: 4.25rem;
+  height: 4.25rem;
+}
+
+.hero__top .habit-card__icon .theme-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
 .hero__name {
   font-size: var(--font-size-2xl);
   margin: 0;
@@ -356,6 +367,13 @@
   font-size: var(--font-size-xl);
 }
 
+.tip__icon .theme-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  color: var(--color-accent);
+  --icon-accent: var(--color-text);
+}
+
 .tip__title {
   font-weight: var(--font-weight-bold);
   margin-top: var(--space-2);
@@ -457,6 +475,13 @@
   font-weight: var(--font-weight-bold);
 }
 
+.achv__medal .theme-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  color: var(--color-on-accent); /* de medaille is een vlak in de accentkleur: het icoon staat er donker op */
+  --icon-accent: var(--color-on-accent);
+}
+
 .achv__medal {
   display: grid;
   place-items: center;
@@ -485,6 +510,11 @@
   box-shadow: none;
   filter: grayscale(1);
   opacity: 0.6;
+}
+
+.achv--locked .achv__medal .theme-icon {
+  color: var(--color-text-muted); /* niet behaald: een lichte tekening op het donkere vlak; de greyscale en doorzichtigheid van de medaille doen de rest */
+  --icon-accent: var(--color-text-faint);
 }
 
 .celebrate-list {

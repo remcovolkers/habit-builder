@@ -6,3 +6,5 @@ _site/
 Thumbs.db
 supabase/.temp/
 supabase/.branches/
+
+docs/icons/galerij.html

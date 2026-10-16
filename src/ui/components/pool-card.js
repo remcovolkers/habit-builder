@@ -1,3 +1,4 @@
+import { habitIcon } from './habit-icon.js';
 import { h } from '../dom.js';
 import { nl } from '../../content/nl.js';
 import { relativeDayLabel } from '../../app/format.js';
@@ -24,7 +25,7 @@ export function poolCard(entry, { date, today, canLog, canPlan, onPlan, onPlanOt
   ].filter(Boolean);
 
   return h('li', { class: 'pool-card', dataset: { state, color: habit.color } },
-    h('span', { class: 'pool-card__icon', 'aria-hidden': 'true' }, habit.icon),
+    h('span', { class: 'pool-card__icon', 'aria-hidden': 'true' }, habitIcon(habit.icon)),
     h('div', { class: 'pool-card__body' },
       h('div', { class: 'pool-card__name' }, habit.name),
       h('div', { class: 'pool-card__meta' },

@@ -2,6 +2,7 @@ import { h } from '../dom.js';
 import { icon } from '../svg.js';
 import { mascot } from './mascot.js';
 import { TEMPLATES } from '../../content/templates.js';
+import { habitIcon } from './habit-icon.js';
 import { nl } from '../../content/nl.js';
 
 const STARTERS = ['water', 'reading', 'running'];
@@ -23,7 +24,7 @@ export function emptyState({ art, slot = 'empty', title, text, cta = null, secon
       ? h('div', { class: 'empty__starters' },
         h('p', { class: 'empty__starters-title' }, nl.empty.startWith),
         h('div', { class: 'empty__chips' }, ...STARTERS.map((key) =>
-          h('a', { class: 'chip-link', href: `#/habits/new?template=${key}` }, `${TEMPLATES[key].icon} ${TEMPLATES[key].name}`))))
+          h('a', { class: 'chip-link', href: `#/habits/new?template=${key}` }, habitIcon(TEMPLATES[key].icon, 'theme-icon--inline'), ` ${TEMPLATES[key].name}`))))
       : null,
     cta ? h('a', { class: cta.desktopOnly ? 'button button--primary desktop-only' : 'button button--primary', href: cta.href }, cta.label) : null,
     secondary ? h('a', { class: 'button button--ghost', href: secondary.href }, secondary.label) : null);
