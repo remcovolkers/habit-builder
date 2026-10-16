@@ -3,7 +3,7 @@
 Hoort bij [ITERATIE-1.2.md](ITERATIE-1.2.md) §6. **Eén iconenset voor alle thema's** (besluit Remco, 2026-10-16): de kleuren komen uit het thema (`currentColor` en `--icon-accent`), niet uit de tekening. Het doel is dat de app geen emoji van het toestel meer toont; alles komt uit deze set.
 
 ## Stand: de set is compleet (2026-10-16)
-**109 van 109 iconen zijn gemaakt en staan in de app** (`icons/set.svg`, gebouwd met `npm run icons:build` uit `moda-themes/icons/habit-builder-iconen/`). Ze zijn gemaakt met **één prompt**, de **"Alles in één keer"-prompt** onderaan dit document. Die gaf de goede uitvoer in één keer: **gebruik hem als basis voor elke nieuwe aanvraag** (bijvoorbeeld voor een nieuwe prestatie of een extra habit-icoon), met alleen de nieuwe sleutels in de lijst. De vier batches hieronder zijn de terugvalroute als een set te groot wordt.
+**109 van 109 iconen zijn gemaakt en staan in de app** (`icons/set.svg`, gebouwd met `npm run icons:build` uit `moda-themes/icons/icons-complete.html`). Ze zijn gemaakt met **één prompt**, de **"Alles in één keer"-prompt** onderaan dit document. Die gaf de goede uitvoer in één keer: **gebruik hem als basis voor elke nieuwe aanvraag** (bijvoorbeeld voor een nieuwe prestatie of een extra habit-icoon), met alleen de nieuwe sleutels in de lijst. De vier batches hieronder zijn de terugvalroute als een set te groot wordt.
 
 Een nieuw icoon toevoegen: sleutel in `src/content/icons.js` of `src/content/ui-icons.js` en in de tabellen hieronder, het icoon aan Moda vragen met die prompt, de uitvoer onder `moda-themes/icons/` zetten, `npm run icons:build`. De test "de iconenset is compleet" faalt tot de sprite alle sleutels heeft.
 
