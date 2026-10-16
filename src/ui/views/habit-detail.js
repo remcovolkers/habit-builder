@@ -75,6 +75,12 @@ function criterionRow(criterion, detail) {
       g.days(criterion.value, criterion.required),
       h('span', { class: `checklist__value${criterion.met ? ' checklist__value--ok' : ''}` }, g.daysValue(criterion.value, criterion.required)));
   }
+  if (criterion.key === 'repetitions') {
+    return h('li', null,
+      h('i', { class: `ck ${criterion.met ? 'ck--ok' : 'ck--part'}` }, criterion.met ? '✓' : '·'),
+      g.repetitions(criterion.value, criterion.required),
+      h('span', { class: `checklist__value${criterion.met ? ' checklist__value--ok' : ''}` }, g.daysValue(criterion.value, criterion.required)));
+  }
   if (criterion.key === 'consistency') {
     const pct = criterion.value === null ? null : Math.round(criterion.value * 100);
     return h('li', null,
@@ -83,9 +89,10 @@ function criterionRow(criterion, detail) {
       h('span', { class: `checklist__value${criterion.met ? ' checklist__value--ok' : ''}` }, pct === null ? nl.detail.noData : `${pct}%${criterion.met ? ' ✓' : ''}`));
   }
   return h('li', null,
-    h('i', { class: `ck ${criterion.met ? 'ck--ok' : 'ck--part'}` }, criterion.met ? '✓' : '·'),
-    g.automaticity,
-    h('span', { class: `checklist__value${criterion.met ? ' checklist__value--ok' : ''}` }, `${criterion.value ?? nl.detail.noData}/5${criterion.met ? ' ✓' : ''}`));
+    h('i', { class: `ck ${criterion.met ? 'ck--ok' : criterion.value === null ? '' : 'ck--part'}` }, criterion.met ? '✓' : criterion.value === null ? '?' : '·'),
+    detail.automaticityRequired ? h('span', null, g.automaticity, ' ', h('span', { class: 'xs muted' }, g.required)) : g.automaticity,
+    h('span', { class: `checklist__value${criterion.met ? ' checklist__value--ok' : ''}` },
+      criterion.value === null ? g.notEntered : `${criterion.value}/5${criterion.met ? ' ✓' : ''}`));
 }
 
 function graduationCard(detail, refresh) {
@@ -111,7 +118,7 @@ function graduationCard(detail, refresh) {
   }
 
   const rows = stats.graduation.criteria.map((c) => criterionRow(c, detail));
-  if (!detail.useAutomaticity) {
+  if (!detail.useAutomaticity && !detail.automaticityRequired) {
     rows.push(h('li', null,
       h('i', { class: 'ck' }, '?'),
       h('span', null, g.automaticity, ' ', h('span', { class: 'xs muted' }, g.optional)),
@@ -132,9 +139,12 @@ function graduationCard(detail, refresh) {
     }],
   });
 
-  const hint = detail.remainingDays > 0 ? g.remaining(detail.remainingDays) : detail.canGraduate ? g.ready : g.almost;
+  const hint = detail.remainingDays > 0 || detail.remainingRepetitions > 0
+    ? g.remaining(detail.remainingDays, detail.remainingRepetitions)
+    : detail.canGraduate ? g.ready : g.almost;
   return h('section', { class: 'card' },
     h('h2', { class: 'section__title' }, g.title),
+    detail.automaticityRequired ? h('p', { class: 'xs muted card__text' }, g.sparseNote) : null,
     h('ul', { class: 'checklist' }, ...rows),
     h('button', { type: 'button', id: 'graduate', class: `button button--block${detail.canGraduate ? ' button--primary' : ''}`, disabled: !detail.canGraduate, onclick: confirm }, g.button),
     h('p', { class: 'xs muted card__text' }, hint));
@@ -204,7 +214,7 @@ function renderDetail(detail) {
             h('span', { class: `badge badge--phase badge--${phaseKey}` }, nl.detail.phases[phaseKey]),
             detail.pausedNow ? h('span', { class: 'badge badge--phase badge--paused' }, nl.detail.pausedBadge) : null,
             habit.status === 'archived' ? h('span', { class: 'badge badge--phase badge--paused' }, nl.detail.archivedBadge) : null),
-          h('span', { class: 'hero__day' }, h('b', { class: 'num' }, nl.detail.day(stats.activeDays)), ' ', h('span', { class: 'muted' }, nl.detail.ofTotal(detail.graduationDays)))),
+          h('span', { class: 'hero__day' }, h('b', { class: 'num' }, (detail.progress.unit === 'times' ? nl.detail.time : nl.detail.day)(detail.progress.value)), ' ', h('span', { class: 'muted' }, nl.detail.ofTotal(detail.progress.total)))),
         phaseBar(detail),
         h('p', { class: 'hero__note' }, nl.detail.theory)),
 

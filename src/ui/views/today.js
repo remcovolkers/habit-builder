@@ -16,7 +16,9 @@ import { uiIcon } from '../components/habit-icon.js';
 import { account, dismissNudge, nudgeDismissed, nudgeElement } from '../account.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
-import { adjustCounter, clearCheckIn, logCheckIn, planHabit, RuleError, unplanHabit } from '../../app/actions.js';
+import { adjustCounter, clearCheckIn, logCheckIn, planHabit, rateAutomaticity, recordReason, RuleError, unplanHabit } from '../../app/actions.js';
+import { buildAttention, forToday } from '../../app/attention.js';
+import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
 import { counterDoneValue } from '../../domain/counter.js';
 import { charCounter } from '../components/char-counter.js';
 import { datesBetween, formatDateLong, greetingFor, localHour, relativeDayLabel } from '../../app/format.js';
@@ -63,13 +65,17 @@ export function todayView({ query }) {
     className: 'today',
     load: async () => {
       const snapshot = await state.repo.snapshot();
-      return { view: buildDayView({ snapshot, date, today: state.today }), week: buildWeekStrip({ snapshot, date, today: state.today }) };
+      return {
+        view: buildDayView({ snapshot, date, today: state.today }),
+        week: buildWeekStrip({ snapshot, date, today: state.today }),
+        attention: date === state.today ? forToday(buildAttention({ snapshot, today: state.today })) : [],
+      };
     },
-    render: ({ view, week }) => renderDay(view, week),
+    render: ({ view, week, attention }) => renderDay(view, week, attention),
   });
 }
 
-function renderDay(view, week) {
+function renderDay(view, week, attention) {
   const { today } = state;
   const { repo } = state;
   const { date } = view;
@@ -127,6 +133,41 @@ function renderDay(view, week) {
     });
   }
 
+  // het cijfer hoort bij de week van de gekozen dag, ook bij terugwerkend invullen
+  async function rate(entry, score) {
+    await rateAutomaticity(repo, { habitId: entry.habitId, score }, date);
+    notifyChanged();
+    showToast({ message: nl.today.automaticity.saved(score) });
+  }
+
+  // een reden vastleggen; de reactie hoort bij de echte vandaag (zie domain/attention.js)
+  async function saveReason(habitId, reason, note) {
+    await recordReason(repo, { habitId, reason, note }, today);
+    notifyChanged();
+    showToast({ message: nl.attention.sheet.saved(reasonLabel(reason)) });
+  }
+
+  function why(item) {
+    openReasonSheet({ habit: item.habit, current: item.reason, onSave: ({ reason, note }) => saveReason(item.habit.id, reason, note) });
+  }
+
+  // een taak met een vaste dag in de maand die te laat is: reden kiezen, en eventueel meteen alsnog afvinken of overslaan
+  function late(entry) {
+    const { habit } = entry;
+    const then = (status, message) => async ({ reason, note }) => {
+      if (reason !== null) await recordReason(repo, { habitId: habit.id, reason, note }, today);
+      return perform(() => log(habit.id, status, note), message);
+    };
+    openReasonSheet({
+      habit,
+      onSave: ({ reason, note }) => saveReason(habit.id, reason, note),
+      extras: [
+        { label: nl.today.late.doneNow, run: then('done', nl.today.toasts.done(habit.name)) },
+        { label: nl.today.late.skip, run: then('skipped', nl.today.toasts.skipped(habit.name)) },
+      ],
+    });
+  }
+
   function planOnDay(entry, planDate) {
     return perform(() => planHabit(repo, { habitId: entry.habitId, date: planDate }, today), nl.today.toasts.planned(entry.habit.name));
   }
@@ -149,7 +190,7 @@ function renderDay(view, week) {
     });
   }
 
-  const cardOptions = { canLog: view.canLog, onToggle: toggle, onMore: more, onAdjust: adjust };
+  const cardOptions = { canLog: view.canLog, onToggle: toggle, onMore: more, onAdjust: adjust, onRate: rate, onLate: late };
 
   const tally = (entries) => {
     const counted = entries.filter((e) => e.loggedToday !== 'skipped');
@@ -182,6 +223,17 @@ function renderDay(view, week) {
         }))))
     : null;
 
+  const attentionSection = attention.length > 0
+    ? h('section', { class: 'section', 'aria-labelledby': 'attention-title' },
+      h('div', { class: 'section-head' }, h('h2', { id: 'attention-title', class: 'section__title' }, nl.attention.title)),
+      h('p', { class: 'section__hint' }, nl.attention.hint),
+      h('ul', { class: 'card-list' }, ...attention.map((item) => attentionCard(item, {
+        today,
+        onWhy: why,
+        onTick: view.canLog ? (i) => perform(() => log(i.habit.id, 'done'), nl.today.toasts.done(i.habit.name)) : null,
+      }))))
+    : null;
+
   const nudge = account.status === 'anonymous' && view.hasHabits && view.mode === 'today' && !nudgeDismissed()
     ? nudgeElement((event) => { dismissNudge(); event.target.closest('.nudge').remove(); })
     : null;
@@ -207,7 +259,7 @@ function renderDay(view, week) {
     banner(view),
     view.groups.length === 0 && view.pool.length === 0 ? todayEmpty(view) : null,
     h('div', { class: 'today__columns' },
-      h('div', { class: 'today__main' }, ...groupSections),
+      h('div', { class: 'today__main' }, attentionSection, ...groupSections),
       side.length > 0 ? h('div', { class: 'today__side' }, ...side) : null),
     fab({ href: '#/habits/new', label: nl.habits.new }));
 }

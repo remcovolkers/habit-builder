@@ -23,6 +23,25 @@ export const CONSISTENCY_WINDOW_MIN_PERIODS = 3;
 export const CONSISTENCY_THRESHOLD = 0.8;
 export const AUTOMATICITY_THRESHOLD = 4;
 
+/**
+ * Ingeburgerd telt ook het aantal keren (PLAN §4.5): het aantal dat je op het ritme van de habit binnen de
+ * ingeburgerd-grens zou halen, op REPETITIONS_SHARE ervan, met een ondergrens voor zeldzame taken.
+ * Zeldzaam = minder dan SPARSE_BELOW_PER_WEEK keer per week: daar is de telling zwak bewijs en wordt de automatisme-vraag verplicht.
+ */
+export const REPETITIONS_SHARE = CONSISTENCY_THRESHOLD;
+export const MIN_REPETITIONS = 8;
+export const SPARSE_BELOW_PER_WEEK = 1;
+export const DAYS_PER_MONTH = 365.25 / 12;
+
+/**
+ * Aandacht (PLAN §4.9): een taak die stil ligt, te laat is of is mislukt. "Stil" = langer niet gedaan dan SILENT_FACTOR keer de
+ * verwachte tussentijd bij het ritme, met een ondergrens van SILENT_MIN_DAYS dagen (2× per maand: tussentijd 15 dagen, dus de 22e dag).
+ * Mislukte weken en maanden blijven FAILED_LOOKBACK_DAYS extra dagen terug zichtbaar (vanaf de start van de vorige week).
+ */
+export const SILENT_FACTOR = 1.5;
+export const SILENT_MIN_DAYS = 7;
+export const FAILED_LOOKBACK_DAYS = 7;
+
 /** Fasegrenzen in actieve dagen sinds de start. */
 export const PHASE_STARTING_UNTIL_DAY = 21;
 

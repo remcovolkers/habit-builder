@@ -62,7 +62,7 @@ function counterControl(entry, { canLog, onAdjust }) {
 }
 
 /** Eén habit in de lijst van vandaag: icoon, naam, afvinkknop (of teller) en een menu voor meer acties. */
-export function habitCard(entry, { canLog, onToggle, onMore, onAdjust }) {
+export function habitCard(entry, { canLog, onToggle, onMore, onAdjust, onRate, onLate }) {
   const { habit } = entry;
   const state = entryState(entry);
   const meta = metaLine(entry);
@@ -96,11 +96,11 @@ export function habitCard(entry, { canLog, onToggle, onMore, onAdjust }) {
     onclick: () => onMore(entry),
   }, '⋯'),
   isCounter ? counterControl(entry, { canLog, onAdjust }) : null,
-  extras(entry, state));
+  extras(entry, state, { canLog, onRate, onLate }));
 }
 
-/** Onder de kaart over de volle breedte: het herstelmoment (alleen als de habit nog open staat) en de notitie van vandaag. */
-function extras(entry, state) {
+/** Onder de kaart over de volle breedte: het herstelmoment (alleen als de habit nog open staat), "te laat", het automatisme-cijfer en de notitie van vandaag. */
+function extras(entry, state, { canLog, onRate, onLate }) {
   const { habit } = entry;
   const blocks = [];
   if (entry.recovery === true && state === 'open') {
@@ -110,6 +110,35 @@ function extras(entry, state) {
       habit.minimalVersion && !habit.counter ? h('p', null, nl.today.recovery.minimal(habit.minimalVersion)) : null,
       habit.why ? h('p', { class: 'habit-card__why' }, nl.today.recovery.why(habit.why)) : null));
   }
+  if (entry.overdue === true && state === 'open' && canLog) {
+    blocks.push(h('div', { class: 'habit-card__late' },
+      h('p', null, nl.today.late.text(Number(entry.unit.due.slice(8)))),
+      h('button', {
+        type: 'button',
+        class: 'button button--secondary button--small',
+        dataset: { focusKey: `late:${habit.id}` },
+        onclick: () => onLate(entry),
+      }, nl.today.late.button)));
+  }
+  if (entry.automaticity && canLog) blocks.push(automaticityAsk(entry, onRate));
   if (entry.noteToday) blocks.push(h('p', { class: 'habit-card__note' }, `“${entry.noteToday}”`));
   return blocks.length > 0 ? h('div', { class: 'habit-card__extra' }, ...blocks) : null;
+}
+
+/** Het cijfer voor "hoe automatisch voelde dit?": een vraag zolang er nog geen cijfer is, daarna het cijfer (en aanpasbaar). */
+function automaticityAsk(entry, onRate) {
+  const a = nl.today.automaticity;
+  const { score } = entry.automaticity;
+  const label = nl.detail.automaticity.scoreLabel;
+  return h('div', { class: 'habit-card__ask', role: 'group', 'aria-label': a.question },
+    h('p', { class: 'habit-card__ask-title' }, score === null ? a.question : a.saved(score)),
+    score === null ? h('p', { class: 'xs muted' }, a.hint) : null,
+    h('div', { class: 'rating' },
+      ...[1, 2, 3, 4, 5].map((value) => h('button', {
+        type: 'button',
+        'aria-pressed': score === value ? 'true' : 'false',
+        'aria-label': label(value),
+        dataset: { focusKey: `rate:${entry.habitId}:${value}` },
+        onclick: () => onRate(entry, value),
+      }, String(value)))));
 }

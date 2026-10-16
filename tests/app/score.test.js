@@ -341,3 +341,31 @@ test('een jaar aan gegevens: de berekening is snel genoeg om op de achtergrond m
   const each = (performance.now() - t0) / 5;
   assert.ok(each < 200, `te traag: ${each.toFixed(0)} ms per berekening`);
 });
+
+// ---- opbouwbonus bij een taak die niet vaak voorkomt ---------------------------------------------------------------------
+
+const TWICE_A_MONTH = { type: 'times_per_period', period: 'month', count: 2 };
+
+test('een taak 2× per maand telt de opbouwbonus per keer: de eerste keren +4, daarna +2 tot de achtste, daarna niets', () => {
+  const h = habit('m', TWICE_A_MONTH, { startDate: '2026-05-01' }); // ruim 66 dagen oud: op dagen zou er al geen bonus meer zijn
+  const bonusFor = (repetition) => buildBonus({ habit: h, pauses: [], date: TODAY, repetition });
+  assert.deepEqual([1, 3].map(bonusFor), [BUILD_BONUS_STARTING, BUILD_BONUS_STARTING]);
+  assert.deepEqual([4, 8].map(bonusFor), [BUILD_BONUS_BUILDING, BUILD_BONUS_BUILDING]);
+  assert.equal(bonusFor(9), 0);
+  assert.equal(buildBonus({ habit: h, pauses: [], date: TODAY }), 0); // zonder telling: de leeftijd in dagen, zoals voorheen
+});
+
+test('in het venster telt het hoeveelste afgeronde keer het is, ook als eerdere keren buiten het venster liggen', () => {
+  const h = habit('m', TWICE_A_MONTH, { startDate: '2026-05-01' });
+  const first = summary({ habits: [h], checkIns: [done('m', '2026-10-10')] });
+  assert.equal(first.breakdown.bonus, BUILD_BONUS_STARTING); // eerste keer
+  const fourth = summary({ habits: [h], checkIns: [done('m', '2026-05-05'), done('m', '2026-06-03'), done('m', '2026-07-04'), done('m', '2026-10-10')] });
+  assert.equal(fourth.breakdown.bonus, BUILD_BONUS_BUILDING);
+  const tenth = summary({ habits: [h], checkIns: [...days('2026-05-01', '2026-05-09').map((d) => done('m', d)), done('m', '2026-10-10')] });
+  assert.equal(tenth.breakdown.bonus, 0);
+});
+
+test('een dagelijkse habit blijft op leeftijd in dagen rekenen', () => {
+  const h = habit('d', ALL_DAYS, { startDate: '2026-10-01' });
+  assert.equal(buildBonus({ habit: h, pauses: [], date: TODAY, repetition: 40 }), BUILD_BONUS_STARTING);
+});

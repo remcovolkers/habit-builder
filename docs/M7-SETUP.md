@@ -49,6 +49,8 @@ Supabase → **Database → Extensions**: zet **`pg_cron`** en **`pg_net`** aan 
 
 ## Stap 4 – De Edge Function
 
+> **Na een update van de app** (nieuwe melding met aandacht en weekterugblik): plak de volledige inhoud van `supabase/functions/send-reminders/index.ts` opnieuw in de bestaande functie en deploy. Zonder dat blijven de oude teksten staan; de app zelf blijft werken.
+
 Supabase → **Edge Functions → Deploy a new function → Via Editor**.
 
 1. Naam: **`send-reminders`** (precies zo).

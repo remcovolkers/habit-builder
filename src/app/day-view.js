@@ -1,5 +1,7 @@
 // Het view-model voor het Vandaag-scherm: snapshot + datum in, gegroepeerde lijsten uit. Puur.
+import { startOfWeek } from '../domain/dates.js';
 import { DAYPARTS } from '../domain/habit.js';
+import { paceOn } from '../domain/pace.js';
 import { canBackfill } from '../domain/rules.js';
 import { buildToday } from '../domain/today.js';
 
@@ -51,7 +53,17 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
   const day = buildToday({ bundles, dayPlans, today: date, now: today });
   const attach = (entry) => ({ ...entry, habit: habitById.get(entry.habitId) });
 
-  const entries = [...day.scheduled, ...day.planned].map(attach).sort(byHabitOrder);
+  // Een zeldzame taak (pace.js) vraagt na het afvinken hoe automatisch het ging: één cijfer per week waarin hij is gedaan.
+  const weekStart = startOfWeek(date);
+  const ratings = snapshot.ratings ?? [];
+  const withAutomaticity = (entry) => {
+    const { habit } = entry;
+    if (!entry.doneToday || habit.status !== 'active' || !paceOn(habit, date).sparse) return entry;
+    const rating = ratings.find((r) => r.habitId === habit.id && r.weekStart === weekStart);
+    return { ...entry, automaticity: { score: rating?.score ?? null } };
+  };
+
+  const entries = [...day.scheduled, ...day.planned].map(attach).map(withAutomaticity).sort(byHabitOrder);
   const groups = DAYPARTS.map((daypart) => ({
     daypart,
     entries: entries.filter((e) => e.habit.daypart === daypart),

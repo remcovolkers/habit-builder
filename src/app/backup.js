@@ -1,6 +1,7 @@
 // Export en import van alle gegevens als één JSON-bestand (je vangnet: de gratis Supabase heeft geen back-ups).
 import { isValidDate } from '../domain/dates.js';
 import { COUNTER_MAX } from '../domain/counter.js';
+import { SLIP_REASONS } from '../domain/attention.js';
 import { CHECK_IN_STATUSES, validateHabit } from '../domain/habit.js';
 import { validateSettings } from './settings.js';
 
@@ -8,7 +9,7 @@ export const BACKUP_APP = 'habit-builder';
 export const BACKUP_VERSION = 1;
 const REVIEW_TEXT_MAX = 1000;
 
-const COLLECTIONS = ['habits', 'checkIns', 'pauses', 'dayPlans', 'achievements', 'ratings', 'reviews'];
+const COLLECTIONS = ['habits', 'checkIns', 'pauses', 'dayPlans', 'achievements', 'ratings', 'reviews', 'reasons'];
 
 /** snapshot: uitvoer van repo.snapshot(); alleen levende records, zonder interne verwijdermarkeringen. */
 export function buildExport(snapshot, now = new Date()) {
@@ -57,6 +58,9 @@ function validateRecords(name, records, habitIds, problems) {
         break;
       case 'ratings':
         if (!isValidDate(record.weekStart) || !(Number.isInteger(record.score) && record.score >= 1 && record.score <= 5)) return bad('ongeldig cijfer');
+        break;
+      case 'reasons':
+        if (!isValidDate(record.date) || !SLIP_REASONS.includes(record.reason)) return bad('ongeldige reden');
         break;
       case 'reviews':
         if (!isValidDate(record.weekStart) || [record.wentWell, record.adjust].some((t) => typeof t !== 'string' || t.length > REVIEW_TEXT_MAX)) return bad('ongeldige review');

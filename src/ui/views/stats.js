@@ -9,7 +9,9 @@ import { charCounter } from '../components/char-counter.js';
 import { overviewSection } from '../components/overview.js';
 import { socialCard } from '../components/social-card.js';
 import { statsForHabit, streakSpan } from '../../app/habit-detail.js';
-import { saveWeeklyReview } from '../../app/actions.js';
+import { recordReason, saveWeeklyReview } from '../../app/actions.js';
+import { buildWeekReview } from '../../app/attention.js';
+import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
 import { formatDateShort } from '../../app/format.js';
 import { REVIEW_TEXT_MAX, ValidationError } from '../../data/repository.js';
 import { addDays, startOfWeek } from '../../domain/dates.js';
@@ -57,9 +59,31 @@ function reviewCard(snapshot, today) {
     showToast({ message: r.saved });
   }
 
+  // de terugblik: de uitkomst van de week en alleen de taken die aandacht vragen, elk met één tik voor de reden
+  const review = buildWeekReview({ snapshot, today });
+  const a = nl.attention.review;
+  const why = (item) => openReasonSheet({
+    habit: item.habit,
+    current: item.reason,
+    onSave: async ({ reason, note }) => {
+      await recordReason(state.repo, { habitId: item.habit.id, reason, note }, today);
+      notifyChanged();
+      showToast({ message: nl.attention.sheet.saved(reasonLabel(reason)) });
+    },
+  });
+  const lookback = h('div', { class: 'review__lookback' },
+    h('h3', { class: 'section__title' }, a.title),
+    review.week.total > 0 ? h('p', { class: 'xs muted' }, a.summary(review.week.done, review.week.total)) : null,
+    review.items.length === 0
+      ? h('p', { class: 'card__text muted' }, a.nothing)
+      : h('div', { class: 'stack' },
+        h('p', { class: 'xs muted' }, a.count(review.open, review.handled)),
+        h('ul', { class: 'card-list' }, ...review.items.map((item) => attentionCard(item, { today, onWhy: why })))));
+
   const earlier = snapshot.reviews.filter((x) => x.weekStart !== weekStart);
   return h('section', { class: 'card' },
     h('h2', { class: 'section__title' }, r.title),
+    lookback,
     h('form', { class: 'review form', novalidate: true, onsubmit: submit },
       h('p', { class: 'xs muted' }, r.week(formatDateShort(weekStart))),
       h('div', { class: 'field' }, h('label', { class: 'field__label', for: 'wentWell' }, r.wentWell), wentWell, charCounter(wentWell, REVIEW_TEXT_MAX)),

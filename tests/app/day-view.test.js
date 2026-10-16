@@ -135,3 +135,32 @@ test('schema-omschrijvingen', () => {
 test('datesBetween is inclusief', () => {
   assert.deepEqual(datesBetween('2026-10-30', '2026-11-01'), ['2026-10-30', '2026-10-31', '2026-11-01']);
 });
+
+// --- automatisme na het afvinken van een taak die niet vaak voorkomt -----------------------------------------------------
+
+test('een afgevinkte taak 2× per maand vraagt om een cijfer, tot het voor die week is gegeven', () => {
+  const rare = habit('Tuin', { schedules: [{ effectiveFrom: '2026-10-01', schedule: { type: 'times_per_period', period: 'month', count: 2 } }] });
+  const base = { habits: [rare], checkIns: [{ habitId: 'Tuin', date: TODAY, status: 'done' }] };
+  const entry = (extra = {}) => buildDayView({ snapshot: snapshot({ ...base, ...extra }), date: TODAY, today: TODAY }).groups[0].entries[0];
+
+  assert.deepEqual(entry().automaticity, { score: null });
+  assert.deepEqual(entry({ ratings: [{ habitId: 'Tuin', weekStart: '2026-10-12', score: 4 }] }).automaticity, { score: 4 });
+  assert.deepEqual(entry({ ratings: [{ habitId: 'Tuin', weekStart: '2026-10-05', score: 4 }] }).automaticity, { score: null }); // een andere week telt niet
+});
+
+test('geen automatisme-vraag voor een dagelijkse taak, een taak die nog open staat of een ingeburgerde taak', () => {
+  const view = (h, checkIns) => buildDayView({ snapshot: snapshot({ habits: [h], checkIns }), date: TODAY, today: TODAY });
+  const doneToday = [{ habitId: 'A', date: TODAY, status: 'done' }];
+  assert.equal(view(habit('A'), doneToday).groups[0].entries[0].automaticity, undefined);
+
+  const rare = { schedules: [{ effectiveFrom: '2026-10-01', schedule: { type: 'day_of_month', day: 3 } }] };
+  assert.equal(view(habit('A', rare), []).groups[0].entries[0].automaticity, undefined); // nog niet gedaan
+  assert.equal(view(habit('A', { ...rare, status: 'graduated', maintenance: true }), doneToday).groups[0].entries[0].automaticity, undefined);
+});
+
+test('een vaste dag in de maand die voorbij is en nog niet gedaan, staat als "te laat" (voor de uitleg op de kaart)', () => {
+  const late = habit('Rekening', { schedules: [{ effectiveFrom: '2026-10-01', schedule: { type: 'day_of_month', day: 3 } }] });
+  const entry = buildDayView({ snapshot: snapshot({ habits: [late] }), date: TODAY, today: TODAY }).groups[0].entries[0];
+  assert.equal(entry.overdue, true);
+  assert.equal(entry.unit.due, '2026-10-03');
+});

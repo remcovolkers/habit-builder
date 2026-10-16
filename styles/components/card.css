@@ -499,6 +499,48 @@
   margin: 0;
 }
 
+/* te laat: een vaste dag in de maand is voorbij en de taak is nog niet gedaan */
+.habit-card__late {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  padding: var(--space-3);
+  background: var(--color-accent-10);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-button);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.habit-card__late p {
+  margin: 0;
+}
+
+/* automatisme-cijfer na het afvinken van een taak die niet vaak voorkomt */
+.habit-card__ask {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--color-accent-10);
+  border-radius: var(--radius-button);
+  font-size: var(--font-size-sm);
+}
+
+.habit-card__ask p {
+  margin: 0;
+}
+
+.habit-card__ask-title {
+  color: var(--color-text);
+  font-weight: var(--font-weight-bold);
+}
+
+.habit-card__ask .rating {
+  /* op een smal scherm of bij grote tekst komen de knoppen onder elkaar, nooit smaller dan een tikvlak */
+  grid-template-columns: repeat(auto-fit, minmax(var(--size-tap), 1fr));
+  margin-top: var(--space-2);
+}
+
 .habit-card__why {
   color: var(--color-text);
   font-style: italic;
@@ -559,5 +601,48 @@
 
 .notes__text {
   margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+
+/* ---- taken die blijven liggen: de regel op de kaart en het blad met de redenen ---- */
+.attention-card__text,
+.attention-card__agreed,
+.attention-card__reason {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.attention-card__text {
+  font-size: var(--font-size-sm);
+}
+
+.attention-card__reason {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent);
+}
+
+/* de knoppen op een kaart met aandacht komen bij een smal scherm of grote tekst onder elkaar */
+.attention-card .pool-card__more {
+  flex-wrap: wrap;
+}
+
+.attention-card .pool-card__more > .button {
+  flex: 1 1 8rem;
+}
+
+/* de kaart met aandacht: icoon en naam bovenaan, de tekst over de volle breedte eronder (past ook in de smalle kolom van de review) */
+.attention-card {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.attention-card__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.attention-card .pool-card__name {
   overflow-wrap: anywhere;
 }

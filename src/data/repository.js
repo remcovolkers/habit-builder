@@ -10,11 +10,13 @@
 //   listAchievements() / unlockAchievement({key, habitId?, date})
 //   listRatings(habitId?) / setRating({habitId, weekStart, score})   (automatisme 1–5, per week)
 //   listReviews() / getReview(weekStart) / saveReview({weekStart, wentWell, adjust})
+//   listReasons(habitId?) / setReason({habitId, date, reason, note?}) / clearReason(habitId, date)   (waarom een taak bleef liggen)
 //   replaceAll(data)  (import: vervangt alles)
-//   snapshot() -> { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews }
+//   snapshot() -> { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons }
 import { COUNTER_MAX } from '../domain/counter.js';
 import { NOTE_MAX_LENGTH } from '../domain/constants.js';
 import { isValidDate } from '../domain/dates.js';
+import { SLIP_REASONS } from '../domain/attention.js';
 import { CHECK_IN_STATUSES, validateHabit } from '../domain/habit.js';
 import { defaultSettings, validateSettings } from '../app/settings.js';
 import { DATA_COLLECTIONS } from './memory-store.js';
@@ -207,6 +209,27 @@ export function createRepository({
       return upsert('reviews', { id: weekStart, weekStart, wentWell: wentWell.trim(), adjust: adjust.trim() });
     },
 
+    // --- waarom een taak bleef liggen -----------------------------------------------------------
+    // Eén reactie per taak per dag. Een reactie dekt de signalen die op of vóór die dag begonnen (zie domain/attention.js).
+    async listReasons(habitId) {
+      const all = await liveList('reasons');
+      return habitId === undefined ? all : all.filter((r) => r.habitId === habitId);
+    },
+    async setReason({ habitId, date, reason, note = null }) {
+      const errors = [];
+      if (!habitId) errors.push({ field: 'habitId', code: 'required' });
+      if (!isValidDate(date)) errors.push({ field: 'date', code: 'invalid' });
+      if (!SLIP_REASONS.includes(reason)) errors.push({ field: 'reason', code: 'invalid' });
+      if (note !== null && typeof note !== 'string') errors.push({ field: 'note', code: 'invalid' });
+      else if (note !== null && note.trim().length > NOTE_MAX_LENGTH) errors.push({ field: 'note', code: 'too_long' });
+      if (errors.length > 0) throw new ValidationError(errors);
+      const cleanNote = note === null || note.trim() === '' ? null : note.trim();
+      return upsert('reasons', { id: `${habitId}|${date}`, habitId, date, reason, note: cleanNote });
+    },
+    async clearReason(habitId, date) {
+      return softDelete('reasons', `${habitId}|${date}`);
+    },
+
     // --- import: alles vervangen ----------------------------------------------------------------
     async replaceAll(data) {
       const stamp = now();
@@ -219,6 +242,7 @@ export function createRepository({
         achievements: data.achievements,
         ratings: data.ratings,
         reviews: data.reviews,
+        reasons: data.reasons,
       };
       for (const collection of DATA_COLLECTIONS) {
         const incoming = sets[collection] ?? [];
@@ -240,7 +264,7 @@ export function createRepository({
 
     // --- alles voor de schermen -------------------------------------------------------------
     async snapshot() {
-      const [settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews] = await Promise.all([
+      const [settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons] = await Promise.all([
         this.getSettings(),
         this.listHabits(),
         this.listCheckIns(),
@@ -249,8 +273,9 @@ export function createRepository({
         this.listAchievements(),
         this.listRatings(),
         this.listReviews(),
+        this.listReasons(),
       ]);
-      return { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews };
+      return { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons };
     },
   };
 }

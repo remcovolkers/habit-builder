@@ -53,6 +53,22 @@ test('composeMessage: gepland en stapel, alleen gepland, alleen stapel', () => {
   assert.equal(composeMessage(withDays({ '2026-10-16': [0, 3] }), at(6)).body, 'Er liggen 3 taken in je stapel. Pak er vandaag één mee.');
 });
 
+test('composeMessage: aandacht en de weekreview komen er neutraal bij, zonder namen van taken', () => {
+  const body = (entry) => composeMessage(withDays({ '2026-10-16': entry }), at(6)).body;
+  assert.equal(body([0, 0, 1, 0]), '1 taak vraagt aandacht.');
+  assert.equal(body([0, 0, 3, 0]), '3 taken vragen aandacht.');
+  assert.equal(body([0, 0, 0, 1]), 'Je weekterugblik staat klaar.');
+  assert.equal(body([2, 0, 1, 0]), 'Vandaag staat 2 gewoontes op je lijst. 1 taak vraagt aandacht.');
+  assert.equal(body([2, 1, 2, 1]), 'Vandaag: 2 gewoontes, en 1 in je stapel om uit te kiezen. 2 taken vragen aandacht. Je weekterugblik staat klaar.');
+  assert.equal(body([0, 2, 0, 1]), 'Er liggen 2 taken in je stapel. Pak er vandaag één mee. Je weekterugblik staat klaar.');
+});
+
+test('composeMessage: een oudere app (twee getallen) en rommel in de nieuwe getallen geven dezelfde tekst als voorheen', () => {
+  assert.equal(composeMessage(withDays({ '2026-10-16': [3, 2] }), at(6)).body, 'Vandaag: 3 gewoontes, en 2 in je stapel om uit te kiezen.');
+  assert.equal(composeMessage(withDays({ '2026-10-16': [0, 0, -4, 7] }), at(6)), null);
+  assert.equal(composeMessage(withDays({ '2026-10-16': [0, 0, 'veel', null] }), at(6)), null);
+});
+
 test('composeMessage: niets te doen = geen melding; geen samenvatting voor vandaag = algemene tekst', () => {
   assert.equal(composeMessage(withDays({ '2026-10-16': [0, 0] }), at(6)), null);
   assert.equal(composeMessage(withDays({ '2026-10-15': [3, 1] }), at(6)).body, 'Bekijk wat er vandaag op je lijst staat.');

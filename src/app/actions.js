@@ -157,6 +157,14 @@ export async function rateAutomaticity(repo, { habitId, score }, today) {
   return repo.setRating({ habitId, weekStart: startOfWeek(today), score });
 }
 
+/**
+ * Waarom een taak bleef liggen (domain/attention.js): één reactie per taak per dag. De reactie dekt de signalen die tot en met
+ * vandaag begonnen, dus het signaal verdwijnt uit Vandaag en de melding tot er een nieuw komt.
+ */
+export async function recordReason(repo, { habitId, reason, note = null }, today) {
+  return repo.setReason({ habitId, date: today, reason, note });
+}
+
 /** Review van de huidige week (opnieuw opslaan overschrijft). */
 export async function saveWeeklyReview(repo, { wentWell, adjust }, today) {
   return repo.saveReview({ weekStart: startOfWeek(today), wentWell, adjust });

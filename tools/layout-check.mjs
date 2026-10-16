@@ -144,6 +144,80 @@ async function main() {
     setTimeout(() => resolve({ active: document.activeElement === f, cls: f.className, opacity: getComputedStyle(f).opacity }), 400);
   })`);
   check('toetsenbordfocus haalt de knop terug aan het einde van de pagina', focused.active && focused.opacity === '1', JSON.stringify(focused));
+  // zeldzame taken op Vandaag: na het afvinken vraagt de kaart om een cijfer voor het automatisme; een vaste dag in de maand die voorbij is
+  // staat als "te laat" met de vraag wat je tegenhield (die dag is gisteren, dus niet te controleren op de eerste van de maand)
+  const rare = await ev(`(async () => {
+    const { state, notifyChanged } = await import('/src/ui/state.js');
+    const base = { icon: '🌱', color: 'c4', daypart: 'anytime', status: 'active', startDate: '2026-01-01', endDate: null, graduationDays: 66, maintenance: false, counter: null };
+    const garden = await state.repo.saveHabit({ ...base, name: 'Tuin opruimen', sortOrder: 20, schedules: [{ effectiveFrom: '2026-01-01', schedule: { type: 'times_per_period', period: 'month', count: 2 } }] });
+    await state.repo.setCheckIn({ habitId: garden.id, date: state.today, status: 'done' });
+    const day = Number(state.today.slice(8)) - 1;
+    await state.repo.saveHabit({ ...base, name: 'Bed opmaken', icon: '🛏️', sortOrder: 22, schedules: [{ effectiveFrom: '2026-01-01', schedule: { type: 'times_per_period', period: 'month', count: 2 } }] }); // nooit gedaan: stil
+    if (day >= 1) await state.repo.saveHabit({ ...base, name: 'Rekening betalen', sortOrder: 21, schedules: [{ effectiveFrom: '2026-01-01', schedule: { type: 'day_of_month', day } }] });
+    notifyChanged();
+    return { late: day >= 1 };
+  })()`);
+  for (const [size, w, h, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: true });
+    await nav('today');
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(300);
+    const label = `zeldzame taak op Vandaag · ${size}`;
+    const ask = await ev(`(() => { const a = document.querySelector('.habit-card__ask'); const b = [...(a?.querySelectorAll('.rating button') ?? [])].map((x) => x.getBoundingClientRect());
+      return { asked: !!a, buttons: b.length, minW: Math.min(...b.map((r) => r.width)), minH: Math.min(...b.map((r) => r.height)), inside: a ? a.scrollWidth <= a.clientWidth : false, overflow: document.documentElement.scrollWidth - innerWidth }; })()`);
+    check(`${label}: vraag om het cijfer, vijf knoppen ≥ 44px, past in de kaart`, ask.asked && ask.buttons === 5 && ask.minW >= 44 && ask.minH >= 44 && ask.inside && ask.overflow <= 0, JSON.stringify(ask));
+    const quiet = await ev(`(() => { const c = document.querySelector('.attention-card'); const b = [...(c?.querySelectorAll('button') ?? [])].map((x) => x.getBoundingClientRect());
+      return { shown: !!c, buttons: b.length, minH: Math.min(...b.map((r) => r.height)), inside: c ? c.scrollWidth <= c.clientWidth : false, overflow: document.documentElement.scrollWidth - innerWidth, text: c?.querySelector('.attention-card__text')?.textContent }; })()`);
+    check(`${label}: "Even kijken" met de stille taak, knoppen ≥ 44px, past in de kaart`, quiet.shown && quiet.buttons === 2 && quiet.minH >= 44 && quiet.inside && quiet.overflow <= 0, JSON.stringify(quiet));
+    if (rare.late) {
+      const late = await ev(`(() => { const l = document.querySelector('.habit-card__late'); const b = l?.querySelector('button')?.getBoundingClientRect(); return { shown: !!l, h: b?.height, inside: l ? l.scrollWidth <= l.clientWidth : false, overflow: document.documentElement.scrollWidth - innerWidth }; })()`);
+      check(`${label}: "te laat" met knop ≥ 44px, past in de kaart`, late.shown && late.h >= 44 && late.inside && late.overflow <= 0, JSON.stringify(late));
+    }
+  }
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await nav('today');
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`); // een prestatie door de testgegevens opent een viering
+  await sleep(300);
+  await ev(`document.querySelector('.habit-card__ask .rating button[aria-label="Cijfer 4"]').click()`);
+  await sleep(500);
+  const rated = await ev(`({ title: document.querySelector('.habit-card__ask-title')?.textContent, pressed: document.querySelector('.habit-card__ask [aria-pressed="true"]')?.textContent })`);
+  check('een cijfer geven slaat het op en toont het (aanpasbaar)', rated.title === 'Automatisme: 4 van 5' && rated.pressed === '4', JSON.stringify(rated));
+  if (rare.late) {
+    await ev(`document.querySelector('.habit-card__late button').click()`);
+    await sleep(400);
+    const dlg = await ev(`(() => { const d = document.querySelector('dialog[open]'); const radios = [...(d?.querySelectorAll('.choices--reasons input[type=radio]') ?? [])];
+      const faces = [...(d?.querySelectorAll('.choice__face--reason') ?? [])].map((f) => f.getBoundingClientRect());
+      return { open: !!d, radios: radios.length, field: !!d?.querySelector('#reasonNote'), actions: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].map((x) => x.textContent), minH: Math.min(...faces.map((r) => r.height)), overflow: d ? d.scrollWidth - d.clientWidth : 1 }; })()`);
+    check('"Wat hield je tegen?" opent een blad met vijf redenen, een toelichting en vier knoppen', dlg.open && dlg.radios === 5 && dlg.field && dlg.actions.length === 4 && dlg.minH >= 44 && dlg.overflow <= 0, JSON.stringify(dlg));
+    await ev(`[...document.querySelectorAll('.dialog__actions .button')].find((x) => x.textContent === 'Reden opslaan').click()`);
+    await sleep(300);
+    const noChoice = await ev(`({ still: !!document.querySelector('dialog[open]'), error: document.querySelector('dialog[open] .field__error')?.hidden === false })`);
+    check('zonder een reden te kiezen blijft het blad open met een melding', noChoice.still && noChoice.error, JSON.stringify(noChoice));
+    await ev(`(() => { document.querySelector('.choices--reasons input[value="no_time"]').click(); const i = document.querySelector('#reasonNote'); i.value = 'Geen tijd'; i.dispatchEvent(new Event('input')); [...document.querySelectorAll('.dialog__actions .button')].find((x) => x.textContent === 'Deze maand overslaan').click(); })()`);
+    await sleep(600);
+    const skipped = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); const habit = (await state.repo.listHabits()).find((x) => x.name === 'Rekening betalen'); const c = await state.repo.getCheckIn(habit.id, state.today); const r = await state.repo.listReasons(habit.id); return { status: c?.status, note: c?.note, reason: r[0]?.reason, late: !!document.querySelector('.habit-card__late') }; })()`);
+    check('overslaan met een reden legt de keuze en de toelichting vast en haalt de "te laat"-melding weg', skipped.status === 'skipped' && skipped.note === 'Geen tijd' && skipped.reason === 'no_time' && !skipped.late, JSON.stringify(skipped));
+  }
+  // de stille taak: een reden geven haalt hem uit "Even kijken" en zet hem in de terugblik van de week
+  const bedCard = `[...document.querySelectorAll('.today__main .attention-card')].find((c) => c.textContent.includes('Bed opmaken'))`;
+  await ev(`${bedCard}.querySelector('[data-focus-key^="why:"]').click()`);
+  await sleep(400);
+  await ev(`(() => { document.querySelector('.choices--reasons input[value="forgot"]').click(); [...document.querySelectorAll('.dialog__actions .button')].find((x) => x.textContent === 'Reden opslaan').click(); })()`);
+  await sleep(700);
+  const answered = await ev(`({ bed: !!(${bedCard}), others: document.querySelectorAll('.today__main .attention-card').length })`);
+  check('na een reden staat de stille taak niet meer in "Even kijken" (de andere, nog onbeantwoorde taken wel)', !answered.bed && answered.others > 0, JSON.stringify(answered));
+  for (const [size, w, h, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: true });
+    await nav('stats');
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(400);
+    const lookback = await ev(`(() => { const l = document.querySelector('.review__lookback'); const cards = [...(l?.querySelectorAll('.attention-card') ?? [])];
+      return { shown: !!l, cards: cards.length, answered: cards.filter((c) => /Bed opmaken/.test(c.textContent) && /Reden: Vergeten/.test(c.textContent)).length, inside: cards.every((c) => c.scrollWidth <= c.clientWidth), bad: cards.filter((c) => c.scrollWidth > c.clientWidth).map((c) => c.textContent.slice(0, 30) + ' ' + c.scrollWidth + '>' + c.clientWidth + ' ' + [...c.querySelectorAll('*')].filter((e) => e.scrollWidth > e.clientWidth + 1).map((e) => e.className + ':' + e.scrollWidth + '>' + e.clientWidth).join(',')), overflow: document.documentElement.scrollWidth - innerWidth }; })()`);
+    check(`terugblik in de review · ${size}: taken die aandacht vragen, de beantwoorde met reden, past op het scherm`, lookback.shown && lookback.cards >= 1 && lookback.answered === 1 && lookback.inside && lookback.overflow <= 0, JSON.stringify(lookback));
+  }
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  await sleep(300);
   // de iconenkiezer: een knop bij de naam opent een blad met alle iconen, met zoeken; kiezen sluit het blad en zet het icoon
   for (const [size, w, h, zoom] of sizes) {
     await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: true });

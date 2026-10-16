@@ -7,6 +7,7 @@ const daily = { type: 'weekdays', weekdays: [0, 1, 2, 3, 4, 5, 6] };
 const habit = (id, schedule, over = {}) => validHabit({ id, name: id, schedules: [{ effectiveFrom: '2026-10-01', schedule }], ...over });
 const snapshot = (over = {}) => ({ habits: [], checkIns: [], pauses: [], dayPlans: [], ...over });
 const settings = { displayName: '  Remco ', timezone: 'Europe/Amsterdam', dayStartHour: 4 };
+const planned = (entry) => entry.slice(0, 2); // [gepland, stapel]; daarna volgen aandacht en review
 
 test('tijdstip: HH:MM, en niet vóór het begin van je dag', () => {
   assert.equal(DEFAULT_REMINDER_TIME, '08:00');
@@ -22,8 +23,8 @@ test('samenvatting: een paar getallen per dag, voor vandaag en de week erna, met
   assert.equal(summary.name, 'Remco');
   assert.equal(Object.keys(summary.days).length, REMINDER_DAYS);
   assert.deepEqual(Object.keys(summary.days)[0], TODAY);
-  assert.deepEqual(summary.days[TODAY], [2, 0]);
-  assert.deepEqual(summary.days['2026-10-21'], [2, 0]);
+  assert.deepEqual(planned(summary.days[TODAY]), [2, 0]);
+  assert.deepEqual(planned(summary.days['2026-10-21']), [2, 0]);
 });
 
 test('samenvatting: gedaan telt nog mee als gepland; een gewoonte die op vaste weekdagen valt telt alleen die dagen', () => {
@@ -35,11 +36,11 @@ test('samenvatting: gedaan telt nog mee als gepland; een gewoonte die op vaste w
     }),
     today: TODAY, settings,
   });
-  assert.deepEqual(view.days[TODAY], [1, 0], 'vandaag gedaan, maar het stond wel gepland');
-  assert.deepEqual(view.days['2026-10-16'], [1, 0], 'vrijdag');
-  assert.deepEqual(view.days['2026-10-17'], [0, 0], 'zaterdag');
-  assert.deepEqual(view.days['2026-10-18'], [0, 0], 'zondag');
-  assert.deepEqual(view.days['2026-10-19'], [1, 0], 'maandag');
+  assert.deepEqual(planned(view.days[TODAY]), [1, 0], 'vandaag gedaan, maar het stond wel gepland');
+  assert.deepEqual(planned(view.days['2026-10-16']), [1, 0], 'vrijdag');
+  assert.deepEqual(planned(view.days['2026-10-17']), [0, 0], 'zaterdag');
+  assert.deepEqual(planned(view.days['2026-10-18']), [0, 0], 'zondag');
+  assert.deepEqual(planned(view.days['2026-10-19']), [1, 0], 'maandag');
 });
 
 test('samenvatting: de stapel telt alleen taken waar nog iets aan moet gebeuren', () => {
@@ -52,7 +53,7 @@ test('samenvatting: de stapel telt alleen taken waar nog iets aan moet gebeuren'
     }),
     today: TODAY, settings,
   });
-  assert.deepEqual(summary.days[TODAY], [0, 1], 'alleen Hardlopen ligt nog in de stapel');
+  assert.deepEqual(planned(summary.days[TODAY]), [0, 1], 'alleen Hardlopen ligt nog in de stapel');
 });
 
 test('samenvatting: een gepauzeerde gewoonte telt niet mee', () => {
@@ -63,7 +64,7 @@ test('samenvatting: een gepauzeerde gewoonte telt niet mee', () => {
     }),
     today: TODAY, settings,
   });
-  assert.deepEqual(summary.days[TODAY], [0, 0]);
+  assert.deepEqual(planned(summary.days[TODAY]), [0, 0]);
 });
 
 test('samenvatting: zonder gewoontes of naam geeft nullen en een lege naam, zonder fouten', () => {
@@ -119,4 +120,21 @@ test('isAndroid: alleen Android krijgt de uitleg over batterij-instellingen', as
   assert.equal(isAndroid('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130.0 Safari/537.36'), false);
   assert.equal(isAndroid(undefined), false);
   assert.equal(isAndroid(''), false);
+});
+
+test('samenvatting: aandacht (weekelijks, zonder reactie) en de review op zondag', () => {
+  const bed = habit('Bed', { type: 'times_per_period', period: 'month', count: 2 }, { startDate: '2026-08-01' });
+  const checkIns = [{ habitId: 'Bed', date: '2026-08-20', status: 'done' }];
+  // laatst gedaan 20 augustus: het probleem begon 11 september, dus 9 en 16 oktober zijn meldmomenten (TODAY is donderdag 15 oktober)
+  const summary = buildReminderSummary({ snapshot: snapshot({ habits: [bed], checkIns }), today: TODAY, settings });
+  assert.deepEqual(Object.values(summary.days).map((entry) => entry[2]), [0, 1, 0, 0, 0, 0, 0]);
+  assert.equal(summary.days['2026-10-16'][2], 1);
+
+  const answered = buildReminderSummary({ snapshot: snapshot({ habits: [bed], checkIns, reasons: [{ habitId: 'Bed', date: TODAY, reason: 'forgot', note: null }] }), today: TODAY, settings });
+  assert.deepEqual(Object.values(answered.days).map((entry) => entry[2]), [0, 0, 0, 0, 0, 0, 0]);
+
+  // zondag 18 oktober: de weekreview staat klaar zolang hij niet is opgeslagen
+  assert.deepEqual(Object.entries(summary.days).filter(([, entry]) => entry[3] === 1).map(([date]) => date), ['2026-10-18']);
+  const reviewed = buildReminderSummary({ snapshot: snapshot({ reviews: [{ weekStart: '2026-10-12', wentWell: '', adjust: '' }] }), today: TODAY, settings });
+  assert.deepEqual(Object.values(reviewed.days).map((entry) => entry[3]), [0, 0, 0, 0, 0, 0, 0]);
 });
