@@ -166,6 +166,11 @@ select.input {
   box-shadow: var(--shadow-glow);
 }
 
+/* gekozen icoon: de neon gloed van de voorbeeldpagina, in de accentkleur van het thema */
+.choice__input:checked + .choice__face .theme-icon {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-accent) 60%, transparent));
+}
+
 .choice__face--text {
   width: 100%;
   min-height: var(--size-tap);

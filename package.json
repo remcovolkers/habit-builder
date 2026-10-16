@@ -19,7 +19,8 @@
     "db:check-app": "node tools/social-app-check.mjs",
     "db:check-browser": "node tools/social-browser-check.mjs",
     "check:layout": "node tools/layout-check.mjs",
-    "icons:build": "node tools/build-icons.mjs"
+    "icons:build": "node tools/build-icons.mjs",
+    "icons:gallery": "node tools/icon-gallery.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.10"
