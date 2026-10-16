@@ -31,6 +31,8 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
+      - name: Lay-out in een echte browser (ruimte onder de lijst, zwevende knop)
+        run: npm run check:layout
       - name: Lokale Supabase starten (migraties worden vanzelf toegepast)
         run: npm run db:start
       - name: De sociale functies via de echte API
