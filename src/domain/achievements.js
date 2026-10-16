@@ -2,10 +2,16 @@
 // valt; het opslaan en tonen is aan de data- en UI-laag. Wat eenmaal ontgrendeld is, wordt nooit afgenomen.
 import { addDays, diffDays, endOfWeek, startOfWeek } from './dates.js';
 import {
+  ACHIEVEMENT_DAYPARTS,
   ACTIVE_HABITS_ACHIEVEMENT,
+  ALL_DONE_DAYS,
+  ALL_DONE_MIN_UNITS,
+  AUTOMATICITY_WEEKS,
   COMEBACK_GAP_DAYS,
   COUNTER_FULL_DAYS,
   DONE_MILESTONES,
+  FIVE_ACTIVE_ACHIEVEMENT,
+  FRIENDS_ACHIEVEMENT,
   GRADUATED_MILESTONES,
   MILESTONE_DAYS,
   MILESTONE_MIN_CONSISTENCY,
@@ -16,6 +22,7 @@ import {
   REVIEW_STREAK_WEEKS,
   STREAK_MILESTONES,
   STRONG_RETURN,
+  WHY_HABITS_ACHIEVEMENT,
 } from './constants.js';
 import { computeStreaks } from './streaks.js';
 import { isClosed, isPositive } from './units.js';
@@ -32,6 +39,13 @@ export const COUNT_ACHIEVEMENTS = Object.freeze([
   { key: 'minimal_5', measure: 'minimalUsed', target: MINIMAL_ACHIEVEMENT },
   { key: 'counter_week', measure: 'counterStreak', target: COUNTER_FULL_DAYS },
   ...GRADUATED_MILESTONES.map((n) => ({ key: `graduated_${n}`, measure: 'graduatedCount', target: n })),
+  { key: 'automaticity_4', measure: 'ratedWeeks', target: AUTOMATICITY_WEEKS },
+  { key: 'why_3', measure: 'habitsWithWhy', target: WHY_HABITS_ACHIEVEMENT },
+  { key: 'all_dayparts', measure: 'dayparts', target: ACHIEVEMENT_DAYPARTS.length },
+  { key: 'five_active', measure: 'activeHabits', target: FIVE_ACTIVE_ACHIEVEMENT },
+  { key: 'all_done_10', measure: 'allDoneDays', target: ALL_DONE_DAYS },
+  { key: 'first_friend', measure: 'friends', target: 1 },
+  { key: 'friends_5', measure: 'friends', target: FRIENDS_ACHIEVEMENT },
 ].map(Object.freeze));
 
 export const ACHIEVEMENT_KEYS = Object.freeze([
@@ -53,6 +67,15 @@ export const ACHIEVEMENT_KEYS = Object.freeze([
   'counter_week',
   'pause_resume',
   ...GRADUATED_MILESTONES.map((n) => `graduated_${n}`),
+  // ronde 2 van §5
+  'first_review',
+  'automaticity_4',
+  'why_3',
+  'all_dayparts',
+  'five_active',
+  'all_done_10',
+  'first_friend',
+  'friends_5',
 ]);
 
 /** Heeft de habit een gemiste periode van ≥ 7 dagen gehad waarna hij weer is opgepakt? */
@@ -152,6 +175,19 @@ export function counterFullStreak(units) {
   return best;
 }
 
+/** Op hoeveel dagen is alles van die dag gedaan? Minstens ALL_DONE_MIN_UNITS dingen, niets gemist of nog open; overgeslagen en gepauzeerd telt niet mee. */
+export function countAllDoneDays(allUnits) {
+  const days = new Map();
+  for (const unit of allUnits) {
+    if (unit.kind !== 'day') continue;
+    const day = days.get(unit.start) ?? { positive: 0, loose: 0 };
+    if (isPositive(unit)) day.positive += 1;
+    else if (unit.status === 'missed' || unit.status === 'open') day.loose += 1;
+    days.set(unit.start, day);
+  }
+  return [...days.values()].filter((day) => day.positive >= ALL_DONE_MIN_UNITS && day.loose === 0).length;
+}
+
 /** Is er een pauze afgelopen, en is die habit daarna weer gedaan? */
 export function hasResumedPause(pauses, checkIns, today) {
   return pauses.some((pause) => pause.to != null && pause.to < today
@@ -169,11 +205,18 @@ export function hasReviewStreak(reviews, n = REVIEW_STREAK_WEEKS) {
   return false;
 }
 
-/** De metingen achter de COUNT_ACHIEVEMENTS. habits en checkIns mogen ontbreken: wat ze nodig hebben blijft dan 0. */
-export function achievementMeasures({ today, stats, habits = [], checkIns = [] }) {
+/** De metingen achter de COUNT_ACHIEVEMENTS. habits, checkIns, ratings en friends mogen ontbreken: wat ze nodig hebben blijft dan 0. */
+export function achievementMeasures({ today, stats, habits = [], checkIns = [], ratings = [], friends = 0 }) {
   const counterIds = new Set(habits.filter((habit) => habit.counter != null).map((habit) => habit.id));
   const known = new Set(stats.map((s) => s.habitId));
+  const kept = habits.filter((habit) => habit.status !== 'archived');
   return {
+    ratedWeeks: new Set(ratings.filter((r) => known.has(r.habitId)).map((r) => r.weekStart)).size,
+    habitsWithWhy: habits.filter((habit) => String(habit.why ?? '').trim() !== '').length,
+    dayparts: new Set(kept.map((habit) => habit.daypart).filter((part) => ACHIEVEMENT_DAYPARTS.includes(part))).size,
+    activeHabits: stats.filter((s) => s.habitStatus === 'active').length,
+    allDoneDays: countAllDoneDays(stats.flatMap((s) => s.units ?? [])),
+    friends,
     totalDone: stats.reduce((sum, s) => sum + (s.totalDone ?? 0), 0),
     bestDayStreak: Math.max(0, ...stats.map((s) => computeStreaks((s.units ?? []).filter((u) => u.kind === 'day')).best)),
     perfectWeekRun: longestWeekRun(perfectWeekStarts(stats.flatMap((s) => s.units ?? []), today)),
@@ -194,10 +237,11 @@ export function achievementProgress(input) {
  * stats:    uitvoer van buildHabitStats voor elke habit
  * reviews:  [{ weekStart }]
  * unlocked: [{ key, habitId|null }] — wat al eerder is ontgrendeld
- * habits, checkIns, pauses: de gegevens zelf, voor wat de stats niet weten (teller, minimale versie, pauzes)
+ * habits, checkIns, pauses, ratings: de gegevens zelf, voor wat de stats niet weten (teller, minimale versie, pauzes, automatisme)
+ * friends: het aantal vrienden (komt niet uit de lokale gegevens maar uit de sociale cache; zonder sociaal 0)
  * Geeft [{ key, habitId|null }] van de nieuwe ontgrendelingen, in vaste volgorde.
  */
-export function evaluateAchievements({ today, stats, reviews = [], unlocked = [], habits = [], checkIns = [], pauses = [] }) {
+export function evaluateAchievements({ today, stats, reviews = [], unlocked = [], habits = [], checkIns = [], pauses = [], ratings = [], friends = 0 }) {
   const have = new Set(unlocked.map((u) => `${u.key}|${u.habitId ?? ''}`));
   const fresh = [];
   const grant = (key, habitId = null) => {
@@ -222,7 +266,8 @@ export function evaluateAchievements({ today, stats, reviews = [], unlocked = []
   if (stats.filter((s) => s.habitStatus === 'active').length >= ACTIVE_HABITS_ACHIEVEMENT) grant('three_active');
   if (hasReviewStreak(reviews)) grant('review_streak_4');
 
-  const measures = achievementMeasures({ today, stats, habits, checkIns });
+  if (reviews.length > 0) grant('first_review');
+  const measures = achievementMeasures({ today, stats, habits, checkIns, ratings, friends });
   for (const { key, measure, target } of COUNT_ACHIEVEMENTS) if (measures[measure] >= target) grant(key);
   for (const s of stats) if (hasStrongReturn(s.units ?? [])) grant('strong_return', s.habitId);
   if (habits.some((habit) => String(habit.minimalVersion ?? '').trim() !== '')) grant('minimal_first');

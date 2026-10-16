@@ -1,5 +1,8 @@
 // Namen en omschrijvingen van achievements. De regels staan in domain/achievements.js.
-import { DONE_MILESTONES, GRADUATED_MILESTONES, MILESTONE_DAYS, STREAK_MILESTONES } from '../domain/constants.js';
+import {
+  ALL_DONE_DAYS, AUTOMATICITY_WEEKS, DONE_MILESTONES, FIVE_ACTIVE_ACHIEVEMENT, FRIENDS_ACHIEVEMENT, GRADUATED_MILESTONES, MILESTONE_DAYS, STREAK_MILESTONES,
+  WHY_HABITS_ACHIEVEMENT,
+} from '../domain/constants.js';
 import { achievementIconKey } from './ui-icons.js';
 
 const milestones = Object.fromEntries(
@@ -43,6 +46,14 @@ const INFO = {
   counter_week: { title: 'Vol doel', text: 'Zeven dagen achter elkaar het volle doel van een teller gehaald.', perHabit: false },
   pause_resume: { title: 'Pauzeren is oké', text: 'Je nam een pauze en pakte de habit daarna weer op.', perHabit: false },
   ...graduatedMilestones,
+  first_review: { title: 'Eerste review', text: 'Je eerste wekelijkse review is opgeslagen.', perHabit: false },
+  automaticity_4: { title: 'Automatisme gevolgd', text: `In ${AUTOMATICITY_WEEKS} verschillende weken zei je hoe automatisch een habit aanvoelt.`, perHabit: false },
+  why_3: { title: 'Je waarom', text: `Bij ${WHY_HABITS_ACHIEVEMENT} habits heb je ingevuld waarom je ze doet.`, perHabit: false },
+  all_dayparts: { title: 'Hele dag', text: 'Je hebt habits in de ochtend, de middag én de avond.', perHabit: false },
+  five_active: { title: 'Vijf tegelijk', text: `${FIVE_ACTIVE_ACHIEVEMENT} actieve habits tegelijk.`, perHabit: false },
+  all_done_10: { title: 'Alles gedaan', text: `${ALL_DONE_DAYS} dagen waarop je alles van die dag hebt gedaan (minstens twee dingen).`, perHabit: false },
+  first_friend: { title: 'Samen sterker', text: 'Je eerste vriend staat in je lijst.', perHabit: false },
+  friends_5: { title: 'Vijf vrienden', text: `${FRIENDS_ACHIEVEMENT} vrienden in je lijst.`, perHabit: false },
 };
 
 /**
@@ -55,8 +66,10 @@ export const ACHIEVEMENT_GROUPS = Object.freeze([
   { id: 'return', label: 'Terugkomen', keys: Object.freeze(['comeback', 'recover_5', 'strong_return']) },
   { id: 'smart', label: 'Slimmer', keys: Object.freeze(['minimal_first', 'minimal_5', 'counter_week', 'pause_resume']) },
   { id: 'rooted', label: 'Ingeburgerd', keys: Object.freeze(['first_graduated', ...GRADUATED_MILESTONES.map((n) => `graduated_${n}`)]) },
-  { id: 'reflect', label: 'Reflectie', keys: Object.freeze(['review_streak_4']) },
-  { id: 'breadth', label: 'Verbreding', keys: Object.freeze(['three_active']) },
+  { id: 'reflect', label: 'Reflectie', keys: Object.freeze(['first_review', 'automaticity_4', 'why_3', 'review_streak_4']) },
+  { id: 'breadth', label: 'Verbreding', keys: Object.freeze(['all_dayparts', 'three_active', 'five_active', 'all_done_10']) },
+  // alleen zichtbaar voor wie sociaal gebruikt (of er al iets uit behaald heeft), zie views/achievements.js
+  { id: 'social', label: 'Samen', social: true, keys: Object.freeze(['first_friend', 'friends_5']) },
 ]);
 
 // elke prestatie krijgt de sleutel van haar icoon (content/ui-icons.js)

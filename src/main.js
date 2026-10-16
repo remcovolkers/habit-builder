@@ -18,7 +18,7 @@ import { friendsInviteView } from './ui/views/friends-invite.js';
 import { loginView } from './ui/views/login.js';
 import { initAccount } from './ui/account.js';
 import { initReminders } from './ui/reminders.js';
-import { initSocial } from './ui/social-app.js';
+import { initSocial, onSocialChanged, social } from './ui/social-app.js';
 import { setDev } from './ui/dev.js';
 import { startPwa } from './pwa.js';
 import { mountUpdateBanner } from './ui/components/update-banner.js';
@@ -108,10 +108,14 @@ if (repo.storeKind === 'memory') {
 
 // Na elke wijziging: zijn er nieuwe prestaties? Ze worden één voor één verwerkt en blijven bewaard.
 let achievementQueue = Promise.resolve();
+// het aantal vrienden komt uit de sociale cache (alleen als sociaal aan staat); checkedFriends is het aantal waarmee we het laatst controleerden
+let checkedFriends = 0;
+const friendCount = () => (social.status === 'on' ? social.friends.length : 0);
 function checkForAchievements() {
   achievementQueue = achievementQueue
     .then(async () => {
-      const fresh = await checkAchievements(state.repo, state.today);
+      checkedFriends = friendCount();
+      const fresh = await checkAchievements(state.repo, state.today, { friends: checkedFriends });
       if (fresh.length > 0) {
         celebrateAchievements(fresh, await state.repo.listHabits());
         notifyChanged(); // zodat de prestatiepagina meteen klopt (de volgende controle vindt niets nieuws)
@@ -120,6 +124,10 @@ function checkForAchievements() {
     .catch((error) => console.error('prestaties controleren mislukt', error));
 }
 onChanged(checkForAchievements);
+// een nieuwe vriend kan een prestatie opleveren
+onSocialChanged(() => {
+  if (friendCount() !== checkedFriends) checkForAchievements();
+});
 checkForAchievements();
 
 // Account: alleen actief als er een sessie is (of we terugkomen van Google); een mislukte start blokkeert de app nooit.

@@ -363,6 +363,15 @@ async function main() {
     await overflow('ranglijst met de vriendenlijst');
     await ev(`document.querySelector('#friendsList').scrollIntoView({ block: 'center' })`);
     await shot('board-friends-list');
+    // prestaties: met sociaal aan staat de groep "Samen", de eerste vriend is behaald en "vijf vrienden" toont de voortgang
+    await goto('#/achievements');
+    await waitFor(`document.querySelector('.achievements-group')`, 'prestaties');
+    await sleep(900); // de controle op nieuwe prestaties draait na een verandering van het aantal vrienden
+    await closeDialogs();
+    const medals = await ev(`[...document.querySelectorAll('#achievements-social .achv')].map((m) => m.dataset.state + ' ' + m.innerText.replace(/\\s+/g, ' '))`);
+    check('met sociaal aan staat de groep "Samen" met "Samen sterker" behaald en voortgang naar vijf vrienden', Array.isArray(medals) && medals.length === 2 && /^unlocked Samen sterker/.test(medals[0]) && new RegExp(`^locked Vijf vrienden ${now.friends} van 5`).test(medals[1]), J(medals));
+    await goto('#/vrienden');
+    await waitFor(`document.querySelector('.board')`, 'ranglijst na prestaties');
   }
   for (const theme of ['mel']) {
     await ev(`import('/src/ui/state.js').then((m) => m.saveSettings({ theme: ${J(theme)} }))`);

@@ -67,6 +67,14 @@ export const RECOVERIES_ACHIEVEMENT = 5; // keer meteen terug na een gemiste een
 export const MINIMAL_ACHIEVEMENT = 5; // keer de minimale versie gedaan
 export const COUNTER_FULL_DAYS = 7; // dagen achter elkaar het volle doel van een teller gehaald
 export const GRADUATED_MILESTONES = [2, 5]; // ingeburgerde habits
+/** Ronde 2: reflectie, verbreding en sociaal. */
+export const AUTOMATICITY_WEEKS = 4; // verschillende weken met een automatisme-cijfer
+export const WHY_HABITS_ACHIEVEMENT = 3; // habits waarbij het "waarom" is ingevuld
+export const FIVE_ACTIVE_ACHIEVEMENT = 5; // actieve habits tegelijk
+export const ALL_DONE_DAYS = 10; // dagen waarop alles van die dag gedaan is
+export const ALL_DONE_MIN_UNITS = 2; // zo'n dag heeft minstens twee dingen (met één is "alles" niets bijzonders)
+export const ACHIEVEMENT_DAYPARTS = Object.freeze(['morning', 'afternoon', 'evening']); // "de hele dag": een habit in elk van deze dagdelen
+export const FRIENDS_ACHIEVEMENT = 5; // vrienden
 /** "Sterk terug": binnen een venster van 14 dagen onder de 50% gehaald (dip), later weer op 80% of hoger. Minstens 4 eenheden in het venster, anders zegt een percentage niets. */
 export const STRONG_RETURN = Object.freeze({ windowDays: 14, dipBelow: 0.5, backAt: 0.8, minUnits: 4 });
 

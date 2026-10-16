@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  ACHIEVEMENT_KEYS, COUNT_ACHIEVEMENTS, achievementProgress, counterFullStreak, countRecoveries, evaluateAchievements, hasComeback,
+  ACHIEVEMENT_KEYS, COUNT_ACHIEVEMENTS, achievementProgress, countAllDoneDays, counterFullStreak, countRecoveries, evaluateAchievements, hasComeback,
   hasPerfectWeek, hasResumedPause, hasReviewStreak, hasStrongReturn, longestWeekRun,
 } from '../../src/domain/achievements.js';
 import { buildHabitStats } from '../../src/domain/stats.js';
@@ -257,4 +257,89 @@ test('voortgang: waarde tot het doel, ook zonder gegevens', () => {
   assert.deepEqual(progress.done_10, { value: 10, target: 10 }); // hoogstens het doel
   assert.deepEqual(progress.streak_7, { value: 0, target: 7 });
   assert.deepEqual(Object.keys(achievementProgress({ today: TODAY, stats: [] })), COUNT_ACHIEVEMENTS.map((a) => a.key));
+});
+
+// --- ronde 2 van §5 --------------------------------------------------------------------------------------------
+
+test('alles gedaan: een dag met minstens twee dingen, alles gehaald, niets gemist of open', () => {
+  const day = (date, ...statuses) => statuses.map((status) => dayUnit(status, date));
+  const units = [
+    ...day('2026-10-01', 'done', 'done'), // telt
+    ...day('2026-10-02', 'done', 'minimal', 'done'), // telt
+    ...day('2026-10-03', 'done'), // maar één ding
+    ...day('2026-10-04', 'done', 'missed'), // eentje gemist
+    ...day('2026-10-05', 'done', 'open'), // vandaag nog niet af
+    ...day('2026-10-06', 'done', 'done', 'skipped'), // overgeslagen doet niets af
+    ...day('2026-10-07', 'done', 'paused'), // één gedaan, de rest gepauzeerd: te weinig
+    weekUnit('done', '2026-10-05'), // een weekeenheid hoort niet bij een dag
+  ];
+  assert.equal(countAllDoneDays(units), 3);
+  assert.equal(countAllDoneDays([]), 0);
+});
+
+test('evaluateAchievements: eerste review', () => {
+  assert.equal(keys(evaluateAchievements({ today: TODAY, stats: [] })).includes('first_review'), false);
+  assert.ok(keys(evaluateAchievements({ today: TODAY, stats: [], reviews: [{ weekStart: '2026-10-05' }] })).includes('first_review'));
+});
+
+test('evaluateAchievements: automatisme in vier verschillende weken (van alle habits samen)', () => {
+  const stats = [fake({ habitId: 'A' }), fake({ habitId: 'B' })];
+  const r = (habitId, weekStart) => ({ habitId, weekStart, score: 3 });
+  const three = [r('A', '2026-09-14'), r('B', '2026-09-14'), r('A', '2026-09-21'), r('A', '2026-10-05')]; // drie weken, vier cijfers
+  assert.equal(keys(evaluateAchievements({ today: TODAY, stats, ratings: three })).includes('automaticity_4'), false);
+  assert.ok(keys(evaluateAchievements({ today: TODAY, stats, ratings: [...three, r('B', '2026-10-12')] })).includes('automaticity_4'));
+  assert.equal(keys(evaluateAchievements({ today: TODAY, stats, ratings: [...three, r('GONE', '2026-10-12')] })).includes('automaticity_4'), false); // een verwijderde habit telt niet
+});
+
+test('evaluateAchievements: het waarom bij drie habits', () => {
+  const habits = (...whys) => whys.map((why, i) => ({ id: `H${i}`, why, status: 'active', daypart: 'anytime' }));
+  assert.equal(keys(evaluateAchievements({ today: TODAY, stats: [], habits: habits('a', 'b', '  ', undefined) })).includes('why_3'), false);
+  assert.ok(keys(evaluateAchievements({ today: TODAY, stats: [], habits: habits('a', 'b', 'c') })).includes('why_3'));
+});
+
+test('evaluateAchievements: een habit in ochtend, middag én avond; "de hele dag" en gearchiveerd tellen niet', () => {
+  const h = (daypart, status = 'active') => ({ id: daypart + status, daypart, status });
+  const got = (habits) => keys(evaluateAchievements({ today: TODAY, stats: [], habits })).includes('all_dayparts');
+  assert.equal(got([h('morning'), h('afternoon')]), false);
+  assert.equal(got([h('morning'), h('afternoon'), h('anytime')]), false);
+  assert.equal(got([h('morning'), h('afternoon'), h('evening', 'archived')]), false);
+  assert.equal(got([h('morning'), h('afternoon'), h('evening')]), true);
+  assert.equal(got([h('morning'), h('morning', 'graduated'), h('afternoon'), h('evening', 'graduated')]), true);
+});
+
+test('evaluateAchievements: vijf actieve habits tegelijk, naast drie', () => {
+  const active = (n) => Array.from({ length: n }, (_, i) => fake({ habitId: `A${i}` }));
+  assert.deepEqual(keys(evaluateAchievements({ today: TODAY, stats: active(4) })), ['three_active']);
+  assert.deepEqual(keys(evaluateAchievements({ today: TODAY, stats: active(5) })), ['three_active', 'five_active']);
+});
+
+test('evaluateAchievements: alles gedaan op tien dagen', () => {
+  const units = (days) => Array.from({ length: days }, (_, i) => [dayUnit('done', addDays('2026-10-01', i))]).flatMap(([u]) => [u, { ...u }]);
+  const two = (n) => [fake({ habitId: 'A', units: units(n).filter((_, i) => i % 2 === 0) }), fake({ habitId: 'B', units: units(n).filter((_, i) => i % 2 === 1) })];
+  assert.equal(keys(evaluateAchievements({ today: TODAY, stats: two(9) })).includes('all_done_10'), false);
+  assert.ok(keys(evaluateAchievements({ today: TODAY, stats: two(10) })).includes('all_done_10'));
+});
+
+test('evaluateAchievements: vrienden komen van buiten (de sociale cache) en zonder sociaal is het 0', () => {
+  const got = (friends) => keys(evaluateAchievements({ today: TODAY, stats: [], friends }));
+  assert.deepEqual(got(0), []);
+  assert.deepEqual(got(1), ['first_friend']);
+  assert.deepEqual(got(4), ['first_friend']);
+  assert.deepEqual(got(5), ['first_friend', 'friends_5']);
+  assert.deepEqual(keys(evaluateAchievements({ today: TODAY, stats: [] })), []); // geen opgave: 0
+});
+
+test('voortgang ronde 2: dagdelen, vrienden en alles gedaan hebben een "x van y"', () => {
+  const p = achievementProgress({
+    today: TODAY,
+    stats: [fake({ habitId: 'A' })],
+    habits: [{ id: 'A', daypart: 'morning', status: 'active', why: 'x' }],
+    friends: 3,
+  });
+  assert.deepEqual(p.all_dayparts, { value: 1, target: 3 });
+  assert.deepEqual(p.friends_5, { value: 3, target: 5 });
+  assert.deepEqual(p.first_friend, { value: 1, target: 1 });
+  assert.deepEqual(p.why_3, { value: 1, target: 3 });
+  assert.deepEqual(p.all_done_10, { value: 0, target: 10 });
+  assert.deepEqual(p.automaticity_4, { value: 0, target: 4 });
 });

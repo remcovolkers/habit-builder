@@ -135,7 +135,7 @@ Na `npm run dev:seed` heeft de stub zes vrienden en een uitnodigingslink. Gebrui
 9. Open dezelfde link nog eens: **"Jij en Remco (stub) waren al vrienden"**. Open hem als de stub zelf: "Dit is je eigen uitnodigingslink". Open een verzonnen link (`…/uitnodiging/` met 64 keer `f`): "Deze link werkt niet meer" met nog steeds de knop Account maken.
 10. Terug als de stub: de leeg-gebruiker staat in "Je vrienden" en de teller bij je link is **1 persoon**.
 
-## L. Prestaties (ronde 1 van §5)
+## L. Prestaties (§5, ronde 1 en 2)
 
 1. Open het gevulde account (`npm run dev:seed`, inloggen als stub). Bij de eerste keer openen na de update kan er één viering met meerdere medailles verschijnen ("n nieuwe prestaties!"): de stub haalt veel regels al. Sluit hem met *Mooi!*.
 2. **Prestaties** is nu per groep: *Aantallen, Volhouden, Terugkomen, Slimmer, Ingeburgerd, Reflectie, Verbreding*, elk met "x van y". Een medaille die nog niet behaald is toont hoe ver je bent, bijvoorbeeld **"199 van 500"** bij *500 keer gedaan*; de rest zegt "Nog niet behaald".
@@ -144,6 +144,8 @@ Na `npm run dev:seed` heeft de stub zes vrienden en een uitnodigingslink. Gebrui
 5. *Sterk terug*: een habit waarvan twee weken minder dan de helft gehaald is en die daarna weer op 80% komt. *Nooit twee keer missen*: vijf keer na een gemiste dag meteen weer gedaan. Beide zijn in de stub al gehaald (Terugkomen: 3 van 3).
 6. Controleer op 320 px met 200% tekst dat de pagina niet zijwaarts scrolt (`npm run check:layout` doet dat ook).
 7. Nieuwe prestaties zijn privé: ze staan niet op de ranglijst en niet in wat vrienden zien.
+8. **Reflectie en verbreding (ronde 2):** *Eerste review* (sla een weekreview op), *Je waarom* (vul het waarom in bij drie habits; "1 van 3" loopt mee), *Automatisme gevolgd* (een cijfer in vier verschillende weken), *Hele dag* (habits in ochtend, middag en avond; "de hele dag" telt niet), *Vijf tegelijk*, *Alles gedaan* (tien dagen waarop alles van de dag is gedaan, minstens twee dingen). De stub heeft de verbredingsgroep al volledig (4 van 4).
+9. **Samen (sociaal):** de groep staat alleen op de pagina als sociaal aan staat. Zet sociaal aan als stub (de vrienden uit de seed): *Samen sterker* is meteen behaald, *Vijf vrienden* toont "4 van 5" en komt erbij zodra je er een vijfde hebt (accepteer Dora). Met het lege account en sociaal uit ontbreekt de groep.
 
 ## Automatische controles
 

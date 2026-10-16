@@ -1,6 +1,7 @@
 import { h } from '../dom.js';
 import { liveView } from '../live.js';
 import { state } from '../state.js';
+import { social } from '../social-app.js';
 import { achievementMedal } from '../components/achievement.js';
 import { nl } from '../../content/nl.js';
 import { emptyState } from '../components/empty-state.js';
@@ -14,12 +15,16 @@ export function achievementsView() {
     className: 'achievements-page',
     load: async () => {
       const snapshot = await state.repo.snapshot();
-      return { unlocked: snapshot.achievements, habits: snapshot.habits, progress: achievementProgress(achievementInput(snapshot, state.today)) };
+      const friends = social.status === 'on' ? social.friends.length : 0;
+      return { unlocked: snapshot.achievements, habits: snapshot.habits, progress: achievementProgress(achievementInput(snapshot, state.today, { friends })), usesSocial: social.status === 'on' };
     },
-    render: ({ unlocked, habits, progress }) => {
+    render: ({ unlocked, habits, progress, usesSocial }) => {
       const names = new Map(habits.map((habit) => [habit.id, habit.name]));
-      const keys = ACHIEVEMENT_KEYS.filter((key) => ACHIEVEMENT_INFO[key]);
-      const reached = keys.filter((key) => unlocked.some((a) => a.key === key));
+      const hasKey = (key) => unlocked.some((a) => a.key === key);
+      // de groep voor vrienden zie je alleen als je sociaal gebruikt, of er al iets uit hebt behaald; wie sociaal niet gebruikt, ziet geen lijst die hij niet kan halen
+      const hidden = new Set(ACHIEVEMENT_GROUPS.filter((g) => g.social && !usesSocial && !g.keys.some(hasKey)).flatMap((g) => g.keys));
+      const keys = ACHIEVEMENT_KEYS.filter((key) => ACHIEVEMENT_INFO[key] && !hidden.has(key));
+      const reached = keys.filter(hasKey);
 
       // een prestatie die een getal haalt toont hoe ver je bent ("37 van 50"), de rest "Nog niet behaald"
       const lockedSub = (key) => (progress[key] ? nl.achievements.progress(progress[key].value, progress[key].target) : nl.achievements.locked);
@@ -34,7 +39,7 @@ export function achievementsView() {
       };
 
       const group = ({ id, label, keys: groupKeys }) => {
-        const shown = groupKeys.filter((key) => ACHIEVEMENT_INFO[key]);
+        const shown = groupKeys.filter((key) => ACHIEVEMENT_INFO[key] && !hidden.has(key));
         if (shown.length === 0) return null;
         const done = shown.filter((key) => reached.includes(key)).length;
         return h('section', { class: 'section achievements-group', id: `achievements-${id}` },
