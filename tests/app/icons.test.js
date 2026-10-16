@@ -3,15 +3,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { ICON_GROUPS, ICONS } from '../../src/content/icons.js';
-import { THEME_ICON_KEYS } from '../../src/content/theme-icons.js';
-import { iconForEmoji, iconForKey, iconKeyFor, searchIcons, themeIconHref, uiIconHref } from '../../src/app/icons.js';
-import { THEME_IDS } from '../../src/app/themes.js';
+import { ICON_SET_KEYS } from '../../src/content/icon-set.js';
+import { iconForEmoji, iconForKey, iconKeyFor, habitIconHref, searchIcons, uiIconHref } from '../../src/app/icons.js';
 import { UI_ICON_GROUPS, UI_ICON_KEYS, achievementIconKey, tipIconKey } from '../../src/content/ui-icons.js';
 import { ACHIEVEMENT_INFO } from '../../src/content/achievements.js';
 import { ACHIEVEMENT_KEYS } from '../../src/domain/achievements.js';
 import { TIPS } from '../../src/content/tips.js';
 import { TEMPLATES } from '../../src/content/templates.js';
-import { ALL_ICON_KEYS, buildSprite, extractIcons, MAX_ICON_BYTES, normalizeIconSvg, themeIconsModule, validateIconSvg } from '../../tools/lib/icons.mjs';
+import { ALL_ICON_KEYS, buildSprite, extractIcons, MAX_ICON_BYTES, iconSetModule, normalizeIconSvg, validateIconSvg } from '../../tools/lib/icons.mjs';
 
 const read = (file) => readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
 const plain = (emoji) => emoji.replace(/️/g, '');
@@ -50,7 +49,7 @@ test('een emoji wordt gevonden met en zonder variatiekenmerk; een eigen emoji is
 
 test('docs/MODA-ICONS.md noemt precies de sleutels van de catalogus (de lijst voor Moda loopt niet uit de pas)', () => {
   const doc = read('docs/MODA-ICONS.md');
-  const table = doc.slice(doc.indexOf('## De 60 sleutels'), doc.indexOf('## Prompt 1'));
+  const table = doc.slice(doc.indexOf('## De 60 sleutels'), doc.indexOf('## De 49 sleutels'));
   const keys = [...table.matchAll(/^\| `([a-z0-9-]+)` \|/gm)].map((m) => m[1]);
   assert.deepEqual([...keys].sort(), ICONS.map((i) => i.key).sort());
   for (const icon of ICONS) assert.ok(table.includes(`| \`${icon.key}\` |`) && table.includes(icon.emoji), `${icon.key}: emoji komt niet overeen`);
@@ -76,31 +75,25 @@ test('zoeken: zonder zoekopdracht alles in dezelfde groepen; groepen zonder tref
   assert.deepEqual(groups.map((g) => g.id), ['social']);
 });
 
-test('thema-iconen: de href wijst alleen naar een sleutel die het thema echt levert', () => {
-  const keys = { mel: ['water'], v0lky1: [] };
-  assert.equal(themeIconHref('mel', '💧', keys), 'themes/mel/icons.svg#water');
-  assert.equal(themeIconHref('mel', '📖', keys), null, 'het thema heeft deze sleutel niet: emoji');
-  assert.equal(themeIconHref('v0lky1', '💧', keys), null);
-  assert.equal(themeIconHref('mel', '🦄', keys), null, 'eigen emoji');
-  assert.equal(themeIconHref('onbekend', '💧', keys), null);
-  assert.equal(themeIconHref('mel', '💧', undefined), null);
+test('habitIconHref: alleen naar een sleutel die in de set staat; anders niets (dan toont de app de emoji)', () => {
+  const keys = ['water'];
+  assert.equal(habitIconHref('💧', keys), 'icons/set.svg#water');
+  assert.equal(habitIconHref('📖', keys), null, 'de set heeft deze sleutel nog niet');
+  assert.equal(habitIconHref('🦄', keys), null, 'eigen emoji');
+  assert.equal(habitIconHref('💧', undefined), null);
 });
 
-test('theme-icons.js: elk thema staat erin, met bestaande sleutels en een sprite waarin ze allemaal zitten', () => {
-  assert.deepEqual(Object.keys(THEME_ICON_KEYS).sort(), [...THEME_IDS].sort());
-  for (const [id, keys] of Object.entries(THEME_ICON_KEYS)) {
-    assert.equal(new Set(keys).size, keys.length, `${id}: dubbele sleutel`);
-    for (const key of keys) assert.ok(iconForKey(key) || UI_ICON_KEYS.includes(key), `${id}: onbekende sleutel ${key}`);
-    if (keys.length === 0) continue;
-    const file = `themes/${id}/icons.svg`;
-    assert.ok(existsSync(new URL(`../../${file}`, import.meta.url)), `${file} ontbreekt`);
-    const sprite = read(file);
-    for (const key of keys) assert.ok(sprite.includes(`<symbol id="${key}"`), `${id}: ${key} staat niet in de sprite`);
-    assert.deepEqual(validateIconSvg('water', `<svg viewBox="0 0 24 24">${sprite.match(/<symbol[\s\S]*?<\/symbol>/)[0]}</svg>`).filter((p) => /script|href/.test(p)), []);
+test('icon-set.js: bestaande sleutels, zonder dubbelen, en een sprite (icons/set.svg) waarin ze allemaal zitten en die door de controle komt', () => {
+  assert.equal(new Set(ICON_SET_KEYS).size, ICON_SET_KEYS.length, 'dubbele sleutel');
+  for (const key of ICON_SET_KEYS) assert.ok(ALL_ICON_KEYS.includes(key), `onbekende sleutel ${key}`);
+  assert.ok(existsSync(new URL('../../icons/set.svg', import.meta.url)), 'icons/set.svg ontbreekt');
+  const sprite = read('icons/set.svg');
+  const symbols = [...sprite.matchAll(/<symbol id="([a-z0-9-]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(symbols, ICON_SET_KEYS.length ? [...ICON_SET_KEYS] : [], 'de sprite en icon-set.js horen bij elkaar (npm run icons:build)');
+  for (const [, key, svg] of sprite.matchAll(/<symbol id="([a-z0-9-]+)"([\s\S]*?)<\/symbol>/g)) {
+    assert.deepEqual(validateIconSvg(key, `<svg viewBox="0 0 24 24"${svg.replace(/^[^>]*viewBox="[^"]*"/, '')}</svg>`), [], key);
   }
 });
-
-// ---- prestaties, tips en tekens in de app (content/ui-icons.js) ---------------------------------------------------------------------------
 
 test('ui-iconen: 49 unieke sleutels in kebab-case, zonder overlap met de habit-iconen', () => {
   assert.equal(UI_ICON_KEYS.length, 49);
@@ -131,17 +124,15 @@ test('elke prestatie en elke tip in de app heeft een icoon in de lijst (de lijst
 
 test('docs/MODA-ICONS.md noemt ook precies de ui-sleutels', () => {
   const doc = read('docs/MODA-ICONS.md');
-  const table = doc.slice(doc.indexOf('## De 49 sleutels'), doc.indexOf('## Prompt 3'));
+  const table = doc.slice(doc.indexOf('## De 49 sleutels'), doc.indexOf('## Eerste prompt'));
   const keys = [...table.matchAll(/^\| `([a-z0-9-]+)` \|/gm)].map((m) => m[1]);
   assert.deepEqual([...keys].sort(), [...UI_ICON_KEYS].sort());
 });
 
-test('uiIconHref: alleen als het thema de sleutel levert', () => {
-  const keys = { mel: ['ach-days-7'], v0lky1: [] };
-  assert.equal(uiIconHref('mel', 'ach-days-7', keys), 'themes/mel/icons.svg#ach-days-7');
-  assert.equal(uiIconHref('mel', 'ach-days-21', keys), null);
-  assert.equal(uiIconHref('v0lky1', 'ach-days-7', keys), null);
-  assert.equal(uiIconHref('onbekend', 'ach-days-7', keys), null);
+test('uiIconHref: alleen als de set de sleutel heeft', () => {
+  assert.equal(uiIconHref('ach-days-7', ['ach-days-7']), 'icons/set.svg#ach-days-7');
+  assert.equal(uiIconHref('ach-days-21', ['ach-days-7']), null);
+  assert.equal(uiIconHref('ach-days-7', undefined), null);
 });
 
 // ---- het gereedschap om een set van Moda in te lezen ---------------------------------------------------------------------------------------
@@ -189,11 +180,10 @@ test('buildSprite: een symbol per icoon in de volgorde van de catalogus, met de 
   assert.ok(!/width="24"|<script/.test(sprite));
 });
 
-test('themeIconsModule schrijft een geldige module die weer gelezen kan worden', async () => {
-  const text = themeIconsModule({ v0lky1: [], mel: ['water', 'book'] });
-  const url = `data:text/javascript;base64,${Buffer.from(text).toString('base64')}`;
-  const { THEME_ICON_KEYS: parsed } = await import(url);
-  assert.deepEqual({ ...parsed, v0lky1: [...parsed.v0lky1], mel: [...parsed.mel] }, { v0lky1: [], mel: ['water', 'book'] });
+test('iconSetModule schrijft een geldige module die weer gelezen kan worden', async () => {
+  const text = iconSetModule(['water', 'book']);
+  const { ICON_SET_KEYS: parsed } = await import(`data:text/javascript;base64,${Buffer.from(text).toString('base64')}`);
+  assert.deepEqual([...parsed], ['water', 'book']);
   assert.ok(Object.isFrozen(parsed));
 });
 

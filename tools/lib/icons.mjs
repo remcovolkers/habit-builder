@@ -84,14 +84,11 @@ export function buildSprite(icons) {
   return `<svg xmlns="http://www.w3.org/2000/svg">\n${symbols.join('\n')}\n</svg>\n`;
 }
 
-/** De tekst van src/content/theme-icons.js voor de sleutels per thema. */
-export function themeIconsModule(keysByTheme) {
-  const lines = Object.entries(keysByTheme).map(([id, keys]) => `  ${id}: Object.freeze([${keys.map((k) => `'${k}'`).join(', ')}]),`);
-  return `// Welke sleutels (content/icons.js) elk thema als eigen tekening levert, in themes/<id>/icons.svg.
+/** De tekst van src/content/icon-set.js voor de sleutels die in de sprite staan. */
+export function iconSetModule(keys) {
+  return `// Welke sleutels (content/icons.js en content/ui-icons.js) in de iconenset staan, icons/set.svg. Eén set voor alle thema's.
 // GEGENEREERD door \`npm run icons:build\` (tools/build-icons.mjs): niet met de hand aanpassen.
 // Een sleutel die hier niet staat, toont de emoji.
-export const THEME_ICON_KEYS = Object.freeze({
-${lines.join('\n')}
-});
+export const ICON_SET_KEYS = Object.freeze([${keys.map((key) => `'${key}'`).join(', ')}]);
 `;
 }

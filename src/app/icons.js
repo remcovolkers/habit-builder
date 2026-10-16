@@ -1,4 +1,4 @@
-// De iconen van habits: opzoeken op emoji, zoeken op naam en het pad van de tekening in een thema. Puur (geen DOM).
+// De iconen van habits: opzoeken op emoji, zoeken op naam en het pad van de tekening in de iconenset. Puur (geen DOM).
 import { ICON_GROUPS, ICONS } from '../content/icons.js';
 
 // een emoji kan met of zonder variatiekenmerk (U+FE0F) zijn opgeslagen
@@ -32,14 +32,17 @@ export function searchIcons(query) {
     .filter((group) => group.icons.length > 0);
 }
 
+/** Waar de sprite met alle tekeningen staat; één set voor alle thema's (de kleuren komen uit het thema). */
+export const ICON_SET_PATH = 'icons/set.svg';
+
 /**
- * Waar de tekening van een icoon in een thema staat (`themes/<thema>/icons.svg#<sleutel>`), of null als dit thema er geen heeft
- * voor deze emoji (dan toont de app de emoji). `themeKeys` is de lijst sleutels die het thema levert (content/theme-icons.js).
+ * De href van de tekening bij de emoji van een habit (`icons/set.svg#<sleutel>`), of null als de set deze sleutel nog niet heeft
+ * (dan toont de app de emoji). `setKeys` is de lijst sleutels die in de sprite staan (content/icon-set.js).
  */
-export function themeIconHref(themeId, emoji, themeKeys) {
+export function habitIconHref(emoji, setKeys) {
   const key = iconKeyFor(emoji);
-  return key && (themeKeys?.[themeId] ?? []).includes(key) ? `themes/${themeId}/icons.svg#${key}` : null;
+  return key && (setKeys ?? []).includes(key) ? `${ICON_SET_PATH}#${key}` : null;
 }
 
-/** Hetzelfde voor de iconen buiten de habits om (content/ui-icons.js): de href als het thema deze sleutel levert, anders null. */
-export const uiIconHref = (themeId, key, themeKeys) => ((themeKeys?.[themeId] ?? []).includes(key) ? `themes/${themeId}/icons.svg#${key}` : null);
+/** Hetzelfde voor de iconen buiten de habits om (content/ui-icons.js): de href als de set deze sleutel heeft, anders null. */
+export const uiIconHref = (key, setKeys) => ((setKeys ?? []).includes(key) ? `${ICON_SET_PATH}#${key}` : null);
