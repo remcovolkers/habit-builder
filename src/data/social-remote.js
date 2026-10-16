@@ -1,4 +1,4 @@
-// De Supabase-kant van vrienden en ranglijst: de functies uit supabase/migrations/0003_social.sql. Geen DOM, geen opslag.
+// De Supabase-kant van vrienden en ranglijst: de functies uit supabase/migrations/0003_social.sql en 0005_invites.sql. Geen DOM, geen opslag.
 // Elke aanroep geeft het resultaat of gooit een SocialError met een stabiele code (zie supabase/migrations/0003_social.sql).
 
 /** Foutcodes uit de server (de melding van de fout) die de UI kan vertalen. */
@@ -29,6 +29,8 @@ export function toSocialError(error) {
   // PostgREST kent de functie niet (de migratie is niet uitgevoerd) of het adres bestaat niet
   if (error?.code === 'PGRST202' || error?.code === '42883' || status === 404) return new SocialError('unavailable', error);
   if (status === 401 || error?.code === '28000' || /jwt/i.test(message)) return new SocialError('not_authenticated', error);
+  // 23503 (foreign key): het account van deze sessie bestaat op de server niet meer; opnieuw inloggen lost het op
+  if (error?.code === '23503' || /foreign key constraint/i.test(message)) return new SocialError('not_authenticated', error);
   if (status === 429) return new SocialError('too_many_requests', error);
   if (/failed to fetch|networkerror|load failed|network request failed|fetch failed/i.test(message) || error?.name === 'TypeError') return new SocialError('offline', error);
   return new SocialError('unknown', error);
@@ -66,8 +68,10 @@ export function createSocialRemote(getClient) {
     createInvite: () => call('invite_create'),
     invites: () => list('invite_list'),
     revokeInvite: async (id) => (await call('invite_revoke', { p_id: id })) === true,
-    /** { status: 'ok', user_id, username, display_name } of { status: 'invalid' }. */
+    /** { status: 'ok', already_friends, user_id, username, display_name } of { status: 'invalid' }. */
     redeemInvite: (code) => call('invite_redeem', { p_code: code }),
+    /** Zonder account te gebruiken (0005): { status: 'ok', display_name } | { status: 'own' } | { status: 'invalid' }. */
+    peekInvite: (code) => call('invite_peek', { p_code: code }),
     publish: async (args) => { await call('publish_summary', args); },
     leaderboard: () => list('leaderboard'),
   };

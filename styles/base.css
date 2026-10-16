@@ -253,6 +253,7 @@ textarea {
 
 summary.section__title {
   cursor: pointer;
+  padding-block: var(--space-3); /* een inklapbare kop is ook een knop: minstens een tikvlak van 44px hoog */
 }
 
 .card-list {

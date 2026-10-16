@@ -4,6 +4,7 @@ import { account } from '../account.js';
 import { social, socialApp } from '../social-app.js';
 import { socialLive } from '../social-view.js';
 import { emptyState } from '../components/empty-state.js';
+import { friendsList } from '../components/friends-list.js';
 import { leaderboardList } from '../components/leaderboard.js';
 import { breakdownCard, onboardingForm, pendingInviteBanner, reasonText, rulesCard, rulesList, sharingSummary } from '../components/social-parts.js';
 import { showToast } from '../components/toast.js';
@@ -66,6 +67,7 @@ function boardPage() {
       social.board.length > 0 ? leaderboardList(social.board) : null,
       hasFriends ? null : emptyState({ art: 'friends', title: f.board.aloneTitle, text: f.board.aloneText, cta: { href: '#/vrienden/toevoegen', label: f.actions.add }, compact: true }),
       hasFriends ? h('p', { class: 'xs muted' }, f.board.hidden) : null),
+    hasFriends ? friendsList() : null,
     breakdownCard(social.summary),
     rulesCard());
 }

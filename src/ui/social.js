@@ -211,9 +211,14 @@ export function createSocial({ remote, cache, env, schedule = defaultSchedule })
     try {
       const result = await fn();
       if (refreshAfter) {
-        await loadLists();
-        rebuildBoard();
-        persist();
+        // de actie is gelukt: faalt het verversen erna (verbinding, een tijdelijke fout), dan blijft de uitkomst "gelukt" en staan de lijsten even oud
+        try {
+          await loadLists();
+          rebuildBoard();
+          persist();
+        } catch (refreshError) {
+          fail(refreshError);
+        }
       }
       emit();
       return { ok: true, ...(result ?? {}) };
@@ -282,23 +287,55 @@ export function createSocial({ remote, cache, env, schedule = defaultSchedule })
     async createInvite() {
       return act(async () => {
         const invite = await remote.createInvite();
+        cache.rememberOwnInvite(userId, invite.id, invite.code); // de server bewaart alleen een hash: zo kun je de link later opnieuw tonen
         return { id: invite.id, code: invite.code, expiresAt: invite.expires_at, link: buildInviteLink(env.baseUrl(), invite.code) };
       }, { refreshAfter: false });
     },
-    invites: () => act(async () => ({ invites: await remote.invites() }), { refreshAfter: false }),
-    revokeInvite: (id) => act(async () => ({ revoked: await remote.revokeInvite(id) }), { refreshAfter: false }),
+    /** Je actieve links, elk met `uses` (hoeveel mensen er via kwamen) en `link` als die van dit apparaat is (anders null). */
+    invites: () => act(async () => {
+      const own = cache.readOwnInvites(userId);
+      const rows = await remote.invites();
+      return { invites: rows.map((row) => ({ ...row, uses: Number(row.uses ?? 0), link: own[row.id] ? buildInviteLink(env.baseUrl(), own[row.id]) : null })) };
+    }, { refreshAfter: false }),
+    revokeInvite: (id) => act(async () => {
+      const revoked = await remote.revokeInvite(id);
+      cache.forgetOwnInvite(userId, id);
+      return { revoked };
+    }, { refreshAfter: false }),
     /** Wisselt een code in. Een ongeldige of verlopen code geeft { ok: false, reason: 'invalid' }. */
     async redeemInvite(code) {
       const result = await act(async () => {
         const outcome = await remote.redeemInvite(String(code ?? '').trim().toLowerCase());
         if (outcome?.status !== 'ok') throw new SocialError('invalid');
-        return { person: person(outcome) };
+        return { person: person(outcome), alreadyFriends: outcome.already_friends === true };
       });
       if (result.ok || result.reason === 'invalid') cache.forgetInvite();
       return result;
     },
+    /**
+     * Wie nodigt je uit? Werkt zonder account (voor het welkomstscherm). { ok: true, status: 'ok' | 'own' | 'invalid', name } of
+     * { ok: false, reason } ('offline', 'unavailable', …). Een goede uitnodiger wordt onthouden voor het inlogscherm.
+     */
+    async peekInvite(code) {
+      const clean = parseInviteHash(`#/vrienden/uitnodiging/${code}`);
+      if (!clean) return { ok: true, status: 'invalid', name: '' };
+      if (!env.online()) return { ok: false, reason: 'offline' };
+      try {
+        const outcome = await remote.peekInvite(clean);
+        const status = ['ok', 'own'].includes(outcome?.status) ? outcome.status : 'invalid';
+        const name = status === 'ok' ? String(outcome.display_name ?? '').trim() : '';
+        if (status === 'ok' && cache.readInvite() === clean) cache.rememberInviter(name);
+        return { ok: true, status, name };
+      } catch (error) {
+        return { ok: false, reason: toSocialError(error).code };
+      }
+    },
     /** Een uitnodiging die binnenkwam voordat je was ingelogd of meedeed: bewaren tot je het kunt afhandelen. */
     rememberInvite: (code) => { const clean = parseInviteHash(`#/vrienden/uitnodiging/${code}`); if (clean) cache.rememberInvite(clean); return Boolean(clean); },
     pendingInvite: () => cache.readInvite(),
+    /** De naam van wie je uitnodigde (alleen bekend nadat het welkomstscherm hem opvroeg), of ''. */
+    pendingInviter: () => (cache.readInvite() ? cache.readInviter() : ''),
+    /** De uitnodiging laten vallen (bijvoorbeeld "niet nu"). */
+    dropInvite: () => cache.forgetInvite(),
   };
 }

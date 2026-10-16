@@ -5,6 +5,7 @@ import { social, socialApp } from '../social-app.js';
 import { socialLive } from '../social-view.js';
 import { copyText, reasonText, shareLink, untilLabel } from '../components/social-parts.js';
 import { showToast } from '../components/toast.js';
+import { INVITE_MAX_USES } from '../../app/social.js';
 import { nl } from '../../content/nl.js';
 
 const f = nl.friends;
@@ -83,7 +84,7 @@ export function friendsAddView() {
   async function makeInvite() {
     const result = await socialApp.createInvite();
     if (!result.ok) { showToast({ message: reasonText(result.reason) }); return; }
-    ui.invite = { link: result.link, expiresAt: result.expiresAt };
+    ui.invite = { link: result.link, expiresAt: result.expiresAt, uses: 0 };
     root.redraw();
     document.getElementById('inviteLink')?.select();
   }
@@ -94,6 +95,14 @@ export function friendsAddView() {
     if (!ok) document.getElementById('inviteLink')?.select();
   }
 
+  /** Je actieve link van dit apparaat staat er weer, zonder een nieuwe te maken (de server bewaart alleen een hash; de code staat op dit apparaat). */
+  async function loadExisting() {
+    if (account.status !== 'signed-in' || social.status !== 'on' || ui.invite) return;
+    const result = await socialApp.invites();
+    const mine = result.ok ? result.invites.find((invite) => invite.link) : null;
+    if (mine) { ui.invite = { link: mine.link, expiresAt: mine.expires_at, uses: mine.uses }; root.redraw(); }
+  }
+
   function inviteSection() {
     return h('section', { class: 'card invite' },
       h('h2', { class: 'section__title' }, t.inviteTitle),
@@ -102,10 +111,11 @@ export function friendsAddView() {
         ? h('div', { class: 'invite__box' },
           h('label', { class: 'field__label', for: 'inviteLink' }, t.inviteLinkLabel),
           h('input', { id: 'inviteLink', class: 'input', type: 'text', readonly: true, value: ui.invite.link, onfocus: (e) => e.target.select() }),
-          h('p', { class: 'xs muted' }, t.expires(untilLabel(ui.invite.expiresAt))),
+          h('p', { class: 'xs muted' }, `${(ui.invite.uses ?? 0) >= INVITE_MAX_USES ? t.usesFull(ui.invite.uses) : t.uses(ui.invite.uses ?? 0)} · ${t.expires(untilLabel(ui.invite.expiresAt))}`),
           h('div', { class: 'invite__actions' },
             navigator.share ? h('button', { type: 'button', id: 'shareInvite', class: 'button button--primary', onclick: async () => { await shareLink(ui.invite.link); } }, t.share) : null,
-            h('button', { type: 'button', id: 'copyInvite', class: navigator.share ? 'button button--secondary' : 'button button--primary', onclick: copyInvite }, t.copy)))
+            h('button', { type: 'button', id: 'copyInvite', class: navigator.share ? 'button button--secondary' : 'button button--primary', onclick: copyInvite }, t.copy),
+            h('button', { type: 'button', id: 'newInvite', class: 'button button--ghost', onclick: makeInvite }, t.inviteNew)))
         : h('button', { type: 'button', id: 'makeInvite', class: 'button button--secondary button--block', onclick: makeInvite }, t.inviteMake));
   }
 
@@ -125,7 +135,8 @@ export function friendsAddView() {
         h('a', { class: 'button button--primary', href: '#/vrienden' }, f.title)));
   }
 
-  const root = socialLive({ className: 'friends friends--add', render });
+  const root = socialLive({ className: 'friends friends--add', render, onAccount: loadExisting });
+  loadExisting();
   return root;
 }
 

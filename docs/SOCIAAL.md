@@ -68,7 +68,7 @@ Prio: M = moet, S = zou moeten, C = kan. Het ID-voorvoegsel is **V** (vrienden).
 | V12 | **Via een uitnodigingslink** ben je direct vrienden (de afzender gaf de link zelf, S8). **Via zoeken op gebruikersnaam** ontstaat een vriendschap pas na acceptatie door de ander. | M |
 | V13 | Ontvangen verzoeken staan in een lijst met **Accepteren / Weigeren**. Weigeren is stil: de afzender ziet alleen dat het verzoek "nog openstaat". Dezelfde afzender kan 30 dagen geen nieuw verzoek meer sturen. | M |
 | V14 | Verzoeken die je zelf verstuurde zie je als "uitgenodigd", met **intrekken**. | M |
-| V15 | Een uitnodigingslink openen zonder account of zonder sociaal: de app leidt je door inloggen en aanzetten, en handelt het verzoek daarna alsnog af (de code blijft onthouden). | S |
+| V15 | Een uitnodigingslink openen zonder account of zonder sociaal: **welkom** met de naam van de uitnodiger, account maken, **één naamstap** ("Hoe wil je heten?", doet meteen mee), en dan direct "Jij en Anna zijn nu vrienden!" (de code blijft onthouden, ook langs Google). Zie ITERATIE-1.2 §2. | S |
 | V16 | Een vriend **verwijderen**: wederzijds en direct; de ander merkt het alleen doordat je uit de lijst verdwijnt. | M |
 | V18 | Een maximum van **50 vrienden** per gebruiker en **20 openstaande verzoeken**, tegen misbruik en om de ranglijst werkbaar te houden. | M |
 
@@ -126,7 +126,7 @@ Gelijke punten: de langste reeks gaat voor, daarna de naam. Gelijke posities kri
 
 ### 4.4 Wie is "actief"
 Je publiceert de datum van je **laatste afgevinkte dag** (`last_active`; een half gehaalde teller telt mee). Een vriend staat in de lijst zolang `last_active` binnen de laatste **3 dagen** valt (vandaag, gisteren of eergisteren, gerekend vanaf de dag van degene die kijkt). Daarna verdwijnt de vriend, en bij de eerstvolgende afvinkactie is hij of zij terug. Wie de app niet opent, publiceert niets en valt dus vanzelf af.
-Je eigen regel staat er altijd. Nieuwe vrienden zonder enige activiteit verschijnen pas na hun eerste afvinkactie.
+Je eigen regel staat er altijd. Nieuwe vrienden zonder enige activiteit verschijnen pas na hun eerste afvinkactie op de ranglijst; ze staan wel meteen in de lijst "Je vrienden" eronder (met een uitleg, en "Nieuw" in de eerste 7 dagen).
 
 **Kort: wanneer sta je op andermans ranglijst?** Als jullie vrienden zijn, jij meedoet en je in de laatste 3 dagen (vandaag, gisteren of eergisteren) minstens één taak hebt afgevinkt, ook een half gehaalde teller. Er is **geen minimum aantal taken of punten**; één afgevinkte taak is genoeg. Overslaan en pauzeren tellen niet als afvinken. Deze uitleg staat in de app onder "Wie staat er op de ranglijst?" (op het aanmeldscherm en op de ranglijst) en volgt de constante `SOCIAL_ACTIVE_DAYS`; een test bewaakt dat tekst en regel gelijk blijven.
 
@@ -189,8 +189,9 @@ Het principe: **tabellen zijn dicht, toegang loopt via kleine `security definer`
 | `friend_respond(user_id, accept)` | beantwoordt een verzoek aan jou; weigeren is stil | 50 vrienden (ook die van de afzender) |
 | `friend_cancel(user_id)` / `friend_remove(user_id)` | eigen verzoek intrekken / vriend verwijderen (wederzijds) | |
 | `friend_list()` | vrienden, binnenkomende en uitgaande verzoeken (alleen mensen die sociaal aan hebben; geweigerd staat er niet in) | |
-| `invite_create()` / `invite_list()` / `invite_revoke(id)` | uitnodigingslink maken (de code komt één keer terug, 64 tekens), eigen actieve links zien, intrekken | 10 per dag, 5 tegelijk actief |
-| `invite_redeem(code)` | wisselt een code in: direct vrienden. Een ongeldige, verlopen of ingetrokken code geeft altijd `{"status":"invalid"}` en **geen fout**, zodat elke poging meetelt | 20 per uur |
+| `invite_create()` / `invite_list()` / `invite_revoke(id)` | uitnodigingslink maken (de code komt één keer terug, 64 tekens), eigen actieve links zien (met `uses`: hoeveel mensen er via kwamen), intrekken. De app onthoudt de code per apparaat, zodat je de link opnieuw kunt tonen | 10 per dag, 5 tegelijk actief |
+| `invite_redeem(code)` | wisselt een code in: direct vrienden (`already_friends: true` als jullie dat al waren; dat telt niet mee). Een ongeldige, verlopen, ingetrokken of volle code geeft altijd `{"status":"invalid"}` en **geen fout**, zodat elke poging meetelt | 20 per uur, **25 mensen per link**, 50 vrienden |
+| `invite_peek(code)` | **ook zonder account** (anon): voor het welkomstscherm de weergavenaam van de uitnodiger, verder niets (`{status:'ok', display_name}`). Voor elke ongeldige, verlopen, ingetrokken of volle code, of een uitnodiger die niet meer meedoet, hetzelfde antwoord `{status:'invalid'}`; ingelogd met je eigen link: `{status:'own'}`. Een code is 128 bit, dus raden helpt niet; zonder inlog is er geen gebruiker om een limiet op te zetten | |
 | `publish_summary(...)` | schrijft **jouw** samenvatting; de server bewaakt de bereiken (punten 0–100 000, datum binnen ±2 dagen, enz.) | 60 per uur |
 | `leaderboard()` | jouw samenvatting en die van **geaccepteerde** vrienden die sociaal aan hebben; geen e-mail of andere velden. Het wegfilteren van wie 3 dagen niets deed (§4.4) doet de app | |
 

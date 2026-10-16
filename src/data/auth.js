@@ -41,11 +41,42 @@ export function describeAuthError(error) {
   return 'unknown';
 }
 
+/**
+ * Wijst de server erop dat het account van deze sessie niet meer bestaat (bijvoorbeeld verwijderd op een ander apparaat)? GoTrue geeft dan 403
+ * `user_not_found`; de database geeft bij elke schrijfactie een foreign-key-fout (23503, door PostgREST als 409 getoond). Andere fouten, zoals
+ * geen verbinding of een verlopen token, zeggen daar niets over.
+ */
+export function isUserGoneError(error) {
+  const code = String(error?.code ?? '');
+  const message = String(error?.message ?? '').toLowerCase();
+  return code === 'user_not_found' || code === '23503' || message.includes('user from sub claim in jwt does not exist') || message.includes('foreign key constraint');
+}
+
+/** Vraagt de server of het account van de huidige sessie nog bestaat. Zonder verbinding of bij een andere fout: nee, we gaan er van uit dat het klopt. */
+export async function sessionIsGone() {
+  try {
+    const client = await getClient();
+    const { error } = await client.auth.getUser();
+    return Boolean(error) && isUserGoneError(error);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * De ingelogde gebruiker. getSession leest alleen wat lokaal bewaard is: een sessie van een account dat intussen is verwijderd lijkt dan nog
+ * geldig tot het token verloopt, en geeft bij elke schrijfactie een 409. Daarom vragen we de server (alleen als er een sessie is en we online zijn).
+ */
 export async function currentUser() {
   const client = await getClient();
   const { data, error } = await client.auth.getSession();
   if (error) throw error;
-  return data.session?.user ?? null;
+  const user = data.session?.user ?? null;
+  if (user && navigator.onLine && (await sessionIsGone())) {
+    await client.auth.signOut({ scope: 'local' }).catch(() => {});
+    return null;
+  }
+  return user;
 }
 
 export async function signInWithGoogle() {

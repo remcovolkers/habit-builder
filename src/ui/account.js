@@ -65,6 +65,11 @@ export async function syncNow() {
     return result;
   } catch (error) {
     console.warn('synchroniseren mislukt', error);
+    // een foreign-key-fout (409) betekent meestal dat het account op de server niet meer bestaat: dan is deze sessie waardeloos en loggen we uit
+    if (auth.isUserGoneError(error) && (await auth.sessionIsGone())) {
+      await auth.signOutLocal().catch(() => {});
+      return null;
+    }
     await refreshPending();
     emit();
     return null;
@@ -130,10 +135,16 @@ async function attach(user) {
 }
 
 let askedName = false;
+let nameAskGuard = () => false;
+
+/** Een uitnodiging die wacht vraagt de naam zelf (één naamstap, ITERATIE-1.2 §2): dan toont het account zijn eigen vraag niet. */
+export function setNameAskGuard(guard) {
+  nameAskGuard = guard;
+}
 
 /** Eerste keer ingelogd en nog geen naam? Vraag hem één keer, na de eerste sync (dan weten we of een ander apparaat hem al kent). */
 function maybeAskName() {
-  if (askedName || !account.user || !shouldAskName(state.settings)) return;
+  if (askedName || !account.user || !shouldAskName(state.settings) || nameAskGuard()) return;
   askedName = true;
   openNameDialog({ initial: account.user.suggestedName, onSaved: emit });
 }

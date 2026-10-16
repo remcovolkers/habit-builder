@@ -20,6 +20,8 @@ export const SLIP_REASONS = Object.freeze(['no_time', 'no_money', 'forgot', 'no_
 export const ATTENTION_KINDS = Object.freeze(['late', 'silent', 'failed', 'behind']); // volgorde = belang
 
 const counts = (status) => status === 'done' || status === 'minimal';
+/** Voor "stil": alles wat laat zien dat je er mee bezig bent, ook een half gehaalde teller en een bewust overgeslagen dag. */
+const active = (status) => counts(status) || status === 'partial' || status === 'skipped';
 
 /** Week of maand waarin dit schema "telt": maand bij een maandschema, anders week. */
 const spanOf = (schedule) => (schedule?.type === 'day_of_month' || (schedule?.type === 'times_per_period' && schedule.period === 'month') ? 'month' : 'week');
@@ -59,7 +61,7 @@ export function attentionFor({ habit, checkIns = [], pauses = [], today }) {
   const dayMisses = new Map(); // weekstart -> { missed, closed, since }
   for (const unit of units) {
     if (unit.status === 'open' && unit.overdue === true) {
-      signals.push({ kind: 'late', habitId, key: `late:${unit.start}`, since: unit.due, episode: unit.due, detail: { due: unit.due, days: diffDays(today, unit.due) } });
+      signals.push({ kind: 'late', habitId, key: `late:${unit.start}`, since: unit.due, episode: addDays(unit.due, 1), detail: { due: unit.due, days: diffDays(today, unit.due) } });
     } else if (unit.status === 'open' && unit.type === 'times_per_period' && inFullPeriod(unit, habit.startDate)
       && unit.count < unit.target && (unit.atRisk || unit.end === today)) {
       signals.push({ kind: 'behind', habitId, key: `behind:${unit.start}`, since: unit.start, episode: unit.start, detail: { span: unit.span, count: unit.count, target: unit.target, end: unit.end } });
@@ -73,7 +75,7 @@ export function attentionFor({ habit, checkIns = [], pauses = [], today }) {
       }
       dayMisses.set(week, entry);
     } else if (unit.status === 'missed' && unit.kind === 'period' && unit.end >= windowStart && inFullPeriod(unit, habit.startDate)) {
-      signals.push({ kind: 'failed', habitId, key: `failed:${unit.start}`, since: unit.end, episode: unit.end, detail: { span: unit.span, count: unit.count, target: unit.target, start: unit.start, end: unit.end } });
+      signals.push({ kind: 'failed', habitId, key: `failed:${unit.start}`, since: unit.end, episode: addDays(unit.end, 1), detail: { span: unit.span, count: unit.count, target: unit.target, start: unit.start, end: unit.end } });
     }
   }
   for (const [week, entry] of dayMisses) {
@@ -93,7 +95,7 @@ function silentSignal({ habit, checkIns, isPaused, today }) {
   const threshold = Math.max(SILENT_MIN_DAYS, Math.floor(SILENT_FACTOR * interval));
   const step = Math.max(SILENT_MIN_DAYS, Math.round(interval)); // het signaal komt elke `step` dagen opnieuw (`since` schuift op) tot je iets doet
 
-  const lastDone = checkIns.filter((c) => counts(c.status) && c.date <= today).map((c) => c.date).sort().at(-1) ?? null;
+  const lastDone = checkIns.filter((c) => active(c.status) && c.date <= today).map((c) => c.date).sort().at(-1) ?? null;
   const firstFull = firstFullPeriodStart(habit.startDate, spanOf(scheduleOn(habit, today)));
   const anchor = lastDone !== null && lastDone > firstFull ? lastDone : firstFull;
   if (anchor >= today) return null;

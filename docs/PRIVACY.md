@@ -15,25 +15,25 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 ## Welke gegevens
 
 **Zonder account** (alleen op je apparaat, in de opslag van je browser):
-- je habits, check-ins, pauzes, planning, prestaties, automatisme-cijfers en wekelijkse reviews;
+- je habits, check-ins, pauzes, planning, prestaties, automatisme-cijfers, wekelijkse reviews en de redenen die je geeft als een taak bleef liggen (met je eventuele toelichting);
 - je instellingen (naam voor de begroeting, tijdzone, dagwissel).
 
 **Met een account** komt daar bij:
 - je **e-mailadres** (bij inloggen met Google ook de naam en profielfoto-URL die Google meestuurt; de app gebruikt die niet);
 - een **kopie van de gegevens hierboven** op de server, gekoppeld aan jouw account en alleen voor jou leesbaar, met als enige uitzondering wat je zelf deelt met vrienden (zie hieronder, en alleen als je meedoet);
 - technische gegevens die nodig zijn om in te loggen (een sessiesleutel in je browser);
-- **alleen als je de ochtendherinnering aanzet**, per apparaat: het adres waar je browser meldingen naartoe laat sturen (met de sleutels om die versleuteld te sturen), het tijdstip dat je koos, je tijdzone, je voornaam, en per dag van de komende week twee getallen: hoeveel gewoontes er gepland staan en hoeveel taken er in je stapel liggen. **De namen van je gewoontes horen daar niet bij.**
+- **alleen als je de ochtendherinnering aanzet**, per apparaat: het adres waar je browser meldingen naartoe laat sturen (met de sleutels om die versleuteld te sturen), het tijdstip dat je koos, je tijdzone, je voornaam, en per dag van de komende week vier getallen: hoeveel gewoontes er gepland staan, hoeveel taken er in je stapel liggen, hoeveel taken om aandacht vragen en of je weekterugblik nog openstaat. **De namen van je gewoontes horen daar niet bij.**
 
 **Alleen als je meedoet met vrienden en de ranglijst** (je zet dat zelf aan, en kunt het weer uitzetten):
 - je **gebruikersnaam** (3 tot 20 tekens, door jou gekozen) en je **weergavenaam**, dezelfde naam als in Instellingen en op Vandaag. Iedereen die je gebruikersnaam precies kent, kan je vinden en je een verzoek sturen. Er is geen lijst van gebruikers en er kan niet gezocht worden op een deel van een naam of op e-mailadres;
 - met wie je **bevriend** bent en welke **verzoeken** er open staan. Een geweigerd verzoek wordt onthouden (zonder dat de afzender het ziet) zodat dezelfde persoon je 30 dagen niet opnieuw kan vragen. Die notitie blijft staan tot een van jullie het account verwijdert;
-- je **uitnodigingslinks**: de database bewaart alleen een onleesbare versie van de code; de link verloopt na 7 dagen en je kunt hem intrekken;
+- je **uitnodigingslinks**: de database bewaart alleen een onleesbare versie van de code en hoeveel mensen er via de link vrienden werden (alleen een aantal, geen namen). De link verloopt na 7 dagen, kan door hooguit 25 mensen gebruikt worden en je kunt hem intrekken. **Wie een geldige link heeft, ziet daarmee je weergavenaam, ook zonder account** (zodat het welkomstscherm kan zeggen wie uitnodigt). Niets anders van jou;
 - een **samenvatting** die de app op je eigen apparaat berekent en bijwerkt zolang je meedoet: je punten van de laatste 7 dagen, het aantal afgeronde taken, je reeks in dagen, het aantal habits dat je doet, de dag waarop je voor het laatst iets afvinkte en de dag van de berekening. Dit is alles wat je vrienden van je habits te zien krijgen;
 - een korte **teller** van je zoek-, verzoek- en uitnodigingsacties, om raden en lastigvallen tegen te gaan. Rijen ouder dan twee dagen worden opgeruimd zodra je weer zo'n actie doet, en ze verdwijnen in elk geval met je account.
 
 **Wat je vrienden niet zien:** je e-mailadres, de namen van je habits, je cues, "waarom"-teksten, notities en reviews, wat je op welk tijdstip afvinkt, en je andere gegevens.
 
-Je habit-namen, cues, "waarom"-teksten, notities en reviews zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
+Je habit-namen, cues, "waarom"-teksten, notities, reviews en de toelichting bij een reden zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
 
 ## Waarvoor
 
@@ -50,6 +50,7 @@ Alleen met de diensten die de app laten draaien (verwerkers):
 | **Supabase** | opslag van je account en gegevens, en het inloggen |
 | **Google** | inloggen met Google, en het versturen van de inlogcode per e-mail (via Gmail) |
 | **GitHub** | het aanbieden van de app zelf (GitHub Pages); GitHub ziet daarbij je IP-adres zoals bij elke website |
+| **Iemand met jouw uitnodigingslink** (ook zonder account) | ziet je weergavenaam en niets anders, zolang de link geldt |
 | **Je vrienden** (andere gebruikers van de app, alleen als je meedoet en zij door jou of door een uitnodigingslink als vriend zijn bevestigd) | zien je weergavenaam, gebruikersnaam en de samenvatting hierboven. Zij kunnen je niet vinden zonder je exacte gebruikersnaam of een link die jij deelde |
 | **De meldingsdienst van je browser** (bij Chrome en Android: Google, bij Edge: Microsoft, bij Firefox: Mozilla) | het afleveren van de ochtendmelding, alleen als je die aanzet. De inhoud is versleuteld; de dienst ziet dat er een melding voor jouw apparaat is, niet wat erin staat |
 

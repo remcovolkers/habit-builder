@@ -37,12 +37,17 @@ function overviewRow(habit, snapshot, today) {
         h('span', null, stats.consistency.rate === null ? nl.detail.noData : nl.stats.consistency(Math.round(stats.consistency.rate * 100))))));
 }
 
+// wat je in de weekreview typt blijft staan als het scherm zich ververst (een reden opslaan, een sync, een nieuwe dag)
+let reviewDraft = null;
+
 function reviewCard(snapshot, today) {
   const weekStart = startOfWeek(today);
   const current = snapshot.reviews.find((r) => r.weekStart === weekStart) ?? null;
   const r = nl.stats.review;
-  const wentWell = h('textarea', { id: 'wentWell', class: 'input', rows: 3 }, current?.wentWell ?? '');
-  const adjust = h('textarea', { id: 'adjust', class: 'input', rows: 3 }, current?.adjust ?? '');
+  const draft = reviewDraft?.weekStart === weekStart ? reviewDraft : null;
+  const keep = () => { reviewDraft = { weekStart, wentWell: wentWell.value, adjust: adjust.value }; };
+  const wentWell = h('textarea', { id: 'wentWell', class: 'input', rows: 3, 'data-focus-key': 'review:wentWell', oninput: () => keep() }, draft?.wentWell ?? current?.wentWell ?? '');
+  const adjust = h('textarea', { id: 'adjust', class: 'input', rows: 3, 'data-focus-key': 'review:adjust', oninput: () => keep() }, draft?.adjust ?? current?.adjust ?? '');
   const error = h('p', { class: 'field__error', role: 'alert', hidden: true }, r.tooLong);
 
   async function submit(event) {
@@ -55,6 +60,7 @@ function reviewCard(snapshot, today) {
       error.hidden = false;
       return;
     }
+    reviewDraft = null;
     notifyChanged();
     showToast({ message: r.saved });
   }
@@ -72,7 +78,7 @@ function reviewCard(snapshot, today) {
     },
   });
   const lookback = h('div', { class: 'review__lookback' },
-    h('h3', { class: 'section__title' }, a.title),
+    h('p', { class: 'kicker' }, a.title),
     review.week.total > 0 ? h('p', { class: 'xs muted' }, a.summary(review.week.done, review.week.total)) : null,
     review.items.length === 0
       ? h('p', { class: 'card__text muted' }, a.nothing)

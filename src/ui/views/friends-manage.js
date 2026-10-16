@@ -5,9 +5,10 @@ import { social, socialApp } from '../social-app.js';
 import { socialLive } from '../social-view.js';
 import { openDialog } from '../components/dialog.js';
 import { openNameDialog } from '../components/name-dialog.js';
-import { reasonText, untilLabel } from '../components/social-parts.js';
+import { copyText, reasonText, shareLink, untilLabel } from '../components/social-parts.js';
 import { showToast } from '../components/toast.js';
 import { state } from '../state.js';
+import { INVITE_MAX_USES } from '../../app/social.js';
 import { nl } from '../../content/nl.js';
 
 const f = nl.friends;
@@ -89,16 +90,28 @@ export function friendsManageView() {
         ui.invites === null
           ? h('p', { class: 'muted' }, f.loading)
           : ui.invites.length > 0
-            ? h('ul', { class: 'person-list card' }, ...ui.invites.map((inv) => h('li', { class: 'person' },
-              h('div', { class: 'person__body' }, h('span', { class: 'person__name' }, t.invite(untilLabel(inv.expires_at)))),
-              h('div', { class: 'person__actions' }, h('button', {
-                type: 'button', class: 'button button--ghost button--small', dataset: { focusKey: `revoke-${inv.id}` },
-                onclick: async () => {
-                  const result = await socialApp.revokeInvite(inv.id);
-                  toast(result, t.revoked);
-                  if (result.ok) { ui.invites = ui.invites.filter((x) => x.id !== inv.id); root.redraw(); }
-                },
-              }, t.revoke)))))
+            ? h('ul', { class: 'person-list card' }, ...ui.invites.map((inv) => h('li', { class: 'person', dataset: { inviteId: inv.id } },
+              h('div', { class: 'person__body' },
+                h('span', { class: 'person__name' }, t.invite(untilLabel(inv.expires_at))),
+                h('span', { class: 'person__user' }, (inv.uses ?? 0) >= INVITE_MAX_USES ? t.inviteFull(inv.uses) : `${t.inviteUses(inv.uses ?? 0)} via deze link`),
+                inv.link ? null : h('span', { class: 'person__user' }, t.inviteOtherDevice)),
+              h('div', { class: 'person__actions' },
+                inv.link ? h('button', {
+                  type: 'button', class: 'button button--secondary button--small', dataset: { focusKey: `copy-${inv.id}` },
+                  onclick: async () => { showToast({ message: (await copyText(inv.link)) ? t.inviteCopied : f.add.copyFailed }); },
+                }, t.inviteCopy) : null,
+                inv.link && navigator.share ? h('button', {
+                  type: 'button', class: 'button button--secondary button--small', dataset: { focusKey: `share-${inv.id}` },
+                  onclick: () => shareLink(inv.link),
+                }, t.inviteShare) : null,
+                h('button', {
+                  type: 'button', class: 'button button--ghost button--small', dataset: { focusKey: `revoke-${inv.id}` },
+                  onclick: async () => {
+                    const result = await socialApp.revokeInvite(inv.id);
+                    toast(result, t.revoked);
+                    if (result.ok) { ui.invites = ui.invites.filter((x) => x.id !== inv.id); root.redraw(); }
+                  },
+                }, t.revoke)))))
             : h('p', { class: 'muted' }, t.noInvites),
         h('a', { class: 'button button--secondary button--small', href: '#/vrienden/toevoegen' }, f.actions.add)),
       section('profile', t.profileTitle,

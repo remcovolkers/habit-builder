@@ -24,14 +24,25 @@ export function socialCard() {
 
     if (social.status === 'on') {
       const position = myPosition(social.board);
-      const alone = !position || social.friends.length === 0;
+      const count = social.friends.length;
+      // nog geen vrienden: de kaart is zelf de uitnodiging om er een toe te voegen (en dus geen link om de hele kaart)
+      if (count === 0) {
+        return h('div', null, invite, h('section', { class: 'card social-card', id: 'socialCard' },
+          h('div', { class: 'social-card__icon' }, icon('friends')),
+          h('div', { class: 'social-card__body' },
+            h('h2', { class: 'section__title' }, c.title),
+            h('p', { class: 'social-card__line' }, position ? [c.points(position.points), ' ', c.alone] : c.alone),
+            social.incoming.length > 0 ? h('a', { class: 'badge badge--risk', id: 'socialRequests', href: '#/vrienden' }, c.requests(social.incoming.length)) : null),
+          h('a', { class: 'button button--primary button--small', id: 'socialAddLink', href: '#/vrienden/toevoegen' }, c.addFirst)));
+      }
+      const alone = !position;
       return h('div', null, invite, h('a', { class: 'card social-card social-card--link', id: 'socialCard', href: '#/vrienden' },
         h('div', { class: 'social-card__icon' }, icon('friends')),
         h('div', { class: 'social-card__body' },
           h('h2', { class: 'section__title' }, c.title),
           h('p', { class: 'social-card__line' }, alone
             ? (position ? [c.points(position.points), ' ', c.alone] : c.alone)
-            : [c.position(position.rank, position.total), ' · ', c.points(position.points)]),
+            : [c.position(position.rank, position.total), ' · ', c.friendCount(count), ' · ', c.points(position.points)]),
           social.incoming.length > 0 ? h('span', { class: 'badge badge--risk', id: 'socialRequests' }, c.requests(social.incoming.length)) : null),
         h('span', { class: 'social-card__go' }, icon('next'))));
     }

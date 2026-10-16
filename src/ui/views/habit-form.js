@@ -282,8 +282,9 @@ async function mount(root, id, templateKey = null) {
   fill(root, 
     h('a', { class: 'back-link', href: backHref }, `‹ ${existing ? existing.name : nl.habits.title}`),
     h('h1', { class: 'page-title' }, existing ? nl.form.titleEdit : nl.form.titleNew),
-    // op desktop blijven de kop en de knoppen staan en scrolt het formulier
-    h('div', { class: 'page__scroll' }, h('form', { class: 'form', novalidate: true, onsubmit: submit },
+    // op desktop blijven de kop en de knoppen staan en scrolt alleen het formulier ertussen
+    h('form', { class: 'habit-form__form', novalidate: true, onsubmit: submit },
+      h('div', { class: 'page__scroll' }, h('div', { class: 'form' },
       existing ? null : h('div', { class: 'templates' },
         h('p', { class: 'field__label' }, nl.form.templates),
         h('div', { class: 'choices' }, ...Object.entries(TEMPLATES).map(([key, template]) =>
@@ -302,9 +303,9 @@ async function mount(root, id, templateKey = null) {
       field(nl.form.cue, cue, { id: 'cue', errorField: 'cue', max: TEXT_MAX }),
       field(nl.form.why, why, { id: 'why', errorField: 'why', max: TEXT_MAX }),
       field(nl.form.minimal, minimal, { id: 'minimalVersion', errorField: 'minimalVersion', max: TEXT_MAX }),
+      extra)),
       formError,
       h('div', { class: 'form__actions' },
         h('button', { type: 'submit', class: 'button button--primary' }, nl.form.submit),
-        h('a', { class: 'button button--ghost', href: backHref }, nl.app.cancel))),
-    extra));
+        h('a', { class: 'button button--ghost', href: backHref }, nl.app.cancel))));
 }

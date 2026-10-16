@@ -61,6 +61,15 @@ if ([404].includes(social.status) || social.body?.code === 'PGRST202') {
   }
 }
 
+// Uitnodigingen (migratie 0005): de voorvertoning mag zonder in te loggen, en geeft voor een verzonnen code alleen {status: invalid}.
+// Ontbreekt de functie, dan is de migratie er nog niet: de app valt dan terug op de oude flow (met een melding), dus dat is geen fout.
+const peek = await call('/rest/v1/rpc/invite_peek', { method: 'POST', body: JSON.stringify({ p_code: 'a'.repeat(64) }) });
+if (peek.status === 404 || peek.body?.code === 'PGRST202') {
+  console.log('--   uitnodigingen: migratie 0005 is hier nog niet uitgevoerd (het welkomstscherm voor een nieuwe gebruiker werkt dan nog niet)');
+} else {
+  check('uitnodigingen: een verzonnen code geeft zonder in te loggen alleen {status: invalid}', peek.status === 200 && JSON.stringify(peek.body) === JSON.stringify({ status: 'invalid' }), `${peek.status} ${JSON.stringify(peek.body)}`);
+}
+
 const failed = results.filter((ok) => !ok).length;
 console.log(`\n${results.length - failed}/${results.length} geslaagd`);
 process.exitCode = failed ? 1 : 0; // geen process.exit: op Windows crasht dat soms terwijl verbindingen nog sluiten

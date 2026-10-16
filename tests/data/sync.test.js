@@ -440,3 +440,13 @@ test('auth-hulpjes: sleutel van de sessie, aanwezige sessie en terugkeer van Goo
   assert.equal(isAuthCallback(''), false);
   assert.equal(isAuthCallback('?date=2026-10-15'), false);
 });
+
+test('isUserGoneError: alleen een verwijderd account telt, geen netwerkfout of verlopen token', async () => {
+  const { isUserGoneError } = await import('../../src/data/auth.js');
+  assert.equal(isUserGoneError({ code: 'user_not_found', status: 403 }), true);
+  assert.equal(isUserGoneError({ code: '23503', status: 409, message: 'violates foreign key constraint "records_user_id_fkey"' }), true);
+  assert.equal(isUserGoneError({ message: 'User from sub claim in JWT does not exist' }), true);
+  for (const other of [null, undefined, {}, { status: 401, code: 'bad_jwt' }, { message: 'Failed to fetch' }, { code: '23505', status: 409, message: 'duplicate key' }]) {
+    assert.equal(isUserGoneError(other), false, JSON.stringify(other));
+  }
+});

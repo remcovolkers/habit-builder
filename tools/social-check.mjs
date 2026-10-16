@@ -1,4 +1,4 @@
-// Controle van migratie 0003 (vrienden en ranglijst) op de LOKALE Supabase, via dezelfde API als de app (PostgREST): vijf gebruikers,
+// Controle van migratie 0003 (vrienden en ranglijst) en 0005 (uitnodigingen: voorvertoning, teller en plafond) op de LOKALE Supabase, via dezelfde API als de app (PostgREST): vijf gebruikers,
 // alle functies en alles wat NIET mag. Aanvulling op tests/server/social.test.js (die op PGlite draait): dit bewijst ook de rechten
 // zoals de echte stack ze uitdeelt.
 // Gebruik: npm run db:start, dan: node tools/social-check.mjs   (de inlogcodes komen uit het lokale mailvenster)
@@ -134,17 +134,25 @@ check('een tweede keer intrekken: false', (await rpc(u5, 'friend_cancel', { p_us
 const inv = await rpc(u1, 'invite_create');
 check('u1 maakt een uitnodiging: een lange code', inv.ok && /^[0-9a-f]{64}$/.test(inv.body.code), J(inv.body));
 const list = await rpc(u1, 'invite_list');
-check('invite_list toont de uitnodiging zonder de code zelf', list.ok && list.body.length === 1 && !('code' in list.body[0]) && !('code_hash' in list.body[0]), J(list.body));
+check('invite_list toont de uitnodiging zonder de code zelf, met het aantal gebruikers', list.ok && list.body.length === 1 && !('code' in list.body[0]) && !('code_hash' in list.body[0]) && list.body[0].uses === 0, J(list.body));
+// zonder account: alleen de weergavenaam, en voor alles wat niet klopt hetzelfde antwoord (0005)
+const peek = await rpc(null, 'invite_peek', { p_code: inv.body.code });
+check('anon: invite_peek geeft alleen de weergavenaam van de uitnodiger', peek.ok && J(Object.keys(peek.body).sort()) === J(['display_name', 'status']) && peek.body.status === 'ok', J(peek.body));
+check('anon: een verzonnen code geeft hetzelfde antwoord als een verlopen of ingetrokken code ({status:invalid})', J((await rpc(null, 'invite_peek', { p_code: 'a'.repeat(64) })).body) === J({ status: 'invalid' }));
+check('ingelogd: je eigen link heet "own"', (await rpc(u1, 'invite_peek', { p_code: inv.body.code })).body?.status === 'own');
 check('een verzonnen code is invalid (geen fout)', (await rpc(u5, 'invite_redeem', { p_code: 'a'.repeat(64) })).body?.status === 'invalid');
 check('u1 kan zijn eigen code niet inwisselen: invalid', (await rpc(u1, 'invite_redeem', { p_code: inv.body.code })).body?.status === 'invalid');
 const redeem = await rpc(u5, 'invite_redeem', { p_code: inv.body.code.toUpperCase() });
 check('u5 wisselt de code in: direct vrienden met u1', redeem.ok && redeem.body.status === 'ok' && redeem.body.username === 'remco2', J(redeem.body));
 check('u1 ziet u5 als vriend', (await rpc(u1, 'friend_list')).body.some((r) => r.user_id === u5.id && r.state === 'friend'));
 check('de code werkt ook voor een tweede persoon (deelbaar in een groep)', (await rpc(u4, 'invite_redeem', { p_code: inv.body.code })).body?.status === 'ok');
-check('opnieuw inwisselen door een vriend: gewoon ok', (await rpc(u5, 'invite_redeem', { p_code: inv.body.code })).body?.status === 'ok');
+const again = await rpc(u5, 'invite_redeem', { p_code: inv.body.code });
+check('opnieuw inwisselen door een vriend: ok, en "al vrienden"', again.body?.status === 'ok' && again.body.already_friends === true, J(again.body));
+check('de teller telt twee mensen (u5 en u4), niet de herhaling', (await rpc(u1, 'invite_list')).body[0]?.uses === 2, J((await rpc(u1, 'invite_list')).body));
 const revoked = await rpc(u1, 'invite_revoke', { p_id: inv.body.id });
 check('u1 trekt de uitnodiging in', revoked.body === true);
 check('een ingetrokken code is invalid', (await rpc(u3, 'invite_redeem', { p_code: inv.body.code })).body?.status === 'invalid');
+check('anon: een ingetrokken code is in de voorvertoning ook invalid', (await rpc(null, 'invite_peek', { p_code: inv.body.code })).body?.status === 'invalid');
 check('een ander kan jouw uitnodiging niet intrekken', (await rpc(u2, 'invite_revoke', { p_id: inv.body.id })).body === false);
 let limit = null;
 for (let i = 0; i < 6; i++) { const r = await rpc(u2, 'invite_create'); if (!r.ok) { limit = r.code; break; } }

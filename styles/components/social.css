@@ -173,6 +173,17 @@
   overflow-wrap: anywhere;
 }
 
+.person__new {
+  margin-inline-start: var(--space-1);
+  vertical-align: middle;
+}
+
+.person__note {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
 .person__actions {
   display: flex;
   flex-wrap: wrap;
@@ -540,4 +551,29 @@
 
 .rules li::marker {
   color: var(--color-accent);
+}
+
+/* de uitnodigingsflow voor een nieuwe gebruiker (docs/ITERATIE-1.2.md §2) */
+.friends__welcome {
+  max-width: 32rem;
+  margin-inline: auto;
+}
+
+.friends__welcome .friends__message {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr); /* anders bepaalt de standaardbreedte van een invoerveld de kolom en loopt de kaart bij grote tekst over */
+  gap: var(--space-4);
+}
+
+.invite-username {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.invite-username .field__hint {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere; /* een lange gebruikersnaam breekt af in plaats van het scherm te verbreden */
 }

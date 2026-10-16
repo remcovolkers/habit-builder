@@ -5,6 +5,8 @@ import { SCORE_WINDOW_DAYS } from '../domain/constants.js';
 export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 20;
 export const INVITE_CODE_LENGTH = 64;
+/** Hoeveel mensen een uitnodigingslink kunnen gebruiken (dezelfde 25 als in supabase/migrations/0005_invites.sql). */
+export const INVITE_MAX_USES = 25;
 const USERNAME_CHARS = /^[a-z0-9_.]+$/;
 
 /**
@@ -111,6 +113,23 @@ export function withOwnSummary({ entries, userId, username, name, summary }) {
   };
   const others = entries.filter((entry) => entry.userId !== userId);
   return [...others, own];
+}
+
+/** Een vriend is "nieuw" als jullie vriendschap van de laatste NEW_FRIEND_DAYS dagen is. */
+export const NEW_FRIEND_DAYS = 7;
+
+/**
+ * De lijst "Je vrienden" (docs/ITERATIE-1.2.md §3): alle vrienden, ook wie niet op de ranglijst staat.
+ * friends: de vrienden uit groupFriends; board: de rijen van buildLeaderboard; now: een Date of tijdstempel.
+ * Elke rij: { userId, name, username, since, onBoard, isNew }, op naam gesorteerd zoals de vrienden zelf.
+ */
+export function friendsOverview({ friends, board, now = Date.now() }) {
+  const onBoard = new Set((board ?? []).map((row) => row.userId));
+  const cutoff = new Date(now).getTime() - NEW_FRIEND_DAYS * 86400000;
+  return (friends ?? []).map((friend) => {
+    const since = friend.since ? Date.parse(friend.since) : Number.NaN;
+    return { ...friend, onBoard: onBoard.has(friend.userId), isNew: Number.isFinite(since) && since >= cutoff };
+  });
 }
 
 /** Voor de uitleg in de UI: over hoeveel dagen de punten gaan. */

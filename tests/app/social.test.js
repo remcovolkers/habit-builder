@@ -143,3 +143,18 @@ test('jouw plek op de ranglijst: rang, aantal mensen en punten; geen plek als je
   assert.equal(myPosition([]), null);
   assert.equal(myPosition(undefined), null);
 });
+
+test('"Je vrienden": alle vrienden, ook wie niet op de ranglijst staat; nieuw is van de laatste 7 dagen', async () => {
+  const { friendsOverview } = await import('../../src/app/social.js');
+  const now = Date.parse('2026-10-17T12:00:00Z');
+  const friends = [
+    { userId: 'a', name: 'Anna', username: 'anna', since: '2026-10-15T08:00:00Z' },
+    { userId: 'b', name: 'Bram', username: 'bram', since: '2026-09-01T08:00:00Z' },
+    { userId: 'c', name: 'Cas', username: 'cas', since: '2026-10-10T12:00:00Z' }, // precies 7 dagen: nog nieuw
+    { userId: 'd', name: 'Dora', username: 'dora', since: null },
+  ];
+  const rows = friendsOverview({ friends, board: [{ userId: 'a' }, { userId: 'me' }], now });
+  assert.deepEqual(rows.map((r) => [r.userId, r.onBoard, r.isNew]), [['a', true, true], ['b', false, false], ['c', false, true], ['d', false, false]]);
+  assert.deepEqual(friendsOverview({ friends: [], board: [], now }), []);
+  assert.deepEqual(friendsOverview({ friends: null, board: null, now }), []);
+});

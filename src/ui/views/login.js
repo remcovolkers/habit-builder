@@ -135,6 +135,7 @@ export function loginView() {
       mascot('login', 'login__mascot'),
       h('p', { class: 'kicker' }, nl.login.kicker),
       h('h1', { class: 'page-title' }, nl.login.title),
+      socialApp.pendingInvite() ? h('p', { class: 'banner', id: 'loginInvite', role: 'status' }, nl.friends.invite.forLogin(socialApp.pendingInviter())) : null,
       h('p', { class: 'muted login__intro' }, nl.login.intro),
       h('div', { class: 'login__body' }, ...(step === 'choose' ? chooseStep() : codeStep())),
       h('p', { id: 'login-error', class: 'field__error', role: 'alert', hidden: error === null }, error ? errorText(error) : ''),

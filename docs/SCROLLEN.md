@@ -29,12 +29,14 @@ Wat scrolt waar, gemeten met `npm run audit:scroll` (met het gevulde account):
 | Vandaag | groet, ring, dagnavigatie, weekstrook | linkerkolom (Even kijken, dagdelen) en rechterkolom (stapel) los van elkaar | 751 van 1090 px zichtbaar | 469 van 1090 px |
 | Habits | titel en knoppen | de lijsten | past | 522 van 664 px |
 | Habit: detail | terug, bewerken | hoofdkolom en zijkolom los van elkaar | past | 626 van 885 px |
-| Habit: bewerken / nieuw | terug, titel, de knoppen Opslaan en Annuleren | het formulier, op ≥ 1200 px in twee kolommen | nieuw: past; bewerken (met teller): 908 van 1112 px | 578 van 855-1112 px |
+| Habit: bewerken / nieuw | terug, titel, de knoppen Opslaan en Annuleren | het formulier (één lijst, ook op brede schermen) | het formulier scrolt in de kolom; de knoppen blijven onderaan staan | niet opnieuw gemeten na de overgang naar één kolom |
 | Voortgang | titel, vriendenkaart, overzicht (week of maand) met de datumkeuze | de taken eronder (met de twee tegels), en de terugblik rechts, los van elkaar | 469 (week) of 297 (maand) van 1623 px | 269 (week) of 191 (maand) van 1623 px |
 | Prestaties | - | past | past | past |
 | Instellingen | - | het werkvlak (balk aan de rand) | past | 730 van 846 px |
 
 De kolommen hebben lucht tussen de inhoud en hun scrollbalk (16 px) en rondom ruimte voor de gloed van de kaarten. Het vaste deel van Voortgang is hoogstens 58% van de schermhoogte: bij het maandoverzicht op een laag scherm scrolt dat deel dan zelf een stukje, zodat de taken zichtbaar blijven; de maandvakjes zijn daarvoor laag (nog wel een tikvlak) in plaats van vierkant.
+
+**Fade, scrollbalk en dagdetail.** Wat uit beeld scrolt smelt weg met een zachte fade (alleen aan de kant waar nog inhoud achter zit; `src/ui/scroll-fade.js` markeert, `styles/layout.css` tekent; de grootte is `--fade-size`). De scrollbalk is dun en in het accent van het thema (`styles/base.css`). Een dag aantikken in het overzicht van Voortgang opent een blad in plaats van onder het raster te klappen, zodat het vaste deel niet hoger wordt.
 
 Aanpassingen onderweg: een compactere kop op Vandaag onder 900 px hoogte, een kleinere heatmap op de detailpagina, en een vaste opslaan-balk onderaan het formulier.
 

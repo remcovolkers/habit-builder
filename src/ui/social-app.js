@@ -3,7 +3,7 @@
 import * as auth from '../data/auth.js';
 import { createSocialCache } from '../data/social-cache.js';
 import { createSocialRemote } from '../data/social-remote.js';
-import { account, onAccountChanged, onBeforeLeave } from './account.js';
+import { account, onAccountChanged, onBeforeLeave, setNameAskGuard } from './account.js';
 import { createSocial } from './social.js';
 import { onChanged, state } from './state.js';
 
@@ -27,12 +27,27 @@ export const social = socialApp.social;
 export const onSocialChanged = socialApp.onChanged;
 
 let started = false;
+let openedInvite = false;
+
+/**
+ * Is er een uitnodiging die op je wacht en ben je nu ingelogd (ook na een omweg via Google, of met een bewaarde sessie)? Dan ga je er één keer
+ * naartoe, zodat de flow afgemaakt wordt. Daarna laten we je met rust.
+ */
+function openPendingInvite() {
+  if (account.status !== 'signed-in') { openedInvite = false; return; }
+  if (openedInvite) return;
+  const code = socialApp.pendingInvite();
+  if (!code) return;
+  openedInvite = true;
+  if (!location.hash.startsWith('#/vrienden/uitnodiging/')) location.hash = `#/vrienden/uitnodiging/${code}`;
+}
 
 export function initSocial() {
   if (started) return;
   started = true;
   socialApp.syncAccount(); // al ingelogd en bekend dat je meedoet? dan staat de cache er direct en wordt hij bijgewerkt
-  onAccountChanged(() => socialApp.syncAccount()); // komt ook bij elke sync-melding: syncAccount doet dan niets
+  setNameAskGuard(() => Boolean(socialApp.pendingInvite()));
+  onAccountChanged(() => { socialApp.syncAccount(); openPendingInvite(); }); // komt ook bij elke sync-melding: syncAccount doet dan niets
   onChanged(() => socialApp.scheduleRecompute()); // een wijziging in je habits: je punten bijwerken en publiceren (alleen als sociaal aan staat)
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && social.status === 'on' && socialApp.needsRefresh()) socialApp.refresh({ background: true });
