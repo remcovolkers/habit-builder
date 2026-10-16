@@ -14,7 +14,14 @@
   box-shadow: var(--shadow-sheet);
 }
 
+/* zolang er een blad open staat, scrolt de pagina erachter niet mee (ook niet via het donkere vlak of aan het einde van de lijst in het blad) */
+html:has(dialog[open]),
+html:has(dialog[open]) body {
+  overflow: hidden;
+}
+
 .dialog {
+  overscroll-behavior: contain;
   touch-action: pan-y; /* scrollen kan, naar de zijkant slepen niet; het handvat en de titel hieronder regelen het slepen zelf */
 }
 

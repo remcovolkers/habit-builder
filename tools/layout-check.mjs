@@ -206,6 +206,31 @@ async function main() {
   await ev(`document.querySelector('.icon-picker__list').scrollTop = 600`);
   const scrolled = await ev(`document.querySelector('.dialog__grab').getBoundingClientRect().top`);
   check('de lijst scrolt in het blad en het handvat blijft op zijn plek', scroll.scrollable && Math.abs(scrolled - scroll.grabTop) < 1, JSON.stringify({ scroll, scrolled }));
+  await ev(`document.querySelectorAll('dialog').forEach((d) => d.close())`); // het blad van de vorige controle
+  await sleep(200);
+  // de pagina erachter scrolt niet mee, ook niet via het donkere vlak of door voorbij het einde van de lijst te scrollen
+  const wheel = (x, y, deltaY) => send('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY });
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
+  await nav('habits/new');
+  await ev('window.scrollTo(0, 200)');
+  await sleep(200);
+  const y0 = await ev('window.scrollY');
+  await ev(`document.querySelector('#iconTrigger').click()`);
+  await sleep(400);
+  await wheel(195, 12, 400);
+  await sleep(300);
+  const afterBackdrop = await ev('window.scrollY');
+  await wheel(195, 500, 400);
+  await wheel(195, 500, 4000);
+  await sleep(300);
+  const afterList = await ev(`({ page: window.scrollY, list: document.querySelector('.icon-picker__list').scrollTop })`);
+  check('met het blad open scrolt de pagina erachter niet (donker vlak, lijst en voorbij het einde van de lijst)', y0 > 0 && afterBackdrop === y0 && afterList.page === y0 && afterList.list > 0, JSON.stringify({ y0, afterBackdrop, afterList }));
+  await ev(`document.querySelectorAll('dialog').forEach((d) => d.close())`);
+  await sleep(200);
+  await wheel(195, 300, 300);
+  await sleep(900); // de browser scrolt zacht door
+  const afterClose = await ev(`({ y: window.scrollY, overflow: getComputedStyle(document.documentElement).overflow, dialogs: [...document.querySelectorAll('dialog')].map((d) => d.className + ' open=' + d.open), docH: document.documentElement.scrollHeight })`);
+  check('na het sluiten scrolt de pagina weer', afterClose.y > y0, JSON.stringify({ y0, afterClose }));
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await nav('habits/new');
   await ev(`document.querySelector('#iconTrigger').click()`);
