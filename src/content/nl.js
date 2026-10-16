@@ -163,6 +163,9 @@ export const nl = {
     name: 'Naam',
     namePlaceholder: 'Bijvoorbeeld: 10 minuten lezen',
     icon: 'Icoon',
+    iconSearch: 'Icoon zoeken',
+    iconSearchPlaceholder: 'Zoek een icoon, bijvoorbeeld "water"',
+    iconNone: 'Geen icoon gevonden. Probeer een ander woord.',
     color: 'Kleur',
     schedule: 'Herhaling',
     scheduleTypes: {
@@ -282,7 +285,7 @@ export const nl = {
     consistencyHint: 'laatste 6 weken',
     notes: { title: 'Laatste notities' },
     noData: '–',
-    streakBest: (n, unit) => `🔥 beste: ${n} ${unit}`,
+    streakBest: (n, unit) => `beste: ${n} ${unit}`,
     units: { day: ['dag', 'dagen'], week: ['week', 'weken'], month: ['maand', 'maanden'] },
     totalSince: (label) => `sinds ${label}`,
     heatmap: {

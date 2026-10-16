@@ -1,3 +1,4 @@
+import { habitIcon } from './habit-icon.js';
 import { fill, h } from '../dom.js';
 import { buildDayDetail, buildPeriodOverview } from '../../app/overview.js';
 import { formatDateLong, formatDateShort } from '../../app/format.js';
@@ -13,7 +14,7 @@ function dayDetail(detail) {
     h('h3', { class: 'overview__detail-title' }, formatDateLong(detail.date)),
     h('ul', { class: 'overview__detail-list' }, ...detail.items.map((item) =>
       h('li', { class: 'overview__detail-item', dataset: { color: item.color, state: item.state } },
-        h('span', { class: 'overview__detail-icon', 'aria-hidden': 'true' }, item.icon),
+        h('span', { class: 'overview__detail-icon', 'aria-hidden': 'true' }, habitIcon(item.icon)),
         h('span', { class: 'overview__detail-name' }, item.name),
         h('span', { class: 'overview__detail-state' }, o.states[item.state])))),
     detail.editable

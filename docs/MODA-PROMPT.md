@@ -64,18 +64,10 @@ Then: **Dagdeel** (Ochtend / Middag / Avond / Overdag), **Startdatum**, **Cue** 
 ## Component sheet
 One board with: buttons (primary, secondary, ghost, destructive, disabled), the check button in all states (open, gedaan, minimaal, overgeslagen, gepauzeerd, gemist), habit card, pool card (normal / at risk / satisfied), badges for the three phases, segmented control, chips, stepper, text input / textarea (default, focus, error), toast, dialog/bottom sheet, tab bar, progress ring, meter, heatmap cell states, achievement badge (locked / unlocked), and the color, type, radius and spacing scale.
 
-## Icon sheet (hoort bij elke aanvraag)
-A second board, delivered **together with every design or theme request**: the habit icons, drawn in the same visual language as the rest of the theme (same stroke weight, corner radius, color use and level of detail as the components above). Habit icons replace emoji, so they must look like they belong to this theme and nothing else.
-
-- **Grid:** 24×24 viewBox, 2px safe margin, one consistent stroke width (or one consistent fill style). Single color via `currentColor`, plus at most one accent color via `var(--color-accent)`. No gradients, no text, no raster images, no scripts.
-- **One SVG per icon**, named exactly by its **key** (lowercase, e.g. `water.svg`), so I can drop the files into `themes/<theme-id>/icons/`. A sheet that shows all icons on a grid with their keys under each is welcome, as is each icon shown at 24, 40 and 56px, on the card surface and on the page background, and in the selected state (accent ring).
-- **Must read at 24px** and on a dark surface; contrast of the icon against its background at least 3:1 (WCAG non-text contrast).
-- **Keys:** use the list in `src/content/icons.js` (kept in sync with this file). Start set: `water`, `book`, `run`, `meditate`, `salad`, `sleep`, `strength`, `guitar`, `clean`, `phone`, `write`, `bike`, `brain`, `sprout`, `sun`, `tooth`, `pill`, `no-smoking`, `note`, `paint`, `dog`, `laundry`, `laptop`, `bed`, `walk`, `swim`, `yoga`, `stretch`, `fruit`, `no-sugar`, `tea`, `cook`, `meal-prep`, `dishes`, `plants`, `tidy`, `budget`, `save-money`, `study`, `language`, `piano`, `draw`, `photo`, `journal`, `gratitude`, `call-friend`, `family`, `outdoors`, `sunrise`, `moon`, `screen-off`, `breathe`, `cold-shower`, `posture`, `floss`, `vitamins`, `medication`, `inbox`, `plan`, `focus`, `music`. If a key makes no sense in this theme, propose a theme-fitting replacement and keep the key.
-- **Theme motif:** say in one line what the motif is (for example "forest druid: runes and leaves" or "monster-collector: bold outlines, rounded and playful") and apply it to every icon.
+## Icons
+The habit, achievement and tip icons are **one icon set for all themes**, made separately: see `docs/MODA-ICONS.md`. A new theme does **not** need its own icons: the set takes its colors from the theme (`currentColor` and `var(--icon-accent)`). Do not design icons in this prompt.
 
 ## Deliverable
 Export as clean **HTML + CSS** if possible (CSS custom properties for every color, font size, radius and spacing value, no inline styles). Otherwise give me screenshots plus a complete list of the exact hex values, font sizes, line heights, radii, spacing and shadow values. Keep names generic (`--color-accent`, `--radius-card`) so I can map them to my own token file.
-
-Also deliver the **Icon sheet** as separate SVG files (see above), next to the HTML and CSS.
 
 Do **not** design Achievements, Settings, Stats overview, weekly review or login; I will derive those from the system you create here.

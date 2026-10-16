@@ -195,24 +195,27 @@ Dat zijn ± 25 nieuwe, naast de 12 bestaande. De sociale groep leest het aantal 
 **Trap 1: meer iconen en een bruikbare kiezer (geen Moda nodig, geen datamodelwijziging).**
 | ID | Eis | Prio |
 |---|---|---|
-| I1 | De catalogus groeit van 24 naar ± **150** emoji, **gegroepeerd per onderwerp** (Gezondheid, Beweging, Voeding, Slaap en rust, Geest en leren, Huis, Werk, Creatief, Sociaal, Natuur en dieren, Geld…) in een eigen bestand `src/content/icons.js`. | M |
-| I2 | De kiezer toont een rij groepen en per groep de iconen, met **vindbare trefwoorden in het Nederlands** ("water" vindt 💧 en 🥤); een zoekveld bij meer dan ± 40 iconen. | M |
-| I3 | De keuze blijft een **emoji-tekst in `habit.icon`**: bestaande habits, sync, export en import blijven ongewijzigd. Een eigen, niet in de lijst voorkomende emoji (bij een oude habit) blijft zichtbaar en kiesbaar (bestaand gedrag, behouden). | M |
-| I4 | Kiezer werkt zonder pinch-zoom en met grote tekst op 320 px (`.choice` in `styles/components/form.css`), tikvlak ≥ 44 px, radiogroup-semantiek en toetsenbordgebruik. | M |
+| I1 | **Gebouwd.** De catalogus groeit van 24 naar **60** iconen (niet ± 150: de lijst is bewust het contract met Moda, zie [MODA-ICONS.md](MODA-ICONS.md)), gegroepeerd in 9 onderwerpen, in `src/content/icons.js`. Er kunnen altijd iconen bij; een bestaande sleutel of emoji verandert niet. | M |
+| I2 | **Gebouwd.** De kiezer heeft een zoekveld en per onderwerp een uitklapbaar blok (het blok met je icoon staat open); zoeken op naam, sleutel en Nederlandse zoekwoorden (`src/app/icons.js`). Elke tegel heeft een naam voor schermlezers. | M |
+| I3 | **Gebouwd.** De keuze blijft een **emoji-tekst in `habit.icon`**: geen wijziging in sync, export, import of datamodel. De sleutel volgt uit de emoji (elke emoji komt maar één keer voor, een test bewaakt dat). Een eigen emoji uit een oudere versie blijft zichtbaar en kiesbaar ("Je huidige icoon"). | M |
+| I4 | **Gebouwd en gemeten** op 320 px met tekst 200%: geen zijwaarts scrollen, tegels ≥ 44 px. Daarbij is een bestaand overflow-probleem van het hele formulier opgelost (de herhaling-keuze en het datumveld verbreedden de pagina bij grote tekst). | M |
 
-**Trap 2: thema-iconen via Moda (besloten: ja).** Elke keer dat Moda om een ontwerp of thema wordt gevraagd, hoort er een **iconensheet** bij (I12).
+**Trap 2: één iconenset van Moda (besluit Remco, 2026-10-16: één set voor alle thema's, kleuren uit het thema).** Eerder was het plan een set per thema; dat is vervallen. Er is **één** set van **109 iconen** (60 habits, 49 voor prestaties, tips en twee tekens) in één stijl; de thema's geven alleen de kleuren (`currentColor` en `--icon-accent`). Een nieuw thema heeft dus geen eigen iconen nodig.
 | ID | Eis | Prio |
 |---|---|---|
-| I10 | Een icoon krijgt een **stabiele sleutel** (bv. `water`, `book`) met de emoji als terugval. Per thema kan een pictogrammenset die sleutel anders tekenen (v0lky1: lijnen in neon-munt; Mel: Pokémon-achtig). | M |
-| I11 | `habit.icon` mag naast een emoji ook een sleutel bevatten (`icon:water`). **Dit is de risicovolle keuze:** oudere appversies en de export kennen alleen emoji. Maatregel: de sleutel bevat altijd een leesbare emoji-terugval als de sleutel onbekend is (de app leest `icon:water|💧`), zodat oud en nieuw samenwerken. Een thema wisselen verandert dan het uiterlijk van bestaande habits, wat bedoeld is. | M |
-| I12 | **Moda-prompt:** `docs/MODA-PROMPT.md` krijgt een onderdeel "iconenset" met de lijst sleutels (§I1), één stijl per thema, 24×24 SVG's op één raster, `currentColor`, en het gewenste aantal. Dat maakt de uitvoer van Moda direct in `styles/themes/` en `themes/<id>/` te zetten. | M |
-| I13 | SVG's worden **niet inline vanaf Moda** gebruikt maar via de bestaande thema-uitrol (`themes/<id>/…`, service worker-cache). Zonder verbinding en zonder de set van een thema: terugval op de emoji. | M |
+| I10 | **Gebouwd.** Een icoon heeft een stabiele sleutel met de emoji als terugval; de tekeningen staan in **één sprite** `icons/set.svg` (een `<symbol id=\"<sleutel>\">` per icoon). `src/content/icon-set.js` (gegenereerd) zegt welke sleutels erin staan. Wat ontbreekt toont de emoji. | M |
+| I11 | **Anders opgelost dan gepland, en beter.** Er komt **geen** `icon:<sleutel>\|<emoji>` in `habit.icon`: een oudere appversie op een ander apparaat zou dat als tekst tonen. `habit.icon` blijft een gewone emoji en de sleutel volgt daaruit (`iconKeyFor`). Zo veranderen data, sync en export niet en krijgen bestaande habits vanzelf de tekening zodra die er is. | M |
+| I12 | **Gebouwd:** [MODA-ICONS.md](MODA-ICONS.md): wat er nog moet (97 iconen in vier batches), de prompts, en de sleutellijsten (60 + 49); tests houden de lijsten gelijk aan de code. | M |
+| I13 | **Gebouwd:** `npm run icons:build` (`tools/build-icons.mjs`) leest alles onder `docs/icons/` (svg-bestanden en HTML-pagina's van Moda, het laatst gewijzigde wint), controleert elk icoon (viewBox 0 0 24 24, geen scripts, stijlen, tekst, verlopen of vaste kleuren, ≤ 6 kB), zet Moda's accent-stijl om in kenmerken, schrijft `icons/set.svg` en `icon-set.js`, en meldt wat nog ontbreekt. Bij één fout wordt niets geschreven. De sprite staat onder `icons/` en gaat mee in de offline-cache. | M |
+| I14 | **Gebouwd:** prestaties, tips en twee tekens (`ui-streak`, `ui-celebrate`) komen ook uit de set (`content/ui-icons.js`, component `uiIcon`); een medaille toont het icoon donker op het accentvlak, een tip in de accentkleur. | M |
 
-**Besloten:** trap 1 en trap 2 allebei. Volgorde: trap 1 eerst (de catalogus met sleutels en de nieuwe kiezer; de sleutels uit `src/content/icons.js` zijn het contract met Moda). Daarna vraagt Remco Moda om de iconensheet per thema (zie `docs/MODA-PROMPT.md`, onderdeel "Icon sheet"); de aanpassing in de data (`icon:<sleutel>|<emoji>`) volgt zodra een eerste set binnen is, zodat de sleutels niet achteraf veranderen.
+**Eindtoestand bereikt (2026-10-16): geen emoji van het toestel meer in de app.** De set is compleet (109 van 109, gemaakt met één Moda-prompt, zie [MODA-ICONS.md](MODA-ICONS.md)) en de overgangsmaatregelen zijn verwijderd:
+1. de emoji-terugval in `habitIcon` en `uiIcon` is weg; een onbekende eigen emoji (oude habit of import) krijgt het standaardicoon `sprout`, en dat wordt het ook als je zo'n habit opnieuw opslaat;
+2. de `emoji`-velden in `content/achievements.js` en `content/tips.js` zijn weg; de sjabloon-chips tonen het icoon uit de set;
+3. de emoji in `content/icons.js` en `content/templates.js` blijven alleen bestaan als **sleutel in de opgeslagen data** (`habit.icon`), niet als weergave.
+Drie tests bewaken dit: de set is compleet, er staat geen emoji meer in de code buiten die twee bestanden, en het standaardicoon staat in de set.
 
-**Vaste werkafspraak (Remco, 2026-10-16):** *bij elke Moda-aanvraag voor een thema of ontwerp hoort een iconensheet in dezelfde stijl.* Die afspraak staat in `docs/MODA-PROMPT.md` en `docs/THEMES.md` (stap "iconenset") en een thema zonder set valt terug op de emoji, zodat een nieuw thema nooit blokkeert op de iconen.
-
----
+**Gemeten in een echte browser** in beide thema's (v0lky1 en Mel): kaarten, kiezer, prestaties (behaald en vergrendeld), tips en de reeksvlam; geen zijwaarts scrollen op 320 px met tekst 200%.
 
 ## 7. Niet-functioneel (voor alles hierboven)
 - Alle teksten in `src/content/nl.js`; geen `innerHTML` (guardrail); `svh`; tikvlakken ≥ 44 px; geen pinch-zoom, dus lay-outs moeten robuust zijn bij grote tekst.
@@ -230,7 +233,7 @@ Besloten door Remco op 2026-10-16. In de laatste kolom staat wat het besluit bet
 | B3 | Vandaag: welke oplossing voor de ruimte onder de laatste kaart? | **Eerst meten**, dan (a) minder reserve; (b) alleen als (a) niet genoeg is | Remco ging akkoord met de voorgestelde volgorde. |
 | B4 | Linkplafond per link (L4)? | **25** | Remco ging akkoord met het voorstel; constante aan te passen. |
 | B5 | Omvang prestatiecatalogus (§5)? | **de hele voorgestelde lijst, in twee rondes** | akkoord met het voorstel. |
-| B6 | Iconen: trap 1 alleen, of ook trap 2? | **Beide: iconen laten genereren die bij het thema passen**; bij elke Moda-aanvraag hoort een iconensheet | trap 2 is nu **M**; zie §6 en `docs/MODA-PROMPT.md`. Remco bedoelt met "thema" de visuele thema's. |
+| B6 | Iconen: trap 1 alleen, of ook trap 2? | **Beide.** Eerst een set per thema, daarna (zelfde dag) **één set voor alle thema's**, met de kleuren uit het thema | zie §6 en [MODA-ICONS.md](MODA-ICONS.md). |
 | B7 | Wat gebeurde er met de link? | Zelf geopende en doorgestuurde links gaven bij de ontvanger "Pagina niet gevonden"; een nieuwe link werkte | zie §1 punt 3; hypothese, eerst controleren. |
 
 ## 9. Voorstel voor de volgorde

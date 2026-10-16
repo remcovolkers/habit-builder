@@ -12,6 +12,7 @@ import { emptyState } from '../components/empty-state.js';
 import { weekStrip } from '../components/week-strip.js';
 import { buildWeekStrip } from '../../app/overview.js';
 import { fab } from '../components/fab.js';
+import { uiIcon } from '../components/habit-icon.js';
 import { account, dismissNudge, nudgeDismissed, nudgeElement } from '../account.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
@@ -187,7 +188,7 @@ function renderDay(view, week) {
 
   const celebrate = allDone
     ? h('section', { class: 'section celebrate', role: 'status' },
-      mascot('celebrate') ?? h('div', { class: 'celebrate__emoji', 'aria-hidden': 'true' }, '🌿'),
+      mascot('celebrate') ?? h('div', { class: 'celebrate__emoji', 'aria-hidden': 'true' }, uiIcon('ui-celebrate')),
       h('h2', { class: 'celebrate__title' }, nl.today.celebrateTitle),
       h('p', { class: 'celebrate__text' }, nl.today.celebrateText))
     : null;

@@ -22,7 +22,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const server = spawn(process.execPath, ['tools/serve.mjs'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });
 const profile = mkdtempSync(join(tmpdir(), 'hb-layout-'));
-const edge = spawn(BROWSER, ['--headless=new', '--disable-gpu', ...(process.env.CI ? ['--no-sandbox', '--disable-dev-shm-usage'] : []), `--remote-debugging-port=${DEBUG}`, `--user-data-dir=${profile}`, '--no-first-run', 'about:blank'], { stdio: 'ignore' });
+const edge = spawn(BROWSER, ['--headless=new', '--disable-gpu', ...(process.env.CI ? ['--no-sandbox', '--disable-dev-shm-usage'] : []), `--remote-debugging-port=${DEBUG}`, `--user-data-dir=${profile}`, '--no-first-run', 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+let browserLog = '';
+edge.stderr.on('data', (chunk) => { browserLog = (browserLog + chunk).slice(-1500); });
+let browserExit = null;
+edge.on('exit', (code, signal) => { browserExit = `${code ?? signal}`; });
 const cleanup = () => {
   server.kill();
   if (process.platform === 'win32') spawn('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });
@@ -77,12 +81,13 @@ const MEASURE = (offset) => `(() => {
 })()`;
 
 async function main() {
-  let page;
-  for (let i = 0; i < 40 && !page; i++) {
-    await sleep(250);
-    try { page = (await (await fetch(`http://127.0.0.1:${DEBUG}/json`)).json()).find((t) => t.type === 'page'); } catch { /* de browser start nog */ }
+  // de browser krijgt ruim de tijd om op te starten (een trage CI-machine heeft er soms meer dan 10 seconden voor nodig)
+  let page = null;
+  for (let i = 0; i < 160 && !page && browserExit === null; i++) {
+    try { page = (await (await fetch(`http://127.0.0.1:${DEBUG}/json/list`)).json()).find((t) => t.type === 'page') ?? null; } catch { /* de browser start nog */ }
+    if (!page) await sleep(250);
   }
-  if (!page) throw new Error('browser niet bereikbaar');
+  if (!page) throw new Error(`de browser kwam niet op (${BROWSER}; ${browserExit === null ? 'geen antwoord na 40 s' : `gestopt met ${browserExit}`}): ${browserLog.replace(/\s+/g, ' ').slice(-400)}`);
   const ws = new WebSocket(page.webSocketDebuggerUrl);
   await new Promise((r) => { ws.onopen = r; });
   let id = 0;

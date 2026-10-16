@@ -57,6 +57,8 @@
 
 .input {
   width: 100%;
+  min-width: 0; /* een datumveld heeft een eigen minimumbreedte; bij grote tekst op een smal scherm mag het krimpen */
+  max-width: 100%;
   min-height: 3rem;
   padding: var(--space-3) var(--space-4);
   background: var(--color-elevated);
@@ -154,9 +156,19 @@ select.input {
   font-size: 1.375rem;
 }
 
+.choice__face .theme-icon {
+  color: var(--color-text);
+  --icon-accent: var(--color-accent);
+}
+
 .choice__input:checked + .choice__face {
   border-color: var(--color-accent);
   box-shadow: var(--shadow-glow);
+}
+
+/* gekozen icoon: de neon gloed van de voorbeeldpagina, in de accentkleur van het thema */
+.choice__input:checked + .choice__face .theme-icon {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-accent) 60%, transparent));
 }
 
 .choice__face--text {
@@ -225,7 +237,8 @@ select.input {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
-  white-space: nowrap;
+  text-align: center;
+  overflow-wrap: anywhere; /* bij grote tekst op een smal scherm mag het label afbreken in plaats van de pagina te verbreden */
 }
 
 .choice__input:checked + .segmented__face {
@@ -577,4 +590,57 @@ select.input {
   margin-top: var(--space-4);
   padding-top: var(--space-3);
   border-top: 1px dashed var(--color-hairline-strong);
+}
+
+/* icoonkiezer: een zoekveld en per onderwerp een uitklapbaar blok met keuzes */
+.icon-picker {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.icon-group[open] > .choices {
+  margin-bottom: var(--space-3);
+}
+
+.icon-group[hidden],
+.icon-group .choice[hidden] {
+  display: none;
+}
+
+.icon-group__name {
+  display: flex;
+  align-items: center;
+  min-height: var(--size-tap);
+  cursor: pointer;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.icon-group__name {
+  justify-content: space-between;
+  list-style: none; /* eigen pijltje hieronder: de standaarddriehoek verdwijnt bij display: flex */
+}
+
+.icon-group__name::-webkit-details-marker {
+  display: none;
+}
+
+.icon-group__name::after {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-inline: var(--space-2);
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform var(--duration-fast);
+}
+
+.icon-group[open] > .icon-group__name {
+  color: var(--color-text);
+}
+
+.icon-group[open] > .icon-group__name::after {
+  transform: rotate(-135deg);
 }

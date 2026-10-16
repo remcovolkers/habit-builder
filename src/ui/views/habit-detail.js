@@ -1,3 +1,4 @@
+import { habitIcon, uiIcon } from '../components/habit-icon.js';
 import { h } from '../dom.js';
 import { liveView } from '../live.js';
 import { notifyChanged, state } from '../state.js';
@@ -194,7 +195,7 @@ function renderDetail(detail) {
       h('section', { class: 'card card--hero' },
         mascot(`phase.${phaseKey}`, 'hero__mascot'),
         h('div', { class: 'hero__top' },
-          h('span', { class: 'habit-card__icon', dataset: { color: habit.color }, 'aria-hidden': 'true' }, habit.icon),
+          h('span', { class: 'habit-card__icon', dataset: { color: habit.color }, 'aria-hidden': 'true' }, habitIcon(habit.icon)),
           h('div', null,
             h('h1', { class: 'page-title hero__name' }, habit.name),
             h('span', { class: 'hero__meta' }, [schedule, nl.dayparts[habit.daypart]].join(' · ')))),
@@ -210,7 +211,7 @@ function renderDetail(detail) {
       h('section', { class: 'tiles' },
         tile(nl.detail.tiles.strength, String(pct(stats.strength)), '%', meter(pct(stats.strength))),
         tile(nl.detail.tiles.streak, String(stats.streaks.current), pluralUnit(detail.streakSpan, stats.streaks.current),
-          h('span', { class: 'tile__hint' }, nl.detail.streakBest(stats.streaks.best, pluralUnit(detail.streakSpan, stats.streaks.best)))),
+          h('span', { class: 'tile__hint' }, uiIcon('ui-streak', 'theme-icon--inline'), ' ', nl.detail.streakBest(stats.streaks.best, pluralUnit(detail.streakSpan, stats.streaks.best)))),
         tile(nl.detail.tiles.consistency, stats.consistency.rate === null ? nl.detail.noData : String(pct(stats.consistency.rate)), stats.consistency.rate === null ? '' : '%',
           h('span', { class: 'tile__hint' }, nl.detail.consistencyHint)),
         tile(nl.detail.tiles.total, String(stats.totalDone), '×',
@@ -228,7 +229,7 @@ function renderDetail(detail) {
 
       tip
         ? h('section', { class: 'card card--quiet tip', dataset: { tip: detail.tipKey } },
-          h('span', { class: 'tip__icon', 'aria-hidden': 'true' }, tip.emoji),
+          h('span', { class: 'tip__icon', 'aria-hidden': 'true' }, uiIcon(tip.icon)),
           h('div', null, h('span', { class: 'kicker' }, nl.detail.tip), h('p', { class: 'tip__title' }, tip.title), h('p', { class: 'tip__text' }, tip.text)))
         : null,
 
