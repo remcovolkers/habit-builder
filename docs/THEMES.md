@@ -21,6 +21,7 @@ Een thema delen kan met een link: `https://remcovolkers.github.io/habit-builder/
 | Toepassen (kenmerk, browserkleur, logo) | `src/ui/theme.js` |
 | Illustratie voor een plek in het huidige thema | `src/ui/components/mascot.js` |
 | Illustraties zelf (gepubliceerd) | `themes/<id>/…` |
+| Habit-iconen per thema (SVG per sleutel, met emoji als terugval) | `themes/<id>/icons/<sleutel>.svg`, sleutels in `src/content/icons.js` (nog te bouwen, [ITERATIE-1.2.md](ITERATIE-1.2.md) §6) |
 
 ## Een nieuw thema toevoegen
 
@@ -28,7 +29,8 @@ Een thema delen kan met een link: `https://remcovolkers.github.io/habit-builder/
 2. Kleurtriplets (`--accent-rgb` enz.) schrijf je met **spaties** (`255 203 5`), niet met komma's; anders is `rgb(var(--accent-rgb) / 0.3)` ongeldig en valt de regel stil weg. Een test bewaakt dat ook.
 3. Voeg het thema toe aan `THEMES` in `src/app/themes.js` en aan de lijst in `src/theme-boot.js`, en laad het CSS-bestand in `index.html`.
 4. Illustraties (optioneel): zet SVG's in `themes/<id>/` en koppel ze per plek in `mascots`. Een plek zonder illustratie toont gewoon de standaard-emoji.
-5. `npm test` controleert contrast (WCAG AA) per thema, dat elke `var(--…)` bestaat, en dat de illustraties bestaan en geen scripts bevatten.
+5. **Iconenset (hoort bij elk thema):** vraag Moda bij elke aanvraag voor een thema ook om de *Icon sheet* uit [MODA-PROMPT.md](MODA-PROMPT.md). De SVG's komen in `themes/<id>/icons/<sleutel>.svg`, met de sleutels uit `src/content/icons.js`. Een sleutel die in een thema ontbreekt valt terug op de emoji; een thema zonder set blijft dus bruikbaar, maar de bedoeling is dat elk thema een volledige set heeft.
+6. `npm test` controleert contrast (WCAG AA) per thema, dat elke `var(--…)` bestaat, en dat de illustraties bestaan en geen scripts bevatten.
 
 ## Let op bij Pokémon
 
