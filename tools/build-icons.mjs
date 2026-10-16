@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { THEME_IDS } from '../src/app/themes.js';
 import { THEME_ICON_KEYS } from '../src/content/theme-icons.js';
 import { ICONS } from '../src/content/icons.js';
-import { buildSprite, extractIcons, themeIconsModule, validateIconSvg } from './lib/icons.mjs';
+import { buildSprite, extractIcons, normalizeIconSvg, themeIconsModule, validateIconSvg } from './lib/icons.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const [theme, source] = process.argv.slice(2);
@@ -29,6 +29,7 @@ if (icons.size === 0) {
 }
 
 let failed = 0;
+for (const [key, svg] of icons) icons.set(key, normalizeIconSvg(svg));
 for (const [key, svg] of icons) {
   const problems = validateIconSvg(key, svg);
   if (problems.length) {

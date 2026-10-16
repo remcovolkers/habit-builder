@@ -18,6 +18,25 @@ function attributesOf(text) {
   return out;
 }
 
+const STYLE_TO_ATTR = new Set(['fill', 'stroke', 'stroke-width', 'fill-opacity', 'stroke-opacity', 'opacity', 'stroke-linecap', 'stroke-linejoin']);
+
+/**
+ * Moda zet het accent soms als style="stroke:var(--icon-accent, currentColor);fill:…" op een element. Dat is bedoeld zoals het is, maar een
+ * style-kenmerk wordt door de beveiligingsregels van de app (CSP) niet overal gelezen. Hier worden zulke stijlen kenmerken
+ * (stroke="…" fill="…"); een stijl met iets anders dan tekenkenmerken blijft staan en wordt bij het controleren afgekeurd.
+ */
+export function normalizeIconSvg(svg) {
+  return String(svg).replace(/<(\w+)(\s[^>]*?)?(\/?)>/g, (tag, name, rest = '', selfClose) => {
+    const style = /\sstyle\s*=\s*"([^"]*)"/.exec(rest);
+    if (!style) return tag;
+    const declarations = style[1].split(';').map((d) => d.trim()).filter(Boolean).map((d) => [d.slice(0, d.indexOf(':')).trim().toLowerCase(), d.slice(d.indexOf(':') + 1).trim()]);
+    if (declarations.length === 0 || !declarations.every(([property, value]) => STYLE_TO_ATTR.has(property) && value !== '' && !value.includes('"'))) return tag;
+    let attrs = rest.replace(style[0], '');
+    for (const [property] of declarations) attrs = attrs.replace(new RegExp(String.raw`\s${property}\s*=\s*"[^"]*"`, 'i'), '');
+    return `<${name}${attrs}${declarations.map(([property, value]) => ` ${property}="${value}"`).join('')}${selfClose}>`;
+  });
+}
+
 /** Geeft een lijst problemen (leeg = goed) voor één icoon. */
 export function validateIconSvg(key, svg) {
   const problems = [];

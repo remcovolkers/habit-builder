@@ -7,7 +7,7 @@ import { THEME_ICON_KEYS } from '../../src/content/theme-icons.js';
 import { iconForEmoji, iconForKey, iconKeyFor, searchIcons, themeIconHref } from '../../src/app/icons.js';
 import { THEME_IDS } from '../../src/app/themes.js';
 import { TEMPLATES } from '../../src/content/templates.js';
-import { buildSprite, extractIcons, MAX_ICON_BYTES, themeIconsModule, validateIconSvg } from '../../tools/lib/icons.mjs';
+import { buildSprite, extractIcons, MAX_ICON_BYTES, normalizeIconSvg, themeIconsModule, validateIconSvg } from '../../tools/lib/icons.mjs';
 
 const read = (file) => readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
 const plain = (emoji) => emoji.replace(/️/g, '');
@@ -147,4 +147,21 @@ test('themeIconsModule schrijft een geldige module die weer gelezen kan worden',
   const { THEME_ICON_KEYS: parsed } = await import(url);
   assert.deepEqual({ ...parsed, v0lky1: [...parsed.v0lky1], mel: [...parsed.mel] }, { v0lky1: [], mel: ['water', 'book'] });
   assert.ok(Object.isFrozen(parsed));
+});
+
+test('normalizeIconSvg: een style met tekenkenmerken wordt kenmerken (zoals Moda het accent levert); andere stijlen blijven en worden afgekeurd', () => {
+  const moda = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 1" fill-opacity="0.3" style="stroke:var(--icon-accent, currentColor);fill:var(--icon-accent, currentColor)"/></svg>';
+  assert.ok(validateIconSvg('water', moda).some((p) => /style/.test(p)), 'zonder normaliseren afgekeurd');
+  const fixed = normalizeIconSvg(moda);
+  assert.deepEqual(validateIconSvg('water', fixed), []);
+  assert.match(fixed, /fill="var\(--icon-accent, currentColor\)"/);
+  assert.match(fixed, /stroke="var\(--icon-accent, currentColor\)"/);
+  assert.match(fixed, /fill-opacity="0.3"/);
+  assert.ok(!/style=/.test(fixed));
+  // een bestaand kenmerk van hetzelfde type wordt vervangen, niet dubbel gezet
+  assert.equal((normalizeIconSvg('<svg viewBox="0 0 24 24"><path fill="none" style="fill:currentColor"/></svg>').match(/fill=/g) ?? []).length, 1);
+  // andere eigenschappen (bijvoorbeeld filter of animation) laten we staan
+  const odd = '<svg viewBox="0 0 24 24"><path style="filter:blur(2px)"/></svg>';
+  assert.equal(normalizeIconSvg(odd), odd);
+  assert.ok(validateIconSvg('water', odd).some((p) => /style/.test(p)));
 });
