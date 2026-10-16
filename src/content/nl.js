@@ -163,6 +163,8 @@ export const nl = {
     name: 'Naam',
     namePlaceholder: 'Bijvoorbeeld: 10 minuten lezen',
     icon: 'Icoon',
+    iconPickTitle: 'Kies een icoon',
+    iconChange: (name) => `Icoon kiezen, nu: ${name}`,
     iconSearch: 'Icoon zoeken',
     iconSearchPlaceholder: 'Zoek een icoon, bijvoorbeeld "water"',
     iconNone: 'Geen icoon gevonden. Probeer een ander woord.',

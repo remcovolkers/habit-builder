@@ -6,8 +6,8 @@ import { nl } from '../../content/nl.js';
  * actions: [{ label, variant: 'primary'|'secondary'|'danger', onClick }] — de dialoog sluit na onClick,
  * tenzij die `false` teruggeeft (bv. bij een validatiefout).
  */
-export function openDialog({ title, description = null, content = null, actions = [], cancelLabel = nl.app.cancel, onClose = null }) {
-  const dialog = h('dialog', { class: 'dialog', 'aria-labelledby': 'dialog-title' });
+export function openDialog({ title, description = null, content = null, actions = [], cancelLabel = nl.app.cancel, onClose = null, className = '' }) {
+  const dialog = h('dialog', { class: `dialog ${className}`.trim(), 'aria-labelledby': 'dialog-title' });
   const close = () => dialog.close();
 
   const buttons = actions.map(({ label, variant = 'secondary', onClick }) =>
@@ -34,5 +34,5 @@ export function openDialog({ title, description = null, content = null, actions 
   });
   document.body.append(dialog);
   dialog.showModal();
-  return { close };
+  return { close, dialog };
 }

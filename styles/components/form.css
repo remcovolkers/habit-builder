@@ -156,20 +156,11 @@ select.input {
   font-size: 1.375rem;
 }
 
-.choice__face .theme-icon {
-  color: var(--color-text);
-  --icon-accent: var(--color-accent);
-}
-
 .choice__input:checked + .choice__face {
   border-color: var(--color-accent);
   box-shadow: var(--shadow-glow);
 }
 
-/* gekozen icoon: de neon gloed van de voorbeeldpagina, in de accentkleur van het thema */
-.choice__input:checked + .choice__face .theme-icon {
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-accent) 60%, transparent));
-}
 
 .choice__face--text {
   width: 100%;
@@ -592,55 +583,136 @@ select.input {
   border-top: 1px dashed var(--color-hairline-strong);
 }
 
-/* icoonkiezer: een zoekveld en per onderwerp een uitklapbaar blok met keuzes */
-.icon-picker {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.icon-group[open] > .choices {
-  margin-bottom: var(--space-3);
-}
-
-.icon-group[hidden],
-.icon-group .choice[hidden] {
-  display: none;
-}
-
-.icon-group__name {
+/* naam met het icoon ervoor: een knop die de iconenkiezer opent */
+.name-row {
   display: flex;
-  align-items: center;
-  min-height: var(--size-tap);
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.name-row .input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.icon-trigger {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 3.5rem;
+  min-height: 3.5rem;
+  padding: 0;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-button);
+  color: var(--color-text);
   cursor: pointer;
-  font-weight: var(--font-weight-bold);
+}
+
+.icon-trigger__art .theme-icon {
+  width: 2rem;
+  height: 2rem;
+  --icon-accent: var(--color-accent);
+}
+
+/* klein potloodje in de hoek: dit icoon is te veranderen */
+.icon-trigger__hint {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  display: grid;
+  place-items: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  background: var(--color-accent);
+  border-radius: var(--radius-full);
+  color: var(--color-on-accent);
+}
+
+.icon-trigger__hint svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.icon-trigger:focus-visible,
+.icon-picker__tile:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+
+@media (hover: hover) {
+  .icon-trigger:hover {
+    border-color: var(--color-accent-50);
+  }
+}
+
+/* het blad met alle iconen: scrolt zelf, het zoekveld blijft bovenaan staan */
+.dialog--picker {
+  max-height: 88svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.dialog--picker .dialog__actions {
+  margin-top: var(--space-3);
+}
+
+.icon-picker__search {
+  position: sticky;
+  top: calc(-1 * var(--space-3));
+  z-index: 1;
+  padding-block: var(--space-2);
+  background: var(--color-elevated);
+}
+
+.icon-picker__group {
+  margin-top: var(--space-3);
+}
+
+.icon-picker__name {
+  margin: 0 0 var(--space-2);
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-muted);
 }
 
-.icon-group__name {
-  justify-content: space-between;
-  list-style: none; /* eigen pijltje hieronder: de standaarddriehoek verdwijnt bij display: flex */
+.icon-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.5rem, 1fr));
+  gap: var(--space-2);
 }
 
-.icon-group__name::-webkit-details-marker {
-  display: none;
-}
-
-.icon-group__name::after {
-  content: '';
-  width: 0.5rem;
-  height: 0.5rem;
-  margin-inline: var(--space-2);
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: rotate(45deg);
-  transition: transform var(--duration-fast);
-}
-
-.icon-group[open] > .icon-group__name {
+.icon-picker__tile {
+  display: grid;
+  place-items: center;
+  min-height: 3.5rem;
+  padding: 0;
+  background: var(--color-surface-solid, var(--color-elevated));
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-button);
   color: var(--color-text);
+  cursor: pointer;
 }
 
-.icon-group[open] > .icon-group__name::after {
-  transform: rotate(-135deg);
+.icon-picker__tile .theme-icon {
+  width: 2.125rem;
+  height: 2.125rem;
+  --icon-accent: var(--color-accent);
+}
+
+/* het gekozen icoon: ring en neon gloed in de accentkleur van het thema */
+.icon-picker__tile[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+.icon-picker__tile[aria-pressed='true'] .theme-icon {
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--color-accent) 60%, transparent));
+}
+
+@media (hover: hover) {
+  .icon-picker__tile:hover {
+    border-color: var(--color-accent-50);
+  }
 }

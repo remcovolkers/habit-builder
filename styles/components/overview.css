@@ -276,3 +276,9 @@ button.overview__cell {
 .overview__detail-item[data-state='missed'] .overview__detail-state {
   color: var(--color-danger);
 }
+
+/* het icoon van een habit in het dagdetail */
+.overview__detail-icon .theme-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}

@@ -144,6 +144,38 @@ async function main() {
     setTimeout(() => resolve({ active: document.activeElement === f, cls: f.className, opacity: getComputedStyle(f).opacity }), 400);
   })`);
   check('toetsenbordfocus haalt de knop terug aan het einde van de pagina', focused.active && focused.opacity === '1', JSON.stringify(focused));
+  // de iconenkiezer: een knop bij de naam opent een blad met alle iconen, met zoeken; kiezen sluit het blad en zet het icoon
+  for (const [size, w, h, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: true });
+    await nav('habits/new');
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(300);
+    const label = `iconenkiezer · ${size}`;
+    const before = await ev(`({ trigger: !!document.querySelector('#iconTrigger'), box: document.querySelector('#iconTrigger')?.getBoundingClientRect().width, overflow: document.documentElement.scrollWidth - innerWidth })`);
+    check(`${label}: knop bij de naam, groot genoeg, formulier verbreedt niet`, before.trigger && before.box >= 44 && before.overflow <= 0, JSON.stringify(before));
+    await ev(`document.querySelector('#iconTrigger').click()`);
+    await sleep(400);
+    const open = await ev(`(() => { const d = document.querySelector('dialog.dialog--picker'); const tiles = [...d.querySelectorAll('.icon-picker__tile')]; const r = tiles[0].getBoundingClientRect();
+      return { open: d.open, tiles: tiles.length, groups: d.querySelectorAll('.icon-picker__group').length, w: r.width, h: r.height, drawn: [...d.querySelectorAll('.icon-picker__tile .theme-icon use')].length, overflow: d.scrollWidth - d.clientWidth, keyboard: document.activeElement?.tagName }; })()`);
+    check(`${label}: blad met 60 iconen in 9 onderwerpen, tegels ≥ 44px, geen overflow, focus niet in het zoekveld`, open.open && open.tiles === 60 && open.groups === 9 && open.w >= 44 && open.h >= 44 && open.drawn === 60 && open.overflow <= 0 && open.keyboard !== 'INPUT', JSON.stringify(open));
+    await ev(`(() => { const i = document.querySelector('#iconSearch'); i.value = 'gitaar'; i.dispatchEvent(new Event('input')); })()`);
+    const found = await ev(`[...document.querySelectorAll('.icon-picker__tile')].map((t) => t.title)`);
+    check(`${label}: zoeken op "gitaar" vindt alleen de gitaar`, found.length === 1 && found[0] === 'Gitaar spelen', JSON.stringify(found));
+    await ev(`document.querySelector('.icon-picker__tile').click()`);
+    await sleep(400);
+    const after = await ev(`({ closed: !document.querySelector('dialog'), label: document.querySelector('#iconTrigger').getAttribute('aria-label'), focus: document.activeElement?.id })`);
+    check(`${label}: kiezen sluit het blad, zet het icoon en geeft de focus terug aan de knop`, after.closed && /Gitaar spelen/.test(after.label) && after.focus === 'iconTrigger', JSON.stringify(after));
+  }
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await nav('habits/new');
+  await ev(`document.querySelector('#iconTrigger').click()`);
+  await sleep(300);
+  await ev(`[...document.querySelectorAll('.icon-picker__tile')].find((t) => t.title === 'Fietsen').click()`);
+  await sleep(300);
+  await ev(`(() => { const n = document.querySelector('#name'); n.value = 'Naar werk fietsen'; n.dispatchEvent(new Event('input')); document.querySelector('form').requestSubmit(); })()`);
+  await sleep(1000);
+  const saved = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); return (await state.repo.listHabits()).map((x) => x.icon + ' ' + x.name); })()`);
+  check('een gekozen icoon wordt bij de habit opgeslagen (als emoji, zodat sync en export ongewijzigd blijven)', saved.includes('🚴 Naar werk fietsen'), JSON.stringify(saved));
   ws.close();
 }
 

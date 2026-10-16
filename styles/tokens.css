@@ -47,6 +47,7 @@
   /* maten */
   /* tikvlak: minstens 44px, en groeit niet mee met grote tekst (anders passen er geen knoppen meer naast elkaar) */
   --size-tap: max(44px, min(2.75rem, 12vw));
+  --size-tile: max(52px, min(3.25rem, 14vw)); /* het icoonvak van een habit (kaart, rij, detail) */
   --size-check: max(44px, min(3rem, 13vw));
   --size-tabbar: 4rem;
   --size-sidebar: 15.5rem;

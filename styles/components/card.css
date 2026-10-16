@@ -44,8 +44,8 @@
   display: grid;
   place-items: center;
   flex: none;
-  width: var(--size-tap);
-  height: var(--size-tap);
+  width: var(--size-tile);
+  height: var(--size-tile);
   background: var(--color-elevated);
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-button);
@@ -56,17 +56,29 @@
 
 /* de tekening van een thema (themes/<id>/icons.svg) in plaats van de emoji; het accent volgt de kleur van de habit */
 .theme-icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
   color: var(--color-text);
   --icon-accent: var(--habit-color, var(--color-accent));
 }
 
-/* in de lopende tekst, zo groot als de letters */
+/* de tekening in een tegel van een habit: bijna de hele tegel */
+.habit-card__icon .theme-icon,
+.pool-card__icon .theme-icon,
+.habit-row__icon .theme-icon {
+  width: 2.125rem;
+  height: 2.125rem;
+}
+
+.chip-link .theme-icon--inline {
+  margin-right: 0.15em;
+}
+
+/* in de lopende tekst, iets groter dan de letters */
 .theme-icon--inline {
-  width: 1em;
-  height: 1em;
-  vertical-align: -0.125em;
+  width: 1.3em;
+  height: 1.3em;
+  vertical-align: -0.25em;
   color: inherit;
 }
 
@@ -428,8 +440,8 @@
 }
 
 .celebrate__emoji .theme-icon {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 3.25rem;
+  height: 3.25rem;
   color: var(--color-accent);
 }
 

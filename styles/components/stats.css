@@ -16,6 +16,17 @@
   gap: var(--space-3);
 }
 
+/* op de habit-pagina is het icoon groter dan op een kaart */
+.hero__top .habit-card__icon {
+  width: 4.25rem;
+  height: 4.25rem;
+}
+
+.hero__top .habit-card__icon .theme-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
 .hero__name {
   font-size: var(--font-size-2xl);
   margin: 0;
@@ -357,8 +368,8 @@
 }
 
 .tip__icon .theme-icon {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
   color: var(--color-accent);
   --icon-accent: var(--color-text);
 }
@@ -465,8 +476,8 @@
 }
 
 .achv__medal .theme-icon {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.75rem;
+  height: 2.75rem;
   color: var(--color-on-accent); /* de medaille is een vlak in de accentkleur: het icoon staat er donker op */
   --icon-accent: var(--color-on-accent);
 }
