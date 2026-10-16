@@ -117,6 +117,19 @@ Geen nieuwe route nodig; geen server-wijziging (`friend_list` levert alles). Toe
 - Reken na: de FAB beslaat 1 t/m 4,5rem boven de tabbalk, en het laatste item eindigt op 5,5rem. Onder de laatste kaart zit dus **een volle FAB-hoogte plus twee keer 1rem lucht** (4,5rem extra t.o.v. andere pagina's). Zo is het bedoeld, om te voorkomen dat de knop over de laatste kaart valt; maar de knop staat rechts en dekt de kaart maar op één plek af, dus op Vandaag voelt het als te veel.
 - **Dat het écht de FAB is, is een hypothese.** Er kunnen nog andere onderkanten meespelen (marges van de laatste sectie, de weekstrook, het herstelmoment). Ik heb het niet gemeten.
 
+### Gemeten en opgelost (2026-10-16)
+Gemeten met `npm run check:layout` (echte Edge, 8 habits, onderaan de pagina):
+
+| Scherm | Voor | Na |
+|---|---|---|
+| Vandaag, 390×844 | **100 px** (6,25 rem) tussen laatste kaart en tabbalk | 28 px |
+| Habits, 390×844 | 88 px (5,5 rem) | 16 px |
+| Vandaag, 320×568 met tekst 200% | 200 px | 56 px (zelfde 1,75 rem) |
+
+De hypothese klopte: de FAB-reserve (`5,5rem`) was de oorzaak; Vandaag had er nog 12 px extra bij. Minder reserve (optie a) had hooguit 8–20 px opgeleverd, dus is optie **b** gebouwd: de FAB schuift weg zodra hij de laatste kaart zou afdekken en komt terug zodra je ruim omhoog scrolt (`src/ui/components/fab.js`). De extra reserve in `fab.css` is vervallen, zodat de lijst net zo eindigt als elke andere pagina. Op een pagina die niet scrolt blijft de knop staan; met het toetsenbord haalt focus hem terug. De controle staat in CI (workflow Integratie).
+
+Beperking: een pagina die net niet scrolt, met de laatste kaart precies in de 56 px achter de knop, laat de rechterrand van die kaart onder de knop. Komt zelden voor; het wordt pas opgelost als het in de praktijk hindert.
+
 ### Eisen
 | ID | Eis | Prio |
 |---|---|---|
