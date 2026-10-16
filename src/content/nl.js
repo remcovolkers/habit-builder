@@ -83,6 +83,19 @@ export const nl = {
       minimal: (text) => `Klein begin: ${text}`,
       why: (why) => `Waarom: ${why}`,
     },
+    // een taak die niet vaak voorkomt vraagt direct na het afvinken om één cijfer (de weekvraag past niet bij een maandelijkse taak)
+    automaticity: {
+      question: 'Hoe automatisch voelde dit?',
+      hint: '1 = ik moest er echt voor gaan, 5 = ik deed het zonder erbij na te denken.',
+      saved: (score) => `Automatisme: ${score} van 5`,
+    },
+    // een taak met een vaste dag in de maand die die dag voorbij is
+    late: {
+      text: (day) => `Dit stond op de ${day}e op je lijst en is nog niet gedaan.`,
+      button: 'Wat hield je tegen?',
+      doneNow: 'Toch gedaan',
+      skip: 'Deze maand overslaan',
+    },
     progressWeek: (count, target) => `${count}/${target} deze week`,
     progressMonth: (count, target) => `${count}/${target} deze maand`,
     pool: {
@@ -123,6 +136,52 @@ export const nl = {
       unplanned: (name) => `${name}: terug in de stapel`,
       backfillWindow: 'Terugwerkend aanpassen kan tot 14 dagen terug.',
       planWindow: 'Vooruit plannen kan tot 7 dagen vooruit.',
+    },
+  },
+
+  // Taken die blijven liggen (PLAN §4.9): een korte, neutrale regel per taak en een reden met één tik.
+  attention: {
+    title: 'Even kijken',
+    hint: 'Deze taken liggen langer stil dan je had afgesproken.',
+    agreed: (schedule) => `Afgesproken: ${schedule}`,
+    text: {
+      late: (due) => `Stond op de ${due}e op je lijst en is nog niet gedaan.`,
+      silentNever: 'Nog niet gedaan.',
+      silent: (days) => `Al ${days} dagen niet gedaan.`,
+      failedMonth: (month, count, target) => `${month}: ${count} van ${target} gehaald.`,
+      failedWeek: (label, count, target) => `Week van ${label}: ${count} van ${target} gehaald.`,
+      failedDays: (label, missed) => `${missed} ${missed === 1 ? 'dag' : 'dagen'} gemist in de week van ${label}.`,
+      behind: (span, count, target) => `${count} van ${target} ${span === 'week' ? 'deze week' : 'deze maand'}: het wordt krap.`,
+    },
+    tickNow: 'Nu afvinken',
+    why: 'Wat hield je tegen?',
+    reasonGiven: (label) => `Reden: ${label}`,
+    change: 'Wijzig',
+    reasons: {
+      no_time: 'Geen tijd',
+      no_money: 'Geen geld',
+      forgot: 'Vergeten',
+      no_motivation: 'Geen zin',
+      busy_sick: 'Druk of ziek',
+      wrong_rhythm: 'Ritme klopt niet',
+      other: 'Anders',
+    },
+    sheet: {
+      title: (name) => `${name}: wat hield je tegen?`,
+      description: 'Kies wat het best past. Dan weet je later waar het misging.',
+      note: 'Toelichting (optioneel)',
+      noteOther: 'Wat was het dan?',
+      notePlaceholder: 'Bijvoorbeeld: gast over de vloer, griep, ander schema…',
+      choose: 'Kies eerst een reden.',
+      save: 'Reden opslaan',
+      saved: (label) => `Genoteerd: ${label}`,
+      later: 'Later',
+    },
+    review: {
+      title: 'Terugblik op de week',
+      summary: (done, total) => `${done} van ${total} gehaald, tot en met vandaag.`,
+      nothing: 'Er is niets blijven liggen. Alles loopt zoals afgesproken.',
+      count: (open, handled) => (open === 0 ? `Alles beantwoord (${handled}).` : `${open} om naar te kijken${handled > 0 ? `, ${handled} beantwoord` : ''}.`),
     },
   },
 
@@ -281,6 +340,7 @@ export const nl = {
     phases: { planned: 'Gepland', starting: 'Opstarten', building: 'Opbouw', established: 'Ingeburgerd' },
     phaseLabels: ['Opstarten', 'Opbouw', 'Ingeburgerd'],
     day: (n) => `Dag ${n}`,
+    time: (n) => `Keer ${n}`,
     ofTotal: (n) => `van ~${n}`,
     theory: 'Gemiddeld duurt het ~9 weken voor iets automatisch voelt. Voor jou kan het korter of langer zijn.',
     tiles: { strength: 'Gewoontesterkte', streak: 'Reeks', consistency: 'Consistentie', total: 'Totaal' },
@@ -300,12 +360,20 @@ export const nl = {
       title: 'Ingeburgerd?',
       days: (n, total) => `${total} actieve dagen`,
       daysValue: (n, total) => `${n}/${total}`,
+      repetitions: (n, total) => `${total} keer gedaan`,
       consistency: '80% consistentie',
       automaticity: 'Automatisme ≥ 4',
       optional: '(optioneel)',
+      required: '(verplicht)',
+      sparseNote: 'Deze taak komt niet vaak voor. Daarom tellen we hier keren in plaats van dagen. Na het afvinken vraagt de app hoe automatisch het ging, en de opbouwbonus in je punten telt per keer in plaats van per dag.',
       notEntered: 'niet ingevuld',
       button: 'Markeer als ingeburgerd',
-      remaining: (n) => `Nog ${n} actieve ${n === 1 ? 'dag' : 'dagen'} te gaan.`,
+      remaining: (days, times) => {
+        const parts = [];
+        if (days > 0) parts.push(`${days} actieve ${days === 1 ? 'dag' : 'dagen'}`);
+        if (times > 0) parts.push(`${times} keer`);
+        return `Nog ${parts.join(' en ')} te gaan.`;
+      },
       ready: 'Alle voorwaarden zijn gehaald. Dit is jouw moment.',
       almost: 'Je bent er bijna: nog niet aan alle voorwaarden voldaan.',
       confirmTitle: 'Ingeburgerd verklaren?',

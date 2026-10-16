@@ -27,7 +27,10 @@ export function liveView({ load, render, className = '' }) {
     const active = root.contains(document.activeElement) ? document.activeElement : null;
     const focusKey = active?.dataset?.focusKey ?? null;
     const fallbackKey = active?.dataset?.focusFallback ?? null;
+    // een kolom die zelf scrolt (desktop) blijft bij een hertekening op dezelfde plek staan, zoals de pagina dat op de telefoon vanzelf doet
+    const scrolled = [...root.querySelectorAll('.page__pane, .page__scroll')].map((el) => el.scrollTop);
     fill(root, node);
+    root.querySelectorAll('.page__pane, .page__scroll').forEach((el, i) => { if (scrolled[i]) el.scrollTop = scrolled[i]; });
     const find = (key) => (key ? root.querySelector(`[data-focus-key="${CSS.escape(key)}"]`) : null);
     let target = find(focusKey);
     if (!target || target.disabled) target = find(fallbackKey);

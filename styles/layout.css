@@ -118,11 +118,40 @@
 /* =========================================================================================
    Desktop
    ========================================================================================= */
+/* de grootte van de fade aan de rand van een scrollende kolom; staat op 0 zolang er daar niets achter zit */
+@property --fade-top {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-bottom {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
 @media (min-width: 960px) {
+  :root {
+    --fade-size: 2rem;
+  }
+
+  /* De pagina zelf scrolt niet meer (docs/SCROLLEN.md): de zijbalk staat vast en het werkvlak ernaast is de scroller.
+     Pagina's met een kop en kolommen (`.page`) laten alleen hun kolommen scrollen; de kop blijft staan. */
+  html {
+    scrollbar-gutter: auto; /* de pagina scrolt niet, dus geen gereserveerde strook; het werkvlak reserveert zijn eigen plek */
+  }
+
+  body {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
   .app {
     display: grid;
     grid-template-columns: var(--size-sidebar) minmax(0, 1fr);
-    align-items: start;
+    align-items: stretch;
+    height: 100dvh;
   }
 
   /* zijbalk met merk en navigatie, altijd in beeld */
@@ -203,9 +232,121 @@
     filter: none;
   }
 
+  /* het werkvlak is de scroller en loopt tot aan de rand van het scherm (de balk staat dus rechts); de inhoud blijft op leesbare breedte in het midden */
   .app__main {
-    max-width: var(--content-wide);
-    padding: var(--space-10) var(--space-10) var(--space-12);
+    max-width: none;
+    height: 100dvh;
+    min-height: 0;
+    margin-inline: 0;
+    padding: var(--space-8) max(var(--space-10), calc((100% - var(--content-wide)) / 2)) var(--space-10);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  /* een pagina met kop en kolommen: het werkvlak scrolt niet zelf, de kolommen wel */
+  .app__main:has(.page) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-bottom: var(--space-6);
+  }
+
+  .page {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+  }
+
+  .page > .page__frame {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* de kolommen vullen de rij (en scrollen daarin) in plaats van onderaan uit te steken; de dubbele klasse wint van de \`align-items: start\` van de losse paginaraster-regels */
+  .page__frame > .page__panes {
+    flex: 1;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .page__pane,
+  .page__scroll {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    /* lucht tussen de inhoud en de scrollbalk, en rondom ruimte voor de gloed van de kaarten (die anders aan de rand wordt afgeknipt) */
+    padding: var(--space-1) var(--space-4) var(--space-4) var(--space-1);
+  }
+
+  /* het maandoverzicht staat vast bovenaan Voortgang; met vierkante vakjes liet het geen ruimte over voor de taken eronder, dus laag (nog steeds een tikvlak) */
+  .overview__grid--month .overview__cell {
+    aspect-ratio: auto;
+    min-height: var(--size-tap);
+  }
+
+  /* Wat uit beeld scrolt smelt weg: een zachte fade boven en onder een kolom, alleen zolang er daar nog inhoud achter zit.
+     scroll-fade.js zet data-fade-top en data-fade-bottom; de fade groeit en krimpt zacht (@property hierboven). */
+  .page__pane,
+  .page__scroll,
+  .page__fixed,
+  .app__main:not(:has(.page)) {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent 100%);
+    transition: --fade-top var(--duration-base) var(--ease-out), --fade-bottom var(--duration-base) var(--ease-out);
+  }
+
+  [data-fade-top] {
+    --fade-top: var(--fade-size);
+  }
+
+  [data-fade-bottom] {
+    --fade-bottom: var(--fade-size);
+  }
+
+  /* een kolom met een vast deel bovenaan en een lijst eronder die scrolt (Voortgang) */
+  .page__col {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* dezelfde randen en dezelfde gereserveerde balkplek als de lijst eronder, zodat de rechterranden onder elkaar staan */
+  .page__fixed {
+    flex: none;
+    /* onderaan ruimte voor de rand van de geselecteerde dag (anders wordt die afgeknipt door overflow) */
+    padding: var(--space-1) var(--space-4) var(--space-2) var(--space-1);
+    /* nooit meer dan ruim de helft van het scherm: op een laag scherm met het maandoverzicht scrolt dit deel dan zelf een stukje, zodat de taken eronder zichtbaar blijven */
+    max-height: max(58vh, 24rem);
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .page__fixed > * + * {
+    margin-top: var(--space-5);
+  }
+
+  .page__fixed + .page__scroll {
+    margin-top: var(--space-4);
+  }
+
+  .page__scroll {
+    flex: 1;
+  }
+
+  /* formulier: de knoppen blijven onderaan in beeld terwijl je door de velden scrolt */
+  .habit-form .form__actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    padding-block: var(--space-3);
+    background: linear-gradient(180deg, transparent, var(--color-bg-3) 28%);
   }
 
   .page-title {
@@ -238,11 +379,6 @@
     margin-top: 0;
   }
 
-  .today__side {
-    position: sticky;
-    top: var(--space-6);
-  }
-
   .today__title {
     font-size: var(--font-size-4xl);
   }
@@ -257,6 +393,11 @@
 
   .today__hero .ring__value {
     font-size: var(--font-size-3xl);
+  }
+
+  /* de heatmap hoeft op een breed scherm niet de hele kolom te vullen: kleinere vakjes, zodat de detailpagina op 1080p zonder scrollen past */
+  .heat {
+    max-width: 27rem;
   }
 
   /* habit-detail: hero, tegels en heatmap links; het "werk" rechts */
@@ -310,9 +451,64 @@
   }
 }
 
+/* een laag scherm (een laptop op 125% schaal, of een venster dat niet het hele scherm vult): minder lucht in de kop, zodat de lijsten meer ruimte krijgen */
+@media (min-width: 960px) and (max-height: 900px) {
+  .app__main {
+    padding-top: var(--space-5);
+  }
+
+  .today__header {
+    gap: var(--space-2);
+  }
+
+  .today__hero {
+    --hero-ring: 4.75rem;
+  }
+
+  .today__hero .ring {
+    --thick: 7px;
+  }
+
+  .today__hero .ring__value {
+    font-size: var(--font-size-2xl);
+  }
+
+  .today__title {
+    font-size: var(--font-size-3xl);
+  }
+
+  .page-title {
+    margin-bottom: var(--space-3);
+  }
+
+  .today__columns {
+    margin-top: var(--space-3);
+  }
+}
+
+/* brede schermen: het formulier in twee kolommen, zodat het op 1080p zonder scrollen past */
+@media (min-width: 1200px) {
+  .habit-form {
+    max-width: 62rem;
+  }
+
+  .habit-form .form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-8);
+    align-items: start;
+  }
+
+  .habit-form .form > .templates,
+  .habit-form .form > .form__actions,
+  .habit-form .form > .field__error,
+  .habit-form .form > [role='alert'] {
+    grid-column: 1 / -1;
+  }
+}
+
 /* heel grote schermen: de inhoud wordt niet breder, maar er komt meer lucht omheen */
 @media (min-width: 1500px) {
   .app__main {
-    padding-inline: var(--space-12);
+    padding-inline: max(var(--space-12), calc((100% - var(--content-wide)) / 2));
   }
 }

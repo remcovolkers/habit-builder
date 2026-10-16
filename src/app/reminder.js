@@ -4,9 +4,10 @@
 // [hoeveel gewoontes er gepland staan, hoeveel taken er nog in de stapel liggen]. De server maakt daar de tekst van.
 // Zo staan er geen namen van habits op de server-kant van de herinnering, en blijft de logica van "wat staat er
 // vandaag" op één plek: hier, in de app.
-import { addDays } from '../domain/dates.js';
+import { addDays, startOfWeek, weekday } from '../domain/dates.js';
 import { DISPLAY_NAME_MAX } from './settings.js';
-import { buildDayView } from './day-view.js';
+import { nudgesOn } from './attention.js';
+import { buildDayView, prepareSnapshot } from './day-view.js';
 
 export const DEFAULT_REMINDER_TIME = '08:00';
 /** Hoeveel dagen vooruit we de samenvatting meegeven: zo klopt de melding ook als je een paar dagen niet opent. */
@@ -23,15 +24,23 @@ export function validateReminderTime(time, dayStartHour) {
   return null;
 }
 
-/** { name, days: { 'YYYY-MM-DD': [gepland, in de stapel] } } voor vandaag en de dagen erna. */
+/**
+ * { name, days: { 'YYYY-MM-DD': [gepland, in de stapel, aandacht, review] } } voor vandaag en de dagen erna.
+ *   aandacht  taken die langer liggen dan afgesproken en waar nog niet op is gereageerd (weekelijks opnieuw; zie nudgesOn)
+ *   review    1 op een zondag als de review van die week nog niet is opgeslagen
+ */
 export function buildReminderSummary({ snapshot, today, settings, days = REMINDER_DAYS }) {
   const entries = {};
+  const prepared = prepareSnapshot(snapshot);
+  const reviewed = new Set((snapshot.reviews ?? []).map((review) => review.weekStart));
   for (let i = 0; i < days; i++) {
     const date = addDays(today, i);
-    const view = buildDayView({ snapshot, date, today });
+    const view = buildDayView({ snapshot, date, today, prepared });
     const planned = view.progress.total;
     const pool = view.pool.filter((entry) => !entry.satisfied).length;
-    entries[date] = [planned, pool];
+    const attention = nudgesOn({ snapshot, date, prepared });
+    const review = weekday(date) === 6 && !reviewed.has(startOfWeek(date)) ? 1 : 0;
+    entries[date] = [planned, pool, attention, review];
   }
   return { name: String(settings.displayName ?? '').trim().slice(0, DISPLAY_NAME_MAX), days: entries };
 }

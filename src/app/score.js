@@ -2,7 +2,8 @@
 //
 // Over de laatste SCORE_WINDOW_DAYS dagen, vandaag meegerekend:
 //   + TASK_POINTS per afgeronde taak (één afgevinkte habit op één dag; een teller die je half haalde telt voor de helft)
-//   + opbouwbonus per taak zolang de habit nog niet eigen is: meer in de eerste 21 dagen, minder tot de ingeburgerd-grens (66)
+//   + opbouwbonus per taak zolang de habit nog niet eigen is: meer in de eerste 21 dagen, minder tot de ingeburgerd-grens (66);
+//     bij een zeldzame taak (minder dan 1× per week) rekent hij in keren in plaats van dagen (pace.js)
 //   + startbonus voor een nieuwe habit bij de eerste afgeronde taak (hoogstens START_BONUS_MAX per venster)
 //   − MISS_PENALTY per gemiste dag (vaste dagen) of per ontbrekende keer als een week/maand eindigt (flexibele habits),
 //     maar pas vanaf de tweede keer achter elkaar: een enkele misser per habit is gratis (MISS_GRACE). Nooit twee keer achter elkaar.
@@ -14,6 +15,7 @@ import {
   SCORE_WINDOW_DAYS, START_BONUS, START_BONUS_MAX, TASK_POINTS,
 } from '../domain/constants.js';
 import { addDays } from '../domain/dates.js';
+import { paceOn } from '../domain/pace.js';
 import { countActiveDays } from '../domain/phases.js';
 import { isTracked } from '../domain/rules.js';
 import { computeStreaks } from '../domain/streaks.js';
@@ -28,9 +30,18 @@ export function scoreWindow(today) {
   return Array.from({ length: SCORE_WINDOW_DAYS }, (_, index) => addDays(today, index - (SCORE_WINDOW_DAYS - 1)));
 }
 
-/** Opbouwbonus voor een taak op `date`: 0 voor een habit die eigen is (of ingeburgerd verklaard), anders afhankelijk van de leeftijd. */
-export function buildBonus({ habit, pauses, date }) {
+/**
+ * Opbouwbonus voor een taak op `date`: 0 voor een habit die eigen is (of ingeburgerd verklaard), anders afhankelijk van de leeftijd.
+ * Bij een zeldzame taak (minder dan 1× per week, zie pace.js) telt het hoeveelste keer het is (`repetition`) in plaats van de leeftijd,
+ * want in de eerste 21 dagen komt zo'n taak maar één of twee keer voor.
+ */
+export function buildBonus({ habit, pauses, date, repetition = null }) {
   if (habit.status === 'graduated' && (!habit.graduatedAt || date >= habit.graduatedAt)) return 0;
+  const pace = paceOn(habit, date);
+  if (pace.sparse && repetition !== null) {
+    if (repetition <= pace.startingRepetitions) return BUILD_BONUS_STARTING;
+    return repetition <= pace.requiredRepetitions ? BUILD_BONUS_BUILDING : 0;
+  }
   const age = countActiveDays({ habit, pauses, today: date });
   if (age <= PHASE_STARTING_UNTIL_DAY) return BUILD_BONUS_STARTING;
   return age <= (habit.graduationDays ?? DEFAULT_GRADUATION_DAYS) ? BUILD_BONUS_BUILDING : 0;
@@ -90,13 +101,15 @@ export function buildScoreSummary({ snapshot, today }) {
   for (const bundle of prepared.bundles) {
     const { habit, checkIns, pauses } = bundle;
 
+    const doneDates = checkIns.filter((c) => counts(c.status) && c.date <= today).map((c) => c.date);
     let firstProgress = null;
     for (const c of checkIns) {
       if (!progress(c.status) || c.date > today) continue;
       if (firstProgress === null || c.date < firstProgress) firstProgress = c.date;
       if (lastActive === null || c.date > lastActive) lastActive = c.date;
       if (c.date < first) continue;
-      const extra = buildBonus({ habit, pauses, date: c.date });
+      const repetition = doneDates.filter((d) => d < c.date).length + 1; // het hoeveelste afgeronde keer deze taak is
+      const extra = buildBonus({ habit, pauses, date: c.date, repetition });
       const value = taskValue(extra, c.status);
       const baseValue = taskValue(0, c.status);
       tasks += baseValue;

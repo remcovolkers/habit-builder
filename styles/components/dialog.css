@@ -14,9 +14,10 @@
   box-shadow: var(--shadow-sheet);
 }
 
-/* zolang er een blad open staat, scrolt de pagina erachter niet mee (ook niet via het donkere vlak of aan het einde van de lijst in het blad) */
-html:has(dialog[open]),
-html:has(dialog[open]) body {
+/* zolang er een blad open staat, scrolt de pagina erachter niet mee (ook niet via het donkere vlak of aan het einde van de lijst in het blad).
+   Alleen op <html>: staat `overflow: hidden` ook op <body>, dan wordt <body> zelf een scrollcontainer en raakt de plakkende zijbalk los van het scherm.
+   De scrollbalk blijft zijn plek houden (scrollbar-gutter in base.css), dus de pagina verspringt niet. */
+html:has(dialog[open]) {
   overflow: hidden;
 }
 

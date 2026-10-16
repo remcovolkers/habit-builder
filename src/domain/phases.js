@@ -27,12 +27,27 @@ export function countActiveDays({ habit, pauses = [], today }) {
 /**
  * 'planned' (nog niet gestart) → 'starting' (t/m dag 21) → 'building' → 'established' (alleen als
  * de gebruiker de habit ingeburgerd heeft verklaard).
+ *
+ * Standaard loopt de voortgang in actieve dagen. Met `times` (zeldzame taken) loopt hij in keren:
+ * { repetitions, required, startingUntil }. `day` en `total` staan dan in die eenheid (`unit`: 'days' | 'times').
  */
-export function phaseFor({ activeDays, graduationDays = DEFAULT_GRADUATION_DAYS, graduated = false }) {
+export function phaseFor({ activeDays, graduationDays = DEFAULT_GRADUATION_DAYS, graduated = false, times = null }) {
+  const day = times ? times.repetitions : activeDays;
+  const total = times ? times.required : graduationDays;
+  const startingUntil = times ? times.startingUntil : PHASE_STARTING_UNTIL_DAY;
+
   let phase;
   if (graduated) phase = 'established';
   else if (activeDays <= 0) phase = 'planned';
-  else if (activeDays <= PHASE_STARTING_UNTIL_DAY) phase = 'starting';
+  else if (day <= startingUntil) phase = 'starting';
   else phase = 'building';
-  return { phase, day: activeDays, graduationDays, progress: Math.min(1, Math.max(0, activeDays / graduationDays)) };
+  return {
+    phase,
+    unit: times ? 'times' : 'days',
+    day,
+    total,
+    startingUntil,
+    graduationDays,
+    progress: Math.min(1, Math.max(0, day / total)),
+  };
 }

@@ -97,6 +97,28 @@ test('detail: nog niet toe aan ingeburgerd telt de resterende dagen af', () => {
   assert.equal(detail.canGraduate, false);
 });
 
+test('detail: een taak 2× per maand telt de voortgang in keren en vraagt automatisme', () => {
+  const twice = { type: 'times_per_period', period: 'month', count: 2 };
+  const habit = validHabit({ id: 'h', startDate: '2026-06-01', schedules: [{ effectiveFrom: '2026-06-01', schedule: twice }] });
+  const dates = ['2026-06-05', '2026-06-20', '2026-07-04', '2026-07-19', '2026-08-02', '2026-08-16'];
+  const detail = buildHabitDetail({ habit, snapshot: snapshotFor(habit, dates.map((date) => ({ habitId: 'h', date, status: 'done' }))), today: TODAY });
+
+  assert.deepEqual(detail.progress, { unit: 'times', value: 6, total: 8 });
+  assert.equal(detail.remainingDays, 0); // ruim 66 dagen onderweg
+  assert.equal(detail.remainingRepetitions, 2);
+  assert.equal(detail.automaticityRequired, true);
+  assert.equal(detail.useAutomaticity, false);
+  assert.equal(detail.canGraduate, false);
+  assert.deepEqual(detail.stats.graduation.criteria.map((c) => c.key), ['days', 'repetitions', 'consistency', 'automaticity']);
+  assert.deepEqual(detail.phaseBar.sizes, [3, 5, 2]); // opstarten, opbouw en open einde in keren
+
+  const daily7 = validHabit({ id: 'd', startDate: '2026-09-12', schedules: [{ effectiveFrom: '2026-09-12', schedule: daily }] });
+  const dense = buildHabitDetail({ habit: daily7, snapshot: snapshotFor(daily7, doneRange('d', '2026-09-12', '2026-10-14')), today: TODAY });
+  assert.deepEqual(dense.progress, { unit: 'days', value: 34, total: 66 });
+  assert.equal(dense.automaticityRequired, false);
+  assert.equal(dense.remainingRepetitions, 20); // 53 nodig, 33 gedaan
+});
+
 test('automatisme is optioneel maar wordt bindend zodra je een cijfer geeft (laatste cijfer ≥ 4)', () => {
   const habit = validHabit({ id: 'h', startDate: '2026-08-01', schedules: [{ effectiveFrom: '2026-08-01', schedule: daily }] });
   const checkIns = doneRange('h', '2026-08-01', '2026-10-14');

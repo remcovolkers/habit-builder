@@ -168,8 +168,26 @@ Elke habit levert per periode een rij **eenheden** op: een geplande dag (vaste d
 ### 4.5 Ingeburgerd
 Voorstel zodra **alle** voorwaarden gelden:
 1. ≥ 66 actieve dagen sinds de start (instelbaar per habit, gepauzeerde dagen tellen niet mee);
-2. consistentie ≥ 80% over het venster uit §4.4;
-3. indien de automatisme-vraag aan staat: laatste score ≥ 4.
+2. ≥ een aantal keren gedaan, passend bij het ritme (zie hieronder);
+3. consistentie ≥ 80% over het venster uit §4.4;
+4. indien de automatisme-vraag aan staat: laatste score ≥ 4. Bij een **zeldzame** taak (minder dan 1× per week) staat de vraag altijd aan.
+
+**Aantal keren.** De dagen alleen zeggen weinig bij een taak die 2× per maand terugkomt: 66 dagen zijn dan 4 uitvoeringen, terwijl automatisme uit herhaling komt en niet uit verstreken tijd (Lally et al. onderzochten dagelijkse gewoontes; voor zeldzame taken is er geen sterk bewijs, dus de getallen zijn een keuze). Daarom geldt: `keren = clamp(8, ⌈ritme × 66 dagen × 80%⌉, 66)`, met het ritme van nu en de ingeburgerd-grens van de habit als 66. De 80% is dezelfde marge als bij de consistentie, zodat een dagelijkse habit met een paar gemiste dagen niet later wordt voorgesteld dan voorheen.
+
+| Ritme | Keren nodig | Duurt minstens |
+|---|---|---|
+| Dagelijks | 53 | 66 dagen |
+| Werkdagen | 38 | 66 dagen |
+| 3× per week | 23 | 66 dagen |
+| 1× per week | 8 | 66 dagen |
+| 2× per maand | 8 | ± 4 maanden |
+| 1× per maand / dag van de maand | 8 | ± 8 maanden |
+
+Bij een zeldzame taak telt de voortgang (fase en de regel "Keer 3 van ~8") ook in keren in plaats van dagen: Opstarten loopt tot ⅓ van het doel, daarna Opbouw. Ook de opbouwbonus in de punten rekent dan per keer (SOCIAAL §4.2). De detailpagina legt dit uit.
+
+**Het automatisme-cijfer bij zeldzame taken.** Een weekvraag past niet bij een taak die maandelijks voorkomt. Daarom vraagt de kaart op Vandaag direct nadat zo'n taak is afgevinkt: "Hoe automatisch voelde dit?" (1–5). Het cijfer hoort bij de week van de dag waarop je afvinkt en kan op die kaart worden aangepast; de kaart vraagt dus alleen in weken waarin de taak is gedaan. De bestaande weekvraag op de detailpagina blijft werken en schrijft naar hetzelfde cijfer. Dit geldt niet voor een ingeburgerde habit.
+
+**Te laat (dag van de maand).** Staat een taak met een vaste dag in de maand voorbij die dag nog open, dan zegt de kaart dat en vraagt "Wat hield je tegen?". Dat opent een blad met een veld voor de reden en de keuzes *Toch gedaan* of *Deze maand overslaan*; de reden wordt als notitie bij het afvinken of overslaan bewaard. Overslaan haalt de taak uit de telling van die maand (geen misser), net als elke andere overgeslagen eenheid. De regels staan in `src/domain/pace.js` (puur en getest); de getallen in `constants.js`.
 
 De gebruiker bevestigt. Pas dan wordt de achievement ontgrendeld en verandert de status.
 
@@ -189,6 +207,30 @@ Maand met 28/29/30/31 dagen en dag-van-de-maand 31; week- en maandwissel; zomer-
 > zodra de app verandert, en de server hoeft de records niet te begrijpen: de app is offline-first en de bron van waarheid
 > staat lokaal. Strikte RLS per gebruiker staat in `supabase/migrations/0001_init.sql`. De tabellen hieronder beschrijven
 > de records zoals de app ze gebruikt.
+
+### 4.9 Aandacht: taken die blijven liggen
+
+Eén detector (`src/domain/attention.js`) bepaalt per taak of hij om een reactie vraagt. Vier soorten, van belangrijk naar minder belangrijk:
+
+| Soort | Wanneer |
+|---|---|
+| **te laat** | een vaste dag in de maand is voorbij en de taak staat nog open |
+| **stil** | langer niet gedaan dan 1,5 × de verwachte tussentijd bij het ritme, minstens 7 dagen (2× per maand: tussentijd 15 dagen, dus na 22 dagen) |
+| **mislukt** | een week of maand is voorbij zonder dat de afspraak gehaald is; bij vaste weekdagen de gemiste dagen van een week. Blijft zichtbaar vanaf de start van de vorige week |
+| **loopt achter** | een week of maand loopt nog, maar de afspraak is niet meer te halen, of het is de laatste dag en hij is niet gehaald |
+
+**De eerste periode telt niet mee.** Begin je op de 15e met een taak 2× per maand, dan telt oktober niet (geen "mislukt") en begint de stilte te tellen vanaf 1 november (dus de eerste melding op 23 november). Voor een week geldt hetzelfde. Een taak met een vaste dag in de maand die ná de startdatum valt telt wel mee: die dag was echt afgesproken. Gepauzeerde dagen tellen niet mee voor de stilte; gepauzeerd, gearchiveerd of nog niet gestart betekent geen signalen.
+
+**Eén signaal per taak:** het belangrijkste dat nog geen reactie heeft; is alles beantwoord, dan het belangrijkste dat wel is beantwoord (zodat de review ook toont wat al is afgehandeld).
+
+**Reageren.** Een reactie is een reden met één tik: *Geen tijd, Geen geld, Vergeten, Geen zin, Druk of ziek, Ritme klopt niet, Anders*, met een optionele toelichting (bij *Anders* is de toelichting de reden) (record `reasons`, één per taak per dag). Een reactie dekt alle signalen die op of vóór die dag begonnen. Een signaal dat blijft bestaan komt terug: bij "stil" elke tussentijd opnieuw (15 dagen bij 2× per maand), een nieuw signaal (bijv. een mislukte maand) meteen.
+
+**Drie plekken, steeds kort en neutraal:**
+- **Vandaag, "Even kijken":** stille en mislukte taken (niet per dag) die nog geen reactie hebben, met *Nu afvinken* en *Wat hield je tegen?*. "Te laat" heeft zijn eigen blokje op de kaart van de taak.
+- **Ochtendmelding:** "1 taak vraagt aandacht." Zonder namen van taken (de server kent die niet). Voor elke taak zonder reactie op de dag dat het probleem begon en daarna elke week, nooit dagelijks. Op zondag erbij: "Je weekterugblik staat klaar." als de review van die week nog niet is opgeslagen. De melding komt op het ingestelde tijdstip.
+- **Weekreview (Voortgang):** bovenaan de uitkomst van de week ("12 van 15 gehaald, tot en met vandaag") en alleen de taken die aandacht vragen, ook de al beantwoorde met hun reden. Daaronder de twee tekstvelden.
+
+Bewust nog niet: aanbevelingen op basis van de reden (bij "Ritme klopt niet" het ritme verlagen, bij "Vergeten" een cue voorstellen) en een eigen tijdstip voor de weekreview-melding.
 
 ## 5. Datamodel (Supabase / Postgres, spiegel in IndexedDB)
 

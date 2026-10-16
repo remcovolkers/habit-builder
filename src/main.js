@@ -1,4 +1,5 @@
 import { startRouter } from './router.js';
+import { startScrollFades } from './ui/scroll-fade.js';
 import { fill, h } from './ui/dom.js';
 import { initState, notifyChanged, onChanged, saveSettings, state } from './ui/state.js';
 import { isTheme } from './app/themes.js';
@@ -71,6 +72,7 @@ function markActive({ path }) {
 }
 
 const outlet = document.getElementById('app');
+startScrollFades(document.querySelector('.app'));
 
 // "Naar de inhoud": wie met het toetsenbord werkt hoeft niet elke keer door de navigatie heen
 document.getElementById('skipLink')?.addEventListener('click', () => {

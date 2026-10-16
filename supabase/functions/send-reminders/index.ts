@@ -184,10 +184,19 @@ export function composeMessage(subscription, now) {
   if (!Array.isArray(entry)) return { title, body: 'Bekijk wat er vandaag op je lijst staat.', url };
   const due = Math.max(0, Number(entry[0]) || 0);
   const pool = Math.max(0, Number(entry[1]) || 0);
-  if (due === 0 && pool === 0) return null;
-  if (due > 0 && pool > 0) return { title, body: `Vandaag: ${plural(due, 'gewoonte', 'gewoontes')}, en ${pool} in je stapel om uit te kiezen.`, url };
-  if (due > 0) return { title, body: `Vandaag staat ${plural(due, 'gewoonte', 'gewoontes')} op je lijst.`, url };
-  return { title, body: `Er ${pool === 1 ? 'ligt' : 'liggen'} ${plural(pool, 'taak', 'taken')} in je stapel. Pak er vandaag één mee.`, url };
+  // sinds de aandacht-melding: [gepland, stapel, aandacht, review]; een oudere app stuurt er twee, dan is de rest 0
+  const attention = Math.max(0, Number(entry[2]) || 0);
+  const review = Number(entry[3]) === 1;
+  if (due === 0 && pool === 0 && attention === 0 && !review) return null;
+
+  const parts = [];
+  if (due > 0 && pool > 0) parts.push(`Vandaag: ${plural(due, 'gewoonte', 'gewoontes')}, en ${pool} in je stapel om uit te kiezen.`);
+  else if (due > 0) parts.push(`Vandaag staat ${plural(due, 'gewoonte', 'gewoontes')} op je lijst.`);
+  else if (pool > 0) parts.push(`Er ${pool === 1 ? 'ligt' : 'liggen'} ${plural(pool, 'taak', 'taken')} in je stapel. Pak er vandaag één mee.`);
+  // neutraal en zonder namen: de server kent de habits niet
+  if (attention > 0) parts.push(`${plural(attention, 'taak', 'taken')} ${attention === 1 ? 'vraagt' : 'vragen'} aandacht.`);
+  if (review) parts.push('Je weekterugblik staat klaar.');
+  return { title, body: parts.join(' '), url };
 }
 
 // ============================================================================================

@@ -42,14 +42,15 @@ export function statsForHabit({ habit, checkIns, pauses, ratings, today }) {
 }
 
 /** De drie fasebalken met hoe ver je erin zit, plus de plek van de marker (0–100). */
-export function phaseBar({ activeDays, graduationDays, graduated }) {
-  const second = Math.max(1, graduationDays - PHASE_STARTING_UNTIL_DAY);
-  const third = 15; // alleen visueel: het "ingeburgerd"-deel is open einde
-  const total = PHASE_STARTING_UNTIL_DAY + second + third;
+export function phaseBar({ activeDays, graduationDays, graduated, startingUntil = PHASE_STARTING_UNTIL_DAY, openEnd = 15 }) {
+  // bij een zeldzame habit staan activeDays (voortgang), graduationDays (doel), startingUntil en openEnd in keren in plaats van dagen
+  const second = Math.max(1, graduationDays - startingUntil);
+  const third = openEnd; // alleen visueel: het "ingeburgerd"-deel is open einde
+  const total = startingUntil + second + third;
   const clamp = (n) => Math.min(1, Math.max(0, n));
   return {
-    sizes: [PHASE_STARTING_UNTIL_DAY, second, third],
-    fills: [clamp(activeDays / PHASE_STARTING_UNTIL_DAY), clamp((activeDays - PHASE_STARTING_UNTIL_DAY) / second), graduated ? 1 : 0],
+    sizes: [startingUntil, second, third],
+    fills: [clamp(activeDays / startingUntil), clamp((activeDays - startingUntil) / second), graduated ? 1 : 0],
     markerPercent: Math.round((Math.min(activeDays, graduationDays + (graduated ? third : 0)) / total) * 100),
   };
 }
@@ -65,15 +66,30 @@ export function buildHabitDetail({ habit, snapshot, today }) {
   const graduationDays = habit.graduationDays ?? DEFAULT_GRADUATION_DAYS;
   const pausedNow = isPausedOn(mine.pauses, today);
   const thisWeek = startOfWeek(today);
+  const { phase } = stats;
+  const counted = phase.unit === 'times';
+  const requiredRepetitions = stats.pace.requiredRepetitions;
 
   return {
     habit,
     stats,
     graduationDays,
+    // de voortgang zoals de hero hem toont: dagen, of keren bij een zeldzame taak
+    progress: { unit: phase.unit, value: phase.day, total: phase.total },
+    remainingRepetitions: requiredRepetitions === null ? 0 : Math.max(0, requiredRepetitions - stats.totalDone),
+    automaticityRequired: stats.pace.sparse,
     heatmap: buildHeatmap({ habit, checkIns: mine.checkIns, pauses: mine.pauses, today }),
     streakSpan: streakSpan(habit, stats.units, today),
     remainingDays: Math.max(0, graduationDays - stats.activeDays),
-    phaseBar: phaseBar({ activeDays: stats.activeDays, graduationDays, graduated: stats.graduated }),
+    phaseBar: counted
+      ? phaseBar({
+        activeDays: phase.day,
+        graduationDays: phase.total,
+        graduated: stats.graduated,
+        startingUntil: phase.startingUntil,
+        openEnd: Math.max(1, Math.round((phase.total * 15) / graduationDays)),
+      })
+      : phaseBar({ activeDays: stats.activeDays, graduationDays, graduated: stats.graduated }),
     pausedNow,
     notes: mine.checkIns.filter((c) => typeof c.note === 'string' && c.note !== '').sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, NOTES_SHOWN).map((c) => ({ date: c.date, status: c.status, note: c.note })),
     useAutomaticity: habitRatings.length > 0,

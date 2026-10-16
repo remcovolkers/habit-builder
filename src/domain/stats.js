@@ -1,6 +1,7 @@
 // Alles wat de UI per habit wil weten, in één aanroep. Puur: invoer in, cijfers uit.
 import { DEFAULT_GRADUATION_DAYS } from './constants.js';
 import { evaluateGraduation } from './graduation.js';
+import { paceOn } from './pace.js';
 import { countActiveDays, phaseFor } from './phases.js';
 import { computeConsistency, computeStreaks } from './streaks.js';
 import { computeStrength } from './strength.js';
@@ -8,7 +9,8 @@ import { computeUnits } from './units.js';
 
 /**
  * habit: zie units.js, plus { id, status, graduationDays?, graduatedAt? }
- * automaticityScore: laatste zelfrapportage (1–5) of null; useAutomaticity: weegt mee voor ingeburgerd.
+ * automaticityScore: laatste zelfrapportage (1–5) of null; useAutomaticity: weegt mee voor ingeburgerd
+ * (bij zeldzame taken altijd, zie pace.js).
  */
 export function buildHabitStats({
   habit,
@@ -28,6 +30,12 @@ export function buildHabitStats({
   for (const c of checkIns) loggedByDate.set(c.date, c.status);
   const doneDates = [...loggedByDate].filter(([, s]) => s === 'done' || s === 'minimal').map(([d]) => d).sort();
 
+  // Het ritme van nu bepaalt hoeveel keren ingeburgerd vraagt; zeldzame taken tellen hun voortgang in keren.
+  const pace = paceOn(habit, today);
+  const times = pace.sparse
+    ? { repetitions: doneDates.length, required: pace.requiredRepetitions, startingUntil: pace.startingRepetitions }
+    : null;
+
   return {
     habitId: habit.id,
     habitStatus: habit.status,
@@ -37,12 +45,15 @@ export function buildHabitStats({
     consistency,
     strength: computeStrength(units),
     activeDays,
-    phase: phaseFor({ activeDays, graduationDays, graduated }),
+    pace,
+    phase: phaseFor({ activeDays, graduationDays, graduated, times }),
     graduation: evaluateGraduation({
       activeDays,
       graduationDays,
+      repetitions: doneDates.length,
+      requiredRepetitions: pace.requiredRepetitions,
       consistencyRate: consistency.rate,
-      useAutomaticity,
+      useAutomaticity: useAutomaticity || pace.sparse,
       automaticityScore,
     }),
     totalDone: doneDates.length,

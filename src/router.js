@@ -52,6 +52,7 @@ export function startRouter({ routes, outlet, notFound, onChange }) {
     }
     fill(outlet, view);
     window.scrollTo(0, 0); // een nieuwe pagina begint bovenaan, niet waar de vorige stond
+    outlet.scrollTop = 0; // op desktop is het werkvlak de scroller (kolommen zijn nieuw en beginnen vanzelf bovenaan)
     // focus naar de pagina bij een routewissel (schermlezers lezen de nieuwe pagina voor); niet bij het eerste laden,
     // anders begint de eerste Tab al in de inhoud en komt het toetsenbord nooit bij "Naar de inhoud" of de navigatie
     if (!firstRender) outlet.focus({ preventScroll: true });

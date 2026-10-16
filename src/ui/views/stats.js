@@ -9,7 +9,9 @@ import { charCounter } from '../components/char-counter.js';
 import { overviewSection } from '../components/overview.js';
 import { socialCard } from '../components/social-card.js';
 import { statsForHabit, streakSpan } from '../../app/habit-detail.js';
-import { saveWeeklyReview } from '../../app/actions.js';
+import { recordReason, saveWeeklyReview } from '../../app/actions.js';
+import { buildWeekReview } from '../../app/attention.js';
+import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
 import { formatDateShort } from '../../app/format.js';
 import { REVIEW_TEXT_MAX, ValidationError } from '../../data/repository.js';
 import { addDays, startOfWeek } from '../../domain/dates.js';
@@ -57,9 +59,31 @@ function reviewCard(snapshot, today) {
     showToast({ message: r.saved });
   }
 
+  // de terugblik: de uitkomst van de week en alleen de taken die aandacht vragen, elk met één tik voor de reden
+  const review = buildWeekReview({ snapshot, today });
+  const a = nl.attention.review;
+  const why = (item) => openReasonSheet({
+    habit: item.habit,
+    current: item.reason,
+    onSave: async ({ reason, note }) => {
+      await recordReason(state.repo, { habitId: item.habit.id, reason, note }, today);
+      notifyChanged();
+      showToast({ message: nl.attention.sheet.saved(reasonLabel(reason)) });
+    },
+  });
+  const lookback = h('div', { class: 'review__lookback' },
+    h('h3', { class: 'section__title' }, a.title),
+    review.week.total > 0 ? h('p', { class: 'xs muted' }, a.summary(review.week.done, review.week.total)) : null,
+    review.items.length === 0
+      ? h('p', { class: 'card__text muted' }, a.nothing)
+      : h('div', { class: 'stack' },
+        h('p', { class: 'xs muted' }, a.count(review.open, review.handled)),
+        h('ul', { class: 'card-list' }, ...review.items.map((item) => attentionCard(item, { today, onWhy: why })))));
+
   const earlier = snapshot.reviews.filter((x) => x.weekStart !== weekStart);
   return h('section', { class: 'card' },
     h('h2', { class: 'section__title' }, r.title),
+    lookback,
     h('form', { class: 'review form', novalidate: true, onsubmit: submit },
       h('p', { class: 'xs muted' }, r.week(formatDateShort(weekStart))),
       h('div', { class: 'field' }, h('label', { class: 'field__label', for: 'wentWell' }, r.wentWell), wentWell, charCounter(wentWell, REVIEW_TEXT_MAX)),
@@ -79,7 +103,7 @@ function reviewCard(snapshot, today) {
 
 export function statsView() {
   return liveView({
-    className: 'stats',
+    className: 'stats page',
     load: () => state.repo.snapshot(),
     render: (snapshot) => {
       const { today } = state;
@@ -89,21 +113,24 @@ export function statsView() {
       const graduated = snapshot.habits.filter((habit) => habit.status === 'graduated').length;
       const active = snapshot.habits.filter((habit) => habit.status === 'active' && isTracked(habit, today)).length;
 
-      return h('div', null,
+      return h('div', { class: 'page__frame' },
         h('h1', { class: 'page-title' }, nl.stats.title),
-        h('div', { class: 'stats__columns' },
-          h('div', { class: 'stats__main' },
-            socialCard(),
-            habits.length === 0
-              ? emptyState({ art: 'stats', title: nl.stats.emptyTitle, text: nl.stats.empty, cta: { href: '#/habits/new', label: nl.habits.new } })
-              : h('div', { class: 'detail' },
-                overviewSection(snapshot, today),
-                h('section', { class: 'tiles' },
-                  h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.week), h('span', { class: 'tile__value' }, String(doneLastWeek))),
-                  h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.graduated), h('span', { class: 'tile__value' }, String(graduated)),
-                    h('span', { class: 'tile__hint' }, `${active} ${nl.stats.summary.active.toLowerCase()}`))),
-                h('ul', { class: 'card-list stats__list' }, ...habits.map((habit) => overviewRow(habit, snapshot, today))))),
-          h('div', { class: 'stats__side section' }, reviewCard(snapshot, today))));
+        h('div', { class: 'stats__columns page__panes' },
+          // op desktop blijven de vriendenkaart en het overzicht (week of maand met de datumkeuze) staan; alleen de taken eronder scrollen
+          h('div', { class: 'stats__main page__col' },
+            h('div', { class: 'page__fixed' },
+              socialCard(),
+              habits.length === 0 ? null : overviewSection(snapshot, today)),
+            h('div', { class: 'page__scroll' },
+              habits.length === 0
+                ? emptyState({ art: 'stats', title: nl.stats.emptyTitle, text: nl.stats.empty, cta: { href: '#/habits/new', label: nl.habits.new } })
+                : h('div', { class: 'detail' },
+                  h('section', { class: 'tiles' },
+                    h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.week), h('span', { class: 'tile__value' }, String(doneLastWeek))),
+                    h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.graduated), h('span', { class: 'tile__value' }, String(graduated)),
+                      h('span', { class: 'tile__hint' }, `${active} ${nl.stats.summary.active.toLowerCase()}`))),
+                  h('ul', { class: 'card-list stats__list' }, ...habits.map((habit) => overviewRow(habit, snapshot, today)))))),
+          h('div', { class: 'stats__side page__pane section' }, reviewCard(snapshot, today))));
     },
   });
 }

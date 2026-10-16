@@ -2,7 +2,7 @@
 
 Hoe de gegevens er in de app en op de server uitzien. De bron van waarheid staat **lokaal** (IndexedDB); de server is een gedeelde kopie per gebruiker. Afgeleide waarden (reeksen, sterkte, consistentie, fase, prestaties-kandidaten, herstelmoment, overzichten) worden **nooit opgeslagen**: ze worden altijd uit de check-ins berekend.
 
-## Opslag lokaal (IndexedDB, versie 3)
+## Opslag lokaal (IndexedDB, versie 4)
 
 Eén object store per soort record. Alle records hebben `id`, `createdAt`, `updatedAt` en `deletedAt` (zacht verwijderen, zodat sync een verwijdering kan doorgeven).
 
@@ -16,6 +16,7 @@ Eén object store per soort record. Alle records hebben `id`, `createdAt`, `upda
 | `achievements` | `sleutel\|habitId` | `key`, `habitId` (of `null`), `date`; eenmaal ontgrendeld blijft zo |
 | `ratings` | `habitId\|weekStart` | `habitId`, `weekStart`, `score` (1–5, automatisme) |
 | `reviews` | `weekStart` | `weekStart`, `wentWell`, `adjust` (wekelijkse review, max. 1000 tekens elk) |
+| `reasons` | `habitId\|datum` | `habitId`, `date` (de dag van de reactie), `reason` (`no_time`/`no_money`/`forgot`/`no_motivation`/`busy_sick`/`wrong_rhythm`/`other`), `note` (optioneel, max. 200 tekens): waarom een taak bleef liggen. Een reactie dekt de signalen die op of vóór die dag begonnen (PLAN §4.9) |
 | `outbox` | `collectie\|id` | wat nog naar de server moet (met een `rev` die bij elke wijziging verandert) |
 | `meta` | `sync` | `userId`, `cursor` (laatste `seq` van de server), `lastSyncAt` |
 
@@ -38,7 +39,7 @@ Eén tabel voor alle bovenstaande collecties (zie `supabase/migrations/0001_init
 | Kolom | |
 |---|---|
 | `user_id` | eigenaar (`auth.uid()`), onderdeel van de sleutel |
-| `collection` | een van `settings`, `habits`, `checkIns`, `pauses`, `dayPlans`, `achievements`, `ratings`, `reviews` |
+| `collection` | een van `settings`, `habits`, `checkIns`, `pauses`, `dayPlans`, `achievements`, `ratings`, `reviews`, `reasons` (de laatste sinds `supabase/migrations/0004_reasons.sql`) |
 | `id` | het `id` van het record (hierboven) |
 | `data` | het record als JSON (maximaal 20 kB, moet een object zijn) |
 | `deleted_at` | zacht verwijderen |

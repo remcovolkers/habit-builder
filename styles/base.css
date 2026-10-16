@@ -11,8 +11,20 @@ html {
   overscroll-behavior-y: none;
   /* vangnet: de pagina scrolt nooit zijwaarts. De echte oorzaken (te brede inhoud bij grote tekst) zijn opgelost, zie de 200%-controle. */
   overflow-x: clip;
+  /* de plek van de scrollbalk is altijd gereserveerd: de pagina verspringt niet als hij verdwijnt (bij een open blad) of verschijnt (een korte of lange pagina) */
+  scrollbar-gutter: stable;
   /* geen zoomen met twee vingers en geen dubbeltik-zoom: de app is voor een telefoon gemaakt en schaalt zelf (bewuste keuze). Het tekstformaat van het toestel blijft werken. */
   touch-action: pan-x pan-y;
+}
+
+/* scrollbalken in de kleur van het thema in plaats van de grijze van het systeem: dun, met het accent als duim en een doorzichtig spoor.
+   scrollbar-color wordt geërfd, scrollbar-width niet, vandaar de ster. Geldt voor de pagina en elke lijst die zelf scrolt. */
+html {
+  scrollbar-color: var(--color-accent-50) transparent;
+}
+
+* {
+  scrollbar-width: thin;
 }
 
 body {
