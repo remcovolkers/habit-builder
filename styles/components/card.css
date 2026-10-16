@@ -54,6 +54,14 @@
   line-height: 1;
 }
 
+/* de tekening van een thema (themes/<id>/icons.svg) in plaats van de emoji; het accent volgt de kleur van de habit */
+.habit-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-text);
+  --icon-accent: var(--habit-color, var(--color-accent));
+}
+
 .habit-card__name,
 .pool-card__name,
 .habit-row__name {

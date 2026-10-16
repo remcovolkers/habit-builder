@@ -1,3 +1,4 @@
+import { habitIcon } from '../components/habit-icon.js';
 import { h } from '../dom.js';
 import { liveView } from '../live.js';
 import { notifyChanged, state } from '../state.js';
@@ -194,7 +195,7 @@ function renderDetail(detail) {
       h('section', { class: 'card card--hero' },
         mascot(`phase.${phaseKey}`, 'hero__mascot'),
         h('div', { class: 'hero__top' },
-          h('span', { class: 'habit-card__icon', dataset: { color: habit.color }, 'aria-hidden': 'true' }, habit.icon),
+          h('span', { class: 'habit-card__icon', dataset: { color: habit.color }, 'aria-hidden': 'true' }, habitIcon(habit.icon)),
           h('div', null,
             h('h1', { class: 'page-title hero__name' }, habit.name),
             h('span', { class: 'hero__meta' }, [schedule, nl.dayparts[habit.daypart]].join(' · ')))),

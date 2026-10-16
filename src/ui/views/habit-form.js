@@ -12,8 +12,10 @@ import { ALL_WEEKDAYS, WORKDAYS } from '../../domain/schedule.js';
 import { currentSchedule } from './habits.js';
 import { TEMPLATES } from '../../content/templates.js';
 import { COUNTER_MAX, COUNTER_UNIT_MAX } from '../../domain/counter.js';
+import { ICON_GROUPS, ICONS } from '../../content/icons.js';
+import { iconForEmoji, searchIcons } from '../../app/icons.js';
+import { habitIcon } from '../components/habit-icon.js';
 
-const ICONS = ['💧', '📖', '🏃', '🧘', '🥗', '😴', '💪', '🎸', '🧹', '📞', '✍️', '🚴', '🧠', '🌱', '☀️', '🦷', '💊', '🚭', '📝', '🎨', '🐕', '🧺', '💻', '🛌'];
 const TYPES = ['daily', 'weekdays', 'per_week', 'day_of_month', 'per_month'];
 
 function typeOf(schedule) {
@@ -68,12 +70,49 @@ async function mount(root, id, templateKey = null) {
 
   const name = h('input', { id: 'name', class: 'input', type: 'text', placeholder: nl.form.namePlaceholder, value: base.name ?? '', autocomplete: 'off', 'aria-describedby': 'err-name' });
 
-  const iconChoices = [...new Set([...(base.icon && !ICONS.includes(base.icon) ? [base.icon] : []), ...ICONS])];
-  const chosenIcon = base.icon ?? ICONS[0];
-  const iconGroup = h('div', { class: 'choices', role: 'radiogroup' },
-    ...iconChoices.map((icon) => h('label', { class: 'choice' },
-      h('input', { class: 'choice__input', type: 'radio', name: 'icon', value: icon, checked: icon === chosenIcon }),
-      h('span', { class: 'choice__face' }, icon))));
+  // iconen: per onderwerp een uitklapbaar blok, met een zoekveld erboven. Het blok met je huidige icoon staat open.
+  const known = iconForEmoji(base.icon);
+  const chosenIcon = known?.emoji ?? base.icon ?? ICONS[0].emoji;
+  const customIcon = base.icon && !known ? base.icon : null; // een eigen emoji uit een oudere versie of import blijft kiesbaar
+  const tile = (emoji, name, key) => h('label', { class: 'choice', title: name, dataset: { icon: key } },
+    h('input', { class: 'choice__input', type: 'radio', name: 'icon', value: emoji, checked: emoji === chosenIcon }),
+    h('span', { class: 'choice__face' }, habitIcon(emoji), h('span', { class: 'visually-hidden' }, name)));
+  const iconBlock = (id, label, tiles, open) => h('details', { class: 'icon-group', open, dataset: { group: id } },
+    h('summary', { class: 'icon-group__name' }, label),
+    h('div', { class: 'choices', role: 'radiogroup', 'aria-label': label }, ...tiles));
+  const iconBlocks = [
+    ...(customIcon ? [iconBlock('custom', nl.form.iconCurrent, [tile(customIcon, nl.form.iconCurrent, '')], true)] : []),
+    ...ICON_GROUPS.map((group) => iconBlock(group.id, group.label, group.icons.map((icon) => tile(icon.emoji, icon.name, icon.key)),
+      group.icons.some((icon) => icon.emoji === chosenIcon) || (!customIcon && !known && group === ICON_GROUPS[0]))),
+  ];
+  const iconNone = h('p', { class: 'field__hint', role: 'status', hidden: true }, nl.form.iconNone);
+  const openBefore = new Map(); // welke blokken openstonden voor het zoeken, om ze na het wissen terug te zetten
+  const iconSearch = h('input', {
+    id: 'iconSearch', class: 'input', type: 'search', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false',
+    'aria-label': nl.form.iconSearch, placeholder: nl.form.iconSearchPlaceholder,
+    oninput: () => {
+      const query = iconSearch.value;
+      const hits = new Set(searchIcons(query).flatMap((group) => group.icons.map((icon) => icon.key)));
+      const searching = query.trim() !== '';
+      let visible = 0;
+      for (const block of iconBlocks) {
+        if (searching && !openBefore.has(block)) openBefore.set(block, block.open);
+        let any = 0;
+        for (const label of block.querySelectorAll('.choice')) {
+          const show = !searching || (label.dataset.icon !== '' && hits.has(label.dataset.icon));
+          label.hidden = !show;
+          if (show) any += 1;
+        }
+        block.hidden = any === 0;
+        visible += any;
+        if (searching) block.open = true;
+        else if (openBefore.has(block)) block.open = openBefore.get(block);
+      }
+      if (!searching) openBefore.clear();
+      iconNone.hidden = !searching || visible > 0;
+    },
+  });
+  const iconGroup = h('div', { class: 'icon-picker' }, iconSearch, iconNone, ...iconBlocks);
 
   const chosenColor = base.color ?? HABIT_COLORS[0];
   const colorGroup = h('div', { class: 'choices choices--colors', role: 'radiogroup' },
@@ -201,7 +240,7 @@ async function mount(root, id, templateKey = null) {
   }
 
   function showErrors(errors) {
-    const focusTargets = { name, icon: iconGroup, color: colorGroup, daypart, startDate, schedule: typeGroup, cue, why, minimalVersion: minimal,
+    const focusTargets = { name, icon: iconSearch, color: colorGroup, daypart, startDate, schedule: typeGroup, cue, why, minimalVersion: minimal,
       counterUnit: counterBox.querySelector('#counterUnit'), counterTarget: counterBox.querySelector('#counterTarget'), counter: counterBox.querySelector('#counterOn') };
     let first = null;
     for (const { field: key, code, detail } of errors) {

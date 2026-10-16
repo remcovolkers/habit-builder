@@ -6,7 +6,7 @@ Hoort bij [ITERATIE-1.2.md](ITERATIE-1.2.md) §6 (trap 2) en [MODA-PROMPT.md](MO
 1. **Ronde 1, per thema: 12 iconen** om de stijl vast te leggen. Plak de prompt van dat thema (hieronder) in Moda. Doe de twee thema's in aparte gesprekken.
 2. Beoordeel op: leesbaar op 24 px, gelijke visuele grootte, één accent per icoon, past bij de rest van het thema. Vraag zo nodig bij ("lijnen dunner", "accent minder vaak").
 3. **Ronde 2: de overige 48** met de vervolgprompt onderaan. Zo blijft de stijl gelijk.
-4. Lever de HTML-pagina en (als Moda dat kan) de losse `<sleutel>.svg`-bestanden aan. Ik zet ze in `themes/<id>/icons/`, controleer ze (viewBox, geen scripts, geen vaste kleuren, contrast) en bouw de kiezer en de weergave.
+4. Lever de HTML-pagina en (als Moda dat kan) de losse `<sleutel>.svg`-bestanden aan. Het gereedschap `npm run icons:build -- <thema> <map of html-bestand>` controleert elk icoon (viewBox, geen scripts, geen vaste kleuren, formaat) en maakt `themes/<thema>/icons.svg`; de app gebruikt een icoon zodra het in die sprite staat en toont anders de emoji. Het uiterlijk (grootte, accentkleur) stel ik daarna per thema af.
 5. Een toekomstig thema: dezelfde stappen; de sleutellijst blijft gelijk.
 
 Let op bij **Mel**: laat geen bestaande Pokémon, Poké Ball of logo's tekenen (zie de waarschuwing in [THEMES.md](THEMES.md)); de prompt zegt dat al.

@@ -1,3 +1,4 @@
+import { habitIcon } from './habit-icon.js';
 import { h } from '../dom.js';
 import { icon } from '../svg.js';
 import { nl } from '../../content/nl.js';
@@ -70,7 +71,7 @@ export function habitCard(entry, { canLog, onToggle, onMore, onAdjust }) {
     class: 'habit-card',
     dataset: { state, color: habit.color, overdue: entry.overdue ? 'true' : null, counter: isCounter ? 'true' : null },
   },
-  h('span', { class: 'habit-card__icon', 'aria-hidden': 'true' }, habit.icon),
+  h('span', { class: 'habit-card__icon', 'aria-hidden': 'true' }, habitIcon(habit.icon)),
   h('div', { class: 'habit-card__body' },
     h('div', { class: 'habit-card__name' }, habit.name),
     meta ? h('div', { class: 'habit-card__meta' }, meta) : null,

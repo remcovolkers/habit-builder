@@ -163,6 +163,10 @@ export const nl = {
     name: 'Naam',
     namePlaceholder: 'Bijvoorbeeld: 10 minuten lezen',
     icon: 'Icoon',
+    iconSearch: 'Icoon zoeken',
+    iconSearchPlaceholder: 'Zoek een icoon, bijvoorbeeld "water"',
+    iconNone: 'Geen icoon gevonden. Probeer een ander woord.',
+    iconCurrent: 'Je huidige icoon',
     color: 'Kleur',
     schedule: 'Herhaling',
     scheduleTypes: {
