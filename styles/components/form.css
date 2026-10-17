@@ -753,3 +753,22 @@ select.input {
   text-align: center;
   text-transform: none;
 }
+
+/* een knop die eruitziet als een link in een zin (opent een blad, verlaat de pagina niet) */
+.link-button {
+  display: inline;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--color-accent);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.schedule-example .link-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-tap); /* een tikvlak van minstens 44px, ook al ziet het eruit als een woord in een zin */
+}

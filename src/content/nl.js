@@ -512,6 +512,7 @@ export const nl = {
   guide: {
     title: 'Zo werkt het',
     intro: 'Wat de app bedoelt en hoe je hem gebruikt. Je kunt dit altijd terugvinden onder Instellingen.',
+    rhythmsIntro: 'Bij elke habit kies je een ritme. Het past zich aan jouw leven aan, niet andersom.',
     counter: 'Een teller erbij',
     example: (text) => `Bijvoorbeeld: ${text.replace(/\.$/, '').replace(/^./, (c) => c.toLowerCase())}.`,
     replay: 'Bekijk de introductie opnieuw',
