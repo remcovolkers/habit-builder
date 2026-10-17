@@ -45,6 +45,7 @@ Aanpassingen onderweg: een compactere kop op Vandaag onder 900 px hoogte, een kl
 | Waar | Effect |
 |---|---|
 | `styles/base.css` | geen rubberband, nooit zijwaarts (`overflow-x: clip`), scrollbalk in het thema (dun, accent) |
+| `styles/layout.css`, onderaan (`hover: none` en `pointer: coarse`) | **touchschermen hebben geen scrollbalk en geen gereserveerde strook** (telefoon en tablet). De dunne balk in het thema werd op Android een vaste, zichtbare balk. Muis en trackpad houden hem. Scrollen blijft werken; `check:layout` meet beide met aanraak-emulatie |
 | `styles/layout.css`, blok ≥ 960 px | de schil: `html` en `body` scrollen niet, `.app__main` is de scroller, `.page` / `.page__frame` / `.page__panes` / `.page__pane` / `.page__scroll` voor pagina's met kolommen |
 | `styles/components/dialog.css` | slot op `html` zolang een blad open is (alleen telefoon en brede schermen zonder schil; op desktop scrolt de pagina toch al niet) |
 | `src/ui/live.js` | bewaart de scrollstand van elke kolom bij een hertekening |

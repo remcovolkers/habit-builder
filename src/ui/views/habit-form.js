@@ -17,6 +17,7 @@ import { DEFAULT_ICON_KEY, iconForEmoji, iconForKey, searchIcons } from '../../a
 import { icon } from '../svg.js';
 import { habitIcon } from '../components/habit-icon.js';
 import { GUIDE_TYPES } from '../../content/guide.js';
+import { openRhythmGuide } from '../components/rhythm-guide.js';
 import { setFirstTipPending } from '../intro.js';
 
 const TYPES = ['daily', 'weekdays', 'per_week', 'day_of_month', 'per_month'];
@@ -142,7 +143,8 @@ async function mount(root, id, templateKey = null, intro = false) {
   // een voorbeeld bij het gekozen ritme, met een link naar de uitleg (docs/ONBOARDING.md O2)
   const exampleLine = () => h('p', { class: 'field__hint schedule-example', id: 'scheduleExample' },
     nl.guide.example(GUIDE_TYPES.find((type) => type.key === form.type).example), ' ',
-    h('a', { href: '#/uitleg' }, nl.form.scheduleMore));
+    // de uitleg opent als blad en niet als pagina: een link naar een andere pagina laat je het formulier verlaten en kwijtraken wat je invulde
+    h('button', { type: 'button', id: 'scheduleMore', class: 'link-button', 'aria-haspopup': 'dialog', onclick: (event) => openRhythmGuide(event.currentTarget) }, nl.form.scheduleMore));
 
   function renderDetails() {
     if (form.type === 'weekdays') {

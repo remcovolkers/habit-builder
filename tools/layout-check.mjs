@@ -223,6 +223,25 @@ async function main() {
   const emptyToday = await ev(`(() => { const b = document.querySelector('.empty .button--primary[href="#/habits/new"]'); return { button: !!b && b.getBoundingClientRect().height >= 44, fab: !!document.querySelector('.fab') }; })()`);
   check('lege Vandaag op de telefoon: een knop "Eerste habit maken" en geen zwevende knop', emptyToday.button && !emptyToday.fab, JSON.stringify(emptyToday));
 
+  // Scrollbalk: op een touchscherm geen (je scrolt met je vinger), met een muis de dunne balk in het thema en een gereserveerde strook
+  const barInfo = () => ev(`(() => { const css = (el) => (el ? { width: getComputedStyle(el).scrollbarWidth, gutter: getComputedStyle(el).scrollbarGutter } : null);
+    return { coarse: matchMedia('(pointer: coarse)').matches, noHover: matchMedia('(hover: none)').matches, html: css(document.documentElement), body: css(document.body) }; })()`);
+  await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 }); // zoals een telefoon: pointer coarse, hover none
+  await send('Emulation.setEmitTouchEventsForMouse', { enabled: true, configuration: 'mobile' });
+  await nav('habits');
+  await sleep(300);
+  const touchBar = await barInfo();
+  await send('Emulation.setEmitTouchEventsForMouse', { enabled: false });
+  await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  await send('Emulation.setDeviceMetricsOverride', { width: 800, height: 700, deviceScaleFactor: 1, mobile: false }); // een smal venster met een muis (vanaf 960 px scrolt het werkvlak en reserveert de pagina zelf geen strook)
+  await nav('habits');
+  await sleep(300);
+  const mouseBar = await barInfo();
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  check('scrollbalk: op een touchscherm geen balk en geen gereserveerde strook, met een muis de dunne balk in het thema en een gereserveerde strook',
+    touchBar.coarse && touchBar.noHover && touchBar.html.width === 'none' && touchBar.html.gutter === 'auto' && touchBar.body.width === 'none'
+      && !mouseBar.coarse && mouseBar.html.width === 'thin' && mouseBar.html.gutter.startsWith('stable'), JSON.stringify({ touchBar, mouseBar }));
+
   const sizes = [['390x844', 390, 844, 100], ['320x568', 320, 568, 100], ['320x568, tekst 200%', 320, 568, 200]];
   for (const [phase, count] of [['weinig habits', 2], ['veel habits', 8]]) {
     await ev(SEED(phase === 'weinig habits' ? 0 : 2, count));
@@ -579,6 +598,34 @@ async function main() {
   const full = await dayState();
   check('meerdere dagdelen op Vandaag: beide dagdelen afvinken maakt de dag gedaan', full.length === 2 && full.every((s) => s.startsWith('done:') && s.includes('2 van 2 dagdelen')), JSON.stringify(full));
   await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); await state.repo.deleteHabit('${created}'); notifyChanged(); })()`);
+
+  // De uitleg over de ritmes vanuit het formulier is een blad boven het formulier en geen andere pagina: wat je invulde blijft staan en je kunt terug
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await settle('habits/new');
+  await ev(`(() => { const n = document.querySelector('#name'); n.value = 'Mijn nieuwe habit'; n.dispatchEvent(new Event('input')); })()`);
+  const hashBefore = await ev('location.hash');
+  await ev(`document.querySelector('#scheduleMore').click()`);
+  await sleep(500);
+  const rhythmSheet = await ev(`(() => { const d = document.querySelector('dialog.dialog--guide[open]'); return { open: !!d, items: d?.querySelectorAll('.guide__type').length ?? 0, hash: location.hash,
+    overflow: d ? d.scrollWidth - d.clientWidth : 1, height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight, actions: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].map((b) => b.textContent) }; })()`);
+  await ev(`[...document.querySelectorAll('dialog.dialog--guide .dialog__actions .button')].find((b) => b.textContent === 'Sluiten').click()`);
+  await sleep(400);
+  const afterRhythm = await ev(`({ open: !!document.querySelector('dialog[open]'), hash: location.hash, name: document.querySelector('#name').value, focus: document.activeElement?.id ?? '' })`);
+  check('habit-formulier: "Uitleg over de ritmes" opent een blad met de vijf ritmes en de teller, de pagina blijft het formulier, en na sluiten staat je invoer er nog en zit de focus weer op de knop',
+    rhythmSheet.open && rhythmSheet.items === 6 && rhythmSheet.hash === hashBefore && rhythmSheet.overflow <= 0 && rhythmSheet.height <= rhythmSheet.vh && rhythmSheet.actions.includes('Sluiten')
+      && !afterRhythm.open && afterRhythm.hash === hashBefore && afterRhythm.name === 'Mijn nieuwe habit' && afterRhythm.focus === 'scheduleMore', JSON.stringify({ rhythmSheet, afterRhythm }));
+  // en op de kleinste schermen met grote tekst
+  await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 568, deviceScaleFactor: 2, mobile: true });
+  await ev(`document.documentElement.style.fontSize = '200%'`);
+  await sleep(400);
+  await ev(`document.querySelector('#scheduleMore').click()`);
+  await sleep(500);
+  const rhythmSmall = await ev(`(() => { const d = document.querySelector('dialog.dialog--guide[open]'); return { open: !!d, overflow: d ? d.scrollWidth - d.clientWidth : 1, height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight,
+    tiny: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].filter((b) => b.getBoundingClientRect().height < 44).length, link: Math.round(document.querySelector('#scheduleMore')?.getBoundingClientRect().height ?? 0) }; })()`);
+  check('habit-formulier: de uitleg over de ritmes past op 320 px met 200% tekst en niet hoger dan het scherm', rhythmSmall.open && rhythmSmall.overflow <= 0 && rhythmSmall.height <= rhythmSmall.vh && rhythmSmall.tiny === 0, JSON.stringify(rhythmSmall));
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
 
   // De stapel (flexibele taken): compacte kaarten, wat dreigt te falen bovenaan, de rest ingeklapt; Habits met een werkbalk en een statusregel; en Plan je week.
   const flexIds = await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); const ids = [];
