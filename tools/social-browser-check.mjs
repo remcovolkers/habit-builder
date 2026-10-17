@@ -3,8 +3,8 @@
 // desktop, grote tekst op 320px, offline en uitzetten. Controleert onderweg overflow, afgeknipte tekst en tikvlakken van 44px.
 // Gebruik: npm run db:start, dan: npm run db:check-browser [map voor schermafbeeldingen]. Een andere browser: zet BROWSER op het pad.
 // Maakt en ruimt de testaccounts ui-me, ui-anna, ui-bram, ui-cor en ui-dora (@example.com) op.
-import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -458,8 +458,10 @@ try {
 } catch (error) {
   check(`onverwachte fout: ${error.message}`, false);
 } finally {
-  if (process.platform === 'win32') spawn('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });
+  if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' }); // wachten, anders houdt de browser het profiel nog vast
   else edge.kill('SIGKILL');
+  // het tijdelijke browserprofiel (honderden MB) weghalen: zonder dit loopt de schijf na een paar runs vol
+  try { rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 }); } catch { /* blijft liggen; het besturingssysteem ruimt tijdelijke bestanden later op */ }
   server.kill();
   const failed = results.filter((r) => !r.ok).length;
   console.log(`\n${results.length - failed}/${results.length} geslaagd`);

@@ -153,6 +153,7 @@ Gebruik het lege account (G) of een schone browser; de vlag staat lokaal (`hb-in
 
 1. **Eerste start zonder habits**: je landt op `#/welkom/1`. "Volgende" gaat naar stap 2, 3 (de app installeren) en 4 (de eerste habit); "Overslaan" gaat naar Vandaag, en bij de volgende start komt de introductie niet terug. Stap 1 heeft "Heb je al een account? Log in" en "Kies je stijl": tik op Mel Theme en alles (kleuren, de mascotte bovenaan, de drie fases) verandert meteen; de keuze blijft staan in Instellingen.
 2. **Stap 3, de app installeren**: in Chrome of Edge staat er een knop Installeren (probeer hem; daarna staat er "Gelukt!"). Op een iPhone in Safari staan er drie genummerde stappen (Delen, Zet op beginscherm, Voeg toe). In een browser zonder installatie (bijvoorbeeld Firefox) staat er een algemene aanwijzing. Open je de app vanaf het beginscherm, dan ontbreekt deze stap en zijn het drie stappen.
+   **Inloggen vanuit stap 1** (heeft een echt account nodig): tik op Log in, log in met een **nieuw** adres: je komt terug bij stap 1 en de regel "Heb je al een account?" is weg. Doe het ook met Google (de pagina laadt opnieuw). Log je in met een account dat al habits heeft, dan kom je op Vandaag uit.
 3. **Stap 4**: zeven sjablonen, elk met het soort ritme eronder (Elke dag · met teller, 3× per week, Di, vr, 2× per maand, Dag 25 van de maand). Een sjabloon opent het formulier ingevuld; onder **Herhaling** staat een voorbeeld met "Uitleg over de ritmes".
 4. **Eerste habit opslaan** vanuit de introductie: je komt op Vandaag met de tip "Je eerste habit staat klaar" (één keer; "Begrepen" sluit hem voorgoed). Een habit met een minimale versie viert ook "Kleine stap".
 5. **Wie al habits heeft** (het gevulde account) ziet de introductie nooit, ook niet via een lege Vandaag later.
@@ -160,6 +161,16 @@ Gebruik het lege account (G) of een schone browser; de vlag staat lokaal (`hb-in
 7. **Uitnodiging als nieuwe gebruiker** (K): na "Jij en Anna zijn nu vrienden!" staat bij een gebruiker zonder habits "Laten we beginnen", dat naar de introductie gaat. "Niet nu" op de naamstap gaat ook naar de introductie.
 8. **Scrollen**: op elke stap blijven de stippen en de titel staan terwijl je de inhoud scrolt; er is geen scrollbalk, de inhoud smelt aan de rand weg en de pagina erachter beweegt niet. Probeer ook een liggende telefoon: daar scrolt de hele pagina.
 9. **Grote tekst**: alles op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout` controleert dit).
+
+## N. Flexibele taken: Habits, de stapel en Plan je week (docs/FLEXIBELE-TAKEN.md)
+
+Gebruik het gevulde account (A). Het stub-account heeft vier flexibele taken (Hardlopen, Bed opmaken, Gitaar spelen, Gordijnen wassen).
+
+1. **Habits**: boven de lijst staat één werkbalk (Volgorde, Pauzeer alles); alleen Volgorde heeft een aan/uit-stand (dan staat er "Klaar"). Bij de groep Flexibel staat een melding in woorden, "Nog n taken om in te plannen", met de knop **Plan je week** ernaast (een kalender, geen aan/uit-stand; hij opent een blad). Is alles gepland of gedaan, dan staat er "Alles is ingepland of gedaan". Gepauzeerde taken (Yoga in het testaccount) tellen niet mee. De lijst heeft de groepen **Vaste dagen** en **Flexibel**. Elke rij heeft een statusregel (bijvoorbeeld "Opbouw · dag 41") en bij een flexibele taak de voortgang van de week of maand.
+2. **Dreigt te falen** (op Habits en op Vandaag): een taak waarvan nog niets gedaan is, krijgt de waarschuwing zodra het deel van de periode dat over is kleiner is dan 60% van wat nog moet. Donderdag 0 van 2 in de week: ja; met één keer gedaan: nee; woensdag 0 van 2: nog niet.
+3. **Vandaag, de stapel**: compacte kaarten met één knop (＋ Vandaag). Onder **Dreigt te falen** staat wat krap is, onder **Verder deze week** de rest. Met meer dan vier taken zit de rest ingeklapt onder "Nog n taken tonen". Achter ⋯ staan "Andere dag…" en "Al gedaan".
+4. **Plan je week** (op Habits bij Flexibel, en bij de stapel op Vandaag): per flexibele taak acht dagknoppen. Tik een dag aan en hij staat daarna op Vandaag van die dag. "Verdeel voor mij" plant wat nog ontbreekt, uit elkaar en niet allemaal op dezelfde dag.
+5. **Grote tekst**: de stapel en het blad op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout`).
 
 ## Automatische controles
 

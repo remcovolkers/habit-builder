@@ -16,9 +16,9 @@ import { friendsAddView } from './ui/views/friends-add.js';
 import { friendsManageView } from './ui/views/friends-manage.js';
 import { friendsInviteView } from './ui/views/friends-invite.js';
 import { loginView } from './ui/views/login.js';
-import { initAccount } from './ui/account.js';
+import { account, initAccount, onAccountChanged } from './ui/account.js';
 import { initReminders } from './ui/reminders.js';
-import { initSocial, onSocialChanged, social } from './ui/social-app.js';
+import { initSocial, onSocialChanged, social, socialApp } from './ui/social-app.js';
 import { setDev } from './ui/dev.js';
 import { startPwa } from './pwa.js';
 import { mountUpdateBanner } from './ui/components/update-banner.js';
@@ -27,7 +27,7 @@ import { checkAchievements } from './app/achievement-runner.js';
 import { settingsView } from './ui/views/settings.js';
 import { guideView } from './ui/views/guide.js';
 import { welcomeView } from './ui/views/welcome.js';
-import { INTRO_HASH, introDue, markIntroSeen } from './ui/intro.js';
+import { INTRO_HASH, afterLoginHash, introDue, markIntroSeen, peekReturn, takeReturn } from './ui/intro.js';
 import { parseHash } from './router.js';
 import { icon } from './ui/svg.js';
 import { nl } from './content/nl.js';
@@ -135,6 +135,27 @@ onSocialChanged(() => {
   if (friendCount() !== checkedFriends) checkForAchievements();
 });
 checkForAchievements();
+
+// Wie vanuit de introductie ging inloggen komt daarna weer bij de introductie. Voor de e-mailcode regelt het inlogscherm dat zelf; dit is voor de omweg via
+// Google, waarbij de pagina opnieuw laadt. We wachten tot de eerste sync binnen is: een bestaand account met habits hoort bij Vandaag te landen, niet bij de introductie.
+let returningFromLogin = false;
+onAccountChanged(() => {
+  if (returningFromLogin || account.status !== 'signed-in' || !peekReturn()) return;
+  returningFromLogin = true;
+  const lastSync = account.sync?.lastSyncAt ?? null;
+  const settled = new Promise((resolve) => {
+    const done = () => { stop(); clearTimeout(timeout); resolve(); };
+    const timeout = setTimeout(done, 8000);
+    const stop = onAccountChanged(() => { if (account.sync?.state === 'error' || (account.sync?.lastSyncAt ?? null) !== lastSync) done(); });
+  });
+  settled.then(async () => {
+    const back = takeReturn();
+    returningFromLogin = false;
+    if (!back || socialApp.pendingInvite()) return; // een uitnodiging die wacht gaat voor (die flow brengt je zelf bij de introductie)
+    const target = afterLoginHash({ back, habitCount: (await state.repo.listHabits()).length });
+    if (location.hash !== target) location.hash = target;
+  });
+});
 
 // Account: alleen actief als er een sessie is (of we terugkomen van Google); een mislukte start blokkeert de app nooit.
 initAccount().catch((error) => console.warn('account starten mislukt', error));

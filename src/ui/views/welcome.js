@@ -15,7 +15,8 @@ import { DEFAULT_GRADUATION_DAYS, PHASE_STARTING_UNTIL_DAY } from '../../domain/
 import { themeOptions } from '../components/theme-picker.js';
 import { saveSettings, state } from '../state.js';
 import { themeFor } from '../../app/themes.js';
-import { markIntroSeen } from '../intro.js';
+import { INTRO_HASH, markIntroSeen, rememberReturn, showLoginHint } from '../intro.js';
+import { account, onAccountChanged } from '../account.js';
 import { onPwaChanged, promptInstall, pwa } from '../../pwa.js';
 
 const w = nl.welcome;
@@ -53,6 +54,15 @@ function growth() {
       h('span', { class: 'welcome__stop-art', 'aria-hidden': 'true' }, mascot(stop.slot, 'welcome__stop-mascot') ?? uiIcon(stop.fallback)),
       h('span', { class: 'welcome__stop-name' }, nl.detail.phases[stop.key]),
       h('span', { class: 'welcome__stop-day' }, nl.detail.day(stop.day)))));
+}
+
+/** "Heb je al een account? Log in": alleen voor wie niet is ingelogd, en het volgt de inlogstatus (die wordt soms pas na het starten hersteld). */
+function loginHint() {
+  const line = h('p', { class: 'xs muted', id: 'welcomeLoginHint' }, w.haveAccount, ' ', h('a', { id: 'welcomeLogin', href: '#/login', onclick: () => rememberReturn(INTRO_HASH) }, w.login)); // na het inloggen terug naar de introductie
+  const sync = () => { line.hidden = !showLoginHint(account.status); };
+  sync();
+  const stop = onAccountChanged(() => (line.isConnected ? sync() : stop()));
+  return line;
 }
 
 /** Een lijstje met bij elk punt een icoon. */
@@ -185,7 +195,7 @@ export function welcomeView({ step }) {
       growth(),
       points(w.points1, ['tip-never-miss-twice', 'tip-start-small']),
       actions(next(), skip),
-      h('p', { class: 'xs muted' }, w.haveAccount, ' ', h('a', { id: 'welcomeLogin', href: '#/login', onclick: finish }, w.login)));
+      loginHint());
     return root;
   }
   if (key === 'install') {

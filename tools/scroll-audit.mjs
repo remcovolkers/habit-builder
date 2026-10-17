@@ -1,8 +1,8 @@
 // Meet per pagina hoe er gescrold wordt: hoe hoog de pagina is ten opzichte van het scherm, welke elementen zelf scrollen en wat blijft staan
 // (sticky of vast). Met het gevulde testaccount (tools/lib/stub-data.mjs), op 1920×1080 en op een telefoon. Alleen lezen: er wordt niets aangepast.
 // Gebruik: npm run audit:scroll. Een andere browser: zet BROWSER op het pad. De uitkomst is de basis voor docs/SCROLLEN.md.
-import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -25,8 +25,10 @@ const profile = mkdtempSync(join(tmpdir(), 'hb-scroll-'));
 const edge = spawn(BROWSER, ['--headless=new', '--disable-gpu', ...(process.env.CI ? ['--no-sandbox', '--disable-dev-shm-usage'] : []), `--remote-debugging-port=${DEBUG}`, `--user-data-dir=${profile}`, '--no-first-run', 'about:blank'], { stdio: 'ignore' });
 const cleanup = () => {
   server.kill();
-  if (process.platform === 'win32') spawn('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });
+  if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' }); // wachten, anders houdt de browser het profiel nog vast
   else edge.kill('SIGKILL');
+  // het tijdelijke browserprofiel (honderden MB) weghalen: zonder dit loopt de schijf na een paar runs vol
+  try { rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 }); } catch { /* blijft liggen; het besturingssysteem ruimt tijdelijke bestanden later op */ }
 };
 
 // het stub-bestand is een module met relatieve imports; de pagina mag dat bestand niet laden, dus de tekst wordt hier een functie

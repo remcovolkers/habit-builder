@@ -4,14 +4,14 @@ import { notifyChanged, state } from '../state.js';
 import { showToast } from '../components/toast.js';
 import { openDialog } from '../components/dialog.js';
 import { entryState, habitCard } from '../components/habit-card.js';
-import { poolCard } from '../components/pool-card.js';
+import { poolCard, periodLabel as periodSummary } from '../components/pool-card.js';
+import { countToPlan, planWeekButton, planWeekPrompt } from '../components/week-planner.js';
 import { ring } from '../components/ring.js';
 import { icon } from '../svg.js';
 import { mascot } from '../components/mascot.js';
 import { emptyState } from '../components/empty-state.js';
 import { weekStrip } from '../components/week-strip.js';
 import { buildWeekStrip } from '../../app/overview.js';
-import { fab } from '../components/fab.js';
 import { uiIcon } from '../components/habit-icon.js';
 import { account, dismissNudge, nudgeDismissed, nudgeElement } from '../account.js';
 import { clearFirstTip, firstTipPending } from '../intro.js';
@@ -26,6 +26,9 @@ import { charCounter } from '../components/char-counter.js';
 import { datesBetween, formatDateLong, greetingFor, localHour, relativeDayLabel } from '../../app/format.js';
 import { addDays, diffDays, isValidDate } from '../../domain/dates.js';
 import { BACKFILL_DAYS, NOTE_MAX_LENGTH, PLAN_AHEAD_DAYS } from '../../domain/constants.js';
+
+// hoeveel kaarten van de stapel er in beeld staan voordat de rest wordt ingeklapt (wat dreigt te falen telt altijd mee en blijft in beeld)
+const POOL_VISIBLE = 4;
 
 const dayHref = (date, today) => (date === today ? '#/today' : `#/today?date=${date}`);
 
@@ -71,13 +74,14 @@ export function todayView({ query }) {
         view: buildDayView({ snapshot, date, today: state.today }),
         week: buildWeekStrip({ snapshot, date, today: state.today }),
         attention: date === state.today ? forToday(buildAttention({ snapshot, today: state.today })) : [],
+        toPlan: countToPlan(snapshot, state.today), // hoeveel flexibele taken nog dagen nodig hebben (op de knop Plan je week)
       };
     },
-    render: ({ view, week, attention }) => renderDay(view, week, attention),
+    render: ({ view, week, attention, toPlan }) => renderDay(view, week, attention, toPlan),
   });
 }
 
-function renderDay(view, week, attention) {
+function renderDay(view, week, attention, toPlan = 0) {
   const { today } = state;
   const { repo } = state;
   const { date } = view;
@@ -220,19 +224,38 @@ function renderDay(view, week, attention) {
       h('ul', { class: 'card-list' }, ...group.entries.map((entry) => habitCard(entry, cardOptions))));
   });
 
+  // De stapel: wat dreigt te falen staat bovenaan en altijd in beeld; de rest toont hoogstens POOL_VISIBLE kaarten en de overige zitten ingeklapt.
+  // Elke kaart is één regel met één knop; "een andere dag" en "al gedaan" zitten achter ⋯.
+  function poolMore(entry) {
+    const { habit } = entry;
+    const actions = [];
+    if (view.canPlan && date === today) actions.push({ label: nl.today.pool.otherDay, onClick: () => planOther(entry) });
+    if (view.canLog) actions.push({ label: nl.today.pool.alreadyDone, onClick: () => perform(() => log(entry.habitId, 'done'), nl.today.toasts.done(habit.name)) });
+    openDialog({ title: habit.name, description: periodSummary(entry), actions, cancelLabel: nl.app.close });
+  }
+  const poolOptions = { date, today, canPlan: view.canPlan, canMore: view.canPlan || view.canLog, onPlan: (e) => planOnDay(e, date), onMore: poolMore };
+  const poolList = (entries) => h('ul', { class: 'card-list' }, ...entries.map((entry) => poolCard(entry, poolOptions)));
+  const urgentPool = view.pool.filter((e) => e.urgent);
+  const restPool = view.pool.filter((e) => !e.urgent);
+  const restShown = restPool.slice(0, Math.max(0, POOL_VISIBLE - urgentPool.length));
+  const restHidden = restPool.slice(restShown.length);
+
   const poolSection = view.pool.length > 0
-    ? h('section', { class: 'section', 'aria-labelledby': 'pool-title' },
+    ? h('section', { class: 'section pool', 'aria-labelledby': 'pool-title' },
       h('div', { class: 'section-head' },
         h('h2', { id: 'pool-title', class: 'section__title' }, nl.today.pool.title),
-        h('span', { class: 'kicker' }, poolPeriod)),
+        view.canPlan && toPlan === 0 ? planWeekButton() : h('span', { class: 'kicker' }, poolPeriod)),
       h('p', { class: 'section__hint' }, nl.today.pool.hint),
-      h('ul', { class: 'card-list' }, ...view.pool.map((entry) =>
-        poolCard(entry, {
-          date, today, canLog: view.canLog, canPlan: view.canPlan,
-          onPlan: (e) => planOnDay(e, date),
-          onPlanOther: planOther,
-          onDoneNow: (e) => perform(() => log(e.habitId, 'done'), nl.today.toasts.done(e.habit.name)),
-        }))))
+      view.canPlan && toPlan > 0 ? planWeekPrompt({ toPlan }) : null,
+      urgentPool.length > 0
+        ? h('div', { class: 'pool__group' }, h('h3', { class: 'pool__group-title pool__group-title--urgent' }, nl.today.pool.urgentTitle), poolList(urgentPool))
+        : null,
+      restShown.length > 0
+        ? h('div', { class: 'pool__group' }, urgentPool.length > 0 ? h('h3', { class: 'pool__group-title' }, nl.today.pool.restTitle) : null, poolList(restShown))
+        : null,
+      restHidden.length > 0
+        ? h('details', { class: 'pool__more' }, h('summary', { class: 'pool__more-summary' }, nl.today.pool.showMore(restHidden.length)), poolList(restHidden))
+        : null)
     : null;
 
   const attentionSection = attention.length > 0
@@ -280,8 +303,7 @@ function renderDay(view, week, attention) {
     view.groups.length === 0 && view.pool.length === 0 ? todayEmpty(view) : null,
     h('div', { class: 'today__columns page__panes' },
       h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections),
-      side.length > 0 ? h('div', { class: 'today__side page__pane' }, ...side) : null),
-    fab({ href: '#/habits/new', label: nl.habits.new }));
+      side.length > 0 ? h('div', { class: 'today__side page__pane' }, ...side) : null));
 }
 
 function dayLink(date, label, symbol, enabled) {
@@ -322,7 +344,7 @@ function todayEmpty(view) {
   if (!view.hasHabits) {
     return emptyState({
       art: 'sprout', title: nl.today.noHabitsTitle, text: nl.today.noHabits, starters: true,
-      cta: { href: '#/habits/new', label: nl.today.createFirst, desktopOnly: true },
+      cta: { href: '#/habits/new', label: nl.today.createFirst }, // Vandaag heeft geen zwevende knop meer (die hoort bij de lijst op Habits), dus ook op de telefoon een gewone knop
     });
   }
   return emptyState({

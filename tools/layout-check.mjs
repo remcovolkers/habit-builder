@@ -1,8 +1,8 @@
 // Meet in een echte browser (headless Edge of Chrome, zonder Supabase) de ruimte onder de laatste kaart op Vandaag en Habits, en of de
 // zwevende knop (FAB) de laatste kaart afdekt. Aanleiding: te veel scrollruimte onder de lijst (docs/ITERATIE-1.2.md §4).
 // Gebruik: npm run check:layout. Een andere browser: zet BROWSER op het pad.
-import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -29,8 +29,10 @@ let browserExit = null;
 edge.on('exit', (code, signal) => { browserExit = `${code ?? signal}`; });
 const cleanup = () => {
   server.kill();
-  if (process.platform === 'win32') spawn('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' });
+  if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' }); // wachten, anders houdt de browser het profiel nog vast
   else edge.kill('SIGKILL');
+  // het tijdelijke browserprofiel (honderden MB) weghalen: zonder dit loopt de schijf na een paar runs vol
+  try { rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 }); } catch { /* blijft liggen; het besturingssysteem ruimt tijdelijke bestanden later op */ }
 };
 
 const failures = [];
@@ -70,12 +72,13 @@ const MEASURE = (offset) => `(() => {
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
   return new Promise((resolve) => setTimeout(() => {
     const barTop = document.querySelector('.tabbar').getBoundingClientRect().top;
-    const fabTop = fab.getBoundingClientRect().top;
+    const fabTop = fab ? fab.getBoundingClientRect().top : null;
     resolve({
       scrollable: max, rem,
       gapPx: Math.round(barTop - lastBottom),
-      covered: lastBottom > fabTop,
-      fabShown: getComputedStyle(fab).opacity === '1',
+      hasFab: Boolean(fab),
+      covered: fab ? lastBottom > fabTop : false,
+      fabShown: fab ? getComputedStyle(fab).opacity === '1' : false,
     });
   }, 400));
 })()`;
@@ -113,6 +116,19 @@ async function main() {
   await nav('welkom/1');
   const totalSteps = await ev(`document.querySelectorAll('.welcome__dot').length`);
   check('introductie: vier stappen (met de app installeren) in een browser waar de app nog niet geïnstalleerd is', totalSteps === 4, String(totalSteps));
+  const loginHint = await ev(`(() => { const l = document.querySelector('#welcomeLoginHint'); return { exists: !!l, hidden: l?.hidden ?? null, link: document.querySelector('#welcomeLogin')?.getAttribute('href') }; })()`);
+  check('introductie, stap 1: zonder account staat "Heb je al een account? Log in" erbij', loginHint.exists && loginHint.hidden === false && loginHint.link === '#/login', JSON.stringify(loginHint));
+  // "Log in" onthoudt dat je terug wilt naar de introductie (de inlog zelf is hier niet te doen); overslaan vergeet dat weer
+  await ev(`document.querySelector('#welcomeLogin').click()`);
+  await sleep(400);
+  const remembered = await ev(`({ hash: location.hash, stored: JSON.parse(localStorage.getItem('hb-after-login') ?? 'null')?.hash ?? null })`);
+  await nav('welkom/1');
+  await ev(`document.querySelector('#welcomeSkip').click()`);
+  await sleep(300);
+  const forgotten = await ev(`localStorage.getItem('hb-after-login')`);
+  check('introductie, stap 1: "Log in" onthoudt de terugweg naar de introductie en "Overslaan" vergeet hem weer', remembered.hash === '#/login' && remembered.stored === '#/welkom/1' && forgotten === null, JSON.stringify({ remembered, forgotten }));
+  await ev(`localStorage.removeItem('hb-intro-seen')`); // de rest van de controle gaat uit van een introductie die nog niet is afgerond
+  await nav('welkom/1');
   // de stijl kiezen op de eerste stap: het thema, de mascottes en de stap zelf veranderen meteen mee, en de focus blijft op de gekozen kaart
   // de kaarten staan naast elkaar (320 px) met een omschrijving van een verschillende lengte, en zijn toch even hoog
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
@@ -203,6 +219,9 @@ async function main() {
   await ev(`document.documentElement.style.fontSize = '100%'`);
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await nav('today');
+  // zonder habits en zonder zwevende knop heeft een lege Vandaag op de telefoon zelf een knop om de eerste habit te maken
+  const emptyToday = await ev(`(() => { const b = document.querySelector('.empty .button--primary[href="#/habits/new"]'); return { button: !!b && b.getBoundingClientRect().height >= 44, fab: !!document.querySelector('.fab') }; })()`);
+  check('lege Vandaag op de telefoon: een knop "Eerste habit maken" en geen zwevende knop', emptyToday.button && !emptyToday.fab, JSON.stringify(emptyToday));
 
   const sizes = [['390x844', 390, 844, 100], ['320x568', 320, 568, 100], ['320x568, tekst 200%', 320, 568, 200]];
   for (const [phase, count] of [['weinig habits', 2], ['veel habits', 8]]) {
@@ -215,13 +234,16 @@ async function main() {
         await sleep(300);
         const label = `${route} · ${phase} · ${size}`;
         const end = await ev(MEASURE(0));
+        // de zwevende knop hoort bij de lijst op Habits; op Vandaag staat hij niet (daar suggereert hij samen met de datumkeuze dat je ook voor een andere dag een habit kunt toevoegen)
+        check(`${label}: ${route === 'habits' ? 'de zwevende knop staat er' : 'geen zwevende knop'}`, end.hasFab === (route === 'habits'), JSON.stringify(end));
         if (phase === 'weinig habits') {
           // past de pagina niet op het scherm, dan scrolt hij (en geldt de rest hieronder niet); anders staat de knop er gewoon
-          if (end.scrollable <= 0) check(`${label}: past op het scherm, knop blijft staan`, end.fabShown, JSON.stringify(end));
+          if (end.scrollable <= 0) { if (route === 'habits') check(`${label}: past op het scherm, knop blijft staan`, end.fabShown, JSON.stringify(end)); }
           else check(`${label}: einde, hoogstens 2rem onder de laatste kaart`, end.gapPx <= 2 * end.rem, `${end.gapPx}px`);
           continue;
         }
         check(`${label}: einde, hoogstens 2rem onder de laatste kaart`, end.gapPx <= 2 * end.rem, `${end.gapPx}px (${(end.gapPx / end.rem).toFixed(1)}rem)`);
+        if (route !== 'habits') continue;
         check(`${label}: einde, de knop dekt de laatste kaart niet af`, !end.covered || !end.fabShown, JSON.stringify(end));
         const up = await ev(MEASURE(Math.round(8 * end.rem)));
         check(`${label}: 8rem hoger is de knop er weer`, up.fabShown, JSON.stringify(up));
@@ -234,6 +256,8 @@ async function main() {
   await nav('today');
   // de prestatie "Drie tegelijk" door de testgegevens opent een viering (een modale dialoog): eerst sluiten, anders neemt zij de focus
   await ev(`document.querySelector('dialog[open] .button--primary')?.click()`);
+  await sleep(400);
+  await nav('habits');
   await sleep(400);
   await ev(MEASURE(0));
   const focused = await ev(`new Promise((resolve) => {
@@ -418,13 +442,21 @@ async function main() {
   check('een gekozen icoon wordt bij de habit opgeslagen (als emoji, zodat sync en export ongewijzigd blijven)', saved.includes('🚴 Naar werk fietsen'), JSON.stringify(saved));
   // desktop (docs/SCROLLEN.md): de pagina scrolt zelf niet; de kop blijft staan en alleen de kolommen scrollen
   await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 600, deviceScaleFactor: 1, mobile: false });
-  const noPageScroll = () => ev(`({ page: document.documentElement.scrollHeight - innerHeight, bodyY: Math.round(window.scrollY) })`);
+  // een pagina met kolommen (`.page`) laat het werkvlak niet scrollen: wat niet in een kolom of lijst staat die zelf scrolt, wordt afgeknipt. `clipped` meet dat.
+  const noPageScroll = () => ev(`(() => { const main = document.querySelector('.app__main'); return { page: document.documentElement.scrollHeight - innerHeight, bodyY: Math.round(window.scrollY),
+    clipped: getComputedStyle(main).overflowY === 'hidden' ? main.scrollHeight - main.clientHeight : 0 }; })()`);
   const settle = async (route) => { await nav(route); await ev(`document.documentElement.style.fontSize = '100%'`); await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`); await sleep(300); };
-  for (const [what, route] of [['Vandaag', 'today'], ['Habits', 'habits'], ['Voortgang', 'stats'], ['Habit: nieuw', 'habits/new'], ['Instellingen', 'settings'], ['Prestaties', 'achievements']]) {
+  for (const [what, route] of [['Vandaag', 'today'], ['Habits', 'habits'], ['Voortgang', 'stats'], ['Habit: nieuw', 'habits/new'], ['Instellingen', 'settings'], ['Prestaties', 'achievements'], ['Zo werkt het', 'uitleg'], ['Introductie', 'welkom/2']]) {
     await settle(route);
     const m = await noPageScroll();
     check(`desktop, ${what}: de pagina zelf scrolt niet (alleen het werkvlak of een kolom)`, m.page <= 1 && m.bodyY === 0, JSON.stringify(m));
+    check(`desktop, ${what}: niets wordt afgeknipt (alles is te bereiken door te scrollen)`, m.clipped <= 1, JSON.stringify(m));
   }
+  // Zo werkt het scrolt op desktop in de pagina: met het einde van de uitleg in beeld staat ook de knop voor de introductie op het scherm
+  await settle('uitleg');
+  const guideEnd = await ev(`(async () => { const sc = document.querySelector('.guide__scroll'); const before = sc.scrollTop; sc.scrollTop = sc.scrollHeight; await new Promise((r) => setTimeout(r, 300));
+    const b = document.querySelector('#replayIntro').getBoundingClientRect(); return { room: sc.scrollHeight - sc.clientHeight, before, after: sc.scrollTop, buttonInView: b.top >= 0 && b.bottom <= innerHeight }; })()`);
+  check('desktop, Zo werkt het: de uitleg scrolt tot het einde (de knop "Bekijk de introductie opnieuw" komt in beeld)', guideEnd.room > 100 && guideEnd.after > guideEnd.before && guideEnd.buttonInView, JSON.stringify(guideEnd));
   // de kop blijft staan als een kolom scrolt, en de kolommen scrollen los van elkaar
   await settle('today');
   const headBefore = await ev(`Math.round(document.querySelector('.today__header').getBoundingClientRect().top)`);
@@ -547,6 +579,74 @@ async function main() {
   const full = await dayState();
   check('meerdere dagdelen op Vandaag: beide dagdelen afvinken maakt de dag gedaan', full.length === 2 && full.every((s) => s.startsWith('done:') && s.includes('2 van 2 dagdelen')), JSON.stringify(full));
   await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); await state.repo.deleteHabit('${created}'); notifyChanged(); })()`);
+
+  // De stapel (flexibele taken): compacte kaarten, wat dreigt te falen bovenaan, de rest ingeklapt; Habits met een werkbalk en een statusregel; en Plan je week.
+  const flexIds = await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); const ids = [];
+    const base = { icon: '💧', color: 'c2', daypart: 'anytime', status: 'active', startDate: '2026-01-01', endDate: null, graduationDays: 66, maintenance: false, counter: null };
+    const flex = (name, period, count, order) => state.repo.saveHabit({ ...base, name, sortOrder: 200 + order, schedules: [{ effectiveFrom: '2026-01-01', schedule: { type: 'times_per_period', period, count } }] });
+    // twee die bijna altijd dreigen te falen (7× per week, 31× per maand), en zes die deze maand al gehaald zijn (1× per maand, gisteren gedaan; wat vandaag is gedaan staat bij de dagdelen, niet in de stapel)
+    ids.push((await flex('Dreigt A', 'week', 7, 0)).id, (await flex('Dreigt B', 'month', 31, 1)).id);
+    const yesterday = new Date(state.today + 'T00:00:00Z'); yesterday.setUTCDate(yesterday.getUTCDate() - 1); const ymd = yesterday.toISOString().slice(0, 10);
+    if (ymd.slice(0, 7) === state.today.slice(0, 7)) for (let i = 0; i < 6; i++) { const done = await flex('Klaar ' + (i + 1), 'month', 1, 2 + i); ids.push(done.id); await state.repo.setCheckIn({ habitId: done.id, date: ymd, status: 'done' }); }
+    notifyChanged(); return ids; })()`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await nav('today');
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  await sleep(500);
+  const poolInfo = await ev(`(() => { const cards = [...document.querySelectorAll('.pool .pool-card--compact')]; const outside = cards.filter((c) => !c.closest('details'));
+    return { urgentTitle: !!document.querySelector('.pool__group-title--urgent'), shown: outside.length, hidden: document.querySelectorAll('.pool details .pool-card--compact').length, summary: document.querySelector('.pool__more-summary')?.textContent ?? '',
+      maxHeight: Math.round(Math.max(...cards.map((c) => c.getBoundingClientRect().height))), planWeek: !!document.querySelector('#planWeek'), overflow: document.documentElement.scrollWidth - innerWidth }; })()`);
+  const mondayTheFirst = await ev(`new Date().getDay() === 1 && new Date().getDate() === 1`); // dan is er niets krap; en op de eerste van de maand kan "gisteren" niet in dezelfde maand
+  const firstOfMonth = await ev(`new Date().getDate() === 1`);
+  check('Vandaag, de stapel: compacte kaarten (hoogstens 150 px, eerder ruim 230), wat dreigt te falen bovenaan, de rest ingeklapt met "Nog n taken tonen", en Plan je week',
+    (poolInfo.urgentTitle || mondayTheFirst) && poolInfo.maxHeight <= 150 && (firstOfMonth || (poolInfo.hidden >= 1 && /^Nog \d+ taken? tonen$/.test(poolInfo.summary))) && poolInfo.planWeek && poolInfo.overflow <= 0, JSON.stringify(poolInfo));
+  // de stapel op de kleinste schermen met grote tekst
+  await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 568, deviceScaleFactor: 2, mobile: true });
+  await ev(`document.documentElement.style.fontSize = '200%'`);
+  await sleep(400);
+  const poolSmall = await ev(`({ overflow: document.documentElement.scrollWidth - innerWidth, tiny: [...document.querySelectorAll('.pool .pool-card--compact .button, .pool .pool-card--compact .habit-card__more')].filter((b) => b.getBoundingClientRect().height < 44).length })`);
+  check('Vandaag, de stapel: past op 320 px met 200% tekst en alle knoppen zijn minstens 44 px', poolSmall.overflow <= 0 && poolSmall.tiny === 0, JSON.stringify(poolSmall));
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+
+  // Habits: een werkbalk op één plek, een statusregel per habit, en een eigen groep voor flexibele taken
+  await nav('habits');
+  await sleep(500);
+  const habitsInfo = await ev(`(() => { const tools = document.querySelector('.habits__tools'); const buttons = tools ? [...tools.querySelectorAll('button')] : []; const tops = new Set(buttons.map((b) => Math.round(b.getBoundingClientRect().top)));
+    const plan = document.querySelector('#planWeek');
+    return { tools: !!tools, buttons: buttons.map((b) => b.textContent), rows: tops.size, plan: plan ? { inPrompt: !!plan.closest('.plan-prompt'), classes: plan.className, pressed: plan.getAttribute('aria-pressed'), popup: plan.getAttribute('aria-haspopup'), message: document.querySelector('.habits .plan-prompt__text strong')?.textContent ?? null, badge: !!document.querySelector('.badge--count'), icon: !!plan.querySelector('svg') } : null, titles: [...document.querySelectorAll('.habits h2.section__title')].map((e) => e.textContent), statuses: document.querySelectorAll('.habit-row__status').length, habitRows: document.querySelectorAll('.habit-row').length, flexible: document.querySelectorAll('.habit-row[data-section="active"] .habit-row__progress').length, overflow: document.documentElement.scrollWidth - innerWidth }; })()`);
+  check('Habits: een werkbalk (Volgorde, Pauzeer alles) op één regel, groepen Vaste dagen en Flexibel, en een statusregel bij de lopende habits',
+    habitsInfo.tools && !habitsInfo.buttons.includes('Plan je week') && habitsInfo.buttons.includes('Volgorde') && habitsInfo.rows === 1 && habitsInfo.titles.includes('Vaste dagen') && habitsInfo.titles.includes('Flexibel') && habitsInfo.statuses >= 8 && habitsInfo.flexible >= 8 && habitsInfo.overflow <= 0, JSON.stringify(habitsInfo));
+
+  // Plan je week staat bij de groep Flexibel en ziet er niet "aan" uit: een neutrale knop met een kalender, een getal voor wat nog dagen nodig heeft, en geen aan/uit-stand
+  check('Habits: bij Flexibel staat in woorden wat er te doen is ("Nog n taken om in te plannen") met de knop Plan je week ernaast: een gewone knop (geen aan/uit-stand) met kalender die een blad opent, en geen los getal',
+    habitsInfo.plan && habitsInfo.plan.inPrompt && habitsInfo.plan.pressed === null && habitsInfo.plan.popup === 'dialog' && habitsInfo.plan.icon && !habitsInfo.plan.badge && /^Nog \d+ taken? om in te plannen$/.test(habitsInfo.plan.message ?? ''), JSON.stringify(habitsInfo.plan));
+  // Plan je week: een blad met per flexibele taak dagen om aan te tikken, en "Verdeel voor mij"
+  await ev(`document.querySelector('#planWeek').click()`);
+  await sleep(700);
+  const planner = await ev(`(() => { const d = document.querySelector('dialog.dialog--planner[open]'); return { open: !!d, rows: d?.querySelectorAll('.planner__row').length ?? 0, days: d?.querySelectorAll('.planner__day').length ?? 0,
+    overflow: d ? d.scrollWidth - d.clientWidth : 1, height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight, actions: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].map((b) => b.textContent) }; })()`);
+  check('Plan je week: een blad met een rij per flexibele taak (acht dagen elk), de knoppen "Verdeel voor mij" en "Klaar", en niet hoger dan het scherm',
+    planner.open && planner.rows >= 8 && planner.days === planner.rows * 8 && planner.overflow <= 0 && planner.height <= planner.vh && planner.actions.includes('Verdeel voor mij') && planner.actions.includes('Klaar'), JSON.stringify(planner));
+  await ev(`[...document.querySelectorAll('dialog.dialog--planner .dialog__actions .button')].find((b) => b.textContent === 'Verdeel voor mij').click()`);
+  await sleep(900);
+  const afterSuggest = await ev(`({ planned: document.querySelectorAll('dialog.dialog--planner .planner__day[aria-pressed="true"]').length, open: !!document.querySelector('dialog.dialog--planner[open]') })`);
+  // één dag weer uitzetten en aanzetten
+  await ev(`document.querySelector('dialog.dialog--planner .planner__day[aria-pressed="true"]').click()`);
+  await sleep(500);
+  const afterToggle = await ev(`document.querySelectorAll('dialog.dialog--planner .planner__day[aria-pressed="true"]').length`);
+  check('Plan je week: "Verdeel voor mij" plant dagen en laat het blad open; een gepland dag is met een tik weer uit te zetten', afterSuggest.open && afterSuggest.planned >= 2 && afterToggle === afterSuggest.planned - 1, JSON.stringify({ afterSuggest, afterToggle }));
+  // op de kleinste schermen met grote tekst
+  await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 568, deviceScaleFactor: 2, mobile: true });
+  await ev(`document.documentElement.style.fontSize = '200%'`);
+  await sleep(500);
+  const plannerSmall = await ev(`(() => { const d = document.querySelector('dialog.dialog--planner[open]'); return { overflow: d ? d.scrollWidth - d.clientWidth : 1, height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight, tiny: [...(d?.querySelectorAll('.planner__day, .dialog__actions .button') ?? [])].filter((b) => b.getBoundingClientRect().height < 44).length }; })()`);
+  check('Plan je week: past op 320 px met 200% tekst, niet hoger dan het scherm en alle knoppen zijn minstens 44 px', plannerSmall.overflow <= 0 && plannerSmall.height <= plannerSmall.vh && plannerSmall.tiny === 0, JSON.stringify(plannerSmall));
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  // opruimen: de taken weer weg, zodat de controles hierna van dezelfde stand uitgaan
+  await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); for (const id of ${JSON.stringify(flexIds)}) { await state.repo.deleteHabit(id); } for (const plan of await state.repo.listDayPlans?.() ?? []) { if (${JSON.stringify(flexIds)}.includes(plan.habitId)) await state.repo.clearDayPlan(plan.habitId, plan.date); } notifyChanged(); })()`);
 
   // "Anders": past geen van de redenen, dan is de toelichting de reden
   await nav('today');
