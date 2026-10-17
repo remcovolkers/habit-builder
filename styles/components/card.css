@@ -340,6 +340,78 @@
   gap: var(--space-2);
 }
 
+/* de compacte kaart in de stapel: icoon, naam met voortgang en één knop op een regel (op een smal scherm of bij grote tekst loopt de knop door naar de volgende regel) */
+.pool-card--compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3);
+}
+
+.pool-card--compact .pool-card__body {
+  flex: 1 1 6rem;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.pool-card--compact .pool-card__icon {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.pool-card--compact .pool-card__icon .theme-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.pool-card--compact .pool-card__actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.pool-card--compact .habit-card__more {
+  flex: none;
+}
+
+/* de stapel in groepen: wat dreigt te falen, de rest, en wat is ingeklapt */
+.pool__group + .pool__group,
+.pool__group + .pool__more,
+.pool__more {
+  margin-top: var(--space-4);
+}
+
+.pool__group-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-kicker);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.pool__group-title--urgent {
+  color: var(--color-warning);
+}
+
+.pool__more-summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--size-tap);
+  margin-bottom: var(--space-2);
+  color: var(--color-accent);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.pool__more[open] > .card-list {
+  margin-top: var(--space-2);
+}
+
 .pool-card__more {
   display: flex;
   justify-content: center;
@@ -384,8 +456,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 24px;
-  padding: 0 var(--space-2);
+  min-height: 24px; /* min en niet vast: bij grote tekst of een smalle rij mag een bolletje over twee regels, zonder dat de tekst uit het vlak loopt */
+  padding: 2px var(--space-2);
   border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
@@ -562,9 +634,43 @@
 
 /* ---- volgorde aanpassen ---- */
 .habits__tools {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
   margin-top: var(--space-3);
+}
+
+.habits__hint {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+/* de statusregel onder een habit: de fase en bij een flexibele taak de voortgang van de week of maand */
+.habit-row__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* tijdens het verplaatsen heeft een rij alleen de naam nodig: de pijlen nemen de ruimte van de statusregel in */
+.habit-row[data-reordering='true'] .habit-row__status {
+  display: none;
+}
+
+.habit-row__progress {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.badge--phase {
+  background: var(--color-accent-10);
+  color: var(--color-accent);
 }
 
 .habit-row[data-reordering='true'] {
@@ -658,4 +764,37 @@
 
 .attention-card .pool-card__name {
   overflow-wrap: anywhere;
+}
+
+/* "Nog 2 taken om in te plannen" met de knop Plan je week ernaast (op Habits bij Flexibel en op Vandaag bij de stapel) */
+.plan-prompt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
+}
+
+.plan-prompt--needed {
+  border-color: var(--color-border);
+  background: var(--color-accent-10);
+}
+
+.plan-prompt__text {
+  display: grid;
+  flex: 1 1 11rem;
+  gap: 2px;
+  margin: 0;
+  min-width: 0;
+  font-size: var(--font-size-sm);
+}
+
+.plan-prompt__hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
 }

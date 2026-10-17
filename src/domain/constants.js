@@ -98,3 +98,9 @@ export const MISS_GRACE = 1;
 /** Een teller die je half haalde levert deze fractie van een taak op en kost geen minpunten. */
 export const PARTIAL_FRACTION = 0.5;
 export const SOCIAL_ACTIVE_DAYS = 3;
+
+/**
+ * Een flexibele taak (N× per week of maand) "dreigt te falen" zodra het deel van de periode dat nog over is kleiner is dan TIGHT_RATIO
+ * keer het deel van de afspraak dat nog moet. Donderdag 0 van 2 in de week: 4 van 7 dagen over (57%) tegen 100% nog te doen: krap.
+ */
+export const TIGHT_RATIO = 0.6;

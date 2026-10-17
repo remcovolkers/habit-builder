@@ -24,6 +24,7 @@ const ICONS = {
   addSquare: [['rect', { x: 4, y: 4, width: 16, height: 16, rx: 3 }], ['path', { d: 'M12 8.5v7M8.5 12h7' }]],
   menu: [['circle', { cx: 12, cy: 5, r: 1.2 }], ['circle', { cx: 12, cy: 12, r: 1.2 }], ['circle', { cx: 12, cy: 19, r: 1.2 }]],
   install: [['path', { d: 'M12 3v12M8 11l4 4 4-4' }], ['path', { d: 'M5 20h14' }]],
+  calendar: [['rect', { x: 3.5, y: 5, width: 17, height: 15.5, rx: 3 }], ['path', { d: 'M8 3v4M16 3v4M3.5 10h17' }]],
 };
 
 /** icon('check', { strokeWidth: 3 }) -> <svg aria-hidden> */

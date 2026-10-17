@@ -3,6 +3,7 @@ import { startOfWeek } from '../domain/dates.js';
 import { DAYPARTS } from '../domain/habit.js';
 import { donePartsOf, habitDayparts, hasMultipleDayparts } from '../domain/dayparts.js';
 import { paceOn } from '../domain/pace.js';
+import { isTight } from '../domain/tight.js';
 import { canBackfill } from '../domain/rules.js';
 import { buildToday } from '../domain/today.js';
 
@@ -78,9 +79,15 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
     entries: entries.filter((e) => habitDayparts(e.habit).includes(daypart)).map((e) => forPart(e, daypart)),
   })).filter((g) => g.entries.length > 0);
 
-  const pool = day.pool.map(attach).sort(
+  // een taak in de stapel dreigt te falen als het echt niet meer kan (atRisk) of al krap wordt (domain/tight.js); die komen bovenaan
+  const withUrgency = (entry) => {
+    const tight = !entry.satisfied && isTight({ count: entry.count, target: entry.target, remainingDays: entry.remainingDays, days: entry.unit.days });
+    return { ...entry, tight, urgent: !entry.satisfied && (entry.atRisk || tight) };
+  };
+  const pool = day.pool.map(attach).map(withUrgency).sort(
     (a, b) =>
       Number(a.satisfied) - Number(b.satisfied) ||
+      Number(b.urgent) - Number(a.urgent) ||
       Number(b.atRisk) - Number(a.atRisk) ||
       a.remainingDays - b.remainingDays ||
       byHabitOrder(a, b),

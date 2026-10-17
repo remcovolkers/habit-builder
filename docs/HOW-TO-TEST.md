@@ -162,6 +162,16 @@ Gebruik het lege account (G) of een schone browser; de vlag staat lokaal (`hb-in
 8. **Scrollen**: op elke stap blijven de stippen en de titel staan terwijl je de inhoud scrolt; er is geen scrollbalk, de inhoud smelt aan de rand weg en de pagina erachter beweegt niet. Probeer ook een liggende telefoon: daar scrolt de hele pagina.
 9. **Grote tekst**: alles op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout` controleert dit).
 
+## N. Flexibele taken: Habits, de stapel en Plan je week (docs/FLEXIBELE-TAKEN.md)
+
+Gebruik het gevulde account (A). Het stub-account heeft vier flexibele taken (Hardlopen, Bed opmaken, Gitaar spelen, Gordijnen wassen).
+
+1. **Habits**: boven de lijst staat één werkbalk (Volgorde, Pauzeer alles); alleen Volgorde heeft een aan/uit-stand (dan staat er "Klaar"). Bij de groep Flexibel staat een melding in woorden, "Nog n taken om in te plannen", met de knop **Plan je week** ernaast (een kalender, geen aan/uit-stand; hij opent een blad). Is alles gepland of gedaan, dan staat er "Alles is ingepland of gedaan". Gepauzeerde taken (Yoga in het testaccount) tellen niet mee. De lijst heeft de groepen **Vaste dagen** en **Flexibel**. Elke rij heeft een statusregel (bijvoorbeeld "Opbouw · dag 41") en bij een flexibele taak de voortgang van de week of maand.
+2. **Dreigt te falen** (op Habits en op Vandaag): een taak waarvan nog niets gedaan is, krijgt de waarschuwing zodra het deel van de periode dat over is kleiner is dan 60% van wat nog moet. Donderdag 0 van 2 in de week: ja; met één keer gedaan: nee; woensdag 0 van 2: nog niet.
+3. **Vandaag, de stapel**: compacte kaarten met één knop (＋ Vandaag). Onder **Dreigt te falen** staat wat krap is, onder **Verder deze week** de rest. Met meer dan vier taken zit de rest ingeklapt onder "Nog n taken tonen". Achter ⋯ staan "Andere dag…" en "Al gedaan".
+4. **Plan je week** (op Habits bij Flexibel, en bij de stapel op Vandaag): per flexibele taak acht dagknoppen. Tik een dag aan en hij staat daarna op Vandaag van die dag. "Verdeel voor mij" plant wat nog ontbreekt, uit elkaar en niet allemaal op dezelfde dag.
+5. **Grote tekst**: de stapel en het blad op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout`).
+
 ## Automatische controles
 
 ```

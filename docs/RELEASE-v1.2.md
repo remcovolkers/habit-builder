@@ -14,6 +14,7 @@ Algemene werkwijze: [WERKWIJZE.md](WERKWIJZE.md).
 | Desktop-schil met kolommen die zelf scrollen | [SCROLLEN.md](SCROLLEN.md) |
 | **Onboarding** (stijl kiezen, een dag, de app installeren, de eerste habit) en **Zo werkt het** | [ONBOARDING.md](ONBOARDING.md) |
 | **Meerdere dagdelen** per habit (tandenpoetsen 's ochtends en 's avonds) | [DATAMODEL.md](DATAMODEL.md) |
+| **Flexibele taken**: compacte stapel, "Dreigt te falen", Plan je week en een verbeterd Habits-scherm | [FLEXIBELE-TAKEN.md](FLEXIBELE-TAKEN.md) |
 | Teller voor de ontwikkelaar (aantal gebruikers, vandaag actief) | migratie `0006_dev_usage.sql` |
 
 ## 1. Proberen op echte telefoons (Jij)
