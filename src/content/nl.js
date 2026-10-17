@@ -307,6 +307,7 @@ export const nl = {
       off: 'Ontwikkelaarsopties staan uit',
       title: 'Ontwikkelaar',
       turnOff: 'Ontwikkelaarsopties uitzetten',
+      usage: (users, activeToday) => `Gebruikers buiten jou: ${users} · vandaag actief: ${activeToday}`,
     },
     title: 'Instellingen',
     legal: {

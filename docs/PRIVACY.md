@@ -41,6 +41,8 @@ Uitsluitend om de app te laten werken: je habits tonen, je voortgang berekenen, 
 
 De gegevens voor vrienden en de ranglijst gebruik ik alleen om die functie te laten werken: vrienden vinden en bevestigen, en jullie punten naast elkaar zetten. De grondslag is je **toestemming**: je zet het zelf aan en kunt het op elk moment uitzetten.
 
+Als beheerder van de app kan ik zien **hoeveel** accounts er zijn en hoeveel daarvan vandaag iets hebben gesynchroniseerd. Dat zijn alleen aantallen, zonder namen of e-mailadressen, en er wordt er niets extra voor bewaard.
+
 ## Met wie gedeeld
 
 Alleen met de diensten die de app laten draaien (verwerkers):

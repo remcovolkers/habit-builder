@@ -3,6 +3,8 @@ import { reloadSettings, saveSettings, state } from '../state.js';
 import { openDialog } from '../components/dialog.js';
 import { accountCard } from '../components/account-card.js';
 import { account, onAccountChanged } from '../account.js';
+import * as auth from '../../data/auth.js';
+import { fetchDevUsage } from '../../data/dev-usage.js';
 import { installCard } from '../components/install-card.js';
 import { reminderCard } from '../components/reminder-card.js';
 import { THEMES, THEME_IDS, themeFor } from '../../app/themes.js';
@@ -112,6 +114,27 @@ function legalSection() {
 }
 
 /**
+ * Eén regel met hoeveel mensen buiten jou de app gebruiken (alleen als je bent ingelogd en de server je als beheerder kent; anders blijft de
+ * regel weg). Het antwoord wordt één keer opgehaald per keer dat de ontwikkelaarsopties getoond worden.
+ */
+function devUsageLine() {
+  const line = h('p', { class: 'field__hint', id: 'devUsage', role: 'status', hidden: true });
+  let asked = false;
+  const load = () => {
+    if (asked || account.status !== 'signed-in') return;
+    asked = true;
+    fetchDevUsage(() => auth.getClient()).then((usage) => {
+      if (!usage) return;
+      line.textContent = nl.settings.dev.usage(usage.users, usage.activeToday);
+      line.hidden = false;
+    });
+  };
+  load();
+  const stop = onAccountChanged(() => (line.isConnected ? load() : stop()));
+  return line;
+}
+
+/**
  * De versieregel onderaan. Zeven keer tikken zet de ontwikkelaarsopties aan of uit (zoals op Android); anderen zien alleen een versienummer.
  */
 function versionLine() {
@@ -122,6 +145,7 @@ function versionLine() {
     fill(dev, isDev()
       ? h('div', { class: 'stack' },
         h('p', { class: 'field__hint', id: 'devOn' }, nl.settings.dev.on),
+        devUsageLine(),
         h('button', { type: 'button', id: 'devOff', class: 'button button--ghost button--block', onclick: () => { setDev(false); showToast({ message: nl.settings.dev.off }); } }, nl.settings.dev.turnOff))
       : null);
   };
