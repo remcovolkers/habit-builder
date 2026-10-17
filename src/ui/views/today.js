@@ -14,6 +14,8 @@ import { weekStrip } from '../components/week-strip.js';
 import { buildWeekStrip } from '../../app/overview.js';
 import { uiIcon } from '../components/habit-icon.js';
 import { account, dismissNudge, nudgeDismissed, nudgeElement } from '../account.js';
+import { openFeedbackSheet } from '../components/feedback-sheet.js';
+import { feedbackInviteDue, snoozeFeedbackInvite } from '../feedback-state.js';
 import { clearFirstTip, firstTipPending } from '../intro.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
@@ -296,7 +298,24 @@ function renderDay(view, week, attention, toPlan = 0) {
       h('h2', { class: 'section__title' }, celebrate ? nl.today.sideDone : nl.today.sideTip),
       celebrate ? h('span', { class: 'xs muted' }, nl.today.sectionCount(view.progress.done, view.progress.total)) : null)
     : null;
-  const side = [sideHead, poolSection, nudge, celebrate].filter(Boolean);
+  // Een rustige uitnodiging voor feedback, onderaan en nooit tijdens het afvinken: pas na een week gebruik, niet naast het zetje om in te loggen,
+  // en na "Niet nu" of openen weer maanden stil (docs/FEEDBACK.md)
+  const feedbackInvite = !nudge && view.hasHabits && view.mode === 'today' && feedbackInviteDue()
+    ? (() => {
+      const f = nl.feedback.invite;
+      const card = h('div', { class: 'banner feedback-invite', id: 'feedbackInvite', role: 'region', 'aria-label': f.title },
+        h('strong', null, f.title),
+        h('p', { class: 'feedback-invite__text' }, f.text),
+        h('div', { class: 'feedback-invite__actions' },
+          h('button', {
+            type: 'button', id: 'feedbackInviteYes', class: 'button button--secondary button--small',
+            onclick: () => { snoozeFeedbackInvite(); card.remove(); openFeedbackSheet({ opener: document.getElementById('app') }); },
+          }, f.yes),
+          h('button', { type: 'button', id: 'feedbackInviteLater', class: 'button button--ghost button--small', onclick: () => { snoozeFeedbackInvite(); card.remove(); } }, f.later)));
+      return card;
+    })()
+    : null;
+  const side = [sideHead, poolSection, nudge, feedbackInvite, celebrate].filter(Boolean);
   return h('div', { class: 'today__inner page__frame' },
     header(view, week),
     banner(view),

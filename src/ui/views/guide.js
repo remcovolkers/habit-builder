@@ -4,6 +4,7 @@ import { nl } from '../../content/nl.js';
 import { GUIDE_SECTIONS } from '../../content/guide.js';
 import { rhythmList } from '../components/rhythm-guide.js';
 import { INTRO_HASH } from '../intro.js';
+import { openFeedbackSheet } from '../components/feedback-sheet.js';
 
 const g = nl.guide;
 
@@ -22,5 +23,9 @@ export function guideView() {
           section.types ? rhythmList() : null)),
         h('section', { class: 'section guide__section' },
           h('p', { class: 'section__hint' }, g.replayHint),
-          h('a', { class: 'button button--secondary button--block', id: 'replayIntro', href: INTRO_HASH }, g.replay)))));
+          h('a', { class: 'button button--secondary button--block', id: 'replayIntro', href: INTRO_HASH }, g.replay)),
+        // Zo werkt het is de plek waar je merkt dat iets onduidelijk is: hier mag je dat meteen laten weten
+        h('section', { class: 'section guide__section' },
+          h('p', { class: 'section__hint' }, nl.feedback.guideHint),
+          h('button', { type: 'button', id: 'guideFeedback', class: 'button button--ghost button--block', 'aria-haspopup': 'dialog', onclick: (event) => openFeedbackSheet({ opener: event.currentTarget }) }, nl.feedback.title)))));
 }

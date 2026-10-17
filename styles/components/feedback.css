@@ -1,0 +1,201 @@
+/* Feedback (docs/FEEDBACK.md): het blad voor gebruikers, de uitnodiging op Vandaag, de regel in de zijbalk en het tabje voor de beheerder */
+
+/* het blad: handvat, titel en knoppen blijven staan, het formulier scrolt zonder zichtbare balk */
+.dialog--feedback[open] {
+  display: flex;
+  flex-direction: column;
+  max-height: 88svh;
+  overflow: hidden;
+}
+
+.dialog--feedback .feedback-form {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: var(--space-3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.dialog--feedback .feedback-form::-webkit-scrollbar {
+  display: none;
+}
+
+.dialog--feedback .dialog__actions {
+  flex: none;
+  margin-top: var(--space-3);
+}
+
+.feedback-form__context {
+  margin: 0;
+}
+
+/* de uitnodiging onderaan Vandaag: een rustige kaart, geen pop-up */
+.feedback-invite {
+  display: grid;
+  gap: var(--space-2);
+  border-color: var(--color-border);
+}
+
+.feedback-invite__text {
+  margin: 0;
+}
+
+.feedback-invite__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* een stille regel onderaan de zijbalk op de computer (op de telefoon staat feedback onder Instellingen) */
+.sidebar__feedback {
+  display: none;
+}
+
+/* het tabje voor de beheerder: nooit op de telefoon en de tablet, op de computer alleen als de server zegt dat je beheerder bent */
+.tabbar__item--dev {
+  display: none !important;
+}
+
+.tabbar__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  margin-left: auto;
+  padding: 0 var(--space-1);
+  background: var(--color-accent);
+  border-radius: var(--radius-full);
+  color: var(--color-on-accent);
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+}
+
+@media (min-width: 960px) {
+  .sidebar__feedback {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: auto;
+    min-height: var(--size-tap);
+    padding: 0 var(--space-3);
+    background: none;
+    border: 0;
+    border-radius: var(--radius-button);
+    color: var(--color-text-muted);
+    font: inherit;
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+  }
+
+  .sidebar__feedback svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex: none;
+  }
+
+  .sidebar__feedback:hover {
+    background: var(--color-accent-10);
+    color: var(--color-text);
+  }
+
+  .tabbar__item--dev:not([hidden]) {
+    display: flex !important;
+  }
+}
+
+/* de lijst voor de beheerder */
+.feedback-admin__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.feedback-admin__kind {
+  width: auto;
+  min-width: 10rem;
+}
+
+.feedback-admin__empty {
+  margin: var(--space-6) 0;
+  color: var(--color-text-muted);
+}
+
+.feedback-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedback-item {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.feedback-item[data-status='done'] {
+  border-color: var(--color-hairline);
+  opacity: 0.7;
+}
+
+.feedback-item__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.feedback-item__when {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.feedback-item__new {
+  margin-left: auto;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-kicker);
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.feedback-item__body {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.feedback-item__meta {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.feedback-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.badge--kind {
+  background: var(--color-accent-10);
+  color: var(--color-accent);
+}
+
+.badge--kind-problem {
+  background: var(--color-warning-12);
+  color: var(--color-warning);
+}
+
+.badge--kind-question {
+  background: var(--color-elevated);
+  color: var(--color-text);
+}

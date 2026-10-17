@@ -6,7 +6,7 @@ Functioneel testen op de lokale omgeving met de twee testaccounts. Achtergrond e
 
 ```
 npm run db:start            # Docker Desktop moet draaien
-npm run dev:seed            # maakt stub@example.com (gevuld) en leeg@example.com (leeg)
+npm run dev:seed            # maakt stub@example.com (gevuld), leeg@example.com (leeg) en beheer@example.com (beheerder, voor het tabje Feedback)
 npm run serve               # de app op http://localhost:5173/
 ```
 
@@ -171,6 +171,20 @@ Gebruik het gevulde account (A). Het stub-account heeft vier flexibele taken (Ha
 3. **Vandaag, de stapel**: compacte kaarten met één knop (＋ Vandaag). Onder **Dreigt te falen** staat wat krap is, onder **Verder deze week** de rest. Met meer dan vier taken zit de rest ingeklapt onder "Nog n taken tonen". Achter ⋯ staan "Andere dag…" en "Al gedaan".
 4. **Plan je week** (op Habits bij Flexibel, en bij de stapel op Vandaag): per flexibele taak acht dagknoppen. Tik een dag aan en hij staat daarna op Vandaag van die dag. "Verdeel voor mij" plant wat nog ontbreekt, uit elkaar en niet allemaal op dezelfde dag.
 5. **Grote tekst**: de stapel en het blad op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout`).
+
+## O. Feedback (docs/FEEDBACK.md)
+
+Heeft een draaiende Supabase nodig met migratie 0007 (lokaal doet `npm run db:start` dat zelf; een bestaande lokale database bijwerken kan met `npm run db:reset`). Voor het tabje log je lokaal in als `beheer@example.com` (`npm run dev:admin` maakt dat account, code via `npm run dev:code -- beheer`); in productie moet je jezelf in `app_admins` zetten (zie de release-checklist).
+
+1. **Instellingen → Feedback geven**: een blad met vier soorten (Idee, Probleem, Vraag, Compliment), een tekstvak met teller en "Dit gaat mee: de pagina (#/settings) en de versie van de app". Versturen zonder soort of tekst geeft meldingen en laat het blad open. **Annuleren** brengt je terug op Instellingen, met de focus op de knop.
+2. **Zonder account** (anoniem): kies een soort, schrijf iets, **Versturen**: een bedankje. Er is geen mailvinkje.
+3. **Met account**: er staat een vinkje "Je mag me hierover mailen". Stuur één bericht met en één zonder het vinkje.
+4. **Zonder verbinding** (vliegtuigmodus): versturen geeft "Geen verbinding. Je tekst staat nog hier"; het blad blijft open en je tekst staat er nog. Zet de verbinding weer aan en verstuur opnieuw.
+5. **Zijbalk (computer)**: onderaan staat de stille regel "Feedback geven"; die opent hetzelfde blad. Op de telefoon staat die regel er niet.
+6. **Zo werkt het** (onderaan): "Mis je iets of is iets onduidelijk?" met dezelfde knop.
+7. **De uitnodiging op Vandaag**: zet in de console `localStorage.setItem('hb-first-run', Date.now() - 10 * 864e5)` en `localStorage.setItem('hb-nudge-dismissed', '1')` en open Vandaag: onderaan staat "Hoe bevalt de app tot nu toe?". "Niet nu" laat hem verdwijnen en hij komt de eerste 28 dagen niet terug. In de eerste week (en naast het zetje om in te loggen) verschijnt hij niet.
+8. **Het tabje voor jou** (alleen op de computer, ingelogd als beheerder): in de zijbalk staat **Feedback** met het aantal nieuwe berichten. De lijst heeft de filters Nieuw, Afgehandeld en Alles (met aantallen) en een soort. Per bericht: soort, datum, tekst, afzender ("Anoniem" of een mailadres), pagina en versie. **Afgehandeld** verplaatst het bericht; **Verwijderen** vraagt eerst om bevestiging. Een gewone gebruiker ziet het tabje niet; opent hij `#/feedback` toch, dan staat er dat het alleen voor de beheerder is.
+9. **Grote tekst**: het blad op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout` controleert dit, ook met een nagebootste server voor jouw lijst).
 
 ## Automatische controles
 

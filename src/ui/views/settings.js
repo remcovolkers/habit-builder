@@ -17,6 +17,8 @@ import { MAX_DAY_START_HOUR } from '../../domain/constants.js';
 import { nl } from '../../content/nl.js';
 import { config } from '../../config.js';
 import { createTapCounter, isDev, onDevChanged, setDev } from '../dev.js';
+import { openFeedbackSheet } from '../components/feedback-sheet.js';
+import { icon } from '../svg.js';
 
 function timeZones() {
   const zones = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : [];
@@ -88,6 +90,17 @@ function themeSection() {
 }
 
 /** Zo werkt het: de naslag bij de app (docs/ONBOARDING.md O1). */
+/** Feedback geven (docs/FEEDBACK.md): op de telefoon staat het hier, op de computer ook in de zijbalk. Het blad opent boven Instellingen. */
+function feedbackSection() {
+  const f = nl.feedback;
+  const button = h('button', { type: 'button', id: 'feedbackOpen', class: 'button button--secondary button--block', 'aria-haspopup': 'dialog', onclick: () => openFeedbackSheet({ opener: button }) },
+    icon('feedback'), f.title);
+  return h('section', { class: 'section' },
+    h('h2', { class: 'section__title' }, f.settingsTitle),
+    h('p', { class: 'section__hint' }, f.settingsHint),
+    button);
+}
+
 function guideSection() {
   const g = nl.guide;
   return h('section', { class: 'section' },
@@ -206,6 +219,7 @@ export function settingsView() {
       h('button', { type: 'submit', class: 'button button--primary button--block' }, nl.settings.save)),
     backupSection(),
     guideSection(),
+    feedbackSection(),
     legalSection(),
     versionLine())));
 }

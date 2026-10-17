@@ -627,6 +627,140 @@ async function main() {
   await ev(`document.documentElement.style.fontSize = '100%'`);
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
 
+  // Feedback (docs/FEEDBACK.md). Het blad opent boven de huidige pagina, controleert de invoer, houdt je tekst bij een fout en geeft de focus terug.
+  const fbButtons = (label) => `[...document.querySelectorAll('dialog.dialog--feedback .dialog__actions .button')].find((b) => b.textContent === '${label}')`;
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await settle('settings');
+  await ev(`document.querySelector('#feedbackOpen').click()`);
+  await sleep(500);
+  const fbSheet = await ev(`(() => { const d = document.querySelector('dialog.dialog--feedback[open]'); return { open: !!d, kinds: d?.querySelectorAll('input[name="feedbackKind"]').length ?? 0, hash: location.hash, contact: !!d?.querySelector('#feedbackContact'),
+    context: d?.querySelector('.feedback-form__context')?.textContent ?? '', height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight, overflow: d ? d.scrollWidth - d.clientWidth : 1 }; })()`);
+  await ev(`${fbButtons('Versturen')}.click()`);
+  await sleep(300);
+  const fbEmpty = await ev(`({ open: !!document.querySelector('dialog.dialog--feedback[open]'), errors: [...document.querySelectorAll('dialog.dialog--feedback .field__error:not([hidden])')].map((e) => e.textContent) })`);
+  await send('Network.enable');
+  await send('Network.emulateNetworkConditions', { offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 }); // nooit echt versturen vanuit een controle
+  await ev(`(() => { document.querySelector('input[name="feedbackKind"][value="idea"]').click(); const t = document.querySelector('#feedbackText'); t.value = 'Een donker thema graag'; t.dispatchEvent(new Event('input')); })()`);
+  await ev(`${fbButtons('Versturen')}.click()`);
+  await sleep(1500);
+  const fbOffline = await ev(`({ open: !!document.querySelector('dialog.dialog--feedback[open]'), text: document.querySelector('#feedbackText')?.value, errors: [...document.querySelectorAll('dialog.dialog--feedback .field__error:not([hidden])')].map((e) => e.textContent) })`);
+  await send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+  await ev(`${fbButtons('Annuleren')}.click()`);
+  await sleep(400);
+  const fbClosed = await ev(`({ open: !!document.querySelector('dialog[open]'), hash: location.hash, focus: document.activeElement?.id ?? '' })`);
+  check('feedback vanuit Instellingen: een blad met vier soorten (zonder mailvinkje zonder account) en de context die meegaat, de pagina blijft Instellingen, en het past op het scherm',
+    fbSheet.open && fbSheet.kinds === 4 && fbSheet.hash === '#/settings' && !fbSheet.contact && fbSheet.context.includes('#/settings') && fbSheet.context.includes('1.2') && fbSheet.height <= fbSheet.vh && fbSheet.overflow <= 0, JSON.stringify(fbSheet));
+  check('feedback: leeg versturen geeft twee meldingen en laat het blad open; zonder verbinding komt er een melding, het blad blijft open en je tekst blijft staan; annuleren geeft de focus terug',
+    fbEmpty.open && fbEmpty.errors.length === 2 && fbOffline.open && fbOffline.text === 'Een donker thema graag' && fbOffline.errors.length === 1 && /probeer het zo opnieuw/.test(fbOffline.errors[0])
+      && !fbClosed.open && fbClosed.hash === '#/settings' && fbClosed.focus === 'feedbackOpen', JSON.stringify({ fbEmpty, fbOffline, fbClosed }));
+  // op de kleinste schermen met grote tekst
+  await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 568, deviceScaleFactor: 2, mobile: true });
+  await ev(`document.documentElement.style.fontSize = '200%'`);
+  await sleep(400);
+  await ev(`document.querySelector('#feedbackOpen').click()`);
+  await sleep(500);
+  const fbSmall = await ev(`(() => { const d = document.querySelector('dialog.dialog--feedback[open]'); return { open: !!d, overflow: d ? d.scrollWidth - d.clientWidth : 1, height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight,
+    tiny: [...(d?.querySelectorAll('.dialog__actions .button, .choice__face') ?? [])].filter((b) => b.getBoundingClientRect().height < 44).length }; })()`);
+  check('feedback: het blad past op 320 px met 200% tekst, niet hoger dan het scherm, en alle knoppen zijn minstens 44 px', fbSmall.open && fbSmall.overflow <= 0 && fbSmall.height <= fbSmall.vh && fbSmall.tiny === 0, JSON.stringify(fbSmall));
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  // ook onderaan Zo werkt het
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await settle('uitleg');
+  await ev(`document.querySelector('#guideFeedback').click()`);
+  await sleep(400);
+  const fbGuide = await ev(`({ open: !!document.querySelector('dialog.dialog--feedback[open]'), hash: location.hash })`);
+  check('feedback: onderaan Zo werkt het opent hetzelfde blad zonder weg te gaan van de pagina', fbGuide.open && fbGuide.hash === '#/uitleg', JSON.stringify(fbGuide));
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+
+  // de zijbalk en het tabje voor de beheerder: alleen op de computer
+  const fbVisible = (selector) => `(() => { const e = document.querySelector('${selector}'); if (!e) return null; const s = getComputedStyle(e); const r = e.getBoundingClientRect(); return { display: s.display, shown: s.display !== 'none' && r.width > 0 && r.height > 0, bottom: Math.round(r.bottom) }; })()`;
+  const phoneLink = await ev(fbVisible('#feedbackLink'));
+  await ev(`document.querySelector('#feedbackTab').hidden = false`); // alsof de server zegt dat je beheerder bent: op de telefoon blijft het tabje toch weg
+  const phoneTab = await ev(fbVisible('#feedbackTab'));
+  await ev(`document.querySelector('#feedbackTab').hidden = true`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+  await settle('today');
+  const deskLink = await ev(fbVisible('#feedbackLink'));
+  const deskTabHidden = await ev(fbVisible('#feedbackTab'));
+  await ev(`document.querySelector('#feedbackTab').hidden = false`);
+  const deskTabShown = await ev(fbVisible('#feedbackTab'));
+  await ev(`document.querySelector('#feedbackTab').hidden = true`);
+  await ev(`document.querySelector('#feedbackLink').click()`);
+  await sleep(500);
+  const deskSheet = await ev(`({ open: !!document.querySelector('dialog.dialog--feedback[open]'), sidebarVisible: getComputedStyle(document.querySelector('.sidebar')).display !== 'none' })`);
+  await ev(`${fbButtons('Annuleren')}.click()`);
+  await sleep(400);
+  const deskFocus = await ev(`document.activeElement?.id ?? ''`);
+  check('feedback: op de telefoon geen regel in de zijbalk en nooit het tabje Feedback; op de computer wel de regel onderaan de zijbalk (die het blad opent), en het tabje alleen voor de beheerder',
+    phoneLink && !phoneLink.shown && phoneTab && !phoneTab.shown && deskLink.shown && deskLink.bottom > 700 && deskTabHidden && !deskTabHidden.shown && deskTabShown.shown && deskSheet.open && deskFocus === 'feedbackLink',
+    JSON.stringify({ phoneLink, phoneTab, deskLink, deskTabHidden, deskTabShown, deskSheet, deskFocus }));
+
+  // het tabje Feedback voor de beheerder (met een nagebootste server): zonder beheerder een melding, met beheerder de lijst met filters, afhandelen en verwijderen
+  await settle('feedback');
+  const notAdmin = await ev(`document.querySelector('#feedbackOnlyAdmin')?.textContent ?? null`);
+  await ev(`(async () => { const { admin } = await import('/src/ui/admin.js'); const auth = await import('/src/data/auth.js'); const client = await auth.getClient();
+    const row = (id, kind, body, status, mail) => ({ id, created_at: new Date().toISOString(), kind, body, route: '#/habits', app_version: '1.2', user_id: null, contact_email: mail, status, handled_at: null });
+    const rows = [row('1', 'idea', 'Een donker thema graag', 'new', null), row('2', 'problem', 'Het scherm hapert', 'new', 'anna@x.nl'), row('3', 'compliment', 'Mooie app', 'done', null)];
+    window.__fbRows = rows; window.__fbCalls = [];
+    client.rpc = async (fn, args) => { window.__fbCalls.push(fn);
+      if (fn === 'feedback_list') return { data: rows.map((r) => ({ ...r })), error: null };
+      if (fn === 'feedback_set_status') { const r = rows.find((x) => x.id === args.p_id); if (r) r.status = args.p_status; return { data: Boolean(r), error: null }; }
+      if (fn === 'feedback_delete') { const i = rows.findIndex((x) => x.id === args.p_id); if (i >= 0) rows.splice(i, 1); return { data: i >= 0, error: null }; }
+      return { data: null, error: null }; };
+    admin.status = 'yes'; })()`);
+  await settle('habits');
+  await settle('feedback');
+  await sleep(600);
+  const adminState = () => ev(`({ items: document.querySelectorAll('.feedback-item').length, tabs: [...document.querySelectorAll('input[name="feedbackStatus"]')].map((i) => i.nextElementSibling.textContent),
+    mail: document.querySelector('.feedback-item a[href^="mailto:"]')?.getAttribute('href') ?? null, anonymous: [...document.querySelectorAll('.feedback-item__meta')].some((m) => m.textContent.startsWith('Anoniem')),
+    clipped: (() => { const m = document.querySelector('.app__main'); return getComputedStyle(m).overflowY === 'hidden' ? m.scrollHeight - m.clientHeight : 0; })() })`);
+  const adminFirst = await adminState();
+  await ev(`document.querySelector('.feedback-item .button--secondary').click()`); // het eerste bericht afhandelen
+  await sleep(600);
+  const adminAfterDone = await adminState();
+  await ev(`document.querySelector('input[name="feedbackStatus"][value="all"]').click()`);
+  await sleep(300);
+  const adminAll = await adminState();
+  await ev(`(() => { const s = document.querySelector('#feedbackKind'); s.value = 'compliment'; s.dispatchEvent(new Event('change')); })()`);
+  await sleep(300);
+  const adminKind = await adminState();
+  await ev(`(() => { const s = document.querySelector('#feedbackKind'); s.value = 'all'; s.dispatchEvent(new Event('change')); })()`);
+  await sleep(300);
+  await ev(`[...document.querySelectorAll('.feedback-item .button--ghost')][0].click()`); // verwijderen vraagt eerst om bevestiging
+  await sleep(400);
+  const confirm = await ev(`({ open: !!document.querySelector('dialog[open]'), rows: window.__fbRows.length })`);
+  await ev(`[...document.querySelectorAll('dialog[open] .dialog__actions .button')].find((b) => b.textContent === 'Verwijderen').click()`);
+  await sleep(700);
+  const afterDelete = await ev(`({ rows: window.__fbRows.length, calls: window.__fbCalls.filter((c) => c !== 'feedback_list') })`);
+  check('Feedback (beheerder): zonder beheerdersrechten staat er een melding; met rechten een lijst met Nieuw (2), Afgehandeld (1) en Alles (3), een mailto-link en "Anoniem", en niets wordt afgeknipt',
+    notAdmin !== null && adminFirst.items === 2 && adminFirst.tabs.join('|') === 'Nieuw (2)|Afgehandeld (1)|Alles (3)' && adminFirst.mail === 'mailto:anna@x.nl' && adminFirst.anonymous && adminFirst.clipped <= 1, JSON.stringify({ notAdmin, adminFirst }));
+  check('Feedback (beheerder): afhandelen verplaatst het bericht naar Afgehandeld, filteren op soort werkt, en verwijderen vraagt eerst om bevestiging en haalt het dan weg',
+    adminAfterDone.items === 1 && adminAfterDone.tabs[0] === 'Nieuw (1)' && adminAll.items === 3 && adminKind.items === 1 && confirm.open && confirm.rows === 3 && afterDelete.rows === 2
+      && afterDelete.calls.join(',') === 'feedback_set_status,feedback_delete', JSON.stringify({ adminAfterDone, adminAll, adminKind, confirm, afterDelete }));
+  await ev(`(async () => { const { admin } = await import('/src/ui/admin.js'); const auth = await import('/src/data/auth.js'); const client = await auth.getClient(); delete client.rpc; admin.status = 'no'; })()`);
+  await send('Network.disable');
+
+  // De uitnodiging voor feedback onderaan Vandaag: pas na een week gebruik, niet naast het zetje om in te loggen, en na "Niet nu" een tijd stil
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await ev(`(() => { localStorage.setItem('hb-nudge-dismissed', '1'); localStorage.setItem('hb-first-run', String(Date.now() - 3 * 864e5)); localStorage.removeItem('hb-feedback-asked'); localStorage.removeItem('hb-feedback-sent'); })()`);
+  await settle('today');
+  const inviteEarly = await ev(`!!document.querySelector('#feedbackInvite')`);
+  await ev(`localStorage.setItem('hb-first-run', String(Date.now() - 10 * 864e5))`);
+  await settle('habits');
+  await settle('today');
+  const inviteLate = await ev(`(() => { const c = document.querySelector('#feedbackInvite'); return { shown: !!c, buttons: c ? [...c.querySelectorAll('button')].map((b) => b.textContent) : [], tiny: c ? [...c.querySelectorAll('button')].filter((b) => b.getBoundingClientRect().height < 44).length : 0 }; })()`);
+  await ev(`document.querySelector('#feedbackInviteLater').click()`);
+  await sleep(300);
+  const inviteGone = await ev(`({ shown: !!document.querySelector('#feedbackInvite'), asked: localStorage.getItem('hb-feedback-asked') !== null })`);
+  await settle('habits');
+  await settle('today');
+  const inviteStillGone = await ev(`!!document.querySelector('#feedbackInvite')`);
+  check('feedback: de uitnodiging onderaan Vandaag komt niet in de eerste week, daarna met "Feedback geven" en "Niet nu" (minstens 44 px), verdwijnt na "Niet nu" en komt dan niet terug',
+    inviteEarly === false && inviteLate.shown && inviteLate.buttons.join('|') === 'Feedback geven|Niet nu' && inviteLate.tiny === 0 && !inviteGone.shown && inviteGone.asked && inviteStillGone === false, JSON.stringify({ inviteEarly, inviteLate, inviteGone, inviteStillGone }));
+  // terug naar de beginstand voor de controles hierna
+  await ev(`(() => { localStorage.removeItem('hb-nudge-dismissed'); localStorage.removeItem('hb-feedback-asked'); localStorage.removeItem('hb-feedback-sent'); localStorage.setItem('hb-first-run', String(Date.now())); })()`);
+
   // De stapel (flexibele taken): compacte kaarten, wat dreigt te falen bovenaan, de rest ingeklapt; Habits met een werkbalk en een statusregel; en Plan je week.
   const flexIds = await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); const ids = [];
     const base = { icon: '💧', color: 'c2', daypart: 'anytime', status: 'active', startDate: '2026-01-01', endDate: null, graduationDays: 66, maintenance: false, counter: null };

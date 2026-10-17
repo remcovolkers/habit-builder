@@ -7,6 +7,7 @@ import { dueDateInMonth } from '../../src/domain/schedule.js';
 
 export const STUB_EMAIL = 'stub@example.com';
 export const EMPTY_EMAIL = 'leeg@example.com';
+export const ADMIN_EMAIL = 'beheer@example.com';
 
 const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
 const WORKDAYS = [0, 1, 2, 3, 4];
