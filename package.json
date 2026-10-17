@@ -19,6 +19,7 @@
     "db:check-app": "node tools/social-app-check.mjs",
     "db:check-browser": "node tools/social-browser-check.mjs",
     "dev:seed": "node tools/dev-accounts.mjs seed",
+    "dev:admin": "node tools/dev-accounts.mjs admin",
     "dev:code": "node tools/dev-accounts.mjs code",
     "check:layout": "node tools/layout-check.mjs",
     "audit:scroll": "node tools/scroll-audit.mjs",

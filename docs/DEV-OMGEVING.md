@@ -67,14 +67,17 @@ Open http://localhost:5173/ → Instellingen → **Inloggen of account maken**, 
 Voor functioneel testen zonder alles zelf aan te maken:
 
 ```
-npm run dev:seed          # maakt (of herstelt) beide accounts
+npm run dev:seed          # maakt (of herstelt) alle accounts, ook de beheerder
+npm run dev:admin         # alleen het beheerdersaccount (opnieuw), zonder de andere accounts aan te raken
 npm run dev:code -- stub  # toont een inlogcode voor stub@example.com
 npm run dev:code -- leeg  # idem voor leeg@example.com
+npm run dev:code -- beheer  # idem voor beheer@example.com
 ```
 
 | Account | Inhoud |
 |---|---|
 | `leeg@example.com` | niets: het scherm van een nieuwe gebruiker (lege Vandaag, sjablonen, naam vragen) |
+| `beheer@example.com` | de **beheerder** (staat in `app_admins`): op de computer staat het tabje **Feedback** in de zijbalk, met vier testberichten (een van een ingelogde afzender met mailadres, drie anoniem, een afgehandeld; herkenbaar aan versie "test"). Beheerder maken kan alleen via SQL; het script doet dat met `docker exec` in de lokale database (`supabase_db_habit-builder`) |
 | `stub@example.com` | twaalf habits, één voor elke toestand: ingeburgerd te bevestigen, opbouw, opstart, gemiste werkdag vorige week, **zeldzaam en stil** ("Even kijken"), **te laat**, stapel, ingeburgerd in onderhoud, gepauzeerd, gearchiveerd, gepland, een al beantwoorde stille taak; plus teller, automatisme-cijfer en twee reviews. Na het seeden staat per habit wat je ervan mag verwachten |
 
 Het stub-account heeft ook **vrienden** (sociaal staat aan, gebruikersnaam `@stub`): Anna, Bram en Cor staan op de ranglijst, Fien is vriend maar deed 10 dagen niets (dus niet op de ranglijst), Dora heeft een verzoek gestuurd en aan Eef heeft de stub er een gestuurd. Elke vriend is een eigen account (`vriend-anna@example.com`, enzovoort; `npm run dev:code -- anna` geeft de code) en blijft tussen twee seeds bestaan. `dev:seed` toont ook een **uitnodigingslink** van de stub, om de flow voor een nieuwe gebruiker mee te proberen.

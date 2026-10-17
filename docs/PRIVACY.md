@@ -31,6 +31,11 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 - een **samenvatting** die de app op je eigen apparaat berekent en bijwerkt zolang je meedoet: je punten van de laatste 7 dagen, het aantal afgeronde taken, je reeks in dagen, het aantal habits dat je doet, de dag waarop je voor het laatst iets afvinkte en de dag van de berekening. Dit is alles wat je vrienden van je habits te zien krijgen;
 - een korte **teller** van je zoek-, verzoek- en uitnodigingsacties, om raden en lastigvallen tegen te gaan. Rijen ouder dan twee dagen worden opgeruimd zodra je weer zo'n actie doet, en ze verdwijnen in elk geval met je account.
 
+**Alleen als je feedback stuurt** (in de app, met of zonder account; je beslist zelf of je het doet):
+- de **soort feedback** die je koos (idee, probleem, vraag of compliment), **de tekst van je feedback**, **de pagina waarop je zat** en **de versie van de app**, zodat ik begrijp waar het over gaat. Meer gaat er niet mee: geen naam, geen gegevens over je habits en geen apparaatgegevens;
+- **het e-mailadres van je account**, en alleen als je bent ingelogd én "Je mag me hierover mailen" aanvinkt. Dan is het bericht ook aan je account gekoppeld, en verdwijnt het als je je account verwijdert. Zonder het vinkje (of zonder account) is het bericht anoniem: er wordt niets bijgehouden over wie het stuurde, ook niet hoe vaak;
+- het bericht is alleen te lezen door mij als beheerder van de app. Ik gebruik het om de app te verbeteren en, als je het vinkje aanzette, om je te antwoorden. Ik bewaar het tot ik het heb afgehandeld en verwijder het daarna, uiterlijk na een jaar.
+
 **Wat je vrienden niet zien:** je e-mailadres, de namen van je habits, je cues, "waarom"-teksten, notities en reviews, wat je op welk tijdstip afvinkt, en je andere gegevens.
 
 Je habit-namen, cues, "waarom"-teksten, notities, reviews en de toelichting bij een reden zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
@@ -64,7 +69,7 @@ De app gebruikt geen tracking-cookies. Wel bewaart je browser lokale opslag (Ind
 
 ## Hoe lang
 
-Zolang je het apparaat of je account gebruikt. Verwijder je je account in de app, dan worden je account en alle bijbehorende gegevens direct van de server gewist, ook je profiel, je vriendschappen, je uitnodigingen en je samenvatting.
+Zolang je het apparaat of je account gebruikt. Verwijder je je account in de app, dan worden je account en alle bijbehorende gegevens direct van de server gewist, ook je profiel, je vriendschappen, je uitnodigingen en je samenvatting, en de feedback die aan je account gekoppeld was. Anonieme feedback kan ik niet aan jou terugvinden en blijft dus staan tot ik hem afhandel (uiterlijk een jaar).
 
 **Zet je vrienden en de ranglijst uit**, dan verdwijn je direct uit de lijsten en zoekresultaten van anderen, wordt je samenvatting gewist en worden je uitnodigingslinks ingetrokken. Je gebruikersnaam en je vriendschappen blijven bewaard (gepauzeerd, onzichtbaar voor anderen), zodat je ze terugkrijgt als je later weer meedoet. Wil je ook die kwijt, verwijder dan je account. Kopieën in back-ups van de hostingdienst kunnen daarna nog kort bestaan. Gegevens op je eigen apparaat blijven staan tot je ze zelf wist.
 

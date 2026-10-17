@@ -20,6 +20,11 @@ const COVERED = {
     active_habits: 'aantal habits', last_active: 'voor het laatst iets afvinkte', updated_at: null,
   },
   social_rate: { id: null, user_id: null, action: 'van je zoek-, verzoek- en uitnodigingsacties', at: null },
+  // feedback (0007_feedback.sql): wat een gebruiker stuurt, en alleen met het vinkje ook het adres van het account
+  feedback: {
+    id: null, created_at: null, kind: 'soort feedback', body: 'de tekst van je feedback', route: 'de pagina waarop je zat', app_version: 'de versie van de app',
+    user_id: null, contact_email: 'het e-mailadres van je account', status: null, handled_at: null,
+  },
 };
 
 /** De kolomnamen van elke `create table ... public.<naam> (...)` in de migraties. */

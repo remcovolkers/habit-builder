@@ -15,6 +15,7 @@ Algemene werkwijze: [WERKWIJZE.md](WERKWIJZE.md).
 | **Onboarding** (stijl kiezen, een dag, de app installeren, de eerste habit) en **Zo werkt het** | [ONBOARDING.md](ONBOARDING.md) |
 | **Meerdere dagdelen** per habit (tandenpoetsen 's ochtends en 's avonds) | [DATAMODEL.md](DATAMODEL.md) |
 | **Flexibele taken**: compacte stapel, "Dreigt te falen", Plan je week en een verbeterd Habits-scherm | [FLEXIBELE-TAKEN.md](FLEXIBELE-TAKEN.md) |
+| **Feedbackhub**: feedback geven (ook zonder account) en een tabje Feedback voor jou op de computer | [FEEDBACK.md](FEEDBACK.md) |
 | Teller voor de ontwikkelaar (aantal gebruikers, vandaag actief) | migratie `0006_dev_usage.sql` |
 
 ## 1. Proberen op echte telefoons (Jij)
@@ -39,12 +40,13 @@ Alle migraties zijn **alleen uitbreiding** en opnieuw uit te voeren: de huidige 
 1. `supabase/migrations/0004_reasons.sql` (redenen bij taken die blijven liggen)
 2. `supabase/migrations/0005_invites.sql` (uitnodigen voor nieuwe gebruikers)
 3. `supabase/migrations/0006_dev_usage.sql` (de teller voor de ontwikkelaar)
-4. Voeg jezelf toe als beheerder, anders blijft de teller verborgen:
+4. `supabase/migrations/0007_feedback.sql` (de feedbackhub; vereist 0006). **Zonder deze migratie zegt de feedbackknop "Feedback versturen kan nog niet"**
+5. Voeg jezelf toe als beheerder (alleen als je dat nog niet deed), anders blijven de teller en het tabje Feedback verborgen:
    ```sql
    insert into public.app_admins (user_id) select id from auth.users where email = 'jouw-adres';
    ```
-5. Plak de Edge Function `send-reminders` opnieuw (de ochtendmelding is aangepast; zie [M7-SETUP.md](M7-SETUP.md)).
-6. Controleer in de projectmap: `node tools/live-check.mjs`. Alle regels moeten **OK** zijn.
+6. Plak de Edge Function `send-reminders` opnieuw (de ochtendmelding is aangepast; zie [M7-SETUP.md](M7-SETUP.md)).
+7. Controleer in de projectmap: `node tools/live-check.mjs`. Alle regels moeten **OK** zijn (die kent 0006 en 0007 niet: test de teller en de feedback dus zelf, zie hieronder).
 
 Meerdere dagdelen vragen **geen** migratie: het zit in de gegevens van een habit en een check-in (`dayparts`, `parts`), en de server bewaart dat als JSON.
 
@@ -58,8 +60,9 @@ Meerdere dagdelen vragen **geen** migratie: het zit in de gegevens van een habit
 
 1. Open de app op je telefoon, ververs via "Vernieuwen" als de updatemelding komt, en controleer onderaan Instellingen het versienummer (1.2).
 2. **Bestaande gebruikers** zien de onboarding niet (ze hebben habits) en krijgen wel de nieuwe prestaties in één viering. Controleer dat met je eigen account.
-3. Instellingen → Ontwikkelaarsopties (zeven tikken op het versienummer): de regel met het aantal gebruikers en wie vandaag actief was.
-4. Controleer dat Google-login, vrienden en de ochtendherinnering nog werken.
+3. Het tabje **Feedback** staat in de zijbalk (alleen op de computer en alleen als je in `app_admins` staat). Verstuur zelf een testbericht via "Feedback geven" onderaan de zijbalk (met en zonder het mailvinkje) en kijk of het in de lijst komt; verwijder het daarna.
+4. Instellingen → Ontwikkelaarsopties (zeven tikken op het versienummer): de regel met het aantal gebruikers en wie vandaag actief was.
+5. Controleer dat Google-login, vrienden en de ochtendherinnering nog werken.
 
 ## Terugdraaien
 

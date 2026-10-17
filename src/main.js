@@ -31,6 +31,10 @@ import { INTRO_HASH, afterLoginHash, introDue, markIntroSeen, peekReturn, takeRe
 import { parseHash } from './router.js';
 import { icon } from './ui/svg.js';
 import { nl } from './content/nl.js';
+import { feedbackAdminView } from './ui/views/feedback-admin.js';
+import { admin, initAdmin, onAdminChanged } from './ui/admin.js';
+import { openFeedbackSheet } from './ui/components/feedback-sheet.js';
+import { markFirstRun } from './ui/feedback-state.js';
 
 const NAV = [
   { key: 'today', path: '/today' },
@@ -54,19 +58,42 @@ const routes = [
   { path: '/vrienden/uitnodiging/:code', render: ({ params }) => friendsInviteView({ code: params.code }) },
   { path: '/settings', render: () => settingsView() },
   { path: '/uitleg', render: () => guideView() },
+  { path: '/feedback', render: () => feedbackAdminView() },
   { path: '/welkom/:step', render: ({ params }) => welcomeView({ step: params.step }) },
   { path: '/login', render: () => loginView() },
 ];
 
+// Het tabje Feedback is alleen voor de beheerder en alleen op de computer: het staat verborgen tot de server zegt dat je beheerder bent,
+// en onder 960 px (telefoon en tablet) laat de CSS het ook dan weg (docs/FEEDBACK.md).
+const feedbackTab = h('a', { class: 'tabbar__item tabbar__item--dev', id: 'feedbackTab', href: '#/feedback', dataset: { path: '/feedback' }, hidden: true },
+  icon('feedback'),
+  h('span', { class: 'tabbar__label' }, nl.nav.feedback),
+  h('span', { class: 'tabbar__count', hidden: true }));
+
 const tabbar = document.getElementById('tabbar');
-fill(tabbar, 
+fill(tabbar,
   ...NAV.map(({ key, path, also }) =>
     h('a', { class: 'tabbar__item', href: `#${path}`, dataset: { path, also: also?.join(' ') } },
       icon(key),
       h('span', { class: 'tabbar__label' }, nl.nav[key]),
     ),
   ),
+  feedbackTab,
 );
+
+function showFeedbackTab() {
+  feedbackTab.hidden = admin.status !== 'yes';
+  const count = feedbackTab.querySelector('.tabbar__count');
+  count.hidden = admin.newCount === 0;
+  count.textContent = String(admin.newCount);
+  count.setAttribute('aria-label', nl.feedback.admin.newCount(admin.newCount));
+}
+onAdminChanged(showFeedbackTab);
+
+// Onderaan de zijbalk (alleen op de computer; op de telefoon staat het onder Instellingen): een stille regel om feedback te geven
+const feedbackLink = document.getElementById('feedbackLink');
+fill(feedbackLink, icon('feedback'), h('span', null, nl.feedback.title));
+feedbackLink.addEventListener('click', () => openFeedbackSheet({ opener: feedbackLink }));
 
 function markActive({ path }) {
   for (const link of tabbar.children) {
@@ -161,6 +188,8 @@ onAccountChanged(() => {
 initAccount().catch((error) => console.warn('account starten mislukt', error));
 initReminders();
 initSocial();
+initAdmin();
+markFirstRun(); // sinds wanneer je de app gebruikt: de rustige uitnodiging voor feedback komt pas na een week
 
 // PWA: service worker (offline + updates). Mislukt dit, dan werkt de app gewoon online verder.
 mountUpdateBanner();
