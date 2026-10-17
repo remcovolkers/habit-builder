@@ -1,0 +1,538 @@
+/* de introductie (#/welkom/1..3) en Zo werkt het (#/uitleg), docs/ONBOARDING.md */
+
+/* Scrollen (docs/SCROLLEN.md): de stappen en de titel staan vast, de inhoud scrolt eronder. Een scrollbalk is niet nodig: de inhoud
+   smelt aan de rand weg zolang er meer is. Alleen op een scherm dat hoog genoeg is (30rem, dus ook mee met grote tekst); lager scrolt de pagina als geheel. */
+.welcome-page {
+  width: 100%;
+  max-width: 32rem;
+  margin-inline: auto;
+}
+
+.welcome__header {
+  display: grid;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+
+.welcome__scroll {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+  padding: var(--space-1) var(--space-1) var(--space-4);
+  scrollbar-width: none;
+  scrollbar-gutter: auto;
+}
+
+.welcome__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-height: 30rem) {
+  /* telefoon en tablet; vanaf 960 px doet de schil in layout.css dit al voor `.page` en `.page__scroll` */
+  .app__main:has(.welcome-page) {
+    display: flex;
+    flex: none; /* anders wint flex-basis van de hoogte en groeit het werkvlak met de inhoud mee */
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .welcome-page {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .welcome__scroll {
+    --fade-size: 2rem;
+    --fade-top: 0px;
+    --fade-bottom: 0px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent 100%);
+    transition: --fade-top var(--duration-base) var(--ease-out), --fade-bottom var(--duration-base) var(--ease-out);
+  }
+
+  .welcome__scroll[data-fade-top] {
+    --fade-top: var(--fade-size);
+  }
+
+  .welcome__scroll[data-fade-bottom] {
+    --fade-bottom: var(--fade-size);
+  }
+}
+
+/* voortgangsstippen */
+.welcome__progress {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.welcome__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-full);
+  background: var(--color-hairline-strong);
+  transition: width var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
+}
+
+.welcome__dot[data-state='past'] {
+  background: var(--color-accent-deep, var(--color-accent));
+}
+
+.welcome__dot[data-state='current'] {
+  width: 1.5rem;
+  background: var(--color-accent);
+  box-shadow: var(--shadow-glow-soft);
+}
+
+/* het grote beeld bovenaan */
+.welcome__hero {
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.welcome__hero-art {
+  display: grid;
+  place-items: center;
+  width: 6.5rem;
+  height: 6.5rem;
+  background: var(--color-accent-10);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-glow);
+}
+
+.welcome__hero-art .theme-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  color: var(--color-accent);
+  --icon-accent: var(--color-accent);
+}
+
+.welcome__mascot {
+  width: 7.5rem;
+  max-width: 60%;
+  height: auto;
+}
+
+.welcome__title {
+  margin: 0;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.welcome__subtitle {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+}
+
+/* groei: drie fases, de tekeningen worden groter */
+.welcome__growth {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4.5rem, 1fr));
+  align-items: end;
+  gap: var(--space-3);
+  margin: var(--space-2) 0;
+  padding: var(--space-4) var(--space-3) var(--space-3);
+  list-style: none;
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
+}
+
+.welcome__stop {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: end;
+  gap: var(--space-1);
+  text-align: center;
+}
+
+.welcome__stop-art {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-10);
+  border: 1px solid var(--color-border);
+}
+
+.welcome__stop[data-stage='2'] .welcome__stop-art {
+  width: 3.75rem;
+  height: 3.75rem;
+}
+
+.welcome__stop[data-stage='3'] .welcome__stop-art {
+  width: 4.5rem;
+  height: 4.5rem;
+  box-shadow: var(--shadow-glow);
+}
+
+.welcome__stop-art .theme-icon {
+  width: 60%;
+  height: 60%;
+  color: var(--color-accent);
+  --icon-accent: var(--color-accent);
+}
+
+.welcome__stop-mascot {
+  width: 90%;
+  height: 90%;
+  object-fit: contain;
+}
+
+.welcome__stop-name {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  overflow-wrap: anywhere;
+}
+
+.welcome__stop-day {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+}
+
+/* punten met een icoon */
+.welcome__points {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+
+.welcome__points li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.welcome__point-icon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: var(--color-accent-10);
+  border-radius: var(--radius-button);
+}
+
+.welcome__point-icon .theme-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-accent);
+  --icon-accent: var(--color-accent);
+}
+
+.welcome__actions {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* de app installeren: het icoon van de app, en stappen met de knoppen die je ziet */
+.welcome__app-icon {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 22%;
+  box-shadow: var(--shadow-glow);
+}
+
+.welcome__install {
+  display: grid;
+}
+
+.welcome__howto {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.welcome__steps {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: install;
+}
+
+.welcome__steps li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-elevated);
+  border-radius: var(--radius-card);
+  overflow-wrap: anywhere;
+  counter-increment: install;
+}
+
+.welcome__step-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: var(--color-accent-10);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  color: var(--color-accent);
+}
+
+/* het stapnummer als klein bolletje op de hoek van het icoon */
+.welcome__step-icon::after {
+  content: counter(install);
+  position: absolute;
+  top: -0.4rem;
+  left: -0.4rem;
+  display: grid;
+  place-items: center;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.2rem;
+  background: var(--color-accent);
+  border-radius: var(--radius-full);
+  color: var(--color-on-accent);
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-bold);
+}
+
+.welcome__step-icon svg {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.welcome__installed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3);
+  background: var(--color-accent-10);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  font-weight: var(--font-weight-bold);
+}
+
+.welcome__installed-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  background: var(--color-accent);
+  border-radius: var(--radius-full);
+  color: var(--color-on-accent);
+}
+
+.welcome__installed-mark svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+/* een echte habitkaart om te proberen */
+.welcome__demo-box {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.welcome__demo .habit-card__more {
+  display: none;
+}
+
+.welcome__demo-hint {
+  margin: 0;
+  text-align: center;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-accent);
+}
+
+.welcome__legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.welcome__legend-mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  margin-right: var(--space-1);
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-full);
+  color: var(--color-text);
+  font-weight: var(--font-weight-bold);
+}
+
+/* de vijf ritmes: de naam en een voorbeeld */
+.welcome__rhythms {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-sm);
+}
+
+.welcome__rhythms li {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-elevated);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-button);
+  overflow-wrap: anywhere;
+}
+
+/* de sjablonen: een kleurtegel met het icoon, de naam en wat voor soort habit het is */
+.welcome__starters {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.welcome__starter {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: 'tile name' 'tile kind';
+  align-items: center;
+  column-gap: var(--space-3);
+  min-height: var(--size-tap);
+  padding: var(--space-3);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
+  background: var(--color-elevated);
+  color: inherit;
+  text-decoration: none;
+}
+
+.welcome__tile {
+  grid-area: tile;
+  display: grid;
+  place-items: center;
+  width: var(--size-tile);
+  height: var(--size-tile);
+  background: color-mix(in srgb, var(--habit-color, var(--color-accent)) 16%, var(--color-surface-solid, transparent));
+  border-radius: var(--radius-button);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--habit-color, transparent) 55%, transparent);
+}
+
+.welcome__tile .theme-icon {
+  width: 2.125rem;
+  height: 2.125rem;
+}
+
+.welcome__starter-name {
+  grid-area: name;
+  font-weight: var(--font-weight-bold);
+  overflow-wrap: anywhere;
+}
+
+.welcome__starter-kind {
+  grid-area: kind;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.welcome__starter:active {
+  transform: scale(0.98);
+}
+
+/* een rustige entree: de onderdelen komen na elkaar binnen (bij verminderde beweging staat dit uit, zie base.css) */
+@keyframes welcome-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+.welcome__scroll > * {
+  animation: welcome-in var(--duration-base) var(--ease-out) both;
+}
+
+.welcome__scroll > :nth-child(2) { animation-delay: 60ms; }
+.welcome__scroll > :nth-child(3) { animation-delay: 120ms; }
+.welcome__scroll > :nth-child(4) { animation-delay: 180ms; }
+.welcome__scroll > :nth-child(n + 5) { animation-delay: 240ms; }
+
+/* Zo werkt het */
+.guide__body {
+  max-width: 40rem;
+}
+
+.guide__section > p + p {
+  margin-top: var(--space-2);
+}
+
+.guide__types {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide__type {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-card);
+  background: var(--color-elevated);
+  overflow-wrap: anywhere;
+}
+
+.guide__type-title {
+  font-weight: var(--font-weight-bold);
+}
+
+.guide__type-text {
+  font-size: var(--font-size-sm);
+}
+
+.guide__type-example {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.schedule-example {
+  overflow-wrap: anywhere;
+}
+
+/* de stijl kiezen op de eerste stap: twee kaarten naast elkaar, op een smal scherm of bij grote tekst onder elkaar */
+.welcome__theme {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.welcome__theme .theme-options {
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.welcome__theme .theme-option__face {
+  padding: var(--space-3);
+}
+
+.welcome__theme .theme-option__desc {
+  font-size: var(--font-size-xs);
+}

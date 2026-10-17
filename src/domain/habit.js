@@ -4,12 +4,22 @@ import { isValidDate } from './dates.js';
 import { validateSchedules } from './schedule.js';
 
 export const DAYPARTS = Object.freeze(['morning', 'afternoon', 'evening', 'anytime']);
+/** De dagdelen waarop een habit er meerdere kan hebben ("tandenpoetsen 's ochtends en 's avonds"). "Overdag" is geen dagdeel om te combineren. */
+export const SPLIT_DAYPARTS = Object.freeze(['morning', 'afternoon', 'evening']);
 export const HABIT_STATUSES = Object.freeze(['planned', 'active', 'graduated', 'archived']);
 export const HABIT_COLORS = Object.freeze(['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8']);
 export const CHECK_IN_STATUSES = Object.freeze(['done', 'minimal', 'skipped', 'partial']);
 
 export const NAME_MAX = 60;
 export const TEXT_MAX = 200;
+
+/** De dagdelen van een lijst, in de volgorde van de dag. */
+export const sortDayparts = (parts) => [...parts].sort((a, b) => DAYPARTS.indexOf(a) - DAYPARTS.indexOf(b));
+
+/** Een geldige lijst: unieke dagdelen uit SPLIT_DAYPARTS, in de volgorde van de dag. `min` = het kleinste aantal. */
+export const validParts = (parts, min = 1) => Array.isArray(parts) && parts.length >= min && parts.length <= SPLIT_DAYPARTS.length
+  && new Set(parts).size === parts.length && parts.every((part) => SPLIT_DAYPARTS.includes(part))
+  && parts.every((part, i) => i === 0 || DAYPARTS.indexOf(parts[i - 1]) < DAYPARTS.indexOf(part));
 
 /**
  * Geeft [{ field, code, detail? }]; leeg = geldig.
@@ -43,6 +53,13 @@ export function validateHabit(habit) {
   if (scheduleErrors.length === 0 && isValidDate(habit.startDate)) {
     const earliest = habit.schedules.map((s) => s.effectiveFrom).sort()[0];
     if (earliest > habit.startDate) add('schedule', 'starts_after_habit');
+  }
+
+  // meerdere dagdelen: minstens twee, het eerste is ook `daypart` (oudere appversies kennen alleen dat), en alleen bij vaste weekdagen en zonder teller
+  if (habit.dayparts != null) {
+    if (!validParts(habit.dayparts, 2) || habit.daypart !== habit.dayparts[0]) add('dayparts', 'invalid');
+    else if (habit.counter != null) add('dayparts', 'no_counter');
+    else if (scheduleErrors.length === 0 && habit.schedules.some((s) => s.schedule.type !== 'weekdays')) add('dayparts', 'needs_weekdays');
   }
 
   if (habit.counter != null) {

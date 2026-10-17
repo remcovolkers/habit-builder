@@ -25,6 +25,7 @@ import {
   WHY_HABITS_ACHIEVEMENT,
 } from './constants.js';
 import { computeStreaks } from './streaks.js';
+import { habitDayparts } from './dayparts.js';
 import { isClosed, isPositive } from './units.js';
 
 /**
@@ -213,7 +214,7 @@ export function achievementMeasures({ today, stats, habits = [], checkIns = [], 
   return {
     ratedWeeks: new Set(ratings.filter((r) => known.has(r.habitId)).map((r) => r.weekStart)).size,
     habitsWithWhy: habits.filter((habit) => String(habit.why ?? '').trim() !== '').length,
-    dayparts: new Set(kept.map((habit) => habit.daypart).filter((part) => ACHIEVEMENT_DAYPARTS.includes(part))).size,
+    dayparts: new Set(kept.flatMap(habitDayparts).filter((part) => ACHIEVEMENT_DAYPARTS.includes(part))).size,
     activeHabits: stats.filter((s) => s.habitStatus === 'active').length,
     allDoneDays: countAllDoneDays(stats.flatMap((s) => s.units ?? [])),
     friends,

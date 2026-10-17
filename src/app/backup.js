@@ -2,7 +2,7 @@
 import { isValidDate } from '../domain/dates.js';
 import { COUNTER_MAX } from '../domain/counter.js';
 import { SLIP_REASONS } from '../domain/attention.js';
-import { CHECK_IN_STATUSES, validateHabit } from '../domain/habit.js';
+import { CHECK_IN_STATUSES, validParts, validateHabit } from '../domain/habit.js';
 import { validateSettings } from './settings.js';
 
 export const BACKUP_APP = 'habit-builder';
@@ -46,6 +46,7 @@ function validateRecords(name, records, habitIds, problems) {
       case 'checkIns':
         if (!isValidDate(record.date) || !CHECK_IN_STATUSES.includes(record.status)) return bad('ongeldige datum of status');
         if (record.value != null && !(Number.isInteger(record.value) && record.value >= 0 && record.value <= COUNTER_MAX)) return bad('ongeldige waarde');
+        if (record.parts != null && !validParts(record.parts)) return bad('ongeldige dagdelen');
         break;
       case 'pauses':
         if (!isValidDate(record.from) || (record.to != null && (!isValidDate(record.to) || record.to < record.from))) return bad('ongeldige pauze');

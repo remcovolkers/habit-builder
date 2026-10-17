@@ -3,6 +3,8 @@
 import { addDays, diffDays, startOfWeek } from '../domain/dates.js';
 import { DEFAULT_GRADUATION_DAYS, PLAN_AHEAD_DAYS } from '../domain/constants.js';
 import { clampCounter, counterDoneValue, counterStatus } from '../domain/counter.js';
+import { donePartsOf, habitDayparts, hasMultipleDayparts, partsStatus } from '../domain/dayparts.js';
+import { sortDayparts } from '../domain/habit.js';
 import { canBackfill } from '../domain/rules.js';
 import { scheduleAt } from '../domain/schedule.js';
 import { moveHabit } from './ordering.js';
@@ -18,14 +20,14 @@ export class RuleError extends Error {
 // --- check-ins ------------------------------------------------------------------------------
 
 async function restoreCheckIn(repo, habitId, date, previous) {
-  if (previous) await repo.setCheckIn({ habitId, date, status: previous.status, note: previous.note, value: previous.value ?? null });
+  if (previous) await repo.setCheckIn({ habitId, date, status: previous.status, note: previous.note, value: previous.value ?? null, parts: previous.parts ?? null });
   else await repo.clearCheckIn(habitId, date);
 }
 
-export async function logCheckIn(repo, { habitId, date, status, note = null, value = null }, today) {
+export async function logCheckIn(repo, { habitId, date, status, note = null, value = null, parts = null }, today) {
   if (!canBackfill(date, today)) throw new RuleError('backfill_window');
   const previous = await repo.getCheckIn(habitId, date);
-  await repo.setCheckIn({ habitId, date, status, note, value });
+  await repo.setCheckIn({ habitId, date, status, note, value, parts });
   return { undo: () => restoreCheckIn(repo, habitId, date, previous) };
 }
 
@@ -44,6 +46,23 @@ export async function adjustCounter(repo, { habit, date, delta }, today) {
   if (status === null) await repo.clearCheckIn(habit.id, date);
   else await repo.setCheckIn({ habitId: habit.id, date, status, note: previous?.note ?? null, value });
   return { undo: () => restoreCheckIn(repo, habit.id, date, previous), value, status };
+}
+
+/**
+ * Eén dagdeel van een habit met meerdere dagdelen afvinken of weer wissen ("tandenpoetsen: ochtend"). De dag is gedaan als alle dagdelen gedaan zijn,
+ * daaronder staat hij op 'partial' (zie domain/dayparts.js); op 0 komen we terug bij "niets gelogd".
+ * Geeft { undo, parts, status } terug.
+ */
+export async function togglePart(repo, { habit, date, part }, today) {
+  if (!hasMultipleDayparts(habit) || !habitDayparts(habit).includes(part)) throw new RuleError('not_a_part');
+  if (!canBackfill(date, today)) throw new RuleError('backfill_window');
+  const previous = await repo.getCheckIn(habit.id, date);
+  const done = donePartsOf(habit, previous);
+  const parts = done.includes(part) ? done.filter((p) => p !== part) : sortDayparts([...done, part]);
+  const status = partsStatus(parts.length, habitDayparts(habit).length);
+  if (status === null) await repo.clearCheckIn(habit.id, date);
+  else await repo.setCheckIn({ habitId: habit.id, date, status, note: previous?.note ?? null, value: parts.length, parts });
+  return { undo: () => restoreCheckIn(repo, habit.id, date, previous), parts, status };
 }
 
 export async function clearCheckIn(repo, { habitId, date }, today) {
@@ -102,11 +121,13 @@ export const sameSchedule = (a, b) => JSON.stringify(normalizeSchedule(a)) === J
  * (domein: geldt voor de hele periode waarin je het wijzigt); de geschiedenis blijft ongemoeid.
  */
 export function applyHabitForm({ existing = null, values, today, sortOrder = 0 }) {
+  // meerdere dagdelen: alleen bij twee of meer, in de volgorde van de dag; het eerste is ook `daypart`
+  const dayparts = Array.isArray(values.dayparts) && new Set(values.dayparts).size > 1 ? sortDayparts([...new Set(values.dayparts)]) : null;
   const common = {
     name: String(values.name ?? '').trim(),
     icon: values.icon,
     color: values.color,
-    daypart: values.daypart,
+    daypart: dayparts ? dayparts[0] : values.daypart,
     cue: clean(values.cue),
     why: clean(values.why),
     minimalVersion: clean(values.minimalVersion),
@@ -116,6 +137,7 @@ export function applyHabitForm({ existing = null, values, today, sortOrder = 0 }
   if (!existing) {
     return {
       ...common,
+      ...(dayparts ? { dayparts } : {}),
       status: 'active',
       startDate: values.startDate,
       endDate: null,
@@ -127,6 +149,8 @@ export function applyHabitForm({ existing = null, values, today, sortOrder = 0 }
   }
 
   const next = { ...existing, ...common };
+  if (dayparts) next.dayparts = dayparts;
+  else delete next.dayparts;
   if (existing.startDate > today) {
     next.startDate = values.startDate;
     next.schedules = [{ effectiveFrom: values.startDate, schedule: values.schedule }];

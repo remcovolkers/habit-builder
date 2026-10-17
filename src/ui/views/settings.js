@@ -7,7 +7,8 @@ import * as auth from '../../data/auth.js';
 import { fetchDevUsage } from '../../data/dev-usage.js';
 import { installCard } from '../components/install-card.js';
 import { reminderCard } from '../components/reminder-card.js';
-import { THEMES, THEME_IDS, themeFor } from '../../app/themes.js';
+import { themeFor } from '../../app/themes.js';
+import { themeOptions } from '../components/theme-picker.js';
 import { downloadBackup } from '../download.js';
 import { showToast } from '../components/toast.js';
 import { ValidationError } from '../../data/repository.js';
@@ -83,24 +84,16 @@ function themeSection() {
   return h('fieldset', { class: 'section themes' },
     h('legend', { class: 'section__title' }, nl.settings.theme.title),
     hint,
-    h('div', { class: 'theme-options', role: 'radiogroup' },
-      ...THEME_IDS.map((id) => {
-        const theme = THEMES[id];
-        const swatches = theme.swatches.map((color) => {
-          const dot = h('i', { class: 'theme-option__swatch' });
-          dot.style.background = color;
-          return dot;
-        });
-        return h('label', { class: 'theme-option', dataset: { theme: id } },
-          h('input', {
-            class: 'choice__input', type: 'radio', name: 'theme', value: id, checked: id === current,
-            onchange: () => saveSettings({ theme: id }),
-          }),
-          h('span', { class: 'theme-option__face' },
-            h('span', { class: 'theme-option__swatches' }, ...swatches),
-            h('span', { class: 'theme-option__name' }, theme.name),
-            h('span', { class: 'theme-option__desc' }, theme.description)));
-      })));
+    themeOptions({ current, onPick: (id) => saveSettings({ theme: id }) }));
+}
+
+/** Zo werkt het: de naslag bij de app (docs/ONBOARDING.md O1). */
+function guideSection() {
+  const g = nl.guide;
+  return h('section', { class: 'section' },
+    h('h2', { class: 'section__title' }, g.settingsTitle),
+    h('p', { class: 'section__hint' }, g.settingsHint),
+    h('a', { class: 'button button--secondary button--block', id: 'guideLink', href: '#/uitleg' }, g.settingsLink));
 }
 
 /** Links naar de privacyverklaring en voorwaarden (staan op GitHub, in de repository van de app). */
@@ -212,6 +205,7 @@ export function settingsView() {
         h('p', { id: 'hint-day', class: 'field__hint' }, nl.settings.dayStartHint), errorEls.dayStartHour),
       h('button', { type: 'submit', class: 'button button--primary button--block' }, nl.settings.save)),
     backupSection(),
+    guideSection(),
     legalSection(),
     versionLine())));
 }

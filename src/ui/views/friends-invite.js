@@ -9,6 +9,7 @@ import { social, socialApp } from '../social-app.js';
 import { socialLive } from '../social-view.js';
 import { inviteNameForm, reasonText } from '../components/social-parts.js';
 import { state } from '../state.js';
+import { INTRO_HASH, introSeen } from '../intro.js';
 import { parseInviteHash } from '../../app/social.js';
 import { nl } from '../../content/nl.js';
 
@@ -117,15 +118,18 @@ export function friendsInviteView({ code: raw }) {
       h('section', { class: 'card friends__message' },
         h('p', null, t.nameText(ui.peek.name)),
         (form ??= inviteNameForm({ inviterName: ui.peek.name })),
-        h('button', { type: 'button', id: 'inviteLater', class: 'button button--ghost button--small', onclick: () => { socialApp.dropInvite(); location.hash = '#/today'; } }, t.later)));
+        h('button', { type: 'button', id: 'inviteLater', class: 'button button--ghost button--small', onclick: () => { socialApp.dropInvite(); location.hash = introSeen() ? '#/today' : INTRO_HASH; } }, t.later)));
   }
 
   function done() {
     const name = ui.person?.name ?? '';
     const board = h('a', { class: `button ${ui.hasHabits ? 'button--primary' : 'button--secondary'}`, id: 'toBoard', href: '#/vrienden' }, t.toBoard);
+    // wie nog geen habits heeft en de introductie nog niet zag, gaat daarheen (docs/ONBOARDING.md O4); anders direct naar de eerste habit
     const next = ui.hasHabits
       ? h('a', { class: 'button button--secondary', id: 'toToday', href: '#/today' }, t.toToday)
-      : h('a', { class: 'button button--primary', id: 'firstHabit', href: '#/habits/new' }, t.firstHabit);
+      : introSeen()
+        ? h('a', { class: 'button button--primary', id: 'firstHabit', href: '#/habits/new' }, t.firstHabit)
+        : h('a', { class: 'button button--primary', id: 'startIntro', href: INTRO_HASH }, t.startIntro);
     return h('div', { class: 'detail friends__welcome' },
       mainHeading(ui.alreadyFriends ? t.already(name) : t.success(name), 'inviteSuccess'),
       h('section', { class: 'card friends__message' },

@@ -517,6 +517,80 @@
   --icon-accent: var(--color-text-faint);
 }
 
+/* een medaille die je aantikt voor de uitleg: de knop vult het hele vak en ziet er hetzelfde uit als zonder knop */
+.achv__button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 2.75rem;
+  padding: var(--space-2) var(--space-1);
+  border: 0;
+  border-radius: var(--radius-card);
+  background: none;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.achv__button:active {
+  transform: scale(0.97);
+}
+
+/* de uitleg in het blad */
+.achv-detail__body {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: center;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.achv-detail__heading {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-muted);
+}
+
+.achv-detail__text {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.achv-detail__status {
+  margin: 0;
+  font-weight: var(--font-weight-bold);
+}
+
+.achv-detail__rows {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.achv-detail__row {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-elevated);
+}
+
+.achv-detail__habit {
+  font-weight: var(--font-weight-bold);
+}
+
+.achv-detail__when {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
 .celebrate-list {
   display: grid;
   gap: var(--space-4);

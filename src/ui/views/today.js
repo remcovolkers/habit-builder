@@ -14,12 +14,14 @@ import { buildWeekStrip } from '../../app/overview.js';
 import { fab } from '../components/fab.js';
 import { uiIcon } from '../components/habit-icon.js';
 import { account, dismissNudge, nudgeDismissed, nudgeElement } from '../account.js';
+import { clearFirstTip, firstTipPending } from '../intro.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
-import { adjustCounter, clearCheckIn, logCheckIn, planHabit, rateAutomaticity, recordReason, RuleError, unplanHabit } from '../../app/actions.js';
+import { adjustCounter, clearCheckIn, logCheckIn, planHabit, rateAutomaticity, recordReason, RuleError, togglePart, unplanHabit } from '../../app/actions.js';
 import { buildAttention, forToday } from '../../app/attention.js';
 import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
 import { counterDoneValue } from '../../domain/counter.js';
+import { habitDayparts, hasMultipleDayparts } from '../../domain/dayparts.js';
 import { charCounter } from '../components/char-counter.js';
 import { datesBetween, formatDateLong, greetingFor, localHour, relativeDayLabel } from '../../app/format.js';
 import { addDays, diffDays, isValidDate } from '../../domain/dates.js';
@@ -79,7 +81,7 @@ function renderDay(view, week, attention) {
   const { today } = state;
   const { repo } = state;
   const { date } = view;
-  const log = (habitId, status, note = null, value = null) => logCheckIn(repo, { habitId, date, status, note, value }, today);
+  const log = (habitId, status, note = null, value = null, parts = null) => logCheckIn(repo, { habitId, date, status, note, value, parts }, today);
 
   // Tikken op +/− achter elkaar mogen elkaar niet inhalen: eerst klaar, dan de volgende.
   let queue = Promise.resolve();
@@ -90,6 +92,15 @@ function renderDay(view, week, attention) {
 
   function toggle(entry) {
     const name = entry.habit.name;
+    if (entry.part) {
+      const open = entryState(entry) === 'open';
+      // een minimale of overgeslagen dag staat voor alle dagdelen: tik je er een aan, dan wordt de hele dag weer leeg en begin je opnieuw
+      const resets = entry.loggedToday === 'minimal' || entry.loggedToday === 'skipped';
+      return perform(
+        () => (resets ? clearCheckIn(repo, { habitId: entry.habitId, date }, today) : togglePart(repo, { habit: entry.habit, date, part: entry.part }, today)),
+        open ? nl.today.toasts.done(name) : nl.today.toasts.cleared(name),
+      );
+    }
     return entryState(entry) === 'open'
       ? perform(() => log(entry.habitId, 'done'), nl.today.toasts.done(name))
       : perform(() => clearCheckIn(repo, { habitId: entry.habitId, date }, today), nl.today.toasts.cleared(name));
@@ -99,14 +110,15 @@ function renderDay(view, week, attention) {
     const { habit } = entry;
     const noteInput = h('input', { id: 'noteInput', type: 'text', class: 'input', value: entry.noteToday ?? '', placeholder: nl.today.actions.notePlaceholder });
     const note = () => noteInput.value.trim() || null;
-    const logged = entryState(entry) !== 'open';
+    const logged = entry.loggedToday !== null && entry.loggedToday !== undefined;
+    const multi = hasMultipleDayparts(habit);
     const actions = [];
     if (view.canLog) {
-      const doneValue = habit.counter ? counterDoneValue(habit.counter, entry.valueToday ?? 0) : null;
+      const doneValue = habit.counter ? counterDoneValue(habit.counter, entry.valueToday ?? 0) : (multi ? habitDayparts(habit).length : null);
       actions.push({
-        label: habit.counter ? nl.today.actions.goalReached : nl.today.actions.done,
+        label: habit.counter ? nl.today.actions.goalReached : (multi ? nl.today.actions.allParts : nl.today.actions.done),
         variant: 'primary',
-        onClick: () => perform(() => log(habit.id, 'done', note(), doneValue), nl.today.toasts.done(habit.name)),
+        onClick: () => perform(() => log(habit.id, 'done', note(), doneValue, multi ? habitDayparts(habit) : null), nl.today.toasts.done(habit.name)),
       });
       if (habit.minimalVersion && !habit.counter) {
         actions.push({ label: nl.today.actions.minimal(habit.minimalVersion), onClick: () => perform(() => log(habit.id, 'minimal', note()), nl.today.toasts.minimal(habit.name)) });
@@ -118,7 +130,7 @@ function renderDay(view, week, attention) {
       if (logged) {
         actions.push({
           label: nl.today.actions.saveNote,
-          onClick: () => perform(() => log(habit.id, entry.loggedToday, note(), entry.valueToday), nl.today.actions.noteSaved(habit.name)),
+          onClick: () => perform(() => log(habit.id, entry.loggedToday, note(), entry.valueToday, entry.partsToday), nl.today.actions.noteSaved(habit.name)),
         });
       }
       if (logged) actions.push({ label: nl.today.actions.clear, onClick: () => perform(() => clearCheckIn(repo, { habitId: habit.id, date }, today), nl.today.toasts.cleared(habit.name)) });
@@ -238,6 +250,14 @@ function renderDay(view, week, attention) {
     ? nudgeElement((event) => { dismissNudge(); event.target.closest('.nudge').remove(); })
     : null;
 
+  // één keer, na de eerste habit uit de introductie (docs/ONBOARDING.md O5)
+  const firstTip = view.hasHabits && view.mode === 'today' && firstTipPending()
+    ? h('div', { class: 'banner nudge first-tip', id: 'firstTip', role: 'status' },
+      h('strong', null, nl.today.firstTip.title), ' ',
+      h('span', null, nl.today.firstTip.text),
+      h('button', { type: 'button', class: 'nudge__dismiss', onclick: (event) => { clearFirstTip(); event.target.closest('.first-tip').remove(); } }, nl.today.firstTip.dismiss))
+    : null;
+
   const celebrate = allDone
     ? h('section', { class: 'section celebrate', role: 'status' },
       mascot('celebrate') ?? h('div', { class: 'celebrate__emoji', 'aria-hidden': 'true' }, uiIcon('ui-celebrate')),
@@ -259,7 +279,7 @@ function renderDay(view, week, attention) {
     banner(view),
     view.groups.length === 0 && view.pool.length === 0 ? todayEmpty(view) : null,
     h('div', { class: 'today__columns page__panes' },
-      h('div', { class: 'today__main page__pane' }, attentionSection, ...groupSections),
+      h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections),
       side.length > 0 ? h('div', { class: 'today__side page__pane' }, ...side) : null),
     fab({ href: '#/habits/new', label: nl.habits.new }));
 }

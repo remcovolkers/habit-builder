@@ -147,6 +147,20 @@ Na `npm run dev:seed` heeft de stub zes vrienden en een uitnodigingslink. Gebrui
 8. **Reflectie en verbreding (ronde 2):** *Eerste review* (sla een weekreview op), *Je waarom* (vul het waarom in bij drie habits; "1 van 3" loopt mee), *Automatisme gevolgd* (een cijfer in vier verschillende weken), *Hele dag* (habits in ochtend, middag en avond; "de hele dag" telt niet), *Vijf tegelijk*, *Alles gedaan* (tien dagen waarop alles van de dag is gedaan, minstens twee dingen). De stub heeft de verbredingsgroep al volledig (4 van 4).
 9. **Samen (sociaal):** de groep staat alleen op de pagina als sociaal aan staat. Zet sociaal aan als stub (de vrienden uit de seed): *Samen sterker* is meteen behaald, *Vijf vrienden* toont "4 van 5" en komt erbij zodra je er een vijfde hebt (accepteer Dora). Met het lege account en sociaal uit ontbreekt de groep.
 
+## M. Introductie en Zo werkt het (docs/ONBOARDING.md)
+
+Gebruik het lege account (G) of een schone browser; de vlag staat lokaal (`hb-intro-seen`), wis hem in de console met `localStorage.removeItem('hb-intro-seen')`.
+
+1. **Eerste start zonder habits**: je landt op `#/welkom/1`. "Volgende" gaat naar stap 2, 3 (de app installeren) en 4 (de eerste habit); "Overslaan" gaat naar Vandaag, en bij de volgende start komt de introductie niet terug. Stap 1 heeft "Heb je al een account? Log in" en "Kies je stijl": tik op Mel Theme en alles (kleuren, de mascotte bovenaan, de drie fases) verandert meteen; de keuze blijft staan in Instellingen.
+2. **Stap 3, de app installeren**: in Chrome of Edge staat er een knop Installeren (probeer hem; daarna staat er "Gelukt!"). Op een iPhone in Safari staan er drie genummerde stappen (Delen, Zet op beginscherm, Voeg toe). In een browser zonder installatie (bijvoorbeeld Firefox) staat er een algemene aanwijzing. Open je de app vanaf het beginscherm, dan ontbreekt deze stap en zijn het drie stappen.
+3. **Stap 4**: zeven sjablonen, elk met het soort ritme eronder (Elke dag · met teller, 3× per week, Di, vr, 2× per maand, Dag 25 van de maand). Een sjabloon opent het formulier ingevuld; onder **Herhaling** staat een voorbeeld met "Uitleg over de ritmes".
+4. **Eerste habit opslaan** vanuit de introductie: je komt op Vandaag met de tip "Je eerste habit staat klaar" (één keer; "Begrepen" sluit hem voorgoed). Een habit met een minimale versie viert ook "Kleine stap".
+5. **Wie al habits heeft** (het gevulde account) ziet de introductie nooit, ook niet via een lege Vandaag later.
+6. **Instellingen → Zo werkt het** (`#/uitleg`): acht onderdelen, de vijf ritmes plus de teller met voorbeelden, en onderaan "Bekijk de introductie opnieuw" (verandert niets aan je gegevens).
+7. **Uitnodiging als nieuwe gebruiker** (K): na "Jij en Anna zijn nu vrienden!" staat bij een gebruiker zonder habits "Laten we beginnen", dat naar de introductie gaat. "Niet nu" op de naamstap gaat ook naar de introductie.
+8. **Scrollen**: op elke stap blijven de stippen en de titel staan terwijl je de inhoud scrolt; er is geen scrollbalk, de inhoud smelt aan de rand weg en de pagina erachter beweegt niet. Probeer ook een liggende telefoon: daar scrolt de hele pagina.
+9. **Grote tekst**: alles op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout` controleert dit).
+
 ## Automatische controles
 
 ```
