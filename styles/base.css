@@ -180,6 +180,8 @@ textarea {
 }
 
 .section__title {
+  min-width: 0;
+  overflow-wrap: anywhere; /* een lange kop breekt af bij grote tekst, in plaats van de pagina te verbreden */
   font-family: var(--font-display);
   font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-xl);
@@ -253,6 +255,7 @@ textarea {
 
 summary.section__title {
   cursor: pointer;
+  padding-block: var(--space-3); /* een inklapbare kop is ook een knop: minstens een tikvlak van 44px hoog */
 }
 
 .card-list {

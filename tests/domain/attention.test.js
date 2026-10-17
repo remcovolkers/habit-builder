@@ -161,3 +161,20 @@ test('een half gehaalde teller is geen gemiste dag', () => {
   assert.deepEqual(signals(h, done, '2026-10-15'), []);
   assert.deepEqual(kinds(signals(h, checks(...all.map((d) => [d])), '2026-10-15')), ['failed']); // zonder iets op de 13e wel
 });
+
+test('stil: een half gehaalde teller en een bewust overgeslagen dag tellen als bezig zijn', () => {
+  const h = habit(daily, '2026-10-01');
+  const partial = checks(...Array.from({ length: 12 }, (_, i) => [`2026-10-${String(i + 1).padStart(2, '0')}`, 'partial']));
+  assert.deepEqual(only('silent', signals(h, partial, '2026-10-12')), []);
+  const m = habit(perMonth(2), '2026-09-01');
+  assert.deepEqual(only('silent', signals(m, checks(['2026-09-04'], ['2026-10-10', 'skipped']), '2026-10-30')), []); // 20 dagen na het overslaan
+  assert.deepEqual(kinds(only('silent', signals(m, checks(['2026-09-04'], ['2026-10-10', 'skipped']), '2026-11-01'))), ['silent']); // 22 dagen
+});
+
+test('de meldmomenten beginnen op de eerste dag dat het signaal te zien is: de dag na de vaste dag, de dag na een mislukte week', () => {
+  const late = habit(onDay(3), '2026-08-01');
+  assert.equal(only('late', signals(late, [], '2026-10-04'))[0].episode, '2026-10-04');
+  const weekly = habit(perWeek(3), '2026-09-01');
+  const failed = only('failed', signals(weekly, [], '2026-10-19'))[0];
+  assert.equal(failed.episode, '2026-10-19'); // de week van 12 tot en met 18 oktober
+});

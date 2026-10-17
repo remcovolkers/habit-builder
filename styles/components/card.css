@@ -622,6 +622,19 @@
   color: var(--color-accent);
 }
 
+/* een taak waar al op gereageerd is: rustiger, maar nog steeds goed leesbaar (geen doorzichtigheid: dat haalt het contrast onder de norm) */
+.attention-card[data-state='satisfied'] {
+  opacity: 1;
+  border-style: solid;
+  border-color: var(--color-hairline);
+}
+
+.attention-card[data-state='satisfied'] .pool-card__name,
+.attention-card[data-state='satisfied'] .attention-card__text,
+.attention-card[data-state='satisfied'] .pool-card__icon {
+  color: var(--color-text-muted);
+}
+
 /* de knoppen op een kaart met aandacht komen bij een smal scherm of grote tekst onder elkaar */
 .attention-card .pool-card__more {
   flex-wrap: wrap;

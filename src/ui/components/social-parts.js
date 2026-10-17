@@ -3,7 +3,8 @@ import { h } from '../dom.js';
 import { showToast } from './toast.js';
 import { charCounter } from './char-counter.js';
 import { saveSettings, state } from '../state.js';
-import { socialApp } from '../social-app.js';
+import { account } from '../account.js';
+import { social, socialApp } from '../social-app.js';
 import { USERNAME_MAX, describeBreakdown, suggestUsername, validateUsername } from '../../app/social.js';
 import { DISPLAY_NAME_MAX } from '../../app/settings.js';
 import { MISS_PENALTY, SOCIAL_ACTIVE_DAYS, START_BONUS_MAX, TASK_POINTS } from '../../domain/constants.js';
@@ -129,6 +130,100 @@ export function onboardingForm({ onJoined = null } = {}) {
     submit,
     h('p', { class: 'xs muted' }, t.offAnytime, ' ',
       h('a', { id: 'socialPrivacy', href: `${nl.login.legalBase}/PRIVACY.md`, target: '_blank', rel: 'noopener noreferrer' }, t.privacy)));
+}
+
+/**
+ * De ene naamstap voor wie via een uitnodiging komt (docs/ITERATIE-1.2.md §2): één vraag, "Hoe wil je heten?". De gebruikersnaam wordt
+ * voorgesteld en staat achter "Wijzigen"; is hij bezet, dan probeert het formulier er zelf een cijfer achter. Meedoen aan sociaal
+ * gebeurt met dit formulier; het inwisselen van de uitnodiging doet het scherm erna zodra sociaal aan staat.
+ */
+export function inviteNameForm({ inviterName = '', onJoined = null } = {}) {
+  const t = nl.friends.invite;
+  const previous = social.me ?? null; // je deed eerder mee en zette sociaal uit: dan bestaat je profiel nog, met je gebruikersnaam
+  const startName = String(state.settings?.displayName ?? '').trim() || String(previous?.display_name ?? '').trim() || String(account.user?.suggestedName ?? '').trim();
+  const nameInput = h('input', {
+    id: 'socialName', class: 'input', type: 'text', autocomplete: 'given-name', value: startName, 'aria-label': t.nameTitle, 'aria-describedby': 'socialNameError',
+  });
+  const userInput = h('input', {
+    id: 'socialUsername', class: 'input', type: 'text', autocomplete: 'off', autocapitalize: 'none', autocorrect: 'off', spellcheck: 'false',
+    value: previous?.username ?? suggestUsername(startName), 'aria-describedby': 'socialUserHint socialUserError', 'aria-required': 'true',
+  });
+  const nameCount = charCounter(nameInput, DISPLAY_NAME_MAX);
+  const userCount = charCounter(userInput, USERNAME_MAX);
+  const nameError = h('p', { id: 'socialNameError', class: 'field__error', role: 'alert', hidden: true });
+  const userError = h('p', { id: 'socialUserError', class: 'field__error', role: 'alert', hidden: true });
+  const userLine = h('p', { id: 'socialUserLine', class: 'field__hint' });
+  const changeButton = h('button', { type: 'button', id: 'changeUsername', class: 'button button--ghost button--small', onclick: () => { revealed = true; refreshUsername(); userInput.focus(); } }, t.usernameChange);
+  const userField = h('div', { class: 'field' },
+    h('label', { class: 'field__label', for: 'socialUsername' }, nl.friends.intro.usernameLabel), userInput, userCount,
+    h('p', { id: 'socialUserHint', class: 'field__hint' }, nl.friends.intro.usernameHint), userError);
+  const userSummary = h('div', { class: 'invite-username' }, userLine, changeButton);
+  const submit = h('button', { type: 'submit', id: 'socialJoin', class: 'button button--primary button--block' }, t.nameSubmit(inviterName));
+
+  let touched = Boolean(previous?.username); // heeft de gebruiker de gebruikersnaam zelf aangepast? (dan raden we er geen cijfer bij; een bestaande naam blijft zoals hij is)
+  let revealed = false;
+
+  function refreshUsername() {
+    const checked = validateUsername(userInput.value);
+    const show = revealed || !checked.ok;
+    userField.hidden = !show;
+    userSummary.hidden = show || !checked.ok;
+    userLine.textContent = checked.ok ? t.usernameLine(checked.value) : '';
+  }
+  userInput.addEventListener('input', () => { touched = true; refreshUsername(); });
+  nameInput.addEventListener('input', () => {
+    if (touched) return;
+    userInput.value = suggestUsername(nameInput.value);
+    userCount.update();
+    refreshUsername();
+  });
+
+  const show = (el, input, text) => { el.textContent = text; el.hidden = false; input.setAttribute('aria-invalid', 'true'); };
+  const clear = () => { for (const [el, input] of [[nameError, nameInput], [userError, userInput]]) { el.hidden = true; input.removeAttribute('aria-invalid'); } };
+
+  /** Probeert de gebruikersnaam; is hij bezet en is hij door ons voorgesteld, dan met een cijfer erachter (2 t/m 9). */
+  async function enableWithFallback(username, displayName) {
+    let candidate = username;
+    let result = await socialApp.enable({ username: candidate, displayName });
+    for (let n = 2; !result.ok && result.reason === 'username_taken' && !touched && n <= 9; n += 1) {
+      candidate = `${username.slice(0, USERNAME_MAX - String(n).length)}${n}`;
+      result = await socialApp.enable({ username: candidate, displayName });
+    }
+    return result;
+  }
+
+  async function onsubmit(event) {
+    event.preventDefault();
+    document.activeElement?.blur?.();
+    clear();
+    const name = nameInput.value.trim();
+    if (name === '') { show(nameError, nameInput, t.nameRequired); nameInput.focus(); return; }
+    if (name.length > DISPLAY_NAME_MAX) { show(nameError, nameInput, reasonText('invalid_display_name')); nameInput.focus(); return; }
+    const username = validateUsername(userInput.value);
+    if (!username.ok) { revealed = true; refreshUsername(); show(userError, userInput, reasonText(username.reason)); userInput.focus(); return; }
+
+    submit.disabled = true;
+    if (name !== startName) await saveSettings({ displayName: name, nameAsked: true });
+    else await saveSettings({ nameAsked: true }); // de naam is nu gevraagd: de aparte naamvraag van het account hoeft niet meer
+    const result = await enableWithFallback(username.value, name);
+    submit.disabled = false;
+    if (!result.ok) {
+      if (['offline', 'signed-out', 'unavailable', 'too_many_requests', 'unknown', 'not_authenticated'].includes(result.reason)) showToast({ message: reasonText(result.reason) });
+      else if (result.reason === 'invalid_display_name') { show(nameError, nameInput, reasonText(result.reason)); nameInput.focus(); }
+      else { revealed = true; refreshUsername(); show(userError, userInput, reasonText(result.reason)); userInput.focus(); }
+      return;
+    }
+    onJoined?.();
+  }
+
+  refreshUsername();
+  return h('form', { class: 'form onboarding onboarding--invite', novalidate: true, onsubmit },
+    h('div', { class: 'field' }, nameInput, nameCount, nameError),
+    userSummary,
+    userField,
+    submit,
+    h('p', { class: 'xs muted' }, nl.friends.intro.offAnytime, ' ',
+      h('a', { id: 'socialPrivacy', href: `${nl.login.legalBase}/PRIVACY.md`, target: '_blank', rel: 'noopener noreferrer' }, nl.friends.intro.privacy)));
 }
 
 /** Wat vrienden wel en niet zien: twee korte lijsten. */

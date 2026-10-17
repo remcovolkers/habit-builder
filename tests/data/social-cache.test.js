@@ -64,3 +64,31 @@ test('een uitnodigingscode onthouden en weer vergeten', () => {
   cache.forgetInvite();
   assert.equal(cache.readInvite(), null);
 });
+
+test('de naam van wie je uitnodigde hoort bij de wachtende uitnodiging en gaat er mee weg', () => {
+  const cache = createSocialCache(memory());
+  assert.equal(cache.readInviter(), '');
+  cache.rememberInvite('c'.repeat(64));
+  cache.rememberInviter('Anna');
+  assert.equal(cache.readInviter(), 'Anna');
+  cache.forgetInvite();
+  assert.equal(cache.readInviter(), '');
+});
+
+test('je eigen links: per gebruiker, onthouden en vergeten, kapotte opslag geeft geen links', () => {
+  const store = memory();
+  const cache = createSocialCache(store);
+  assert.deepEqual(cache.readOwnInvites('u1'), {});
+  cache.rememberOwnInvite('u1', 'i1', 'a'.repeat(64));
+  cache.rememberOwnInvite('u1', 'i2', 'b'.repeat(64));
+  assert.deepEqual(cache.readOwnInvites('u1'), { i1: 'a'.repeat(64), i2: 'b'.repeat(64) });
+  assert.deepEqual(cache.readOwnInvites('u2'), {}, 'een ander account ziet ze niet');
+  cache.forgetOwnInvite('u1', 'i1');
+  assert.deepEqual(cache.readOwnInvites('u1'), { i2: 'b'.repeat(64) });
+  store.map.set('hb-social-own-invites', 'kapot');
+  assert.deepEqual(cache.readOwnInvites('u1'), {});
+  cache.rememberOwnInvite('u1', 'i3', 'c'.repeat(64));
+  cache.clear();
+  assert.deepEqual(cache.readOwnInvites('u1'), {}, 'wissen haalt ze weg');
+  assert.equal(store.map.size, 0);
+});

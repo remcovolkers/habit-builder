@@ -192,35 +192,53 @@ async function main() {
   await waitFor(`document.querySelector('#loginLink')`, 'inlogknop in vrienden');
   check('anoniem: #/vrienden legt uit dat je een account nodig hebt', /account/i.test(await appText()));
   await overflow('vrienden niet ingelogd');
+  // ---- 1b. de flow voor een nieuwe gebruiker (docs/ITERATIE-1.2.md §2): welkom, account, één naamstap, "jullie zijn vrienden" ----------------
   await goto(`#/vrienden/uitnodiging/${invite.code}`);
-  await waitFor(`document.querySelector('#loginLink')`, 'uitnodiging zonder login');
-  check('anoniem: een uitnodigingslink vraagt om in te loggen en onthoudt de code', /Je bent uitgenodigd/i.test(await appText()) && (await ev(`localStorage.getItem('hb-social-invite')`)) === invite.code);
+  await waitFor(`document.querySelector('#inviteWelcome')`, 'welkomstscherm');
+  check('welkom: de uitnodiging noemt de naam van wie uitnodigt, zonder account', /Cor nodigt je uit voor Habit Builder/i.test(await text('#inviteWelcome')), await text('#inviteWelcome'));
+  check('welkom: één hoofdactie "Account maken" en een link voor wie al een account heeft', (await count('#loginLink')) === 1 && (await count('#haveAccountLink')) === 1);
+  check('welkom: de code wordt onthouden en de uitnodiger ook (voor het inlogscherm)', (await ev(`localStorage.getItem('hb-social-invite')`)) === invite.code && (await ev(`localStorage.getItem('hb-social-inviter')`)) === 'Cor');
+  check('welkom: zonder account is er geen "terug naar Vrienden"', (await count('.back-link')) === 0);
+  await overflow('welkom');
+  await shot('invite-welcome');
+  await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 640, deviceScaleFactor: 2, mobile: true });
+  await ev(`document.documentElement.style.fontSize = '200%'`);
+  await sleep(300);
+  await overflow('welkom bij 320px en 200% tekst');
+  await ev(`document.documentElement.style.fontSize = ''`);
+  await viewport(390, 844);
   await goto('#/vrienden/uitnodiging/onzin');
   check('een kapotte uitnodigingslink geeft een nette melding', /klopt niet/i.test(await appText()));
+  await goto(`#/vrienden/uitnodiging/${'f'.repeat(64)}`);
+  await waitFor(`document.querySelector('#inviteInvalid')`, 'verlopen of verzonnen link');
+  check('een link die niet werkt: uitleg, en een account maken kan nog steeds', /werkt niet meer/i.test(await text('#inviteInvalid')) && (await count('#loginLink')) === 1, await appText());
+  await ev(`localStorage.setItem('hb-social-invite', '${invite.code}'); localStorage.setItem('hb-social-inviter', 'Cor')`); // de verzonnen link heeft de echte uitnodiging vergeten: terugzetten
 
-  // ---- 2. inloggen via het echte inlogscherm; de onthouden uitnodiging wordt daarna afgehandeld (maar eerst meedoen) -------------------
+  // ---- 2. inloggen via het echte inlogscherm; de onthouden uitnodiging wordt daarna afgehandeld (één naamstap) ------------------------
   await ev(`import('/src/ui/account.js').then((m) => m.onAccountChanged(() => { if (m.account.status === 'signed-in') window.__signed = true; }))`);
+  await goto('#/login');
+  await waitFor(`document.querySelector('#loginInvite')`, 'uitnodiging op het inlogscherm');
+  check('het inlogscherm herinnert aan de uitnodiging: "Je bent uitgenodigd door Cor"', /uitgenodigd door Cor/i.test(await text('#loginInvite')), await text('#loginInvite'));
   await uiLogin('ui-me@example.com');
   check('na inloggen met een onthouden uitnodiging stuurt de app naar die uitnodiging', (await ev(`location.hash`)).includes('/vrienden/uitnodiging/'), await ev(`location.hash`));
-  await waitFor(`document.querySelector('#socialJoin')`, 'meedoen-formulier voor de uitnodiging');
-  check('de uitnodiging vraagt eerst zelf mee te doen', /Je bent uitgenodigd door een vriend/i.test(await appText()));
-  const nameValue = await ev(`document.querySelector('#socialName').value`);
-  await shot('intro-invite');
+  await waitFor(`document.querySelector('#inviteNameTitle')`, 'naamstap voor de uitnodiging');
+  check('de naamstap: één vraag "Hoe wil je heten?" die Cor noemt, en geen aparte naamdialoog van het account', /Hoe wil je heten/i.test(await text('#inviteNameTitle')) && /Cor/.test(await appText()) && (await count('dialog[open]')) === 0, await appText());
+  check('de gebruikersnaam is verstopt achter "Wijzigen" zodra er een goede naam is voorgesteld', (await ev(`document.querySelector('#socialUsername').closest('.field').hidden`)) === true || (await ev(`document.querySelector('#socialName').value`)) === '');
+  await overflow('naamstap');
+  await shot('invite-name');
+  await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 640, deviceScaleFactor: 2, mobile: true });
+  await ev(`document.documentElement.style.fontSize = '200%'`);
+  await sleep(300);
+  await overflow('naamstap bij 320px en 200% tekst');
+  await ev(`document.documentElement.style.fontSize = ''`);
+  await viewport(390, 844);
 
-  // ---- 3. de kaart op Voortgang en het aanmelden ---------------------------------------------------------------------------------------
-  await goto('#/stats');
-  await waitFor(`document.querySelector('#socialCard')`, 'kaart');
-  check('ingelogd, nog niet meegedaan: de kaart nodigt uit (zonder iets op te halen)', /Vergelijk je week|Ranglijst bekijken/i.test(await text('#socialCard')), await text('#socialCard'));
-  check('de kaart toont de uitnodiging die nog wacht', (await count('#pendingInvite')) === 1);
-  check('je doet nog niet mee: geen vrienden en geen ranglijst opgehaald', (await social()).status !== 'on' && (await social()).board.length === 0, J(await social()));
-  await shot('stats-card-join');
-  await goto('#/vrienden');
-  await waitFor(`document.querySelector('#socialJoin')`, 'aanmelden');
-  check('aanmelden legt uit wie er op de ranglijst komt (geen minimum aantal taken, na 3 dagen niets weg)', /Wie staat er op de ranglijst/i.test(await appText()) && /geen minimum aantal taken/i.test(await appText()) && /3 dagen/.test(await appText()));
-  check('aanmelden toont wat vrienden zien en wat privé blijft', /Dit zien je vrienden/i.test(await appText()) && /Dit blijft privé/i.test(await appText()));
-  await overflow('aanmelden');
-  await shot('intro');
-
+  await click('#socialJoin');
+  await sleep(200);
+  check('zonder naam blijft het formulier staan met een melding', /Vul je naam in/.test(await text('#socialNameError')));
+  await setValue('#socialName', 'Remco Test');
+  check('de gebruikersnaam wordt voorgesteld uit de naam', (await ev(`document.querySelector('#socialUsername').value`)) === 'remco.test');
+  await click('#changeUsername');
   await setValue('#socialUsername', 'a b');
   await click('#socialJoin');
   await sleep(200);
@@ -228,23 +246,17 @@ async function main() {
   await setValue('#socialUsername', 'anna');
   await click('#socialJoin');
   await waitFor(`!document.querySelector('#socialUserError').hidden && /bezet/.test(document.querySelector('#socialUserError').textContent)`, 'bezette naam');
-  check('een bezette gebruikersnaam geeft de reden', true);
-  await setValue('#socialName', 'Remco Test');
+  check('een bezette, zelf getypte gebruikersnaam geeft de reden (er wordt niet stilletjes een cijfer bijgezet)', true);
   await setValue('#socialUsername', 'remco.ui');
   await click('#socialJoin');
-  try { await waitFor(`!document.querySelector('#socialJoin')`, 'aangemeld'); } catch (e) { console.log('DIAG', J({ hash: await ev('location.hash'), social: await social(), userError: await text('#socialUserError'), nameError: await text('#socialNameError'), body: (await appText()).slice(0, 400), problems })); throw e; }
-  await sleep(1200);
+  try { await waitFor(`document.querySelector('#inviteSuccess')`, 'klaar', 15000); } catch (e) { console.log('DIAG', J({ hash: await ev('location.hash'), social: await social(), userError: await text('#socialUserError'), nameError: await text('#socialNameError'), body: (await appText()).slice(0, 400), problems })); throw e; }
   check('de naam uit het formulier staat nu ook in Instellingen/de begroeting', (await ev(`window.habitBuilder.state.settings.displayName`)) === 'Remco Test');
-
-  // na het meedoen staat de wachtende uitnodiging van Cor klaar: openen wisselt hem meteen in
-  await waitFor(`document.querySelector('.board')`, 'ranglijst na aanmelden');
-  check('na het meedoen toont het hoofdscherm de wachtende uitnodiging', (await count('#pendingInvite a')) === 1);
-  await click('#pendingInvite a');
-  await waitFor(`document.querySelector('#inviteSuccess')`, 'uitnodiging ingewisseld', 12000);
-  check('de uitnodiging wordt meteen ingewisseld: "Je bent nu vrienden met Cor"', /vrienden met Cor/i.test(await text('#inviteSuccess')), await text('#inviteSuccess'));
-  check('de onthouden uitnodiging is daarna vergeten', (await ev(`localStorage.getItem('hb-social-invite')`)) === null);
+  check('de uitnodiging wordt meteen ingewisseld: "Jij en Cor zijn nu vrienden!"', /Jij en Cor zijn nu vrienden/i.test(await text('#inviteSuccess')), await text('#inviteSuccess'));
+  check('het bevestigingsscherm toont de nieuwe vriend en wijst de weg (dit testaccount heeft al habits: vrienden bekijken of naar Vandaag)', /@cor/i.test(await appText()) && (await count('#toBoard')) === 1 && (await count('#toToday')) === 1 && (await count('#firstHabit')) === 0, await appText());
+  check('de onthouden uitnodiging en uitnodiger zijn daarna vergeten', (await ev(`localStorage.getItem('hb-social-invite')`)) === null && (await ev(`localStorage.getItem('hb-social-inviter')`)) === null);
   await overflow('uitnodiging gelukt');
   await shot('invite-success');
+
 
   // ---- 4. de ranglijst -------------------------------------------------------------------------------------------------------------------
   await click('#toBoard');
@@ -323,7 +335,8 @@ async function main() {
   check('het verzoek van Dora (nog niet beantwoord) staat onder "Verzoeken aan jou"', /Dora/.test(await text('#incoming') ?? ''), await text('#incoming'));
   await overflow('beheren');
   await shot('manage');
-  await click('#invites .person button');
+  check('Beheren toont bij je link hoeveel mensen hem gebruikten en laat je hem opnieuw kopiëren (de link staat op dit apparaat)', /Nog niemand/.test(await text('#invites .person')) && (await count('#invites .person button[data-focus-key^="copy-"]')) === 1, await text('#invites'));
+  await click('#invites .person button[data-focus-key^="revoke-"]');
   await sleep(600);
   check('een uitnodigingslink intrekken haalt hem uit de lijst', (await count('#invites .person')) === 0);
   await closeDialogs(); // een prestatie-viering van de aangemaakte habits kan hier tussendoor komen
@@ -340,6 +353,26 @@ async function main() {
   // ---- 8. beide thema's en desktop -------------------------------------------------------------------------------------------------------
   await goto('#/vrienden');
   await waitFor(`document.querySelector('.board')`, 'ranglijst voor thema');
+  {
+    const now = await social();
+    const listed = await count('#friendsList .person');
+    check('onder de ranglijst staat "Je vrienden (n)" met alle vrienden, ook wie niet op de ranglijst staat', listed === now.friends && now.friends > 0 && new RegExp(`Je vrienden \\(${now.friends}\\)`, 'i').test(await text('#friendsList')), `${listed} van ${now.friends}: ${await text('#friendsList')}`);
+    const quiet = await count('#friendsList .person__note');
+    check('wie niet op de ranglijst staat krijgt een rustige uitleg', quiet === now.friends - (now.board.length - 1), `${quiet} uitleg, ${now.friends} vrienden, ${now.board.length} op de lijst`);
+    check('een vriend heeft naam, @gebruikersnaam en sinds wanneer', /@\w[\w.]*[\s\S]*Vriend sinds/.test(await text('#friendsList .person')), await text('#friendsList .person'));
+    await overflow('ranglijst met de vriendenlijst');
+    await ev(`document.querySelector('#friendsList').scrollIntoView({ block: 'center' })`);
+    await shot('board-friends-list');
+    // prestaties: met sociaal aan staat de groep "Samen", de eerste vriend is behaald en "vijf vrienden" toont de voortgang
+    await goto('#/achievements');
+    await waitFor(`document.querySelector('.achievements-group')`, 'prestaties');
+    await sleep(900); // de controle op nieuwe prestaties draait na een verandering van het aantal vrienden
+    await closeDialogs();
+    const medals = await ev(`[...document.querySelectorAll('#achievements-social .achv')].map((m) => m.dataset.state + ' ' + m.innerText.replace(/\\s+/g, ' '))`);
+    check('met sociaal aan staat de groep "Samen" met "Samen sterker" behaald en voortgang naar vijf vrienden', Array.isArray(medals) && medals.length === 2 && /^unlocked Samen sterker/.test(medals[0]) && new RegExp(`^locked Vijf vrienden ${now.friends} van 5`).test(medals[1]), J(medals));
+    await goto('#/vrienden');
+    await waitFor(`document.querySelector('.board')`, 'ranglijst na prestaties');
+  }
   for (const theme of ['mel']) {
     await ev(`import('/src/ui/state.js').then((m) => m.saveSettings({ theme: ${J(theme)} }))`);
     await sleep(500);
@@ -365,7 +398,7 @@ async function main() {
   await goto('#/vrienden/toevoegen'); await sleep(300);
   await shot('add-desktop');
   await goto('#/stats'); await sleep(300);
-  check('op desktop staat de kaart op Voortgang met je plek', /Je staat \d+e van \d+/.test(await text('#socialCard')), await text('#socialCard'));
+  check('op desktop staat de kaart op Voortgang met je plek en het aantal vrienden', /Je staat \d+e van \d+/.test(await text('#socialCard')) && /\d+ vrienden?/.test(await text('#socialCard')), await text('#socialCard'));
   await shot('stats-desktop');
   await viewport(390, 844);
 
@@ -388,6 +421,7 @@ async function main() {
   const before = await social();
   await click('#refreshBoard');
   await sleep(600);
+  check('offline blijft ook de vriendenlijst staan (uit de cache)', (await count('#friendsList .person')) === before.friends, String(await count('#friendsList .person')));
   check('offline blijft de ranglijst staan (uit de cache) met een melding', (await count('.board__row')) === before.board.length && /Zonder verbinding|offline/i.test(await appText()), await appText());
   await shot('board-offline');
   await send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
@@ -405,6 +439,14 @@ async function main() {
   await overflow('na uitzetten');
 
   check('geen JavaScript-fouten of console-errors', problems.length === 0, problems.join(' | '));
+
+  // ---- 12. een account dat op een ander apparaat is verwijderd ---------------------------------------------------------------------------------
+  // Zonder controle lijkt de bewaarde sessie nog geldig en geeft elke schrijfactie een 409 (foreign key). Nu herkent de app het bij het openen.
+  const elsewhere = await apiLogin('ui-me@example.com'); // "het andere apparaat"
+  await rpc(elsewhere, 'delete_my_account');
+  await send('Page.reload');
+  await waitFor(`localStorage.getItem('sb-localhost-auth-token') === null`, 'sessie opgeruimd na een elders verwijderd account', 20000);
+  check('een sessie van een elders verwijderd account wordt bij het openen herkend: de app is uitgelogd in plaats van 409-fouten te geven', (await ev(`import('/src/ui/account.js').then((m) => m.account.status)`)) === 'anonymous');
 
   // opruimen
   for (const u of Object.values(people)) await rpc(u, 'delete_my_account');

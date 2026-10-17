@@ -51,6 +51,7 @@ function fakeRemote(data = {}) {
     createInvite: call('createInvite', { id: 'inv1', code: CODE, expires_at: '2026-10-22T00:00:00Z' }),
     invites: call('invites', () => d.invites),
     revokeInvite: call('revokeInvite', true),
+    peekInvite: call('peekInvite', () => d.peek ?? { status: 'ok', display_name: 'Anna' }),
     redeemInvite: call('redeemInvite', () => d.redeem ?? { status: 'ok', user_id: 'u-anna', username: 'anna', display_name: 'Anna' }),
     publish: call('publish', undefined),
     leaderboard: call('leaderboard', () => d.board),
@@ -417,7 +418,7 @@ test('een uitnodiging maken geeft een link met de code; hij staat niet in de lij
   await s.app.refresh();
   const made = await s.app.createInvite();
   assert.deepEqual(made, { ok: true, id: 'inv1', code: CODE, expiresAt: '2026-10-22T00:00:00Z', link: `https://x.test/app/#/vrienden/uitnodiging/${CODE}` });
-  assert.deepEqual((await s.app.invites()).invites, [{ id: 'inv1', created_at: 'x', expires_at: 'y' }]);
+  assert.deepEqual((await s.app.invites()).invites, [{ id: 'inv1', created_at: 'x', expires_at: 'y', uses: 0, link: `https://x.test/app/#/vrienden/uitnodiging/${CODE}` }]);
   assert.deepEqual(await s.app.revokeInvite('inv1'), { ok: true, revoked: true });
 });
 
@@ -428,7 +429,7 @@ test('een uitnodiging inwisselen maakt vrienden (lijsten ververst) en vergeet de
   assert.equal(s.app.pendingInvite(), CODE);
   s.fake.calls.length = 0;
   const result = await s.app.redeemInvite(CODE.toUpperCase());
-  assert.deepEqual(result, { ok: true, person: { userId: 'u-anna', username: 'anna', name: 'Anna', relation: null } });
+  assert.deepEqual(result, { ok: true, person: { userId: 'u-anna', username: 'anna', name: 'Anna', relation: null }, alreadyFriends: false });
   assert.deepEqual(s.fake.calls[0], ['redeemInvite', CODE]);
   assert.ok(s.fake.names().includes('friends'));
   assert.equal(s.app.pendingInvite(), null);
@@ -492,4 +493,72 @@ test('de standaardklok roept setTimeout en clearTimeout als gewone functie aan (
     globalThis.setTimeout = original.set;
     globalThis.clearTimeout = original.clear;
   }
+});
+
+// ---- uitnodigingen: voorvertoning, al vrienden en je eigen links (0005) -----------------------------------------------------------
+
+test('de voorvertoning werkt zonder account en onthoudt wie uitnodigt (voor het inlogscherm)', async () => {
+  const s = setup({ signedIn: false });
+  assert.equal(s.app.rememberInvite(CODE), true);
+  assert.deepEqual(await s.app.peekInvite(CODE), { ok: true, status: 'ok', name: 'Anna' });
+  assert.deepEqual(s.fake.calls, [['peekInvite', CODE]]);
+  assert.equal(s.app.pendingInviter(), 'Anna');
+  s.app.dropInvite();
+  assert.equal(s.app.pendingInvite(), null);
+  assert.equal(s.app.pendingInviter(), '', 'zonder uitnodiging ook geen naam');
+});
+
+test('de voorvertoning: een verzonnen code gaat niet over het netwerk; ongeldig, de eigen link en geen verbinding worden onderscheiden', async () => {
+  const s = setup({ signedIn: false });
+  assert.deepEqual(await s.app.peekInvite('abc'), { ok: true, status: 'invalid', name: '' });
+  assert.deepEqual(s.fake.calls, [], 'geen netwerk voor een code die al niet kan kloppen');
+
+  s.fake.data.peek = { status: 'invalid' };
+  assert.deepEqual(await s.app.peekInvite(CODE), { ok: true, status: 'invalid', name: '' });
+  s.fake.data.peek = { status: 'own' };
+  assert.deepEqual(await s.app.peekInvite(CODE), { ok: true, status: 'own', name: '' });
+  s.fake.data.peek = { status: 'iets-nieuws' };
+  assert.equal((await s.app.peekInvite(CODE)).status, 'invalid', 'een onbekend antwoord is "invalid"');
+
+  s.env.state.online = false;
+  assert.deepEqual(await s.app.peekInvite(CODE), { ok: false, reason: 'offline' });
+  s.env.state.online = true;
+  s.fake.data.failWith.peekInvite = new SocialError('unavailable');
+  assert.deepEqual(await s.app.peekInvite(CODE), { ok: false, reason: 'unavailable' }, 'de migratie is nog niet uitgevoerd');
+});
+
+test('de voorvertoning onthoudt de uitnodiger alleen voor de uitnodiging die op je wacht', async () => {
+  const s = setup({ signedIn: false });
+  await s.app.peekInvite(CODE); // niet onthouden als wachtende uitnodiging
+  assert.equal(s.app.pendingInviter(), '');
+});
+
+test('inwisselen bij iemand die al je vriend is: "al vrienden", geen fout', async () => {
+  const s = setup({ remoteData: { redeem: { status: 'ok', already_friends: true, user_id: 'u-anna', username: 'anna', display_name: 'Anna' } } });
+  await s.app.refresh();
+  s.app.rememberInvite(CODE);
+  const result = await s.app.redeemInvite(CODE);
+  assert.deepEqual([result.ok, result.alreadyFriends, result.person.name], [true, true, 'Anna']);
+  assert.equal(s.app.pendingInvite(), null);
+});
+
+test('je eigen links blijven op dit apparaat beschikbaar (de server bewaart alleen een hash), met het aantal gebruikers', async () => {
+  const s = setup({ remoteData: { invites: [{ id: 'inv1', created_at: 'x', expires_at: '2026-10-22T00:00:00Z', uses: 3 }, { id: 'inv0', created_at: 'w', expires_at: '2026-10-20T00:00:00Z', uses: 1 }] } });
+  await s.app.refresh();
+  await s.app.createInvite(); // inv1
+  const { invites } = await s.app.invites();
+  assert.deepEqual(invites.map((i) => [i.id, i.uses, i.link !== null]), [['inv1', 3, true], ['inv0', 1, false]], 'een link van een ander apparaat kun je hier niet opnieuw tonen');
+  assert.equal(invites[0].link, `https://x.test/app/#/vrienden/uitnodiging/${CODE}`);
+  await s.app.revokeInvite('inv1');
+  assert.equal((await s.app.invites()).invites[0].link, null, 'ingetrokken: ook niet meer lokaal bewaard');
+});
+
+test('de eigen links van een ander account zie je nooit', async () => {
+  const storage = memoryStorage();
+  const first = setup({ storage });
+  await first.app.refresh();
+  await first.app.createInvite();
+  const other = setup({ storage, userId: 'u-ander', remoteData: { invites: [{ id: 'inv1', created_at: 'x', expires_at: 'y', uses: 0 }] } });
+  await other.app.refresh();
+  assert.equal((await other.app.invites()).invites[0].link, null);
 });

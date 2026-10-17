@@ -110,12 +110,42 @@ Maak het browservenster zo hoog als je scherm (op 1080p ongeveer 950 px) en kijk
 3. **Tik een taak af** terwijl je halverwege de linkerkolom staat: de kolom springt niet naar boven.
 4. **Open "Wat hield je tegen?"** terwijl je gescrold staat: niets verschuift, de zijbalk blijft staan, en na sluiten staat alles weer zoals het was. Doe hetzelfde met de iconenkiezer bij een habit bewerken.
 5. **Voortgang:** de titel blijft staan; het overzicht en de terugblik scrollen los van elkaar.
-6. **Habit bewerken of nieuw:** het formulier staat op een breed scherm in twee kolommen en past bij een nieuwe habit zonder scrollen. De knoppen *Habit opslaan* en *Annuleren* blijven onderaan in beeld, ook bij een habit met teller (daar scrolt het formulier).
+6. **Habit bewerken of nieuw:** het formulier is op elk scherm één lijst in een smalle kolom (geen twee kolommen) en scrollt zelf. De knoppen *Habit opslaan* en *Annuleren* blijven onderaan in beeld, ook bij een habit met teller (daar scrolt het formulier).
 7. **Habit: detail:** hoofd- en zijkolom scrollen los van elkaar.
 8. **Instellingen en Prestaties** scrollen als geheel, met de balk aan de rand van het scherm.
 9. **Venster smaller dan 960 px:** de tabbalk komt terug en de pagina scrolt als op een telefoon.
 
 Meten in plaats van kijken: `npm run audit:scroll` (met `SHOTS=<map>` ook schermafbeeldingen).
+
+## K. Vrienden en de uitnodigingsflow (stub en leeg)
+
+Na `npm run dev:seed` heeft de stub zes vrienden en een uitnodigingslink. Gebruik een eigen browserprofiel per account.
+
+**Als de stub (Vrienden)**
+1. Open **Vrienden** (via de kaart bovenaan Voortgang). De ranglijst toont **Anna (340)**, daaronder de **stub zelf** (je eigen cijfers komen uit je habits, ongeveer 270), **Bram (180)** en **Cor (95)**. **Fien** staat er niet op: zij deed 10 dagen niets af. Scroll onder de ranglijst naar **Je vrienden (4)**: Anna, Bram, Cor en Fien met "@naam · Vriend sinds …"; alleen Fien heeft de uitleg "Niet op de ranglijst: de laatste 3 dagen niets afgevinkt…". Omdat de vriendschappen net door de seed zijn gemaakt, hebben ze allemaal het label **Nieuw** (dat verdwijnt na 7 dagen); accepteer Dora en ze komt erbij. De kaart op Voortgang noemt "4 vrienden"; bij het lege account staat er de knop *Vriend toevoegen*.
+2. **Beheren:** onder "Je vrienden" staan Anna, Bram, Cor en Fien (ook Fien); onder "Verzoeken aan jou" staat **Dora**, onder "Je verstuurde verzoeken" staat **Eef**. Accepteer Dora: ze komt in de vriendenlijst en, zodra ze iets afvinkt, op de ranglijst (haar samenvatting is er al, dus meteen). Trek het verzoek aan Eef in.
+3. **Vrienden toevoegen:** zoek op `bram.stub` (al vrienden: "Al vrienden") en op `eef.stub`. Zoek op een bestaande naam die geen vriend is, via een extra account (zie `dev:code -- dora`).
+4. **Je eigen uitnodigingslink:** op "Vrienden toevoegen" staat er geen link (die van de seed staat niet op dit apparaat). Maak er een: hij blijft **na het verlaten van de pagina zichtbaar** met "Nog niemand heeft deze link gebruikt · Werkt tot …", met Kopiëren en Delen. Onder **Beheren** staat dezelfde link met het aantal mensen en een knop Kopiëren.
+
+**Als nieuwe gebruiker (leeg account, of een tweede link-ontvanger)**
+5. Open de uitnodigingslink uit de seed (of die van stap 4) **uitgelogd**, in een schone browser. Verwacht: *"Remco (stub) nodigt je uit voor Habit Builder"* met één knop **Account maken**.
+6. Maak een account (`leeg@example.com`, code via `dev:code -- leeg`). Het inlogscherm zegt *"Je bent uitgenodigd door Remco (stub)"*. Na de code kom je vanzelf op de uitnodiging; er verschijnt **geen aparte naamdialoog**.
+7. **Eén naamstap:** "Hoe wil je heten?" met uitleg. Vul "Leeg" in: de gebruikersnaam (`leeg`) staat achter "Wijzigen". Kies "Niet nu" bij een ander account om over te slaan.
+8. Na het opslaan: **"Jij en Remco (stub) zijn nu vrienden!"** met @stub, en "Maak je eerste habit" (je hebt nog geen habits) en "Bekijk je vrienden".
+9. Open dezelfde link nog eens: **"Jij en Remco (stub) waren al vrienden"**. Open hem als de stub zelf: "Dit is je eigen uitnodigingslink". Open een verzonnen link (`…/uitnodiging/` met 64 keer `f`): "Deze link werkt niet meer" met nog steeds de knop Account maken.
+10. Terug als de stub: de leeg-gebruiker staat in "Je vrienden" en de teller bij je link is **1 persoon**.
+
+## L. Prestaties (§5, ronde 1 en 2)
+
+1. Open het gevulde account (`npm run dev:seed`, inloggen als stub). Bij de eerste keer openen na de update kan er één viering met meerdere medailles verschijnen ("n nieuwe prestaties!"): de stub haalt veel regels al. Sluit hem met *Mooi!*.
+2. **Prestaties** is nu per groep: *Aantallen, Volhouden, Terugkomen, Slimmer, Ingeburgerd, Reflectie, Verbreding*, elk met "x van y". Een medaille die nog niet behaald is toont hoe ver je bent, bijvoorbeeld **"199 van 500"** bij *500 keer gedaan*; de rest zegt "Nog niet behaald".
+3. Een medaille voor meerdere habits toont de eerste twee en "en 7 andere", niet een hele rij.
+4. Zelf uitproberen met het lege account (`leeg`): vink iets af tot 10 keer (*10 keer gedaan*), vul bij een habit een *minimale versie* in (*Kleine stap*, direct), pauzeer een habit, hef de pauze op en vink hem daarna af (*Pauzeren is oké*). *Vol doel* (een teller-habit, zeven dagen op rij het volle doel; een minimale versie of een half doel breekt de reeks) is lokaal alleen met een aangepaste datum te testen en wordt gedekt door de unit-tests.
+5. *Sterk terug*: een habit waarvan twee weken minder dan de helft gehaald is en die daarna weer op 80% komt. *Nooit twee keer missen*: vijf keer na een gemiste dag meteen weer gedaan. Beide zijn in de stub al gehaald (Terugkomen: 3 van 3).
+6. Controleer op 320 px met 200% tekst dat de pagina niet zijwaarts scrolt (`npm run check:layout` doet dat ook).
+7. Nieuwe prestaties zijn privé: ze staan niet op de ranglijst en niet in wat vrienden zien.
+8. **Reflectie en verbreding (ronde 2):** *Eerste review* (sla een weekreview op), *Je waarom* (vul het waarom in bij drie habits; "1 van 3" loopt mee), *Automatisme gevolgd* (een cijfer in vier verschillende weken), *Hele dag* (habits in ochtend, middag en avond; "de hele dag" telt niet), *Vijf tegelijk*, *Alles gedaan* (tien dagen waarop alles van de dag is gedaan, minstens twee dingen). De stub heeft de verbredingsgroep al volledig (4 van 4).
+9. **Samen (sociaal):** de groep staat alleen op de pagina als sociaal aan staat. Zet sociaal aan als stub (de vrienden uit de seed): *Samen sterker* is meteen behaald, *Vijf vrienden* toont "4 van 5" en komt erbij zodra je er een vijfde hebt (accepteer Dora). Met het lege account en sociaal uit ontbreekt de groep.
 
 ## Automatische controles
 

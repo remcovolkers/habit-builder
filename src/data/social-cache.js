@@ -4,6 +4,8 @@
 
 const CACHE_KEY = 'hb-social';
 const INVITE_KEY = 'hb-social-invite';
+const INVITER_KEY = 'hb-social-inviter'; // de naam van wie je uitnodigde, om op het inlogscherm te kunnen tonen
+const OWN_INVITES_KEY = 'hb-social-own-invites'; // de links die jij maakte, zodat je ze opnieuw kunt tonen (de server bewaart alleen een hash)
 
 export function createSocialCache(storage = globalThis.localStorage) {
   const get = (key) => { try { return storage?.getItem(key) ?? null; } catch { return null; } };
@@ -28,9 +30,34 @@ export function createSocialCache(storage = globalThis.localStorage) {
     clear() {
       drop(CACHE_KEY);
       drop(INVITE_KEY);
+      drop(INVITER_KEY);
+      drop(OWN_INVITES_KEY);
     },
     rememberInvite: (code) => set(INVITE_KEY, String(code)),
     readInvite: () => get(INVITE_KEY),
-    forgetInvite: () => drop(INVITE_KEY),
+    forgetInvite() {
+      drop(INVITE_KEY);
+      drop(INVITER_KEY);
+    },
+    rememberInviter: (name) => set(INVITER_KEY, String(name ?? '')),
+    readInviter: () => get(INVITER_KEY) ?? '',
+
+    /** Jouw eigen links van dit apparaat: { [id]: code } voor deze gebruiker. */
+    readOwnInvites(userId) {
+      try {
+        const data = JSON.parse(get(OWN_INVITES_KEY));
+        return data && typeof data === 'object' && data.userId === userId && data.links && typeof data.links === 'object' ? data.links : {};
+      } catch {
+        return {};
+      }
+    },
+    rememberOwnInvite(userId, id, code) {
+      const links = { ...this.readOwnInvites(userId), [id]: code };
+      set(OWN_INVITES_KEY, JSON.stringify({ userId, links }));
+    },
+    forgetOwnInvite(userId, id) {
+      const { [id]: _gone, ...links } = this.readOwnInvites(userId);
+      set(OWN_INVITES_KEY, JSON.stringify({ userId, links }));
+    },
   };
 }

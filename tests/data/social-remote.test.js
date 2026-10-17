@@ -34,6 +34,7 @@ test('elke functie roept de juiste serverfunctie aan met de juiste argumenten', 
     invite_list: ok([{ id: 'i1' }]),
     invite_revoke: ok(true),
     invite_redeem: ok({ status: 'ok' }),
+    invite_peek: ok({ status: 'ok', display_name: 'Anna' }),
     leaderboard: ok([{ user_id: 'u1' }]),
   });
   const remote = createSocialRemote(async () => client);
@@ -53,6 +54,7 @@ test('elke functie roept de juiste serverfunctie aan met de juiste argumenten', 
   await remote.publish({ p_points: 1 });
   assert.deepEqual(await remote.leaderboard(), [{ user_id: 'u1' }]);
   await remote.disable();
+  assert.deepEqual(await remote.peekInvite('abc'), { status: 'ok', display_name: 'Anna' });
 
   assert.deepEqual(client.calls, [
     ['social_me', {}],
@@ -70,6 +72,7 @@ test('elke functie roept de juiste serverfunctie aan met de juiste argumenten', 
     ['publish_summary', { p_points: 1 }],
     ['leaderboard', {}],
     ['social_disable', {}],
+    ['invite_peek', { p_code: 'abc' }],
   ]);
 });
 
@@ -124,4 +127,10 @@ test('niet ingelogd, te veel verzoeken en onbekende fouten', () => {
   assert.equal(toSocialError(undefined).code, 'unknown');
   const own = new SocialError('invalid');
   assert.equal(toSocialError(own), own, 'een SocialError blijft zoals hij is');
+});
+
+test('een foreign-key-fout (het account van deze sessie bestaat niet meer, 409) wordt "not_authenticated": opnieuw inloggen lost het op', () => {
+  const error = { code: '23503', status: 409, message: 'insert or update on table "social_profiles" violates foreign key constraint "social_profiles_user_id_fkey"' };
+  assert.equal(toSocialError(error).code, 'not_authenticated');
+  assert.equal(toSocialError({ status: 409, message: 'duplicate key value violates unique constraint' }).code, 'unknown', 'een ander 409 is geen sessieprobleem');
 });

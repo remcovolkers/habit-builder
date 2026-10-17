@@ -302,11 +302,21 @@
     transition: --fade-top var(--duration-base) var(--ease-out), --fade-bottom var(--duration-base) var(--ease-out);
   }
 
-  [data-fade-top] {
+  /* een nette beginstand ook in een browser zonder @property (dan beweegt de fade niet mee, maar hij werkt wel) */
+  .page__pane,
+  .page__scroll,
+  .page__fixed,
+  .app__main:not(:has(.page)) {
+    --fade-top: 0px;
+    --fade-bottom: 0px;
+  }
+
+  /* dezelfde gewicht als de beginstand hierboven, en later in het bestand: dan wint de markering */
+  :is(.page__pane, .page__scroll, .page__fixed, .app__main)[data-fade-top] {
     --fade-top: var(--fade-size);
   }
 
-  [data-fade-bottom] {
+  :is(.page__pane, .page__scroll, .page__fixed, .app__main)[data-fade-bottom] {
     --fade-bottom: var(--fade-size);
   }
 
@@ -340,13 +350,22 @@
     flex: 1;
   }
 
-  /* formulier: de knoppen blijven onderaan in beeld terwijl je door de velden scrolt */
+  /* formulier: alleen de velden scrollen; de knoppen staan eronder, vast, en niet erachter */
+  .habit-form__form {
+    display: contents;
+  }
+
+  .habit-form .form__actions,
+  .habit-form__form > [role='alert'] {
+    flex: none;
+    padding-top: var(--space-4);
+  }
+
+  /* de knoppen naast elkaar: zo nemen ze op een laag scherm weinig ruimte */
   .habit-form .form__actions {
-    position: sticky;
-    bottom: 0;
-    z-index: 1;
-    padding-block: var(--space-3);
-    background: linear-gradient(180deg, transparent, var(--color-bg-3) 28%);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
   }
 
   .page-title {
@@ -483,26 +502,6 @@
 
   .today__columns {
     margin-top: var(--space-3);
-  }
-}
-
-/* brede schermen: het formulier in twee kolommen, zodat het op 1080p zonder scrollen past */
-@media (min-width: 1200px) {
-  .habit-form {
-    max-width: 62rem;
-  }
-
-  .habit-form .form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: var(--space-8);
-    align-items: start;
-  }
-
-  .habit-form .form > .templates,
-  .habit-form .form > .form__actions,
-  .habit-form .form > .field__error,
-  .habit-form .form > [role='alert'] {
-    grid-column: 1 / -1;
   }
 }
 

@@ -1,6 +1,23 @@
 # Iteratie na 1.1: uitnodigen, vrienden inzien, prestaties en iconen – analyse en requirements
 
-Status: **analyse, besluiten genomen (§8), klaar om te bouwen** · opgesteld 2026-10-16, besluiten 2026-10-16 · bouwt voort op [SOCIAAL.md](SOCIAAL.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
+Status: **§1 en §2 gebouwd (zie "Stand" hieronder); §3, §4, §5 en §6 af** · opgesteld 2026-10-16, besluiten 2026-10-16 · bouwt voort op [SOCIAAL.md](SOCIAAL.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
+
+## Stand
+
+| Onderdeel | Stand |
+|---|---|
+| §4 Vandaag-ruimte | **af** (gemeten en opgelost) |
+| §6 Iconen | **af** (trap 1 en 2, 109 van 109) |
+| §1 Uitnodigingslink | **gebouwd** (migratie `0005_invites.sql`): L1 getest; **L2** de actieve link blijft opnieuw te tonen en te delen (de code wordt per apparaat onthouden); **L3** het aantal mensen per link (in Vrienden toevoegen en Beheren); **L4** plafond 25; **L6** "jullie waren al vrienden". **L5** ("Nieuw" bij nieuwe vrienden) zit in §3. **L7**: een link wijst altijd naar het adres waar hij gemaakt is; een *oudere* app die de route nog niet kent kunnen we niet meer veranderen. **L8**: zie de checklist hieronder. **B7** (de link die "Pagina niet gevonden" gaf) is niet gereproduceerd en blijft een hypothese. |
+| §2 Flow voor een nieuwe gebruiker | **gebouwd**: welkom met de naam van de uitnodiger (`invite_peek`), één naamstap, bevestiging "Jij en Anna zijn nu vrienden!" met de weg vooruit (eerste habit of Vandaag), de uitnodiging overleeft het inloggen en een Google-omweg, het inlogscherm noemt de uitnodiger, de aparte naamvraag van het account wacht zolang er een uitnodiging is, "Niet nu" om over te slaan. Afgedekt door `npm run db:check-browser` (incl. 320 px met 200% tekst), `db:check-social`, de servertests en de controletests van de besturing |
+| §3 Vrienden inzien | **gebouwd**: onder de ranglijst staat "Je vrienden (n)" met alle vrienden (naam, @gebruikersnaam, "Vriend sinds …"), met de rustige uitleg bij wie niet op de ranglijst staat (V40, V41); "Nieuw" als tekst bij vriendschappen van de laatste 7 dagen, dat is ook **L5** (V42); de kaart op Voortgang noemt het aantal vrienden, en bij nul vrienden is het een kaart met de knop "Vriend toevoegen" (V43); de lijst komt uit dezelfde cache als de ranglijst en werkt dus offline (V44). Geen server-wijziging. Afgedekt door `friendsOverview` in `tests/app/social.test.js` en `db:check-browser` |
+| §5 Prestaties | **gebouwd in twee rondes**. **Ronde 2:** *Eerste review*, *Automatisme gevolgd* (een cijfer in 4 verschillende weken, niet per se achter elkaar), *Je waarom* (bij 3 habits), *Hele dag* (een niet-gearchiveerde habit in ochtend, middag én avond; "de hele dag" telt niet), *Vijf tegelijk*, *Alles gedaan* (10 dagen waarop minstens twee dingen gedaan zijn en niets gemist of open is) en, voor wie sociaal gebruikt, *Samen sterker* (eerste vriend) en *Vijf vrienden*. Het aantal vrienden komt uit de sociale cache; de controle draait opnieuw als dat aantal verandert. De groep "Samen" staat alleen op de pagina bij sociaal aan (of als er al iets uit behaald is). **Ronde 1** (besloten 2026-10-17: geen aparte terugwerkende kracht; de regels rekenen over de hele geschiedenis, dus wie een regel al haalt krijgt hem bij de eerstvolgende controle, binnen één gebundelde viering): aantallen (10/50/100/500/1000 keer), reeksen (7/14/30 dagen bij een habit met vaste dagen), vier perfecte weken achter elkaar, *Nooit twee keer missen* (5 keer meteen terug), *Sterk terug* (een venster van 14 dagen onder 50% en later weer op 80%, minstens 4 eenheden), *Kleine stap*, *Tweeminutenregel* (5 keer de minimale versie), *Vol doel* (teller, 7 dagen), *Pauzeren is oké* en tweede/vijfde ingeburgerd. De pagina is per groep, met voortgang ("37 van 50"). "Je eerste uitgenodigde vriend" is geschrapt (de app weet niet welke vriendschap uit een link kwam). Zie `domain/achievements.js` (`COUNT_ACHIEVEMENTS`) |
+
+**Release-checklist voor uitnodigingen (L8).** Een uitnodigingslink mag pas gedeeld worden vanaf een app die de route kent:
+1. Voer `supabase/migrations/0005_invites.sql` uit in het productieproject **vóór** de app wordt uitgerold (anders valt het welkomstscherm terug op een melding en telt de teller niet).
+2. `node tools/live-check.mjs` meldt of de migratie er is ("uitnodigingen: migratie 0005 …").
+3. Open na de uitrol een **nieuwe** link in een schone browser én in een geïnstalleerde app, en loop welkom, account, naam en bevestiging door.
+4. Oude links die vóór de uitrol zijn gedeeld blijven werken zodra de ontvanger de nieuwe app heeft (vernieuwen).
 
 Vijf punten van Remco, hier uitgewerkt. Per punt: wat er nu is (uit de code gelezen, niet aangenomen), wat er mist, de eisen, en wat nog een keuze is.
 

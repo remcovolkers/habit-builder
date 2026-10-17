@@ -12,9 +12,10 @@ const skip = PGlite ? false : 'PGlite is niet geïnstalleerd (npm ci)';
 
 const migration = (name) => readFileSync(fileURLToPath(new URL(`../../supabase/migrations/${name}`, import.meta.url)), 'utf8');
 const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const U = Object.fromEntries(['one', 'two', 'three', 'four', 'five', 'six'].map((name, i) => [name, id(i + 1)]));
+const U = Object.fromEntries(['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'].map((name, i) => [name, id(i + 1)]));
 
 let db = null;
+let rerun0003 = null;
 if (PGlite) {
   db = new PGlite();
   await db.exec(`
@@ -32,6 +33,9 @@ if (PGlite) {
     alter default privileges in schema public grant all on sequences to anon, authenticated;
   `);
   for (const name of ['0001_init.sql', '0002_push.sql', '0003_social.sql']) await db.exec(migration(name));
+  // 0003 nogmaals draaien kan alleen zolang 0005 er nog niet is (die verandert de uitvoer van invite_list); daarom hier en niet in een test
+  try { await db.exec(migration('0003_social.sql')); } catch (error) { rerun0003 = error; }
+  for (const name of ['0004_reasons.sql', '0005_invites.sql']) await db.exec(migration(name));
   await db.exec(`insert into auth.users (id, email) values ${Object.values(U).map((u) => `('${u}', '${u}@x.nl')`).join(', ')};`);
 }
 
@@ -61,8 +65,10 @@ const t = (name, fn) => test(name, { skip }, fn);
 
 // ---- toegang -----------------------------------------------------------------------------------------------------------------
 
-t('de migratie is idempotent: een tweede keer draaien geeft geen fout', async () => {
-  await db.exec(migration('0003_social.sql'));
+t('de migraties zijn idempotent: een tweede keer draaien geeft geen fout', async () => {
+  assert.equal(rerun0003, null, String(rerun0003)); // 0003 is bij het opstarten twee keer gedraaid
+  await db.exec(migration('0004_reasons.sql'));
+  await db.exec(migration('0005_invites.sql'));
 });
 
 const FUNCTIONS = [
@@ -228,7 +234,8 @@ t('een uitnodiging: lange code, in de database alleen een hash, en de lijst toon
   assert.ok(!stored.rows[0].code_hash.includes(created.code), 'de code staat in de database');
   assert.match(stored.rows[0].code_hash, /^[0-9a-f]{64}$/);
   const list = await rpc(U.one, 'invite_list()');
-  assert.deepEqual(Object.keys(list.rows[0]).sort(), ['created_at', 'expires_at', 'id']);
+  assert.deepEqual(Object.keys(list.rows[0]).sort(), ['created_at', 'expires_at', 'id', 'uses']); // wel het aantal gebruikers, nooit de code
+  assert.equal(list.rows[0].uses, 0);
   globalThis.__invite = created;
 });
 
@@ -266,6 +273,76 @@ t('een uitnodiging van iemand die sociaal uitzette werkt niet meer', async () =>
   assert.equal((await rpc(U.two, 'invite_redeem($1)', [code])).value.status, 'invalid');
   await enable(U.four, 'cor', '');
   assert.equal((await rpc(U.two, 'invite_redeem($1)', [code])).value.status, 'invalid', 'uitzetten trekt de uitnodigingen in');
+});
+
+// ---- uitnodigingen: voorvertoning, teller en plafond (0005) ---------------------------------------------------------------------
+
+/** invite_peek als anon (rol 'anon') of als een ingelogde gebruiker. */
+const peek = (code, uid = null) => as(uid ? 'authenticated' : 'anon', uid, async () => (await db.query('select public.invite_peek($1) as r', [code])).rows[0].r);
+
+t('invite_peek: ook zonder account, alleen de weergavenaam van de uitnodiger', async () => {
+  await enable(U.seven, 'zeven', 'Zoë');
+  const { code } = (await rpc(U.seven, 'invite_create()')).value;
+  globalThis.__peek = code;
+  const ok = await peek(code);
+  assert.deepEqual(ok, { status: 'ok', display_name: 'Zoë' }, 'niets anders dan de naam: geen id, geen gebruikersnaam, geen punten');
+  assert.deepEqual(await peek(code.toUpperCase()), ok);
+  assert.deepEqual(await peek(code, U.two), ok, 'ook voor een ingelogde gebruiker');
+});
+
+t('invite_peek: een ongeldige, verlopen, ingetrokken of verzonnen code geeft altijd hetzelfde antwoord; de eigen link heet "own"', async () => {
+  const invalid = { status: 'invalid' };
+  for (const bad of ['a'.repeat(64), '', 'x', null]) assert.deepEqual(await peek(bad), invalid, String(bad));
+
+  const revoked = (await rpc(U.seven, 'invite_create()')).value;
+  assert.deepEqual(await peek(revoked.code), { status: 'ok', display_name: 'Zoë' });
+  await rpc(U.seven, 'invite_revoke($1::uuid)', [revoked.id]);
+  assert.deepEqual(await peek(revoked.code), invalid, 'ingetrokken');
+
+  const expired = (await rpc(U.seven, 'invite_create()')).value;
+  await owner(`update public.invite_codes set expires_at = now() - interval '1 minute' where id = '${expired.id}'`);
+  assert.deepEqual(await peek(expired.code), invalid, 'verlopen');
+
+  await enable(U.eight, 'acht', 'Aaf');
+  const gone = (await rpc(U.eight, 'invite_create()')).value;
+  await rpc(U.eight, 'social_disable()');
+  assert.deepEqual(await peek(gone.code), invalid, 'de uitnodiger doet niet meer mee');
+  await enable(U.eight, 'acht', 'Aaf');
+
+  assert.deepEqual(await peek(globalThis.__peek, U.seven), { status: 'own' }, 'je eigen link');
+});
+
+t('de teller: elke nieuwe vriend via de link telt, opnieuw inwisselen niet; de lijst toont het aantal', async () => {
+  const code = globalThis.__peek;
+  await enable(U.nine, 'negen', 'Nel');
+  const first = (await rpc(U.eight, 'invite_redeem($1)', [code])).value;
+  assert.deepEqual([first.status, first.already_friends, first.username, first.display_name], ['ok', false, 'zeven', 'Zoë']);
+  const again = (await rpc(U.eight, 'invite_redeem($1)', [code])).value;
+  assert.deepEqual([again.status, again.already_friends], ['ok', true], 'jullie waren al vrienden');
+  assert.equal((await rpc(U.nine, 'invite_redeem($1)', [code])).value.already_friends, false);
+  const row = (await rpc(U.seven, 'invite_list()')).rows.find((r) => r.uses > 0);
+  assert.equal(row.uses, 2, 'twee mensen, de herhaling telt niet');
+  assert.equal((await owner(`select uses from public.invite_codes where code_hash = encode(sha256(convert_to('${code}', 'utf8')), 'hex')`)).rows[0].uses, 2);
+});
+
+t('een verzoek dat openstond en daarna via de link wordt geaccepteerd telt als nieuwe vriend', async () => {
+  const { code, id: inviteId } = (await rpc(U.seven, 'invite_create()')).value;
+  await owner(`delete from public.friendships where '${U.nine}' in (user_low, user_high) and '${U.seven}' in (user_low, user_high)`);
+  assert.equal((await rpc(U.nine, 'friend_request($1::uuid)', [U.seven])).value.status, 'pending');
+  const redeemed = (await rpc(U.nine, 'invite_redeem($1)', [code])).value;
+  assert.deepEqual([redeemed.status, redeemed.already_friends], ['ok', false]);
+  assert.equal((await owner(`select uses from public.invite_codes where id = '${inviteId}'`)).rows[0].uses, 1);
+});
+
+t('plafond: hoogstens 25 mensen per link; wie al vriend is behoudt "al vrienden", een nieuwe krijgt "invalid"; de voorvertoning ook', async () => {
+  const { code, id: inviteId } = (await rpc(U.seven, 'invite_create()')).value;
+  await rpc(U.eight, 'invite_redeem($1)', [code]); // al vriend
+  await owner(`update public.invite_codes set uses = 24 where id = '${inviteId}'`);
+  assert.equal((await rpc(U.four, 'invite_redeem($1)', [code])).value.status, 'ok', 'de 25e persoon past nog');
+  assert.equal((await owner(`select uses from public.invite_codes where id = '${inviteId}'`)).rows[0].uses, 25);
+  assert.deepEqual(await peek(code), { status: 'invalid' }, 'vol: de voorvertoning zegt hetzelfde als bij een verzonnen code');
+  assert.equal((await rpc(U.three, 'invite_redeem($1)', [code])).value.status, 'invalid', 'de 26e krijgt niets');
+  assert.deepEqual((await rpc(U.eight, 'invite_redeem($1)', [code])).value.already_friends, true, 'een bestaande vriend merkt er niets van');
 });
 
 // ---- begrenzing ---------------------------------------------------------------------------------------------------------------

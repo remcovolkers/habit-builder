@@ -1,4 +1,5 @@
-.form {
+.form,
+.habit-form__form {
   display: grid;
   gap: var(--space-5);
 }

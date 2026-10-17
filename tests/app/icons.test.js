@@ -6,7 +6,7 @@ import { ICON_GROUPS, ICONS } from '../../src/content/icons.js';
 import { ICON_SET_KEYS } from '../../src/content/icon-set.js';
 import { DEFAULT_ICON_KEY, iconForEmoji, iconForKey, iconKeyFor, habitIconHref, searchIcons, uiIconHref } from '../../src/app/icons.js';
 import { UI_ICON_GROUPS, UI_ICON_KEYS, achievementIconKey, tipIconKey } from '../../src/content/ui-icons.js';
-import { ACHIEVEMENT_INFO } from '../../src/content/achievements.js';
+import { ACHIEVEMENT_GROUPS, ACHIEVEMENT_INFO } from '../../src/content/achievements.js';
 import { ACHIEVEMENT_KEYS } from '../../src/domain/achievements.js';
 import { TIPS } from '../../src/content/tips.js';
 import { TEMPLATES } from '../../src/content/templates.js';
@@ -229,4 +229,10 @@ test('normalizeIconSvg: een style met tekenkenmerken wordt kenmerken (zoals Moda
   const odd = '<svg viewBox="0 0 24 24"><path style="filter:blur(2px)"/></svg>';
   assert.equal(normalizeIconSvg(odd), odd);
   assert.ok(validateIconSvg('water', odd).some((p) => /style/.test(p)));
+});
+
+test('de pagina Prestaties toont elke prestatie in precies één groep', () => {
+  const inGroups = ACHIEVEMENT_GROUPS.flatMap((group) => group.keys);
+  assert.equal(new Set(inGroups).size, inGroups.length, 'een sleutel staat in twee groepen');
+  assert.deepEqual([...inGroups].sort(), [...ACHIEVEMENT_KEYS].sort());
 });
