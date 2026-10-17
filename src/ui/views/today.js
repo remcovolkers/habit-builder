@@ -11,7 +11,6 @@ import { mascot } from '../components/mascot.js';
 import { emptyState } from '../components/empty-state.js';
 import { weekStrip } from '../components/week-strip.js';
 import { buildWeekStrip } from '../../app/overview.js';
-import { fab } from '../components/fab.js';
 import { uiIcon } from '../components/habit-icon.js';
 import { account, dismissNudge, nudgeDismissed, nudgeElement } from '../account.js';
 import { clearFirstTip, firstTipPending } from '../intro.js';
@@ -280,8 +279,7 @@ function renderDay(view, week, attention) {
     view.groups.length === 0 && view.pool.length === 0 ? todayEmpty(view) : null,
     h('div', { class: 'today__columns page__panes' },
       h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections),
-      side.length > 0 ? h('div', { class: 'today__side page__pane' }, ...side) : null),
-    fab({ href: '#/habits/new', label: nl.habits.new }));
+      side.length > 0 ? h('div', { class: 'today__side page__pane' }, ...side) : null));
 }
 
 function dayLink(date, label, symbol, enabled) {
@@ -322,7 +320,7 @@ function todayEmpty(view) {
   if (!view.hasHabits) {
     return emptyState({
       art: 'sprout', title: nl.today.noHabitsTitle, text: nl.today.noHabits, starters: true,
-      cta: { href: '#/habits/new', label: nl.today.createFirst, desktopOnly: true },
+      cta: { href: '#/habits/new', label: nl.today.createFirst }, // Vandaag heeft geen zwevende knop meer (die hoort bij de lijst op Habits), dus ook op de telefoon een gewone knop
     });
   }
   return emptyState({

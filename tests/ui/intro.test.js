@@ -2,7 +2,7 @@
 import { test, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  INTRO_HASH, INTRO_MAX_STEPS, clearFirstTip, firstTipPending, introDue, introSeen, markIntroSeen, setFirstTipPending,
+  INTRO_HASH, INTRO_MAX_STEPS, RETURN_TTL_MS, afterLoginHash, clearFirstTip, firstTipPending, introDue, introSeen, markIntroSeen, peekReturn, rememberReturn, setFirstTipPending, showLoginHint, takeReturn,
 } from '../../src/ui/intro.js';
 
 let store;
@@ -60,4 +60,41 @@ test('de vlaggen blijven los van elkaar', () => {
   markIntroSeen();
   clearFirstTip();
   assert.equal(introSeen(), true);
+});
+
+test('"Heb je al een account? Log in" staat alleen voor wie niet is ingelogd (ook niet terwijl een bewaarde inlog wordt hersteld)', () => {
+  assert.equal(showLoginHint('anonymous'), true);
+  assert.equal(showLoginHint('signed-in'), false);
+  assert.equal(showLoginHint('restoring'), false);
+});
+
+test('terug naar de introductie na het inloggen: de bestemming wordt één keer gegeven en vervalt na tien minuten', () => {
+  const t0 = 1_000_000;
+  assert.equal(peekReturn(t0), false);
+  assert.equal(takeReturn(t0), null);
+  rememberReturn(INTRO_HASH, t0);
+  assert.equal(peekReturn(t0 + 1000), true);
+  assert.equal(takeReturn(t0 + 1000), INTRO_HASH);
+  assert.equal(takeReturn(t0 + 1000), null, 'één keer');
+  rememberReturn(INTRO_HASH, t0);
+  assert.equal(peekReturn(t0 + RETURN_TTL_MS + 1), false);
+  assert.equal(takeReturn(t0 + RETURN_TTL_MS + 1), null, 'verlopen');
+});
+
+test('de onthouden bestemming vervalt als je de introductie overslaat of afrondt, en onzin wordt genegeerd', () => {
+  rememberReturn(INTRO_HASH);
+  markIntroSeen();
+  assert.equal(takeReturn(), null);
+  store.set('hb-after-login', 'geen json');
+  assert.equal(takeReturn(), null);
+  store.set('hb-after-login', JSON.stringify({ hash: 'https://elders.example', at: Date.now() }));
+  assert.equal(takeReturn(), null, 'alleen een route in de app');
+});
+
+test('na het inloggen terug naar de introductie, behalve met een bestaand account vol habits (dan naar Vandaag en is de introductie gezien)', () => {
+  assert.equal(afterLoginHash({ back: INTRO_HASH, habitCount: 0 }), INTRO_HASH);
+  assert.equal(introSeen(), false);
+  assert.equal(afterLoginHash({ back: INTRO_HASH, habitCount: 3 }), '#/today');
+  assert.equal(introSeen(), true);
+  assert.equal(afterLoginHash({ back: '#/habits', habitCount: 3 }), '#/habits');
 });

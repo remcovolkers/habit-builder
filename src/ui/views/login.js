@@ -1,6 +1,8 @@
 import { fill, h } from '../dom.js';
 import { account, activate, afterLogin } from '../account.js';
 import { socialApp } from '../social-app.js';
+import { state } from '../state.js';
+import { afterLoginHash, rememberReturn, takeReturn } from '../intro.js';
 import { icon } from '../svg.js';
 import { mascot } from '../components/mascot.js';
 import { nl } from '../../content/nl.js';
@@ -81,10 +83,19 @@ export function loginView() {
     const token = code.trim();
     return run(async () => {
       if (!CODE.test(token)) throw Object.assign(new Error('code'), { key: 'code_format' });
-      await auth.verifyEmailCode(email, token);
-      await afterLogin();
+      // waar je vandaan kwam (de introductie): nu al pakken, anders loopt de luisteraar in main.js ons voor zodra de inlog binnenkomt; bij een fout leggen we het terug
+      const back = takeReturn();
+      try {
+        await auth.verifyEmailCode(email, token);
+        await afterLogin();
+      } catch (error) {
+        if (back) rememberReturn(back);
+        throw error;
+      }
       const invite = socialApp.pendingInvite(); // een uitnodiging die op je wachtte voordat je was ingelogd
-      location.hash = invite ? `#/vrienden/uitnodiging/${invite}` : '#/today';
+      if (invite) { location.hash = `#/vrienden/uitnodiging/${invite}`; return; }
+      const habitCount = (await state.repo.listHabits()).length;
+      location.hash = (back && afterLoginHash({ back, habitCount })) || '#/today';
     });
   };
 
