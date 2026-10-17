@@ -16,6 +16,7 @@ import {
   archiveHabit, graduateHabit, pauseHabit, rateAutomaticity, resumeHabit, setMaintenance, unarchiveHabit,
 } from '../../app/actions.js';
 import { currentSchedule } from './habits.js';
+import { habitDayparts } from '../../domain/dayparts.js';
 
 const PHASE_INDEX = { planned: -1, starting: 0, building: 1, established: 2 };
 
@@ -208,7 +209,7 @@ function renderDetail(detail) {
           h('span', { class: 'habit-card__icon', dataset: { color: habit.color }, 'aria-hidden': 'true' }, habitIcon(habit.icon)),
           h('div', null,
             h('h1', { class: 'page-title hero__name' }, habit.name),
-            h('span', { class: 'hero__meta' }, [schedule, nl.dayparts[habit.daypart]].join(' · ')))),
+            h('span', { class: 'hero__meta' }, [schedule, habitDayparts(habit).map((part) => nl.dayparts[part]).join(' en ')].join(' · ')))),
         h('div', { class: 'hero__row' },
           h('span', { class: 'badge-group' },
             h('span', { class: `badge badge--phase badge--${phaseKey}` }, nl.detail.phases[phaseKey]),

@@ -29,4 +29,39 @@ export const TEMPLATES = Object.freeze({
     schedule: { type: 'times_per_period', period: 'week', count: 3 },
     minimalVersion: 'Schoenen aan en 1 minuut lopen',
   },
+  // de ritmes die je niet raadt uit de eerste drie: vaste weekdagen, een aantal keer per maand en een vaste dag in de maand
+  swimming: {
+    name: 'Zwemmen',
+    icon: '🏊',
+    color: 'c2',
+    daypart: 'evening',
+    schedule: { type: 'weekdays', weekdays: [1, 4] },
+    minimalVersion: 'Eén baantje',
+  },
+  // meerdere dagdelen: elk dagdeel vink je apart af
+  brushing: {
+    name: 'Tandenpoetsen',
+    icon: '🦷',
+    color: 'c2',
+    daypart: 'morning',
+    dayparts: ['morning', 'evening'],
+    schedule: everyDay,
+    minimalVersion: 'Even spoelen',
+  },
+  cleaning: {
+    name: 'Grote schoonmaak',
+    icon: '🧹',
+    color: 'c4',
+    daypart: 'anytime',
+    schedule: { type: 'times_per_period', period: 'month', count: 2 },
+    minimalVersion: 'Eén kamer',
+  },
+  budget: {
+    name: 'Budget bijhouden',
+    icon: '📊',
+    color: 'c1',
+    daypart: 'evening',
+    schedule: { type: 'day_of_month', day: 25 },
+    cue: 'Na het salaris',
+  },
 });

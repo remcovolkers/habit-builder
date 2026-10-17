@@ -4,6 +4,8 @@ import { icon } from '../svg.js';
 import { nl } from '../../content/nl.js';
 
 export function entryState(entry) {
+  // een habit met meerdere dagdelen: de kaart van een dagdeel is gedaan als dat dagdeel gedaan is, ook als de dag nog deels open staat
+  if (entry.part && entry.loggedToday === 'partial') return entry.partDone ? 'done' : 'open';
   if (entry.loggedToday === 'done') return 'done';
   if (entry.loggedToday === 'minimal') return 'minimal';
   if (entry.loggedToday === 'skipped') return 'skipped';
@@ -26,6 +28,7 @@ function metaLine(entry) {
   } else if (entry.kind === 'day_of_month') {
     parts.push(entry.overdue ? nl.today.overdue : nl.today.dueOn(entry.unit.due.slice(8)));
   }
+  if (entry.partsTotal > 1) parts.push(nl.today.partsProgress(entry.partsDone, entry.partsTotal));
   if (entry.habit.cue) parts.push(entry.habit.cue);
   return parts.join(' · ');
 }
@@ -64,6 +67,9 @@ function counterControl(entry, { canLog, onAdjust }) {
 /** Eén habit in de lijst van vandaag: icoon, naam, afvinkknop (of teller) en een menu voor meer acties. */
 export function habitCard(entry, { canLog, onToggle, onMore, onAdjust, onRate, onLate }) {
   const { habit } = entry;
+  // dezelfde habit staat bij meerdere dagdelen op de pagina: de sleutel voor de focus (live.js) moet per kaart verschillen
+  const key = (name) => `${name}:${habit.id}${entry.part ? `:${entry.part}` : ''}`;
+  const partLabel = entry.part ? ` (${nl.dayparts[entry.part].toLowerCase()})` : '';
   const state = entryState(entry);
   const meta = metaLine(entry);
   const isCounter = Boolean(habit.counter);
@@ -82,17 +88,17 @@ export function habitCard(entry, { canLog, onToggle, onMore, onAdjust, onRate, o
     : h('button', {
       type: 'button',
       class: 'check',
-      dataset: { state, focusKey: `check:${habit.id}` },
+      dataset: { state, focusKey: key('check') },
       'aria-pressed': state === 'done' || state === 'minimal' ? 'true' : 'false',
-      'aria-label': state === 'open' ? nl.today.check(habit.name) : nl.today.uncheck(habit.name),
+      'aria-label': (state === 'open' ? nl.today.check(habit.name) : nl.today.uncheck(habit.name)) + partLabel,
       disabled: !canLog,
       onclick: () => onToggle(entry),
     }, checkFace(state)),
   h('button', {
     type: 'button',
     class: 'habit-card__more',
-    dataset: { focusKey: `more:${habit.id}` },
-    'aria-label': nl.today.more(habit.name),
+    dataset: { focusKey: key('more') },
+    'aria-label': nl.today.more(habit.name) + partLabel,
     onclick: () => onMore(entry),
   }, '⋯'),
   isCounter ? counterControl(entry, { canLog, onAdjust }) : null,

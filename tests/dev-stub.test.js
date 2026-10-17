@@ -19,8 +19,8 @@ async function stub(today) {
 test('het stub-account heeft een habit voor elke toestand', async () => {
   const today = '2026-10-16';
   const { snapshot, created, byName } = await stub(today);
-  assert.equal(created.length, 12);
-  assert.equal(snapshot.habits.length, 12);
+  assert.equal(created.length, 13);
+  assert.equal(snapshot.habits.length, 13);
   assert.equal(snapshot.settings.displayName, 'Remco (stub)');
   assert.equal(snapshot.reviews.length, 2);
 
@@ -36,6 +36,9 @@ test('het stub-account heeft een habit voor elke toestand', async () => {
   const view = buildDayView({ snapshot, date: today, today });
   assert.ok(view.groups.flatMap((g) => g.entries).some((e) => e.habit.name === 'Rekening betalen' && e.overdue));
   assert.ok(view.pool.some((e) => e.habit.name === 'Gitaar spelen'));
+  // Tandenpoetsen staat in twee dagdelen: de ochtend is gedaan, de avond staat open
+  const teeth = view.groups.flatMap((g) => g.entries.filter((e) => e.habit.name === 'Tandenpoetsen').map((e) => [g.daypart, e.partDone]));
+  assert.deepEqual(teeth, [['morning', true], ['evening', false]]);
 
   const detail = (name) => buildHabitDetail({ habit: byName(name), snapshot, today });
   assert.equal(detail('Water drinken').canGraduate, true);
@@ -48,6 +51,6 @@ test('het stub-account heeft een habit voor elke toestand', async () => {
 test('het stub-account laat zich op elke dag aanmaken, ook de 1e en de laatste van de maand en rond de jaarwisseling', async () => {
   for (const today of ['2026-11-01', '2026-10-31', '2026-02-28', '2027-01-01', '2026-03-29']) {
     const { snapshot } = await stub(today);
-    assert.equal(snapshot.habits.length, 12, today);
+    assert.equal(snapshot.habits.length, 13, today);
   }
 });

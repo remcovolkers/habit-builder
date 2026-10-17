@@ -106,6 +106,104 @@ async function main() {
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await nav('today');
 
+  // Introductie (docs/ONBOARDING.md): de browser begint met een leeg profiel, dus dit is een nieuwe gebruiker zonder habits
+  const introHash = await ev('location.hash');
+  check('een nieuwe gebruiker zonder habits landt bij het starten op de introductie', introHash === '#/welkom/1', introHash);
+  await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 568, deviceScaleFactor: 2, mobile: true });
+  await nav('welkom/1');
+  const totalSteps = await ev(`document.querySelectorAll('.welcome__dot').length`);
+  check('introductie: vier stappen (met de app installeren) in een browser waar de app nog niet geïnstalleerd is', totalSteps === 4, String(totalSteps));
+  // de stijl kiezen op de eerste stap: het thema, de mascottes en de stap zelf veranderen meteen mee, en de focus blijft op de gekozen kaart
+  // de kaarten staan naast elkaar (320 px) met een omschrijving van een verschillende lengte, en zijn toch even hoog
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await sleep(300);
+  await ev(`document.querySelector('.welcome__theme .theme-option__desc').textContent += ' met een veel langere omschrijving die over meer regels loopt dan de andere kaart'`);
+  const cardHeights = await ev(`[...document.querySelectorAll('.welcome__theme .theme-option__face')].map((f) => Math.round(f.getBoundingClientRect().height))`);
+  const sideBySide = await ev(`new Set([...document.querySelectorAll('.welcome__theme .theme-option')].map((c) => Math.round(c.getBoundingClientRect().top))).size === 1`);
+  check('introductie, stap 1: de stijlkaarten staan naast elkaar en zijn even hoog, ook als de omschrijving van de ene langer is', sideBySide && cardHeights.length === 2 && cardHeights[0] === cardHeights[1], JSON.stringify({ sideBySide, cardHeights }));
+  await nav('welkom/1'); // de langere omschrijving was alleen voor de meting
+  await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 568, deviceScaleFactor: 2, mobile: true });
+  await sleep(300);
+  const themed = await ev(`(async () => {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const before = { theme: document.documentElement.dataset.theme, cards: document.querySelectorAll('.welcome__theme .theme-option').length, mascots: document.querySelectorAll('.welcome__stop-mascot').length };
+    document.querySelector('.welcome__theme input[value="mel"]').click();
+    await wait(600);
+    const after = { theme: document.documentElement.dataset.theme, mascots: document.querySelectorAll('.welcome__stop-mascot').length, checked: document.querySelector('.welcome__theme input[value="mel"]')?.checked === true,
+      focus: document.activeElement?.value ?? null, step: document.querySelector('.welcome')?.dataset.key };
+    document.querySelector('.welcome__theme input[value="v0lky1"]').click();
+    await wait(600);
+    return { before, after, back: document.documentElement.dataset.theme };
+  })()`);
+  check('introductie, stap 1: de stijl kiezen (twee kaarten) past het thema meteen toe, de mascottes veranderen mee en de focus blijft op de gekozen kaart',
+    themed.before.cards === 2 && themed.before.theme === 'v0lky1' && themed.before.mascots === 0 && themed.after.theme === 'mel' && themed.after.mascots === 3 && themed.after.checked && themed.after.focus === 'mel' && themed.after.step === 'idea' && themed.back === 'v0lky1',
+    JSON.stringify(themed));
+  for (let step = 1; step <= totalSteps; step++) {
+    await nav(`welkom/${step}`);
+    await ev(`document.documentElement.style.fontSize = '200%'`);
+    await sleep(300);
+    const s = await ev(`(() => ({ key: document.querySelector('.welcome')?.dataset.key, title: document.querySelector('#welcomeTitle')?.textContent ?? '', overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      tiny: [...document.querySelectorAll('.welcome a.button, .welcome__starter')].filter((a) => a.getBoundingClientRect().height < 44).length, starters: document.querySelectorAll('.welcome__starter').length,
+      installIcon: !!document.querySelector('.welcome__app-icon'), installHow: !!document.querySelector('#installApp, .welcome__steps') }))()`);
+    check(`introductie, stap ${step} (${s.key}): past op 320 px met 200% tekst en alle knoppen zijn minstens 44 px`,
+      s.title !== '' && s.overflow <= 0 && s.tiny === 0 && (s.key !== 'habit' || s.starters >= 5) && (s.key !== 'install' || (s.installIcon && s.installHow)), JSON.stringify(s));
+  }
+  // Scrollen: de stappen en de titel staan vast, de inhoud scrolt eronder zonder zichtbare balk, en de pagina zelf scrolt niet (telefoon en desktop)
+  for (const [what, w, h, mobile] of [['telefoon', 390, 844, true], ['desktop', 1280, 700, false]]) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile });
+    await nav('welkom/2');
+    await ev(`document.documentElement.style.fontSize = '100%'`);
+    await sleep(500);
+    const measure = () => ev(`(() => { const hd = document.querySelector('.welcome__header').getBoundingClientRect(); const sc = document.querySelector('.welcome__scroll');
+      return { headerTop: Math.round(hd.top), headerBottom: Math.round(hd.bottom), top: sc.scrollTop, room: sc.scrollHeight - sc.clientHeight, bar: sc.offsetWidth - sc.clientWidth, win: window.scrollY,
+        doc: document.documentElement.scrollHeight - innerHeight, fadeBottom: sc.hasAttribute('data-fade-bottom'), inView: hd.top >= 0 && hd.bottom <= innerHeight }; })()`);
+    const before = await measure();
+    await ev(`document.querySelector('.welcome__scroll').scrollTop = 200`);
+    await sleep(400);
+    const after = await measure();
+    check(`introductie, ${what}: titel en stappen blijven staan terwijl de inhoud scrolt, zonder zichtbare scrollbalk en zonder dat de pagina scrolt`,
+      before.room > 200 && after.top > 100 && after.headerTop === before.headerTop && after.headerBottom === before.headerBottom && after.inView && after.bar === 0 && after.win === 0 && after.doc <= 1 && before.fadeBottom,
+      JSON.stringify({ before, after }));
+  }
+  await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 568, deviceScaleFactor: 2, mobile: true });
+  // de weg door de introductie: volgende, volgende, een sjabloon kiezen, opslaan, en dan op Vandaag één keer de tip
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await nav('welkom/1');
+  const visited = [];
+  for (let i = 0; i < totalSteps && !(await ev(`!!document.querySelector('.welcome__starter')`)); i++) {
+    visited.push(await ev(`document.querySelector('.welcome')?.dataset.key`));
+    await ev(`document.querySelector('#welcomeNext').click()`);
+    await sleep(300);
+  }
+  visited.push(await ev(`document.querySelector('.welcome')?.dataset.key`));
+  await ev(`document.querySelector('.welcome__starter[data-template="reading"]').click()`);
+  await sleep(600);
+  const form = await ev(`({ hash: location.hash, name: document.querySelector('#name')?.value, example: document.querySelector('#scheduleExample')?.textContent ?? '' })`);
+  check('introductie: met "Volgende" via het idee, de dag en het installeren naar de eerste habit, en een sjabloon opent het formulier met een voorbeeld bij het ritme',
+    visited.join(',') === 'idea,day,install,habit' && form.hash.includes('template=reading') && form.name === '10 minuten lezen' && form.example.startsWith('Bijvoorbeeld:'), JSON.stringify({ visited, form }));
+  await ev(`document.querySelector('.form__actions .button--primary').click()`);
+  await sleep(900);
+  const tip = await ev(`({ hash: location.hash, tip: !!document.querySelector('#firstTip'), seen: localStorage.getItem('hb-intro-seen') })`);
+  check('introductie: na het opslaan van de eerste habit sta je op Vandaag met de tip, en de introductie is gezien', tip.hash === '#/today' && tip.tip && tip.seen === '1', JSON.stringify(tip));
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`); // een eerste habit met een minimale versie viert "Kleine stap" (een modale dialoog)
+  await ev(`document.querySelector('#firstTip .nudge__dismiss').click()`);
+  await sleep(200);
+  const tipGone = await ev(`({ gone: !document.querySelector('#firstTip'), stored: localStorage.getItem('hb-first-tip') })`);
+  check('introductie: de tip is te sluiten en komt niet terug', tipGone.gone && tipGone.stored === null, JSON.stringify(tipGone));
+  // opruimen: de habit weer weg, zodat de metingen hieronder van een schone start uitgaan
+  await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); for (const habit of await state.repo.listHabits()) await state.repo.deleteHabit(habit.id); notifyChanged(); })()`);
+  // Zo werkt het: bereikbaar uit Instellingen, past op 320 px met 200% tekst en biedt de introductie opnieuw aan
+  await nav('settings');
+  const link = await ev(`document.querySelector('#guideLink')?.getAttribute('href')`);
+  await nav('uitleg');
+  await ev(`document.documentElement.style.fontSize = '200%'`);
+  await sleep(300);
+  const guide = await ev(`({ sections: document.querySelectorAll('.guide__section').length, types: document.querySelectorAll('.guide__type').length, replay: document.querySelector('#replayIntro')?.getAttribute('href'), overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth })`);
+  check('Zo werkt het: staat in Instellingen, past op 320 px met 200% tekst en biedt de introductie opnieuw aan', link === '#/uitleg' && guide.sections >= 8 && guide.types === 6 && guide.replay === '#/welkom/1' && guide.overflow <= 0, JSON.stringify({ link, guide }));
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await nav('today');
+
   const sizes = [['390x844', 390, 844, 100], ['320x568', 320, 568, 100], ['320x568, tekst 200%', 320, 568, 200]];
   for (const [phase, count] of [['weinig habits', 2], ['veel habits', 8]]) {
     await ev(SEED(phase === 'weinig habits' ? 0 : 2, count));
@@ -228,7 +326,7 @@ async function main() {
     await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
     await sleep(300);
     const label = `iconenkiezer · ${size}`;
-    const before = await ev(`({ trigger: !!document.querySelector('#iconTrigger'), box: document.querySelector('#iconTrigger')?.getBoundingClientRect().width, overflow: document.documentElement.scrollWidth - innerWidth })`);
+    const before = await ev(`({ trigger: !!document.querySelector('#iconTrigger'), box: document.querySelector('#iconTrigger')?.getBoundingClientRect().width, overflow: document.documentElement.scrollWidth - innerWidth, wide: [...document.querySelectorAll('.app__main *')].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).slice(0, 4).map((e) => e.tagName + '.' + e.className) })`);
     check(`${label}: knop bij de naam, groot genoeg, formulier verbreedt niet`, before.trigger && before.box >= 44 && before.overflow <= 0, JSON.stringify(before));
     await ev(`document.querySelector('#iconTrigger').click()`);
     await sleep(400);
@@ -398,6 +496,57 @@ async function main() {
     const after = await stand();
     check(`desktop, ${what}: na het sluiten staat alles weer waar het stond`, same(before, after), JSON.stringify({ before, after }));
   }
+
+  // Prestaties: een medaille aantikken opent de uitleg (behaald: waarom en wanneer; niet behaald: hoe en hoe ver je bent)
+  await settle('achievements');
+  for (const [what, state, expectRows] of [['behaalde', 'unlocked', true], ['nog niet behaalde', 'locked', false]]) {
+    const medal = await ev(`(() => { const b = document.querySelector('.achv[data-state="${state}"] .achv__button'); if (!b) return null; const r = b.getBoundingClientRect(); return { h: Math.round(r.height), w: Math.round(r.width) }; })()`);
+    if (medal === null) { check(`Prestaties: een ${what} medaille is aan te tikken`, false, 'geen medaille gevonden'); continue; }
+    await ev(`document.querySelector('.achv[data-state="${state}"] .achv__button').click()`);
+    await sleep(400);
+    const detail = await ev(`(() => { const d = document.querySelector('dialog.achv-detail[open]'); return { open: !!d, title: d?.querySelector('.dialog__title')?.textContent ?? '', heading: d?.querySelector('.achv-detail__heading')?.textContent ?? '', text: d?.querySelector('.achv-detail__text')?.textContent ?? '', rows: d?.querySelectorAll('.achv-detail__row').length ?? 0, status: d?.querySelector('.achv-detail__status')?.textContent ?? '', overflow: d ? d.scrollWidth - d.clientWidth : 1 }; })()`);
+    check(`Prestaties: een ${what} medaille is aan te tikken (minstens 44 px) en opent de uitleg zonder zijwaarts scrollen`,
+      medal.h >= 44 && detail.open && detail.title !== '' && detail.text.length > 10 && detail.overflow <= 0 && (expectRows ? detail.rows > 0 && detail.heading === 'Waarom je hem hebt' : detail.rows === 0 && detail.status !== '' && detail.heading === 'Zo haal je hem'),
+      JSON.stringify({ medal, detail }));
+    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+    await sleep(300);
+  }
+
+  // meerdere dagdelen: in het formulier kies je er meer dan één (behalve met een teller of zonder vaste dagen), en op Vandaag vink je ze apart af
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await settle('habits/new');
+  const parts = () => ev(`[...document.querySelectorAll('input[name="daypart"]')].filter((i) => i.checked).map((i) => i.value).join(',')`);
+  const pick = (value) => ev(`document.querySelector('input[name="daypart"][value="${value}"]').click()`);
+  await pick('morning'); await pick('evening');
+  const multi = await parts();
+  const counterHint = await ev(`document.querySelector('#counterOn') === null`);
+  await pick('anytime');
+  const anytime = await parts();
+  await pick('morning'); await pick('evening');
+  await ev(`document.querySelector('input[name="scheduleType"][value="per_week"]').click()`);
+  const trimmed = await parts();
+  check('meerdere dagdelen: twee dagdelen kiezen kan, een teller kan dan niet, "Overdag" wist de rest en zonder vaste dagen blijft er één over',
+    multi === 'morning,evening' && counterHint && anytime === 'anytime' && trimmed === 'morning', JSON.stringify({ multi, counterHint, anytime, trimmed }));
+  const created = await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js');
+    const habit = await state.repo.saveHabit({ name: 'Tandenpoetsen test', icon: '🦷', color: 'c2', daypart: 'morning', dayparts: ['morning', 'evening'], status: 'active', startDate: '2026-09-01', endDate: null,
+      graduationDays: 66, maintenance: false, sortOrder: 99, counter: null, schedules: [{ effectiveFrom: '2026-09-01', schedule: { type: 'weekdays', weekdays: [0, 1, 2, 3, 4, 5, 6] } }] });
+    notifyChanged(); return habit.id; })()`);
+  await nav('today');
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  await sleep(400);
+  const dayState = () => ev(`[...document.querySelectorAll('.habit-card')].filter((c) => c.querySelector('.habit-card__name')?.textContent === 'Tandenpoetsen test').map((c) => c.dataset.state + ':' + c.closest('section').getAttribute('aria-labelledby') + ':' + (c.querySelector('.habit-card__meta')?.textContent ?? ''))`);
+  const before = await dayState();
+  await ev(`[...document.querySelectorAll('.habit-card')].find((c) => c.querySelector('.habit-card__name')?.textContent === 'Tandenpoetsen test').querySelector('.check').click()`);
+  await sleep(600);
+  const half = await dayState();
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  check('meerdere dagdelen op Vandaag: de habit staat in ochtend en avond, de ochtend afvinken laat de avond open en toont "1 van 2 dagdelen"',
+    before.length === 2 && before.every((s) => s.startsWith('open:')) && half.length === 2 && half[0].startsWith('done:dp-morning') && half[1].startsWith('open:dp-evening') && half.every((s) => s.includes('1 van 2 dagdelen')), JSON.stringify({ before, half }));
+  await ev(`[...document.querySelectorAll('.habit-card')].filter((c) => c.querySelector('.habit-card__name')?.textContent === 'Tandenpoetsen test')[1].querySelector('.check').click()`);
+  await sleep(600);
+  const full = await dayState();
+  check('meerdere dagdelen op Vandaag: beide dagdelen afvinken maakt de dag gedaan', full.length === 2 && full.every((s) => s.startsWith('done:') && s.includes('2 van 2 dagdelen')), JSON.stringify(full));
+  await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); await state.repo.deleteHabit('${created}'); notifyChanged(); })()`);
 
   // "Anders": past geen van de redenen, dan is de toelichting de reden
   await nav('today');

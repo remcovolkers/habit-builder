@@ -105,6 +105,14 @@ export async function fillStubAccount(repo, today) {
   await mark(curtains, [ago(90), ago(60)]);
   await repo.setReason({ habitId: curtains.id, date: ago(2), reason: 'forgot', note: 'Stond niet in mijn agenda' });
 
+  // 13. meerdere dagdelen: 's ochtends en 's avonds. Vandaag is alleen de ochtend gedaan (de avond staat nog open), gisteren allebei, eergisteren alleen de ochtend
+  const teeth = await habit({ name: 'Tandenpoetsen', icon: icon('tooth'), color: 'c2', daypart: 'morning', dayparts: ['morning', 'evening'] },
+    { type: 'weekdays', weekdays: ALL_DAYS }, ago(20), "Twee dagdelen: vandaag alleen de ochtend gedaan, gisteren beide, eergisteren alleen de ochtend (telt als gemist)");
+  await mark(teeth, range(ago(19), ago(3)), 'done', { value: 2, parts: ['morning', 'evening'] });
+  await mark(teeth, [ago(2)], 'partial', { value: 1, parts: ['morning'] });
+  await mark(teeth, [ago(1)], 'done', { value: 2, parts: ['morning', 'evening'] });
+  await mark(teeth, [today], 'partial', { value: 1, parts: ['morning'] });
+
   // twee eerdere weekreviews
   await repo.saveReview({ weekStart: startOfWeek(ago(7)), wentWell: 'Elke dag water gehaald', adjust: 'Eerder naar bed' });
   await repo.saveReview({ weekStart: startOfWeek(ago(14)), wentWell: 'Drie keer hardgelopen', adjust: 'Boek bij het bed leggen' });

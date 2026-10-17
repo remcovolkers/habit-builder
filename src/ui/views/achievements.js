@@ -2,7 +2,8 @@ import { h } from '../dom.js';
 import { liveView } from '../live.js';
 import { state } from '../state.js';
 import { social } from '../social-app.js';
-import { achievementMedal } from '../components/achievement.js';
+import { achievementMedal, openAchievementDetail } from '../components/achievement.js';
+import { explainAchievement } from '../../app/achievement-detail.js';
 import { nl } from '../../content/nl.js';
 import { emptyState } from '../components/empty-state.js';
 import { ACHIEVEMENT_GROUPS, ACHIEVEMENT_INFO } from '../../content/achievements.js';
@@ -32,10 +33,11 @@ export function achievementsView() {
       const medal = (key) => {
         const records = unlocked.filter((a) => a.key === key).sort((a, b) => (a.date < b.date ? -1 : 1));
         const info = ACHIEVEMENT_INFO[key];
-        if (records.length === 0) return achievementMedal({ info, sub: lockedSub(key), locked: true });
+        const onOpen = () => openAchievementDetail({ info, explanation: explainAchievement({ info, records, names, progress: progress[key] ?? null }) });
+        if (records.length === 0) return achievementMedal({ info, sub: lockedSub(key), locked: true, onOpen });
         const habitNames = records.map((a) => names.get(a.habitId)).filter(Boolean);
         const sub = habitNames.length > 0 ? nl.achievements.forHabits(habitNames) : nl.achievements.unlockedOn(formatDateShort(records[0].date));
-        return achievementMedal({ info, sub });
+        return achievementMedal({ info, sub, onOpen });
       };
 
       const group = ({ id, label, keys: groupKeys }) => {

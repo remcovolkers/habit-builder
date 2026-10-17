@@ -57,5 +57,6 @@ Een nieuwe pagina met kolommen maken: geef de wortel de klasse `page`, het eerst
 
 - **Toetsenbord:** een kolom scrolt met het toetsenbord zodra er iets in focus staat (elke kolom bevat knoppen of links). Een kolom zonder bedienbare inhoud kan niet met het toetsenbord gescrold worden; die komen nu niet voor.
 - **Telefoon:** blijft zoals hij was (een pagina die scrolt met de tabbalk onderaan). Een kop die blijft staan is daar optioneel te doen, maar kost beeldruimte.
+- **Introductie** (`#/welkom/1..3`): de stippen en de titel staan vast en de inhoud scrolt eronder (`.welcome__scroll`, zonder zichtbare balk, met de fade), op de telefoon én op desktop. Onder 30rem hoogte (ook bij grote tekst) scrolt de pagina als geheel; `check:layout` meet beide.
 - **Vrienden, inloggen en overige pagina's** hebben de kolomindeling nog niet en scrollen als geheel in het werkvlak.
 - **Smalle laptopvensters bij 200% tekst of 320 px:** bekende afwijking van ongeveer 10 px op Vandaag (herstelmoment, kop van de stapel en knoppen in een stapelkaart); de lay-outcontrole meldt die als INFO.

@@ -25,6 +25,10 @@ import { mountUpdateBanner } from './ui/components/update-banner.js';
 import { celebrateAchievements } from './ui/components/achievement.js';
 import { checkAchievements } from './app/achievement-runner.js';
 import { settingsView } from './ui/views/settings.js';
+import { guideView } from './ui/views/guide.js';
+import { welcomeView } from './ui/views/welcome.js';
+import { INTRO_HASH, introDue, markIntroSeen } from './ui/intro.js';
+import { parseHash } from './router.js';
 import { icon } from './ui/svg.js';
 import { nl } from './content/nl.js';
 
@@ -39,7 +43,7 @@ const NAV = [
 const routes = [
   { path: '/today', render: (ctx) => todayView(ctx) },
   { path: '/habits', render: () => habitsView() },
-  { path: '/habits/new', render: ({ query }) => habitFormView({ id: null, template: query.template ?? null }) },
+  { path: '/habits/new', render: ({ query }) => habitFormView({ id: null, template: query.template ?? null, intro: query.intro === '1' }) },
   { path: '/habits/:id/edit', render: ({ params }) => habitFormView({ id: params.id }) },
   { path: '/habits/:id', render: ({ params }) => habitDetailView({ id: params.id }) },
   { path: '/stats', render: () => statsView() },
@@ -49,6 +53,8 @@ const routes = [
   { path: '/vrienden/beheer', render: () => friendsManageView() },
   { path: '/vrienden/uitnodiging/:code', render: ({ params }) => friendsInviteView({ code: params.code }) },
   { path: '/settings', render: () => settingsView() },
+  { path: '/uitleg', render: () => guideView() },
+  { path: '/welkom/:step', render: ({ params }) => welcomeView({ step: params.step }) },
   { path: '/login', render: () => loginView() },
 ];
 
@@ -138,6 +144,13 @@ initSocial();
 // PWA: service worker (offline + updates). Mislukt dit, dan werkt de app gewoon online verder.
 mountUpdateBanner();
 startPwa().catch((error) => console.warn('PWA starten mislukt', error));
+
+// Introductie (docs/ONBOARDING.md O3a): bij het starten op Vandaag, zolang er geen habits zijn en ze nog niet gezien is. Wie al habits heeft
+// (ook na een update, of op een nieuw apparaat met een account) krijgt haar nooit. Een uitnodigingslink of een andere pagina wordt niet onderbroken.
+// replaceState: de lege Vandaag komt niet in de geschiedenis, dus "terug" gaat niet naar een scherm zonder inhoud.
+const habitCount = (await repo.listHabits().catch(() => [null])).length;
+if (habitCount > 0) markIntroSeen();
+else if (introDue({ habitCount }) && parseHash(location.hash).path === '/today') history.replaceState(null, '', INTRO_HASH);
 
 startRouter({
   routes,

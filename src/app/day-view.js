@@ -1,6 +1,7 @@
 // Het view-model voor het Vandaag-scherm: snapshot + datum in, gegroepeerde lijsten uit. Puur.
 import { startOfWeek } from '../domain/dates.js';
 import { DAYPARTS } from '../domain/habit.js';
+import { donePartsOf, habitDayparts, hasMultipleDayparts } from '../domain/dayparts.js';
 import { paceOn } from '../domain/pace.js';
 import { canBackfill } from '../domain/rules.js';
 import { buildToday } from '../domain/today.js';
@@ -64,9 +65,17 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
   };
 
   const entries = [...day.scheduled, ...day.planned].map(attach).map(withAutomaticity).sort(byHabitOrder);
+
+  // Een habit met meerdere dagdelen staat in elk dagdeel, met een eigen vinkje: `part` is het dagdeel van deze kaart, `partDone` of dat gedaan is,
+  // en `doneToday` volgt dat dagdeel (zodat de teller per dagdeel klopt). `partsDone` en `partsTotal` zijn de stand van de hele dag.
+  const forPart = (entry, part) => {
+    if (!hasMultipleDayparts(entry.habit)) return entry;
+    const done = donePartsOf(entry.habit, { status: entry.loggedToday, parts: entry.partsToday });
+    return { ...entry, part, partDone: done.includes(part), partsDone: done.length, partsTotal: habitDayparts(entry.habit).length, doneToday: done.includes(part) };
+  };
   const groups = DAYPARTS.map((daypart) => ({
     daypart,
-    entries: entries.filter((e) => e.habit.daypart === daypart),
+    entries: entries.filter((e) => habitDayparts(e.habit).includes(daypart)).map((e) => forPart(e, daypart)),
   })).filter((g) => g.entries.length > 0);
 
   const pool = day.pool.map(attach).sort(

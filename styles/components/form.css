@@ -308,6 +308,7 @@ select.input {
 
 .templates {
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* anders bepaalt het breedste sjabloon de kolom en loopt het formulier bij grote tekst over */
   gap: var(--space-2);
 }
 
@@ -323,6 +324,8 @@ select.input {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
   text-decoration: none;
+  max-width: 100%;
+  overflow-wrap: anywhere; /* een lang woord breekt af in plaats van de pagina te verbreden (320 px, 200% tekst) */
 }
 
 .chip-link[aria-current='true'] {
@@ -462,11 +465,12 @@ select.input {
 
 .theme-option {
   position: relative;
-  display: block;
+  display: grid; /* de kaart vult het vak, zodat kaarten naast elkaar even hoog zijn, ook als de omschrijving verschilt */
 }
 
 .theme-option__face {
   display: grid;
+  align-content: start;
   gap: var(--space-1);
   padding: var(--space-4);
   background: var(--color-surface);

@@ -7,7 +7,7 @@ import { charCounter } from '../components/char-counter.js';
 import { nl } from '../../content/nl.js';
 import { ValidationError } from '../../data/repository.js';
 import { applyHabitForm } from '../../app/actions.js';
-import { DAYPARTS, HABIT_COLORS, NAME_MAX, TEXT_MAX } from '../../domain/habit.js';
+import { DAYPARTS, HABIT_COLORS, NAME_MAX, TEXT_MAX, sortDayparts } from '../../domain/habit.js';
 import { ALL_WEEKDAYS, WORKDAYS } from '../../domain/schedule.js';
 import { currentSchedule } from './habits.js';
 import { TEMPLATES } from '../../content/templates.js';
@@ -16,6 +16,8 @@ import { ICONS } from '../../content/icons.js';
 import { DEFAULT_ICON_KEY, iconForEmoji, iconForKey, searchIcons } from '../../app/icons.js';
 import { icon } from '../svg.js';
 import { habitIcon } from '../components/habit-icon.js';
+import { GUIDE_TYPES } from '../../content/guide.js';
+import { setFirstTipPending } from '../intro.js';
 
 const TYPES = ['daily', 'weekdays', 'per_week', 'day_of_month', 'per_month'];
 
@@ -26,13 +28,14 @@ function typeOf(schedule) {
 }
 
 /** Route '/habits/new' (id = null, optioneel ?template=water) of '/habits/:id'. */
-export function habitFormView({ id, template = null }) {
+export function habitFormView({ id, template = null, intro = false }) {
   const root = h('div', { class: 'habit-form page' });
-  mount(root, id, template);
+  mount(root, id, template, intro && id === null);
   return root;
 }
 
-async function mount(root, id, templateKey = null) {
+/** intro: je komt uit de introductie; na het opslaan van je eerste habit ga je naar Vandaag, waar één keer een rustige tip staat. */
+async function mount(root, id, templateKey = null, intro = false) {
   const { repo, today } = state;
   const existing = id === null ? null : await repo.getHabit(id);
   if (id !== null && !existing) {
@@ -53,6 +56,8 @@ async function mount(root, id, templateKey = null) {
     perWeek: initial.type === 'times_per_period' && initial.period === 'week' ? initial.count : 2,
     perMonth: initial.type === 'times_per_period' && initial.period === 'month' ? initial.count : 2,
     day: initial.type === 'day_of_month' ? initial.day : 1,
+    // een habit kan meerdere dagdelen hebben (tandenpoetsen 's ochtends en 's avonds); `daypart` blijft het eerste
+    dayparts: new Set(Array.isArray(base.dayparts) && base.dayparts.length > 1 ? base.dayparts : [base.daypart ?? 'anytime']),
     counterOn: Boolean(base.counter),
     unit: base.counter?.unit ?? 'glazen',
     target: base.counter ? (base.counter.target ?? '') : 8,
@@ -128,15 +133,21 @@ async function mount(root, id, templateKey = null) {
     ...TYPES.map((type) => h('label', { class: 'segmented__item' },
       h('input', {
         class: 'choice__input', type: 'radio', name: 'scheduleType', value: type, checked: type === form.type,
-        onchange: () => { form.type = type; renderDetails(); renderCounter(); },
+        onchange: () => { form.type = type; renderDetails(); renderCounter(); syncDayparts(); },
       }),
       h('span', { class: 'segmented__face' }, nl.form.scheduleTypes[type]))));
 
   const countStepper = (inputId, value, max, label, onChange) => stepper({ id: inputId, value, min: 1, max, label, onChange });
 
+  // een voorbeeld bij het gekozen ritme, met een link naar de uitleg (docs/ONBOARDING.md O2)
+  const exampleLine = () => h('p', { class: 'field__hint schedule-example', id: 'scheduleExample' },
+    nl.guide.example(GUIDE_TYPES.find((type) => type.key === form.type).example), ' ',
+    h('a', { href: '#/uitleg' }, nl.form.scheduleMore));
+
   function renderDetails() {
     if (form.type === 'weekdays') {
-      fill(details, 
+      fill(details,
+        exampleLine(),
         h('p', { class: 'field__label' }, nl.form.weekdaysLabel),
         h('div', { class: 'choices choices--week' }, ...nl.weekdays.short.map((label, i) => h('label', { class: 'choice' },
           h('input', {
@@ -146,17 +157,19 @@ async function mount(root, id, templateKey = null) {
           h('span', { class: 'choice__face choice__face--text' }, label)))));
     } else if (form.type === 'per_week' || form.type === 'per_month') {
       const week = form.type === 'per_week';
-      fill(details, 
+      fill(details,
+        exampleLine(),
         h('label', { class: 'field__label', for: 'count' }, week ? nl.form.countWeek : nl.form.countMonth),
         countStepper('count', week ? form.perWeek : form.perMonth, week ? 7 : 31, week ? nl.form.countWeek : nl.form.countMonth, (v) => { form[week ? 'perWeek' : 'perMonth'] = v; }),
         h('p', { class: 'field__hint' }, nl.form.flexibleHint));
     } else if (form.type === 'day_of_month') {
-      fill(details, 
+      fill(details,
+        exampleLine(),
         h('label', { class: 'field__label', for: 'day' }, nl.form.dayOfMonth),
         countStepper('day', form.day, 31, nl.form.dayOfMonth, (v) => { form.day = v; }),
         h('p', { class: 'field__hint' }, nl.form.dayOfMonthHint));
     } else {
-      fill(details);
+      fill(details, exampleLine());
     }
   }
   renderDetails();
@@ -173,18 +186,21 @@ async function mount(root, id, templateKey = null) {
 
   // --- teller (alleen bij elke dag / vaste dagen) -----------------------------------------
   const counterBox = h('fieldset', { class: 'field' });
-  const counterAllowed = () => form.type === 'daily' || form.type === 'weekdays';
+  const onWeekdays = () => form.type === 'daily' || form.type === 'weekdays';
+  // een teller en meerdere dagdelen sluiten elkaar uit (de dagdelen zijn zelf een soort teller)
+  const counterAllowed = () => onWeekdays() && form.dayparts.size < 2;
+  const multiAllowed = () => onWeekdays() && !form.counterOn;
 
   function renderCounter() {
     if (!counterAllowed()) {
-      fill(counterBox, h('legend', { class: 'field__label' }, nl.form.counter), h('p', { class: 'field__hint' }, nl.form.counterOnlyDaily));
+      fill(counterBox, h('legend', { class: 'field__label' }, nl.form.counter), h('p', { class: 'field__hint' }, onWeekdays() ? nl.form.counterOneDaypart : nl.form.counterOnlyDaily));
       return;
     }
     const unitInput = h('input', { id: 'counterUnit', class: 'input', type: 'text', value: form.unit, placeholder: nl.form.counterUnitPlaceholder, 'aria-describedby': 'err-counterUnit', oninput: (e) => { form.unit = e.target.value; } });
     fill(counterBox,
       h('legend', { class: 'field__label' }, nl.form.counter),
       h('label', { class: 'switch' },
-        h('input', { id: 'counterOn', type: 'checkbox', checked: form.counterOn, onchange: (e) => { form.counterOn = e.target.checked; renderCounter(); } }),
+        h('input', { id: 'counterOn', type: 'checkbox', checked: form.counterOn, onchange: (e) => { form.counterOn = e.target.checked; renderCounter(); syncDayparts(); } }),
         h('span', null, nl.form.counterToggle)),
       form.counterOn
         ? h('div', { class: 'subfields' },
@@ -202,10 +218,35 @@ async function mount(root, id, templateKey = null) {
   renderCounter();
 
   // --- overige velden ---------------------------------------------------------------------
-  const daypart = h('div', { class: 'segmented', role: 'radiogroup', 'aria-describedby': 'err-daypart' },
-    ...DAYPARTS.map((d) => h('label', { class: 'segmented__item' },
-      h('input', { class: 'choice__input', type: 'radio', name: 'daypart', value: d, checked: d === (base.daypart ?? 'anytime') }),
-      h('span', { class: 'segmented__face' }, nl.dayparts[d]))));
+  // dagdelen: een of meer. "Overdag" staat op zichzelf; zonder vaste weekdagen of met een teller kan er maar één (zie multiAllowed)
+  const daypartInputs = new Map();
+  const daypartHint = h('p', { class: 'field__hint', id: 'hint-dayparts' });
+  const daypart = h('div', { class: 'segmented', role: 'group', 'aria-describedby': 'err-daypart err-dayparts hint-dayparts' },
+    ...DAYPARTS.map((d) => {
+      const input = h('input', { class: 'choice__input', type: 'checkbox', name: 'daypart', value: d, checked: form.dayparts.has(d), onchange: (e) => pickDaypart(d, e.target.checked) });
+      daypartInputs.set(d, input);
+      return h('label', { class: 'segmented__item' }, input, h('span', { class: 'segmented__face' }, nl.dayparts[d]));
+    }));
+
+  /** Brengt de vinkjes en de uitleg in lijn met wat mag; de vinkjes blijven dezelfde elementen, zodat de focus niet verspringt. */
+  function syncDayparts() {
+    if (!multiAllowed() && form.dayparts.size > 1) form.dayparts = new Set([sortDayparts([...form.dayparts])[0]]);
+    for (const [d, input] of daypartInputs) input.checked = form.dayparts.has(d);
+    daypartHint.textContent = multiAllowed() ? nl.form.daypartsHint : (form.counterOn ? nl.form.daypartsSingleCounter : nl.form.daypartsSingleSchedule);
+  }
+
+  function pickDaypart(d, on) {
+    if (on) {
+      if (d === 'anytime' || !multiAllowed()) form.dayparts = new Set([d]);
+      else { form.dayparts.delete('anytime'); form.dayparts.add(d); }
+    } else {
+      form.dayparts.delete(d);
+      if (form.dayparts.size === 0) form.dayparts.add(d); // er is altijd minstens één dagdeel
+    }
+    syncDayparts();
+    renderCounter();
+  }
+  syncDayparts();
   const startDate = h('input', { id: 'startDate', class: 'input', type: 'date', value: existing?.startDate ?? today, disabled: started, 'aria-describedby': 'err-startDate hint-startDate' });
   const cue = h('input', { id: 'cue', class: 'input', type: 'text', value: base.cue ?? '', placeholder: nl.form.cuePlaceholder, 'aria-describedby': 'err-cue' });
   const why = h('textarea', { id: 'why', class: 'input', rows: 2, placeholder: nl.form.whyPlaceholder, 'aria-describedby': 'err-why' }, base.why ?? '');
@@ -220,7 +261,7 @@ async function mount(root, id, templateKey = null) {
     for (const el of [formError, ...Object.values(errorEls)]) el.hidden = true;
 
     const values = {
-      name: name.value, icon: chosenIcon, color: radio('color'), daypart: radio('daypart'),
+      name: name.value, icon: chosenIcon, color: radio('color'), daypart: sortDayparts([...form.dayparts])[0], dayparts: sortDayparts([...form.dayparts]),
       startDate: started ? existing.startDate : startDate.value,
       cue: cue.value, why: why.value, minimalVersion: minimal.value, schedule: buildSchedule(),
       counter: counterAllowed() && form.counterOn
@@ -235,13 +276,15 @@ async function mount(root, id, templateKey = null) {
       showErrors(error.errors);
       return;
     }
+    if (intro) setFirstTipPending();
     notifyChanged();
     showToast({ message: nl.app.saved });
-    location.hash = existing ? `#/habits/${encodeURIComponent(existing.id)}` : '#/habits';
+    if (intro) location.hash = '#/today';
+    else location.hash = existing ? `#/habits/${encodeURIComponent(existing.id)}` : '#/habits';
   }
 
   function showErrors(errors) {
-    const focusTargets = { name, icon: iconTrigger, color: colorGroup, daypart, startDate, schedule: typeGroup, cue, why, minimalVersion: minimal,
+    const focusTargets = { name, icon: iconTrigger, color: colorGroup, daypart, dayparts: daypart, startDate, schedule: typeGroup, cue, why, minimalVersion: minimal,
       counterUnit: counterBox.querySelector('#counterUnit'), counterTarget: counterBox.querySelector('#counterTarget'), counter: counterBox.querySelector('#counterOn') };
     let first = null;
     for (const { field: key, code, detail } of errors) {
@@ -288,7 +331,7 @@ async function mount(root, id, templateKey = null) {
       existing ? null : h('div', { class: 'templates' },
         h('p', { class: 'field__label' }, nl.form.templates),
         h('div', { class: 'choices' }, ...Object.entries(TEMPLATES).map(([key, template]) =>
-          h('a', { class: 'chip-link', href: `#/habits/new?template=${key}`, 'aria-current': key === templateKey ? 'true' : null }, habitIcon(template.icon, 'theme-icon--inline'), ` ${template.name}`)))),
+          h('a', { class: 'chip-link', href: `#/habits/new?template=${key}${intro ? '&intro=1' : ''}`, 'aria-current': key === templateKey ? 'true' : null }, habitIcon(template.icon, 'theme-icon--inline'), ` ${template.name}`)))),
       field(nl.form.name, h('div', { class: 'name-row' }, iconTrigger, name), { id: 'name', errorField: 'name', max: NAME_MAX, counterOf: name }),
       errorFor('icon'),
       field(nl.form.color, colorGroup, { group: true, errorField: 'color' }),
@@ -298,7 +341,9 @@ async function mount(root, id, templateKey = null) {
         started ? h('p', { class: 'field__hint' }, nl.form.changeHint) : null,
         errorFor('schedule')),
       counterBox,
-      field(nl.form.daypart, daypart, { group: true, errorField: 'daypart' }),
+      h('fieldset', { class: 'field' },
+        h('legend', { class: 'field__label' }, nl.form.daypart),
+        daypart, daypartHint, errorFor('daypart'), errorFor('dayparts')),
       field(nl.form.startDate, startDate, { id: 'startDate', errorField: 'startDate', hint: started ? nl.form.startDateLocked : null }),
       field(nl.form.cue, cue, { id: 'cue', errorField: 'cue', max: TEXT_MAX }),
       field(nl.form.why, why, { id: 'why', errorField: 'why', max: TEXT_MAX }),

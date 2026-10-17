@@ -19,6 +19,11 @@ const ICONS = {
   plus: [['path', { d: 'M12 5v14M5 12h14' }]],
   sprout: [['path', { d: 'M12 21v-9' }], ['path', { d: 'M12 14c0-4-3-6.5-7.5-6.5C4.5 11.5 7.5 14 12 14z' }], ['path', { d: 'M12 11.5c0-3.5 2.5-6 7-6 0 4-2.5 6-7 6z' }]],
   moon: [['path', { d: 'M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z' }]],
+  // installeren: het deelteken van iOS, "toevoegen", het menu van een browser en "binnenhalen"
+  share: [['path', { d: 'M12 15V3M8 7l4-4 4 4' }], ['path', { d: 'M7 11H6a1 1 0 00-1 1v8a1 1 0 001 1h12a1 1 0 001-1v-8a1 1 0 00-1-1h-1' }]],
+  addSquare: [['rect', { x: 4, y: 4, width: 16, height: 16, rx: 3 }], ['path', { d: 'M12 8.5v7M8.5 12h7' }]],
+  menu: [['circle', { cx: 12, cy: 5, r: 1.2 }], ['circle', { cx: 12, cy: 12, r: 1.2 }], ['circle', { cx: 12, cy: 19, r: 1.2 }]],
+  install: [['path', { d: 'M12 3v12M8 11l4 4 4-4' }], ['path', { d: 'M5 20h14' }]],
 };
 
 /** icon('check', { strokeWidth: 3 }) -> <svg aria-hidden> */
