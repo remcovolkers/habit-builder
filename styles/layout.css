@@ -511,3 +511,20 @@
     padding-inline: max(var(--space-12), calc((100% - var(--content-wide)) / 2));
   }
 }
+
+/* Touchschermen (telefoon, tablet): geen scrollbalk. Je scrolt met je vinger, en het toestel toont zelf kort een indicator als dat nodig is. De dunne
+   balk in het thema (base.css) en de gereserveerde strook ernaast worden op Android een vaste, zichtbare balk en nemen ruimte in. Muis en trackpad houden
+   de balk. Scrollen blijft werken: alleen de balk gaat weg. !important omdat de regels die een strook reserveren (kolommen op desktop) een hogere
+   specificiteit hebben en ook op een tablet in liggende stand gelden. */
+@media (hover: none) and (pointer: coarse) {
+  html,
+  body,
+  * {
+    scrollbar-width: none !important;
+    scrollbar-gutter: auto !important;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
+}

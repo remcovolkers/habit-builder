@@ -223,6 +223,25 @@ async function main() {
   const emptyToday = await ev(`(() => { const b = document.querySelector('.empty .button--primary[href="#/habits/new"]'); return { button: !!b && b.getBoundingClientRect().height >= 44, fab: !!document.querySelector('.fab') }; })()`);
   check('lege Vandaag op de telefoon: een knop "Eerste habit maken" en geen zwevende knop', emptyToday.button && !emptyToday.fab, JSON.stringify(emptyToday));
 
+  // Scrollbalk: op een touchscherm geen (je scrolt met je vinger), met een muis de dunne balk in het thema en een gereserveerde strook
+  const barInfo = () => ev(`(() => { const css = (el) => (el ? { width: getComputedStyle(el).scrollbarWidth, gutter: getComputedStyle(el).scrollbarGutter } : null);
+    return { coarse: matchMedia('(pointer: coarse)').matches, noHover: matchMedia('(hover: none)').matches, html: css(document.documentElement), body: css(document.body) }; })()`);
+  await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 }); // zoals een telefoon: pointer coarse, hover none
+  await send('Emulation.setEmitTouchEventsForMouse', { enabled: true, configuration: 'mobile' });
+  await nav('habits');
+  await sleep(300);
+  const touchBar = await barInfo();
+  await send('Emulation.setEmitTouchEventsForMouse', { enabled: false });
+  await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  await send('Emulation.setDeviceMetricsOverride', { width: 800, height: 700, deviceScaleFactor: 1, mobile: false }); // een smal venster met een muis (vanaf 960 px scrolt het werkvlak en reserveert de pagina zelf geen strook)
+  await nav('habits');
+  await sleep(300);
+  const mouseBar = await barInfo();
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  check('scrollbalk: op een touchscherm geen balk en geen gereserveerde strook, met een muis de dunne balk in het thema en een gereserveerde strook',
+    touchBar.coarse && touchBar.noHover && touchBar.html.width === 'none' && touchBar.html.gutter === 'auto' && touchBar.body.width === 'none'
+      && !mouseBar.coarse && mouseBar.html.width === 'thin' && mouseBar.html.gutter.startsWith('stable'), JSON.stringify({ touchBar, mouseBar }));
+
   const sizes = [['390x844', 390, 844, 100], ['320x568', 320, 568, 100], ['320x568, tekst 200%', 320, 568, 200]];
   for (const [phase, count] of [['weinig habits', 2], ['veel habits', 8]]) {
     await ev(SEED(phase === 'weinig habits' ? 0 : 2, count));
