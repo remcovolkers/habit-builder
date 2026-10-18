@@ -1,9 +1,9 @@
 // "Plan je week": per flexibele taak (N× per week of maand) de komende zeven dagen, en een voorstel dat de nog ontbrekende keren verdeelt. Puur.
 // Het plannen zelf gaat met de bestaande dagplanning (actions.js: planHabit en unplanHabit), dus ook maximaal PLAN_AHEAD_DAYS vooruit.
 import { PLAN_AHEAD_DAYS } from '../domain/constants.js';
-import { addDays, diffDays, eachDay, startOfWeek } from '../domain/dates.js';
+import { addDays, diffDays, eachDay, endOfWeek, startOfWeek } from '../domain/dates.js';
 import { isTracked } from '../domain/rules.js';
-import { neededInWindow } from '../domain/planning.js';
+import { lastChanceThisWeek, neededInWindow } from '../domain/planning.js';
 import { isTight } from '../domain/tight.js';
 import { computeUnits } from '../domain/units.js';
 
@@ -20,6 +20,8 @@ const byOrder = (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.loca
  *   missing     hoeveel keren er nu nog een dag moeten krijgen: wat nog moet min wat gepland is. Bij een taak per maand alleen je deel van dit venster
  *               (domain/planning.js): de rest plan je later in de maand
  *   urgent      dreigt te falen (atRisk of krap, zie domain/tight.js)
+ *   lastChance  deze week is de laatste kans: slaat de gebruiker de taak (per maand) deze week over, dan haalt hij zijn doel niet meer
+ *               (domain/planning.js); daysAfter zegt hoeveel dagen er na deze week nog in de maand zitten
  *   startsOn    de startdatum als de taak pas later in het venster begint (anders null); de dagen ervoor zijn 'blocked'.
  *               Begint hij pas in de volgende week of maand, dan is dat ook de `unit` (unit.start > vandaag)
  *   skipped     de gebruiker koos "Niet in deze week" (habit.noPlanWeek is de maandag van deze week): geen herinnering en geen voorstel voor deze taak.
@@ -66,6 +68,7 @@ export function buildWeekPlan({ snapshot, today }) {
       urgent: unit.count < unit.target && (unit.atRisk || isTight(unit)),
       skipped: habit.noPlanWeek === startOfWeek(today),
       startsOn: startsLater ? habit.startDate : null,
+      ...lastChanceThisWeek({ span: unit.span, open: unit.target - unit.count, planned: plannedHere.length, unitEnd: unit.end, weekEnd: endOfWeek(today) }),
     });
   }
   return rows;

@@ -266,3 +266,13 @@ test('"Dreigt te falen" voor een taak die halverwege de maand begint telt vanaf 
   const old = flexHabit('Oud', 2, 'month', { startDate: '2026-09-01' });
   assert.equal(buildDayView({ snapshot: snapshot({ habits: [old] }), date: '2026-10-19', today: '2026-10-19' }).pool[0].urgent, true, 'een taak die al de hele maand liep is wel krap');
 });
+
+test('Vandaag: een in de laatste kans van de maand overgeslagen taak telt als waarschuwing (poolSkippedLast), een gewone overgeslagen taak niet', () => {
+  const monthly = (id) => flexHabit(id, 1, 'month', { noPlanWeek: '2026-10-26' });
+  const lastWeek = buildDayView({ snapshot: snapshot({ habits: [monthly('A'), monthly('B')], dayPlans: [plan('B', '2026-10-30')] }), date: '2026-10-28', today: '2026-10-28' });
+  assert.deepEqual([lastWeek.poolSkipped, lastWeek.poolSkippedLast], [2, 1], 'B staat al op vrijdag ingepland: overslaan kost niets');
+  const midMonth = buildDayView({ snapshot: snapshot({ habits: [monthly('A')] }), date: TODAY, today: TODAY });
+  assert.deepEqual([midMonth.poolSkipped, midMonth.poolSkippedLast], [0, 0], 'andere week (noPlanWeek hoort bij 26 oktober): niets');
+  const weekHabit = flexHabit('W', 2, 'week', { noPlanWeek: '2026-10-26' });
+  assert.equal(buildDayView({ snapshot: snapshot({ habits: [weekHabit] }), date: '2026-10-28', today: '2026-10-28' }).poolSkippedLast, 0, 'een weektaak heeft geen laatste week van de maand');
+});

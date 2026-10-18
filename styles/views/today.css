@@ -142,3 +142,11 @@
   font-weight: var(--font-weight-bold);
   color: var(--color-accent);
 }
+
+/* een taak overgeslagen in de laatste kans van de maand: een rustige waarschuwing onder de kop Oningepland */
+.pool__warn {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-warning);
+}

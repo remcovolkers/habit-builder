@@ -1,5 +1,6 @@
 // Het view-model voor het Vandaag-scherm: snapshot + datum in, gegroepeerde lijsten uit. Puur.
-import { startOfWeek } from '../domain/dates.js';
+import { endOfWeek, startOfWeek } from '../domain/dates.js';
+import { lastChanceThisWeek } from '../domain/planning.js';
 import { DAYPARTS } from '../domain/habit.js';
 import { donePartsOf, habitDayparts, hasMultipleDayparts } from '../domain/dayparts.js';
 import { paceOn } from '../domain/pace.js';
@@ -110,6 +111,8 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
     groups,
     pool,
     poolSkipped: hidden.length, // hoeveel taken er door "Niet in deze week" uit de stapel zijn gehaald
+    // en bij hoeveel daarvan is dat de laatste kans (een taak per maand die zo zijn doel niet meer haalt)
+    poolSkippedLast: hidden.filter((entry) => !entry.satisfied && lastChanceThisWeek({ span: entry.span, open: entry.target - entry.count, planned: entry.plannedDates.length, unitEnd: entry.unit.end, weekEnd: endOfWeek(date) }).lastChance).length,
     progress: { done: counted.filter((e) => e.doneToday).length, total: counted.length },
   };
 }

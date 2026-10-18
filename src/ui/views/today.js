@@ -255,7 +255,9 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
       h('p', { class: 'section__hint' }, nl.today.pool.hint),
       view.canPlan && toPlan > 0 ? planWeekPrompt({ toPlan }) : null,
       // niets meer in te plannen: alles heeft zijn aandacht gehad (ingepland, gedaan of bewust niet deze week)
-      view.canPlan && toPlan === 0 ? h('p', { class: 'pool__all-planned', role: 'status' }, nl.today.pool.allPlanned) : null,
+      // taken die je deze week hebt overgeslagen terwijl dit de laatste kans van de maand is: dat blijft zichtbaar, want ze staan niet meer in de stapel
+      view.canPlan && view.poolSkippedLast > 0 ? h('p', { class: 'pool__warn', role: 'status' }, nl.today.pool.skippedLast(view.poolSkippedLast)) : null,
+      view.canPlan && toPlan === 0 && !(view.poolSkippedLast > 0) ? h('p', { class: 'pool__all-planned', role: 'status' }, nl.today.pool.allPlanned) : null,
       urgentPool.length > 0
         ? h('div', { class: 'pool__group' }, h('h3', { class: 'pool__group-title pool__group-title--urgent' }, nl.today.pool.urgentTitle), poolList(urgentPool))
         : null,

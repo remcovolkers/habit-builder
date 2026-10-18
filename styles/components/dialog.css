@@ -44,6 +44,10 @@ html:has(dialog[open]) {
   border-radius: var(--radius-full);
 }
 
+.dialog__title:focus {
+  outline: none; /* de titel krijgt de focus bij het openen (voor schermlezers en het toetsenbord); een rand eromheen zou storen */
+}
+
 .dialog__title {
   touch-action: none; /* ook aan de titel is het blad naar beneden te slepen */
 }

@@ -173,3 +173,35 @@
   border-color: var(--color-accent);
   box-shadow: var(--shadow-glow-soft);
 }
+
+/* overslaan in de laatste kans van de maand: een waarschuwing in de rij, eerst als vraag en daarna als vaste regel onder de samenvatting */
+.planner__row[data-last-chance='true'][data-skipped='true'] {
+  border-color: rgb(var(--warning-rgb) / 0.55);
+}
+
+.planner__warning {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-warning);
+}
+
+.planner__confirm {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-warning-12);
+  border: 1px solid rgb(var(--warning-rgb) / 0.55);
+  border-radius: var(--radius-card);
+}
+
+.planner__confirm-text {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.planner__confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

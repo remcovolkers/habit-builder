@@ -67,6 +67,7 @@ export const countPlanSkipped = (snapshot, today) => buildWeekPlan({ snapshot, t
 
 export function openWeekPlanner() {
   const body = h('div', { class: 'planner' });
+  let confirming = null; // de taak waarbij we vragen of overslaan echt de bedoeling is (de laatste kans van de maand)
 
   async function draw(focusKey = null) {
     const snapshot = await state.repo.snapshot();
@@ -81,12 +82,13 @@ export function openWeekPlanner() {
 
   function rowElement(row) {
     const { habit } = row;
-    return h('li', { class: 'planner__row', dataset: { color: habit.color, urgent: row.urgent ? 'true' : null, skipped: row.skipped && row.missing > 0 ? 'true' : null, needs: row.missing > 0 && row.free > 0 && !row.skipped ? 'true' : null } },
+    return h('li', { class: 'planner__row', dataset: { color: habit.color, urgent: row.urgent ? 'true' : null, lastChance: row.lastChance ? 'true' : null, skipped: row.skipped && row.missing > 0 ? 'true' : null, needs: row.missing > 0 && row.free > 0 && !row.skipped ? 'true' : null } },
       h('div', { class: 'planner__head' },
         h('span', { class: 'planner__icon', 'aria-hidden': 'true' }, habitIcon(habit.icon)),
         h('div', { class: 'planner__title' },
           h('span', { class: 'planner__name' }, habit.name),
           h('span', { class: `planner__summary${row.missing > 0 ? ' is-missing' : ''}` }, summary(row, state.today)),
+          row.skipped && row.lastChance ? h('span', { class: 'planner__warning' }, p.skippedLast) : null,
           row.urgent ? h('span', { class: 'badge badge--risk' }, nl.today.pool.urgentTitle) : null)),
       h('div', { class: 'planner__days', role: 'group', 'aria-label': p.daysFor(habit.name) },
         ...row.days.map((day) => {
@@ -105,22 +107,40 @@ export function openWeekPlanner() {
           h('span', { class: 'planner__mark', 'aria-hidden': 'true' }, day.state === 'done' ? '✓' : day.state === 'planned' ? '●' : day.state === 'blocked' ? '–' : ''));
         })),
       // "Niet in deze week": alleen als er iets te plannen is (of het al zo staat, zodat je het kunt terugdraaien)
-      row.missing > 0 && (row.free > 0 || row.skipped)
-        ? h('div', { class: 'planner__foot' },
-          h('button', {
-            type: 'button',
-            class: 'button button--ghost button--small planner__skip',
-            'aria-pressed': row.skipped ? 'true' : 'false',
-            dataset: { focusKey: `skip:${habit.id}` },
-            onclick: () => toggleSkip(row),
-          }, row.skipped ? p.unskipWeek : p.skipWeek))
-        : null);
+      confirming === habit.id && row.lastChance && !row.skipped
+        ? h('div', { class: 'planner__confirm', role: 'alert' },
+          h('p', { class: 'planner__confirm-text' }, p.lastChance(row.daysAfter, row.unit.target - row.unit.count)),
+          h('div', { class: 'planner__confirm-actions' },
+            h('button', { type: 'button', class: 'button button--secondary button--small', dataset: { focusKey: `skipback:${habit.id}` }, onclick: () => { confirming = null; draw(`skip:${habit.id}`); } }, p.keepPlanning),
+            h('button', { type: 'button', class: 'button button--ghost button--small planner__skip-anyway', onclick: () => applySkip(row) }, p.skipAnyway)))
+        : row.missing > 0 && (row.free > 0 || row.skipped)
+          ? h('div', { class: 'planner__foot' },
+            h('button', {
+              type: 'button',
+              class: 'button button--ghost button--small planner__skip',
+              'aria-pressed': row.skipped ? 'true' : 'false',
+              dataset: { focusKey: `skip:${habit.id}` },
+              onclick: () => toggleSkip(row),
+            }, row.skipped ? p.unskipWeek : p.skipWeek))
+          : null);
   }
 
-  async function toggleSkip(row) {
+  async function applySkip(row) {
+    confirming = null;
     await setPlanSkip(state.repo, { habitId: row.habit.id, skipped: !row.skipped }, state.today);
     notifyChanged();
     await draw(`skip:${row.habit.id}`);
+  }
+
+  // Overslaan haalt de taak uit de herinnering, maar niet uit je doel. Is deze week de laatste kans (een taak per maand die zo niet meer te halen is),
+  // dan zegt de rij dat eerst en vraagt om een bevestiging; anders gaat het meteen. Terugzetten ("Toch inplannen") vraagt nooit iets.
+  async function toggleSkip(row) {
+    if (!row.skipped && row.lastChance) {
+      confirming = row.habit.id;
+      await draw(`skipback:${row.habit.id}`);
+      return;
+    }
+    await applySkip(row);
   }
 
   async function toggle(row, day, key) {
