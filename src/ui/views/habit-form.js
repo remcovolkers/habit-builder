@@ -113,10 +113,6 @@ async function mount(root, id, templateKey = null, intro = false) {
       content: h('div', { class: 'icon-picker' }, h('div', { class: 'icon-picker__search' }, search), list),
       actions: [], cancelLabel: nl.app.close, className: 'dialog--picker',
     });
-    // geen toetsenbord dat meteen omhoog springt: de focus gaat naar de titel, het zoekveld is één tik verder
-    const title = picker.dialog.querySelector('.dialog__title');
-    title.tabIndex = -1;
-    title.focus();
     // het gekozen icoon in beeld brengen
     picker.dialog.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'center' });
   }

@@ -888,6 +888,16 @@ async function main() {
   const poolSkipped = await ev(`(() => { const p = document.querySelector('.pool'); return { exists: !!p, cards: p?.querySelectorAll('.pool-card').length ?? 0, title: p?.querySelector('.section__title')?.textContent ?? null, text: p?.querySelector('.pool__all-planned')?.textContent ?? null, warn: p?.querySelector('.pool__warn')?.textContent ?? null, button: !!p?.querySelector('.section-head #planWeek'), overflow: document.documentElement.scrollWidth - innerWidth, left: [...(p?.querySelectorAll('.pool-card') ?? [])].map((c) => c.textContent.slice(0, 40)), prompt: p?.querySelector('.plan-prompt__text')?.textContent ?? null }; })()`);
   check('Vandaag: met "Niet in deze week" verdwijnen de taken uit Oningepland; de kop, de knop Plan je week en "Alles ingepland" blijven staan', poolBefore > 0 && poolSkipped.exists && poolSkipped.cards === 0 && poolSkipped.title === 'Oningepland' && (poolSkipped.text === 'Alles ingepland' || /^Laatste kans van de maand/.test(poolSkipped.warn ?? '')) && poolSkipped.button && poolSkipped.overflow <= 0, JSON.stringify({ poolBefore, poolSkipped }));
   await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); const { setPlanSkip } = await import('/src/app/actions.js'); for (const id of ${JSON.stringify(flexAll)}) await setPlanSkip(state.repo, { habitId: id, skipped: false }, state.today); notifyChanged(); })()`);
+  // een blad met een invoerveld (de notitie bij de drie puntjes op Vandaag, de feedback): de focus gaat naar de titel, niet naar het veld, zodat op een telefoon het toetsenbord niet ongevraagd omhoog springt
+  await nav('today');
+  await sleep(600);
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  await ev(`document.querySelector('.today__main .habit-card__more').click()`);
+  await sleep(500);
+  const moreFocus = await ev(`(() => { const a = document.activeElement; return { hasField: !!document.querySelector('dialog[open] #noteInput'), onTitle: !!a?.classList.contains('dialog__title'), inField: !!a?.matches('input, textarea, select') }; })()`);
+  check('Vandaag, de drie puntjes: de notitie is er, maar de focus staat op de titel van het blad en niet in het veld (geen toetsenbord dat ongevraagd omhoog springt)', moreFocus.hasField && moreFocus.onTitle && !moreFocus.inField, JSON.stringify(moreFocus));
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  await sleep(300);
   // opruimen: de taken weer weg, zodat de controles hierna van dezelfde stand uitgaan
   await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); for (const id of ${JSON.stringify(flexIds)}) { await state.repo.deleteHabit(id); } for (const plan of await state.repo.listDayPlans?.() ?? []) { if (${JSON.stringify(flexIds)}.includes(plan.habitId)) await state.repo.clearDayPlan(plan.habitId, plan.date); } notifyChanged(); })()`);
 

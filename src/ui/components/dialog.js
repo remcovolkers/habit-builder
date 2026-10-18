@@ -9,9 +9,12 @@ const CLOSE_SPEED = 0.6; // of zo snel (px per ms) wegvegen
  * actions: [{ label, variant: 'primary'|'secondary'|'danger', onClick }] — de dialoog sluit na onClick,
  * tenzij die `false` teruggeeft (bv. bij een validatiefout).
  *
+ * Focus: bij het openen gaat die naar de titel, niet naar het eerste veld. Een invoerveld dat de focus krijgt laat op een telefoon meteen het toetsenbord
+ * omhoog springen, en dat is niet gewenst als de tekst optioneel is. `focus: 'native'` laat de browser kiezen (het eerste bedienbare element).
+ *
  * Sluiten kan met een knop, met Esc, door buiten het blad te tikken of door het blad aan het handvat of de titel naar beneden te slepen.
  */
-export function openDialog({ title, description = null, content = null, actions = [], cancelLabel = nl.app.cancel, onClose = null, className = '' }) {
+export function openDialog({ title, description = null, content = null, actions = [], cancelLabel = nl.app.cancel, onClose = null, className = '', focus = 'title' }) {
   const dialog = h('dialog', { class: `dialog ${className}`.trim(), 'aria-labelledby': 'dialog-title' });
   const close = () => dialog.close();
 
@@ -27,7 +30,7 @@ export function openDialog({ title, description = null, content = null, actions 
   if (cancelLabel) buttons.push(h('button', { type: 'button', class: 'button button--ghost', onclick: close }, cancelLabel));
 
   const grab = h('div', { class: 'dialog__grab', 'aria-hidden': 'true' });
-  const heading = h('h2', { id: 'dialog-title', class: 'dialog__title' }, title);
+  const heading = h('h2', { id: 'dialog-title', class: 'dialog__title', tabindex: focus === 'title' ? '-1' : null }, title);
   fill(
     dialog,
     grab,
@@ -81,5 +84,6 @@ export function openDialog({ title, description = null, content = null, actions 
   });
   document.body.append(dialog);
   dialog.showModal();
+  if (focus === 'title') heading.focus({ preventScroll: true }); // de titel, niet het eerste invoerveld: geen toetsenbord dat ongevraagd omhoog springt
   return { close, dialog };
 }

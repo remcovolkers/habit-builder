@@ -50,6 +50,5 @@ export function openNameDialog({ initial = '', onSaved = null } = {}) {
       if (!saved) saveSettings({ nameAsked: true }).catch((e) => console.warn('naam-vlag opslaan mislukt', e));
     },
   });
-  input.focus();
-  input.select();
+  // geen focus in het veld: de naam is optioneel ("Overslaan"), en op een telefoon springt het toetsenbord dan ongevraagd omhoog
 }
