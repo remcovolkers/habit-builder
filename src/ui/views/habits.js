@@ -155,7 +155,8 @@ export function habitsView() {
           section('fixed', { title: hasFlexible ? nl.habits.sections.fixed : nl.habits.sections.active }),
           section('flexible', { title: nl.habits.sections.flexible, hint: nl.habits.flexibleHint, intro: reordering ? null : planWeekPrompt({ toPlan: countToPlan(snapshot, today), skipped: countPlanSkipped(snapshot, today) }) }),
           section('paused'),
-          section('planned'),
+          // een taak die pas binnen een paar dagen start staat bij Gepland; is er nog geen lopende flexibele taak, dan staat Plan je week daar, zodat je hem toch kunt inplannen
+          section('planned', { intro: !hasFlexible && !reordering && countToPlan(snapshot, today) > 0 ? planWeekPrompt({ toPlan: countToPlan(snapshot, today) }) : null }),
           section('graduated', { collapsed: true }),
           section('archived', { collapsed: true })),
         fab({ href: '#/habits/new', label: nl.habits.new }));

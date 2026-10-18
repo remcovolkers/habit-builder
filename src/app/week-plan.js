@@ -18,20 +18,27 @@ const byOrder = (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.loca
  *   free        hoeveel vrije dagen er in deze periode nog zijn om te plannen
  *   missing     hoeveel keren er nog bij moeten voordat de afspraak gehaald is (nog te doen min gepland)
  *   urgent      dreigt te falen (atRisk of krap, zie domain/tight.js)
+ *   startsOn    de startdatum als de taak pas later in het venster begint (anders null); de dagen ervoor zijn 'blocked'.
+ *               Begint hij pas in de volgende week of maand, dan is dat ook de `unit` (unit.start > vandaag)
  *   skipped     de gebruiker koos "Niet in deze week" (habit.noPlanWeek is de maandag van deze week): geen herinnering en geen voorstel voor deze taak.
  *               Dat verandert niets aan de afspraak zelf: de taak blijft staan en kan later in de maand nog gedaan of ingepland worden.
  */
 export function buildWeekPlan({ snapshot, today }) {
-  const dates = eachDay(today, addDays(today, PLAN_AHEAD_DAYS));
+  const lastDay = addDays(today, PLAN_AHEAD_DAYS);
+  const dates = eachDay(today, lastDay);
   const rows = [];
   for (const habit of [...snapshot.habits].sort(byOrder)) {
-    if (!isTracked(habit, today)) continue;
+    // Een taak die binnen het venster start (morgen, overmorgen, ...) staat er ook in, alleen te plannen vanaf zijn startdatum: de rekening gaat dan
+    // vanaf die dag (`asOf`), zodat de eerste week of maand maar telt vanaf de start.
+    const startsLater = habit.startDate > today && habit.startDate <= lastDay;
+    const asOf = startsLater ? habit.startDate : today;
+    if (!isTracked(habit, asOf)) continue;
     const mine = snapshot.checkIns.filter((c) => c.habitId === habit.id);
     const pauses = snapshot.pauses.filter((p) => p.habitId === habit.id);
     const paused = (date) => pauses.some((p) => date >= p.from && (p.to == null || date <= p.to));
     // een gepauzeerde taak is nu niet aan de beurt: geen rij en dus ook niet meegeteld (op Vandaag staat hij ook niet in de stapel)
-    if (paused(today)) continue;
-    const unit = computeUnits({ habit, checkIns: mine, pauses, today }).find((u) => u.type === 'times_per_period' && u.start <= today && today <= u.end);
+    if (paused(asOf)) continue;
+    const unit = computeUnits({ habit, checkIns: mine, pauses, today: asOf }).find((u) => u.type === 'times_per_period' && u.start <= asOf && asOf <= u.end);
     if (!unit) continue;
 
     const statusOn = new Map(mine.map((c) => [c.date, c.status]));
@@ -44,11 +51,11 @@ export function buildWeekPlan({ snapshot, today }) {
       else if (planned.has(date)) state = 'planned';
       return { date, state, inUnit: date <= unit.end };
     });
-    const doneBefore = mine.filter((c) => counts(c.status) && c.date >= unit.start && c.date <= today).map((c) => c.date);
+    const doneBefore = mine.filter((c) => counts(c.status) && c.date >= unit.start && c.date <= asOf).map((c) => c.date);
     const plannedHere = days.filter((d) => d.state === 'planned' && d.inUnit).map((d) => d.date);
     rows.push({
       habit,
-      unit: { span: unit.span, count: unit.count, target: unit.target, end: unit.end, days: unit.days, remainingDays: unit.remainingDays },
+      unit: { span: unit.span, count: unit.count, target: unit.target, start: unit.start, end: unit.end, days: unit.days, remainingDays: unit.remainingDays },
       days,
       anchors: [...new Set([...doneBefore, ...plannedHere])],
       planned: plannedHere.length,
@@ -56,6 +63,7 @@ export function buildWeekPlan({ snapshot, today }) {
       missing: Math.max(0, unit.target - unit.count - plannedHere.length),
       urgent: unit.count < unit.target && (unit.atRisk || isTight(unit)),
       skipped: habit.noPlanWeek === startOfWeek(today),
+      startsOn: startsLater ? habit.startDate : null,
     });
   }
   return rows;
