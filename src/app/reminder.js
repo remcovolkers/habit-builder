@@ -39,7 +39,7 @@ export function buildReminderSummary({ snapshot, today, settings, days = REMINDE
     const date = addDays(today, i);
     const view = buildDayView({ snapshot, date, today, prepared });
     const planned = view.progress.total;
-    const pool = view.pool.filter((entry) => !entry.satisfied).length;
+    const pool = view.pool.filter((entry) => !entry.satisfied && !entry.covered).length;
     const attention = nudgesOn({ snapshot, date, prepared });
     const review = weekday(date) === 6 && !weekReviewHasContent(weekReviewFor(snapshot.reviews, startOfWeek(date))) ? 1 : 0;
     const monthReview = date === endOfMonth(date) && !monthReviewFor(snapshot.reviews, startOfMonth(date))?.adjust?.trim() ? 1 : 0;

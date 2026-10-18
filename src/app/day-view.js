@@ -80,9 +80,12 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
   })).filter((g) => g.entries.length > 0);
 
   // een taak in de stapel dreigt te falen als het echt niet meer kan (atRisk) of al krap wordt (domain/tight.js); die komen bovenaan
+  // Een taak waarvan alle keren die nog moeten al een dag hebben (covered) is niet meer te plannen: hij dreigt niet te falen en zakt naar beneden
   const withUrgency = (entry) => {
-    const tight = !entry.satisfied && isTight({ count: entry.count, target: entry.target, remainingDays: entry.remainingDays, days: entry.unit.days });
-    return { ...entry, tight, urgent: !entry.satisfied && (entry.atRisk || tight) };
+    const covered = !entry.satisfied && entry.plannedDates.length > 0 && entry.missingToPlan === 0;
+    const tight = !entry.satisfied && !covered && isTight({ count: entry.count, target: entry.target, remainingDays: entry.remainingDays, days: entry.unit.days });
+    const atRisk = entry.atRisk && !covered;
+    return { ...entry, covered, tight, atRisk, urgent: !entry.satisfied && !covered && (atRisk || tight) };
   };
   // "Niet in deze week" (Plan je week): zo'n taak staat die week niet in de stapel. Inplannen kan nog via Plan je week; heeft hij al een dag of is hij gedaan, dan staat hij gewoon bij de dag
   const inPool = day.pool.map(attach);
@@ -90,6 +93,7 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
   const pool = inPool.filter((entry) => entry.habit.noPlanWeek !== weekStart).map(withUrgency).sort(
     (a, b) =>
       Number(a.satisfied) - Number(b.satisfied) ||
+      Number(a.covered) - Number(b.covered) ||
       Number(b.urgent) - Number(a.urgent) ||
       Number(b.atRisk) - Number(a.atRisk) ||
       a.remainingDays - b.remainingDays ||

@@ -424,6 +424,17 @@
   background: linear-gradient(180deg, var(--color-warning-12), rgb(var(--surface-rgb) / 0.7));
 }
 
+/* alles al ingepland: een rustige kaart met een doorgetrokken rand, zonder de plusknop */
+.pool-card[data-state='planned'] {
+  border-style: solid;
+  border-color: var(--color-hairline-strong);
+}
+
+.pool-card__planned {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
 .pool-card[data-state='satisfied'] {
   opacity: 0.55;
   border-style: solid;

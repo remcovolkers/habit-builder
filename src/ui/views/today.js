@@ -5,7 +5,7 @@ import { showToast } from '../components/toast.js';
 import { openDialog } from '../components/dialog.js';
 import { entryState, habitCard } from '../components/habit-card.js';
 import { poolCard, periodLabel as periodSummary } from '../components/pool-card.js';
-import { countToPlan, planWeekButton, planWeekPrompt } from '../components/week-planner.js';
+import { countToPlan, openWeekPlanner, planWeekButton, planWeekPrompt } from '../components/week-planner.js';
 import { ring } from '../components/ring.js';
 import { icon } from '../svg.js';
 import { mascot } from '../components/mascot.js';
@@ -239,7 +239,7 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
     if (view.canLog) actions.push({ label: nl.today.pool.alreadyDone, onClick: () => perform(() => log(entry.habitId, 'done'), nl.today.toasts.done(habit.name)) });
     openDialog({ title: habit.name, description: periodSummary(entry), actions, cancelLabel: nl.app.close });
   }
-  const poolOptions = { date, today, canPlan: view.canPlan, canMore: view.canPlan || view.canLog, onPlan: (e) => planOnDay(e, date), onMore: poolMore };
+  const poolOptions = { date, today, canPlan: view.canPlan, canMore: view.canPlan || view.canLog, onPlan: (e) => planOnDay(e, date), onMore: poolMore, onChange: () => openWeekPlanner() };
   const poolList = (entries) => h('ul', { class: 'card-list' }, ...entries.map((entry) => poolCard(entry, poolOptions)));
   const urgentPool = view.pool.filter((e) => e.urgent);
   const restPool = view.pool.filter((e) => !e.urgent);

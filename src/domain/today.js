@@ -12,7 +12,9 @@ const counts = (status) => status === 'done' || status === 'minimal';
  * Geeft:
  *   scheduled – vaste weekdagen van vandaag en dag-van-de-maand-eenheden die open staan (of vandaag zijn gelogd)
  *   planned   – flexibele habits die vandaag zijn meegenomen of vandaag al zijn gelogd
- *   pool      – de stapel: flexibele habits van de lopende week/maand die niet vandaag zijn ingepland
+ *   pool      – de stapel: flexibele habits van de lopende week/maand die niet vandaag zijn ingepland. Elke kaart weet ook op welke andere dagen hij al
+ *               is ingepland (plannedDates: vanaf de echte vandaag, in dezelfde week of maand, zonder gelogde dag) en hoeveel keren er dan nog
+ *               zonder dag zijn (missingToPlan); alles gedekt = covered (dag-view.js)
  * Volgorde = volgorde van `bundles`; sorteren is aan de UI.
  */
 export function buildToday({ bundles, dayPlans = [], today, now = today }) {
@@ -63,6 +65,11 @@ export function buildToday({ bundles, dayPlans = [], today, now = today }) {
     const periodUnit = units.find((u) => u.type === 'times_per_period' && u.start <= today && today <= u.end);
     if (periodUnit && (loggedToday !== undefined || (periodUnit.status !== 'paused' && periodUnit.status !== 'skipped'))) {
       const plannedToday = dayPlans.some((p) => p.habitId === habit.id && p.date === today);
+      // de andere dagen waarop hij al is ingepland: vanaf de echte vandaag (een plan van gisteren zonder check-in telt niet), in deze week of maand en niet op een dag die al is gelogd
+      const logged = new Set(checkIns.map((c) => c.date));
+      const plannedDates = [...new Set(dayPlans
+        .filter((p) => p.habitId === habit.id && p.date !== today && p.date >= now && p.date >= periodUnit.start && p.date <= periodUnit.end && !logged.has(p.date))
+        .map((p) => p.date))].sort();
       const entry = {
         ...base,
         kind: 'period',
@@ -74,6 +81,8 @@ export function buildToday({ bundles, dayPlans = [], today, now = today }) {
         atRisk: periodUnit.atRisk,
         satisfied: periodUnit.status === 'done',
         plannedToday,
+        plannedDates,
+        missingToPlan: Math.max(0, periodUnit.target - periodUnit.count - plannedDates.length),
       };
       if (plannedToday || loggedToday !== undefined) planned.push(entry);
       else pool.push(entry);
