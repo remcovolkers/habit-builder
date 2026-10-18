@@ -809,6 +809,9 @@ async function main() {
     overflow: d ? d.scrollWidth - d.clientWidth : 1, height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight, actions: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].map((b) => b.textContent) }; })()`);
   check('Plan je week: een blad met een rij per flexibele taak (acht dagen elk), de knoppen "Verdeel voor mij" en "Klaar", en niet hoger dan het scherm',
     planner.open && planner.rows >= 8 && planner.days === planner.rows * 8 && planner.overflow <= 0 && planner.height <= planner.vh && planner.actions.includes('Verdeel voor mij') && planner.actions.includes('Klaar'), JSON.stringify(planner));
+  // wat nog ingepland moet worden is in het blad gemarkeerd: precies de rijen die nog "inplannen" willen (de taken van "Nog n taken om in te plannen")
+  const marks = await ev(`(() => { const rows = [...document.querySelectorAll('dialog.dialog--planner .planner__row')]; const needing = rows.filter((r) => /inplannen/.test(r.querySelector('.planner__summary')?.textContent ?? '') && !r.querySelector('.planner__skip[aria-pressed="true"]')); const marked = rows.filter((r) => r.dataset.needs === 'true'); return { rows: rows.length, needing: needing.length, marked: marked.length, same: needing.every((r) => r.dataset.needs === 'true') && marked.every((r) => needing.includes(r)) }; })()`);
+  check('Plan je week: de taken die nog ingepland moeten worden zijn gemarkeerd (en alleen die)', marks.rows > 0 && marks.same, JSON.stringify(marks));
   // "Niet in deze week": de taak telt niet meer mee voor "Nog n taken om in te plannen" en krijgt geen voorstel; terugdraaien kan
   const needCount = () => ev(`Number(/Nog ([0-9]+)/.exec(document.querySelector('.habits .plan-prompt__text strong')?.textContent ?? '')?.[1] ?? 0)`);
   const needBefore = await needCount();

@@ -3,6 +3,7 @@
 import { PLAN_AHEAD_DAYS } from '../domain/constants.js';
 import { addDays, diffDays, eachDay, startOfWeek } from '../domain/dates.js';
 import { isTracked } from '../domain/rules.js';
+import { neededInWindow } from '../domain/planning.js';
 import { isTight } from '../domain/tight.js';
 import { computeUnits } from '../domain/units.js';
 
@@ -16,7 +17,8 @@ const byOrder = (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.loca
  *   anchors     de dagen waarop de taak in deze periode al is gedaan of gepland (voor het verdelen)
  *   planned     hoeveel dagen er in deze periode al gepland zijn
  *   free        hoeveel vrije dagen er in deze periode nog zijn om te plannen
- *   missing     hoeveel keren er nog bij moeten voordat de afspraak gehaald is (nog te doen min gepland)
+ *   missing     hoeveel keren er nu nog een dag moeten krijgen: wat nog moet min wat gepland is. Bij een taak per maand alleen je deel van dit venster
+ *               (domain/planning.js): de rest plan je later in de maand
  *   urgent      dreigt te falen (atRisk of krap, zie domain/tight.js)
  *   startsOn    de startdatum als de taak pas later in het venster begint (anders null); de dagen ervoor zijn 'blocked'.
  *               Begint hij pas in de volgende week of maand, dan is dat ook de `unit` (unit.start > vandaag)
@@ -60,7 +62,7 @@ export function buildWeekPlan({ snapshot, today }) {
       anchors: [...new Set([...doneBefore, ...plannedHere])],
       planned: plannedHere.length,
       free: days.filter((d) => d.state === 'free' && d.inUnit).length,
-      missing: Math.max(0, unit.target - unit.count - plannedHere.length),
+      missing: Math.max(0, neededInWindow({ span: unit.span, open: unit.target - unit.count, remainingDays: unit.remainingDays }) - plannedHere.length),
       urgent: unit.count < unit.target && (unit.atRisk || isTight(unit)),
       skipped: habit.noPlanWeek === startOfWeek(today),
       startsOn: startsLater ? habit.startDate : null,

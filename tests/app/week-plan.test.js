@@ -2,6 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildWeekPlan, suggestPlan } from '../../src/app/week-plan.js';
+import { neededInWindow } from '../../src/domain/planning.js';
 import { applyHabitForm, setPlanSkip } from '../../src/app/actions.js';
 import { validateHabit } from '../../src/domain/habit.js';
 import { testRepo, validHabit } from './helpers.js';
@@ -90,8 +91,8 @@ test('een taak per maand: de dagen van deze week tellen mee voor de maand', () =
   const m = row(rows, 'm');
   assert.equal(m.unit.span, 'month');
   assert.equal(m.days.every((d) => d.inUnit), true);
-  assert.equal(m.missing, 2);
-  assert.equal(suggestPlan(rows).length, 2);
+  assert.equal(m.missing, 1, '2× per maand en nog 17 dagen over: nu alleen je deel van het venster (1), de tweede plan je later');
+  assert.equal(suggestPlan(rows).length, 1);
 });
 
 test('een gepauzeerde taak heeft geen rij: niet in het blad, niet meegeteld en niet voorgesteld', () => {
@@ -127,7 +128,7 @@ test('"Niet in deze week": de taak blijft in het blad (met skipped), maar telt n
   const habits = [flexible('a'), flexible('later', 2, 'month', { noPlanWeek: '2026-10-12' })];
   const rows = buildWeekPlan({ snapshot: snap({ habits }), today: THURSDAY });
   assert.deepEqual(rows.map((r) => [r.habit.id, r.skipped]), [['a', false], ['later', true]]);
-  assert.equal(row(rows, 'later').missing, 2, 'de afspraak zelf verandert niet: er moet nog steeds iets gebeuren');
+  assert.equal(row(rows, 'later').missing, 1, 'de afspraak zelf verandert niet: er moet nog steeds iets gebeuren (voor deze week: 1 van de 2 per maand)');
   assert.deepEqual(rows.filter((r) => r.missing > 0 && r.free > 0 && !r.skipped).map((r) => r.habit.id), ['a'], 'wat countToPlan telt');
   assert.deepEqual(suggestPlan(rows).map((p) => p.habitId), ['a', 'a'], 'ook "Verdeel voor mij" slaat de taak over');
 });
@@ -201,4 +202,31 @@ test('een taak die op zondag start in een week met één dag: de afspraak telt a
 test('de herinnering telt een taak die nog niet is gestart mee (hij is nu te plannen)', () => {
   const rows = buildWeekPlan({ snapshot: snap({ habits: [flexible('nieuw', 2, 'week', { startDate: '2026-10-16' })] }), today: THURSDAY });
   assert.equal(rows.filter((r) => r.missing > 0 && r.free > 0 && !r.skipped).length, 1);
+});
+
+// --- maandtaken vragen alleen om hun deel van het venster ----------------------------------------------------------------------------------
+
+test('neededInWindow: week alles; maand je deel van het venster (minstens 1), en alles als de maand binnen het venster eindigt', () => {
+  const need = (span, open, remainingDays) => neededInWindow({ span, open, remainingDays });
+  assert.deepEqual([need('week', 2, 4), need('week', 0, 4)], [2, 0]);
+  assert.deepEqual([need('month', 2, 13), need('month', 2, 17), need('month', 2, 31)], [1, 1, 1], '2× per maand, nog veel dagen: één nu, de rest later');
+  assert.deepEqual([need('month', 2, 8), need('month', 2, 6), need('month', 3, 2)], [2, 2, 3], 'de maand eindigt binnen het venster: alles nu');
+  assert.deepEqual([need('month', 8, 16), need('month', 8, 31), need('month', 4, 10)], [4, 2, 3], 'meer keren: naar verhouding');
+  assert.equal(need('month', 1, 20), 1);
+});
+
+test('2× per maand, nog 13 dagen over: één dag plannen is genoeg voor de herinnering; de tweede hoeft nog niet', () => {
+  // een taak die op maandag 19 oktober begint (13 dagen over in oktober), gepland op zondag 18 oktober
+  const habits = [flexible('wc', 2, 'month', { startDate: '2026-10-19' })];
+  const SUNDAY = '2026-10-18';
+  const none = buildWeekPlan({ snapshot: snap({ habits }), today: SUNDAY });
+  assert.deepEqual([row(none, 'wc').missing, row(none, 'wc').urgent], [1, false], 'één inplannen, en een taak die net begint dreigt niet te falen');
+  const one = buildWeekPlan({ snapshot: snap({ habits, dayPlans: [{ habitId: 'wc', date: '2026-10-19' }] }), today: SUNDAY });
+  assert.equal(row(one, 'wc').missing, 0, 'één dag is genoeg');
+  assert.equal(one.filter((r) => r.missing > 0 && r.free > 0).length, 0, 'dus geen "Nog n taken om in te plannen"');
+});
+
+test('2× per maand aan het eind van de maand: dan moeten beide nu een dag', () => {
+  const rows = buildWeekPlan({ snapshot: snap({ habits: [flexible('wc', 2, 'month')] }), today: '2026-10-25' });
+  assert.equal(row(rows, 'wc').missing, 2, 'nog 7 dagen over: alles moet nu');
 });

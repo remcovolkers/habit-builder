@@ -249,3 +249,20 @@ test('"Niet in deze week" gaat voor: zo\'n taak (ook 2× per maand) heeft geen k
   assert.deepEqual(names(poolOf(snap, '2026-10-16')), [], 'morgen kijken: nog dezelfde week');
   assert.deepEqual(names(poolOf(snap, '2026-10-19')), ['Maand'], 'maandag: weer een gewone kaart');
 });
+
+test('2× per maand, nog veel dagen over: één dag ingepland is genoeg ("ingepland"), de tweede plan je later; aan het eind van de maand niet', () => {
+  const monthly = flexHabit('WC', 2, 'month');
+  const one = buildDayView({ snapshot: snapshot({ habits: [monthly], dayPlans: [plan('WC', '2026-10-17')] }), date: TODAY, today: TODAY }).pool[0];
+  assert.deepEqual([one.covered, one.missingToPlan], [true, 0]);
+  const late = buildDayView({ snapshot: snapshot({ habits: [monthly], dayPlans: [plan('WC', '2026-10-30')] }), date: '2026-10-27', today: '2026-10-27' }).pool[0];
+  assert.deepEqual([late.covered, late.missingToPlan], [false, 1], 'nog 5 dagen: beide moeten nu een dag');
+});
+
+test('"Dreigt te falen" voor een taak die halverwege de maand begint telt vanaf zijn start', () => {
+  // 2× per maand, begonnen op de 19e: op de 19e is 100% van zijn periode over, niet 13 van 31 dagen
+  const fresh = flexHabit('Nieuw', 2, 'month', { startDate: '2026-10-19' });
+  const entry = buildDayView({ snapshot: snapshot({ habits: [fresh] }), date: '2026-10-19', today: '2026-10-19' }).pool[0];
+  assert.equal(entry.urgent, false);
+  const old = flexHabit('Oud', 2, 'month', { startDate: '2026-09-01' });
+  assert.equal(buildDayView({ snapshot: snapshot({ habits: [old] }), date: '2026-10-19', today: '2026-10-19' }).pool[0].urgent, true, 'een taak die al de hele maand liep is wel krap');
+});

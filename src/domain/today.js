@@ -1,6 +1,7 @@
 // Het Vandaag-scherm en de stapel (PLAN §4.6, F10–F12), afgeleid uit check-ins en dagplannen.
 // Niets wordt gemuteerd: een plan van gisteren zonder check-in valt vanzelf terug in de stapel.
 import { computeUnits } from './units.js';
+import { neededInWindow } from './planning.js';
 import { isTracked } from './rules.js';
 
 const counts = (status) => status === 'done' || status === 'minimal';
@@ -82,7 +83,7 @@ export function buildToday({ bundles, dayPlans = [], today, now = today }) {
         satisfied: periodUnit.status === 'done',
         plannedToday,
         plannedDates,
-        missingToPlan: Math.max(0, periodUnit.target - periodUnit.count - plannedDates.length),
+        missingToPlan: Math.max(0, neededInWindow({ span: periodUnit.span, open: periodUnit.target - periodUnit.count, remainingDays: periodUnit.remainingDays }) - plannedDates.length),
       };
       if (plannedToday || loggedToday !== undefined) planned.push(entry);
       else pool.push(entry);
