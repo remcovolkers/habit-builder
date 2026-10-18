@@ -171,6 +171,8 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 /**
  * De tekst van de melding. null = er is niets te doen vandaag, dus ook geen melding.
  * Is er voor vandaag geen samenvatting (de app is al een tijd niet geopend), dan een algemene tekst.
+ * Staat er een review klaar (week op zondag, maand op de laatste dag van de maand), dan staat die vooraan en opent een tik op de melding
+ * Voortgang bij die review (met een korte markering). Staan beide klaar, dan gaat de tik naar de weekreview.
  */
 export function composeMessage(subscription, now) {
   const { date, hour } = localMoment(now, subscription.timezone);
@@ -184,19 +186,23 @@ export function composeMessage(subscription, now) {
   if (!Array.isArray(entry)) return { title, body: 'Bekijk wat er vandaag op je lijst staat.', url };
   const due = Math.max(0, Number(entry[0]) || 0);
   const pool = Math.max(0, Number(entry[1]) || 0);
-  // sinds de aandacht-melding: [gepland, stapel, aandacht, review]; een oudere app stuurt er twee, dan is de rest 0
+  // sinds de aandacht-melding: [gepland, stapel, aandacht, review, maandreview]; een oudere app stuurt er minder, dan is de rest 0
   const attention = Math.max(0, Number(entry[2]) || 0);
-  const review = Number(entry[3]) === 1;
-  if (due === 0 && pool === 0 && attention === 0 && !review) return null;
+  const weekReview = Number(entry[3]) === 1;
+  const monthReview = Number(entry[4]) === 1;
+  if (due === 0 && pool === 0 && attention === 0 && !weekReview && !monthReview) return null;
 
   const parts = [];
+  if (weekReview && monthReview) parts.push('Je weekterugblik en maandreview staan klaar.');
+  else if (weekReview) parts.push('Je weekterugblik staat klaar.');
+  else if (monthReview) parts.push('Je maandreview staat klaar.');
   if (due > 0 && pool > 0) parts.push(`Vandaag: ${plural(due, 'gewoonte', 'gewoontes')}, en ${pool} in je stapel om uit te kiezen.`);
   else if (due > 0) parts.push(`Vandaag staat ${plural(due, 'gewoonte', 'gewoontes')} op je lijst.`);
   else if (pool > 0) parts.push(`Er ${pool === 1 ? 'ligt' : 'liggen'} ${plural(pool, 'taak', 'taken')} in je stapel. Pak er vandaag één mee.`);
   // neutraal en zonder namen: de server kent de habits niet
   if (attention > 0) parts.push(`${plural(attention, 'taak', 'taken')} ${attention === 1 ? 'vraagt' : 'vragen'} aandacht.`);
-  if (review) parts.push('Je weekterugblik staat klaar.');
-  return { title, body: parts.join(' '), url };
+  const review = weekReview ? 'week' : monthReview ? 'month' : null;
+  return { title, body: parts.join(' '), url: review ? `./#/stats?review=${review}&date=${date}` : url };
 }
 
 // ============================================================================================

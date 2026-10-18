@@ -148,3 +148,22 @@
   font-size: 0.75rem;
   line-height: 1;
 }
+
+/* "Niet in deze week": een stille knop onder de dagen; staat hij aan, dan is de rij gedempt (geen herinnering, geen voorstel) */
+.planner__foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.planner__skip {
+  max-width: 100%;
+  text-align: center;
+}
+
+.planner__row[data-skipped='true'] {
+  border-style: dashed;
+}
+
+.planner__row[data-skipped='true'] .planner__summary {
+  color: var(--color-text-muted);
+}

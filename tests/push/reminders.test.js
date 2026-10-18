@@ -59,8 +59,21 @@ test('composeMessage: aandacht en de weekreview komen er neutraal bij, zonder na
   assert.equal(body([0, 0, 3, 0]), '3 taken vragen aandacht.');
   assert.equal(body([0, 0, 0, 1]), 'Je weekterugblik staat klaar.');
   assert.equal(body([2, 0, 1, 0]), 'Vandaag staat 2 gewoontes op je lijst. 1 taak vraagt aandacht.');
-  assert.equal(body([2, 1, 2, 1]), 'Vandaag: 2 gewoontes, en 1 in je stapel om uit te kiezen. 2 taken vragen aandacht. Je weekterugblik staat klaar.');
-  assert.equal(body([0, 2, 0, 1]), 'Er liggen 2 taken in je stapel. Pak er vandaag één mee. Je weekterugblik staat klaar.');
+  // een review staat vooraan: een tik op de melding opent die review
+  assert.equal(body([2, 1, 2, 1]), 'Je weekterugblik staat klaar. Vandaag: 2 gewoontes, en 1 in je stapel om uit te kiezen. 2 taken vragen aandacht.');
+  assert.equal(body([0, 2, 0, 1]), 'Je weekterugblik staat klaar. Er liggen 2 taken in je stapel. Pak er vandaag één mee.');
+});
+
+test('composeMessage: een maandreview komt erbij, en een tik opent Voortgang bij de review (week gaat voor maand)', () => {
+  const message = (entry) => composeMessage(withDays({ '2026-10-16': entry }), at(6));
+  assert.equal(message([0, 0, 0, 0, 1]).body, 'Je maandreview staat klaar.');
+  assert.equal(message([0, 0, 0, 1, 1]).body, 'Je weekterugblik en maandreview staan klaar.');
+  assert.equal(message([3, 0, 0, 0, 1]).body, 'Je maandreview staat klaar. Vandaag staat 3 gewoontes op je lijst.');
+  assert.equal(message([0, 0, 0, 0, 1]).url, './#/stats?review=month&date=2026-10-16');
+  assert.equal(message([0, 0, 0, 1, 0]).url, './#/stats?review=week&date=2026-10-16');
+  assert.equal(message([0, 0, 0, 1, 1]).url, './#/stats?review=week&date=2026-10-16');
+  assert.equal(message([3, 1, 0, 0, 0]).url, './#/today', 'zonder review blijft het Vandaag');
+  assert.equal(message([0, 0, 0, 0, 'ja']), null, 'rommel telt niet');
 });
 
 test('composeMessage: een oudere app (twee getallen) en rommel in de nieuwe getallen geven dezelfde tekst als voorheen', () => {

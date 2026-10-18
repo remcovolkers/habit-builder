@@ -1,7 +1,7 @@
 // "Plan je week": per flexibele taak (N× per week of maand) de komende zeven dagen, en een voorstel dat de nog ontbrekende keren verdeelt. Puur.
 // Het plannen zelf gaat met de bestaande dagplanning (actions.js: planHabit en unplanHabit), dus ook maximaal PLAN_AHEAD_DAYS vooruit.
 import { PLAN_AHEAD_DAYS } from '../domain/constants.js';
-import { addDays, diffDays, eachDay } from '../domain/dates.js';
+import { addDays, diffDays, eachDay, startOfWeek } from '../domain/dates.js';
 import { isTracked } from '../domain/rules.js';
 import { isTight } from '../domain/tight.js';
 import { computeUnits } from '../domain/units.js';
@@ -18,6 +18,8 @@ const byOrder = (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.loca
  *   free        hoeveel vrije dagen er in deze periode nog zijn om te plannen
  *   missing     hoeveel keren er nog bij moeten voordat de afspraak gehaald is (nog te doen min gepland)
  *   urgent      dreigt te falen (atRisk of krap, zie domain/tight.js)
+ *   skipped     de gebruiker koos "Niet in deze week" (habit.noPlanWeek is de maandag van deze week): geen herinnering en geen voorstel voor deze taak.
+ *               Dat verandert niets aan de afspraak zelf: de taak blijft staan en kan later in de maand nog gedaan of ingepland worden.
  */
 export function buildWeekPlan({ snapshot, today }) {
   const dates = eachDay(today, addDays(today, PLAN_AHEAD_DAYS));
@@ -53,6 +55,7 @@ export function buildWeekPlan({ snapshot, today }) {
       free: days.filter((d) => d.state === 'free' && d.inUnit).length,
       missing: Math.max(0, unit.target - unit.count - plannedHere.length),
       urgent: unit.count < unit.target && (unit.atRisk || isTight(unit)),
+      skipped: habit.noPlanWeek === startOfWeek(today),
     });
   }
   return rows;
@@ -65,7 +68,7 @@ export function buildWeekPlan({ snapshot, today }) {
 export function suggestPlan(rows) {
   const load = new Map();
   for (const row of rows) for (const day of row.days) if (day.state === 'planned') load.set(day.date, (load.get(day.date) ?? 0) + 1);
-  const order = rows.filter((row) => row.missing > 0).sort((a, b) => a.free / a.missing - b.free / b.missing);
+  const order = rows.filter((row) => row.missing > 0 && !row.skipped).sort((a, b) => a.free / a.missing - b.free / b.missing);
 
   const picks = [];
   for (const row of order) {

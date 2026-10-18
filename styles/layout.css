@@ -285,10 +285,17 @@
     padding: var(--space-1) var(--space-4) var(--space-4) var(--space-1);
   }
 
-  /* het maandoverzicht staat vast bovenaan Voortgang; met vierkante vakjes liet het geen ruimte over voor de taken eronder, dus laag (nog steeds een tikvlak) */
+  /* het maandoverzicht staat vast bovenaan Voortgang; met vierkante vakjes liet het geen ruimte over voor de taken eronder, dus laag
+     (op een aanraakscherm nog steeds een tikvlak; met een muis lager, zie overview.css) */
   .overview__grid--month .overview__cell {
     aspect-ratio: auto;
     min-height: var(--size-tap);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .overview__grid--month .overview__cell {
+      min-height: 2rem;
+    }
   }
 
   /* Wat uit beeld scrolt smelt weg: een zachte fade boven en onder een kolom, alleen zolang er daar nog inhoud achter zit.

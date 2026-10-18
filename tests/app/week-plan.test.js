@@ -2,7 +2,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildWeekPlan, suggestPlan } from '../../src/app/week-plan.js';
-import { validHabit } from './helpers.js';
+import { applyHabitForm, setPlanSkip } from '../../src/app/actions.js';
+import { validateHabit } from '../../src/domain/habit.js';
+import { testRepo, validHabit } from './helpers.js';
 
 const THURSDAY = '2026-10-15';
 const flexible = (id, count = 2, period = 'week', over = {}) => validHabit({
@@ -117,4 +119,44 @@ test('de teller telt alleen taken die nog dagen nodig hebben en waarvoor nog een
     today: THURSDAY,
   });
   assert.deepEqual(rows.filter((r) => r.missing > 0 && r.free > 0).map((r) => r.habit.id), ['a'], 'b heeft in deze week geen vrije dag meer');
+});
+
+// --- "Niet in deze week" -----------------------------------------------------------------------------------------------------------
+
+test('"Niet in deze week": de taak blijft in het blad (met skipped), maar telt niet mee voor de herinnering en krijgt geen voorstel', () => {
+  const habits = [flexible('a'), flexible('later', 2, 'month', { noPlanWeek: '2026-10-12' })];
+  const rows = buildWeekPlan({ snapshot: snap({ habits }), today: THURSDAY });
+  assert.deepEqual(rows.map((r) => [r.habit.id, r.skipped]), [['a', false], ['later', true]]);
+  assert.equal(row(rows, 'later').missing, 2, 'de afspraak zelf verandert niet: er moet nog steeds iets gebeuren');
+  assert.deepEqual(rows.filter((r) => r.missing > 0 && r.free > 0 && !r.skipped).map((r) => r.habit.id), ['a'], 'wat countToPlan telt');
+  assert.deepEqual(suggestPlan(rows).map((p) => p.habitId), ['a', 'a'], 'ook "Verdeel voor mij" slaat de taak over');
+});
+
+test('"Niet in deze week" geldt alleen voor die week: een oudere markering telt niet meer', () => {
+  const rows = buildWeekPlan({ snapshot: snap({ habits: [flexible('a', 2, 'week', { noPlanWeek: '2026-10-05' })] }), today: THURSDAY });
+  assert.equal(row(rows, 'a').skipped, false, 'vorige week gekozen: deze week weer aan de beurt');
+  assert.equal(suggestPlan(rows).length, 2);
+  const next = buildWeekPlan({ snapshot: snap({ habits: [flexible('a', 2, 'month', { noPlanWeek: '2026-10-12' })] }), today: '2026-10-19' });
+  assert.equal(row(next, 'a').skipped, false, 'maandag 19 oktober: een nieuwe week');
+});
+
+test('setPlanSkip: zet de markering op de maandag van deze week en haalt hem weer weg; de rest van de taak blijft ongemoeid', async () => {
+  const { repo } = testRepo();
+  const habit = await repo.saveHabit(flexible(undefined, 2, 'month', { id: undefined }));
+  const done = await setPlanSkip(repo, { habitId: habit.id, skipped: true }, '2026-10-17'); // zaterdag
+  assert.equal(done.noPlanWeek, '2026-10-12');
+  assert.deepEqual([done.name, done.schedules], [habit.name, habit.schedules]);
+  assert.equal((await repo.getHabit(habit.id)).noPlanWeek, '2026-10-12');
+  const back = await setPlanSkip(repo, { habitId: habit.id, skipped: false }, '2026-10-17');
+  assert.equal('noPlanWeek' in back, false);
+  assert.equal(await setPlanSkip(repo, { habitId: 'bestaat-niet', skipped: true }, '2026-10-17'), null);
+  // de markering komt ook door een export en import heen en een ongeldige waarde wordt geweigerd
+  assert.deepEqual(validateHabit({ ...habit, noPlanWeek: '2026-10-12' }), []);
+  assert.deepEqual(validateHabit({ ...habit, noPlanWeek: 'volgende week' }), [{ field: 'noPlanWeek', code: 'invalid' }]);
+});
+
+test('de markering blijft staan als je de habit bewerkt (applyHabitForm)', async () => {
+  const habit = flexible('a', 2, 'month', { noPlanWeek: '2026-10-12' });
+  const next = applyHabitForm({ existing: habit, values: { name: 'Anders', icon: habit.icon, color: habit.color, daypart: habit.daypart, schedule: habit.schedules[0].schedule }, today: THURSDAY });
+  assert.equal(next.noPlanWeek, '2026-10-12');
 });

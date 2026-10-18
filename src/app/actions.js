@@ -1,6 +1,7 @@
 // Handelingen van de gebruiker: domeinregels toepassen en daarna opslaan via de repository.
 // Elke handeling die je ongedaan wilt kunnen maken geeft { undo } terug.
-import { addDays, diffDays, startOfWeek } from '../domain/dates.js';
+import { addDays, diffDays, startOfMonth, startOfWeek } from '../domain/dates.js';
+import { monthReviewState, weekReviewState } from '../domain/reviews.js';
 import { DEFAULT_GRADUATION_DAYS, PLAN_AHEAD_DAYS } from '../domain/constants.js';
 import { clampCounter, counterDoneValue, counterStatus } from '../domain/counter.js';
 import { donePartsOf, habitDayparts, hasMultipleDayparts, partsStatus } from '../domain/dayparts.js';
@@ -189,9 +190,41 @@ export async function recordReason(repo, { habitId, reason, note = null }, today
   return repo.setReason({ habitId, date: today, reason, note });
 }
 
-/** Review van de huidige week (opnieuw opslaan overschrijft). */
-export async function saveWeeklyReview(repo, { wentWell, adjust }, today) {
-  return repo.saveReview({ weekStart: startOfWeek(today), wentWell, adjust });
+/**
+ * Review van de week waarin `date` valt (opnieuw opslaan overschrijft). Alleen zolang de review open staat: vrijdag 00:00 tot maandag 12:00
+ * (domain/reviews.js). `now` is de lokale muurtijd, 'YYYY-MM-DDTHH:MM' (localNow).
+ */
+export async function saveWeeklyReview(repo, { wentWell, wentBad }, date, now) {
+  const weekStart = startOfWeek(date);
+  const state = weekReviewState(weekStart, now);
+  if (state !== 'open') throw new RuleError(state === 'before' ? 'review_locked' : 'review_closed');
+  return repo.saveReview({ weekStart, wentWell, wentBad });
+}
+
+/** Review van de maand waarin `date` valt: open van de 25e tot de 2e van de volgende maand om 12:00. */
+export async function saveMonthlyReview(repo, { adjust }, date, now) {
+  const monthStart = startOfMonth(date);
+  const state = monthReviewState(monthStart, now);
+  if (state !== 'open') throw new RuleError(state === 'before' ? 'review_locked' : 'review_closed');
+  return repo.saveMonthReview({ monthStart, adjust });
+}
+
+/** De eenmalige maandtaak afvinken. Geeft { undo } terug. */
+export async function completeMonthTask(repo, { monthStart }, today) {
+  await repo.setMonthTaskApplied({ monthStart, date: today });
+  return { undo: () => repo.setMonthTaskApplied({ monthStart, date: null }) };
+}
+
+/**
+ * "Niet in deze week" bij Plan je week: de herinnering "Nog n taken om in te plannen" en "Verdeel voor mij" slaan deze taak over, voor de
+ * kalenderweek waarin `today` valt. Bijvoorbeeld voor een taak die je later in de maand wilt doen. De afspraak zelf blijft zoals hij was.
+ * `skipped: false` zet het weer terug.
+ */
+export async function setPlanSkip(repo, { habitId, skipped }, today) {
+  const habit = await repo.getHabit(habitId);
+  if (!habit) return null;
+  const { noPlanWeek, ...rest } = habit;
+  return repo.saveHabit(skipped ? { ...rest, noPlanWeek: startOfWeek(today) } : rest);
 }
 
 // --- pauzeren, archiveren -----------------------------------------------------------------------

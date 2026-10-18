@@ -38,6 +38,12 @@ export const weekday = (date) => (new Date(toUtc(date)).getUTCDay() + 6) % 7;
 export const startOfWeek = (date) => addDays(date, -weekday(date));
 export const endOfWeek = (date) => addDays(date, 6 - weekday(date));
 
+/** Weeknummer volgens ISO 8601 (de week met de eerste donderdag van het jaar is week 1). */
+export function isoWeek(date) {
+  const thursday = addDays(startOfWeek(date), 3);
+  return Math.floor(diffDays(thursday, `${thursday.slice(0, 4)}-01-01`) / 7) + 1;
+}
+
 export const daysInMonth = (year, month) => new Date(Date.UTC(year, month, 0)).getUTCDate();
 export const dayOfMonth = (date) => Number(date.slice(8, 10));
 
@@ -66,6 +72,18 @@ export function eachDay(from, to) {
   const days = [];
   for (let d = from; d <= to; d = addDays(d, 1)) days.push(d);
   return days;
+}
+
+/**
+ * De lokale muurtijd in `timeZone` als 'YYYY-MM-DDTHH:MM', zonder dagwissel. Voor momenten die op de klok liggen, zoals het openen en
+ * sluiten van een review (vrijdag 00:00, maandag 12:00). Tekst in dit formaat is op volgorde te vergelijken.
+ */
+export function localNow(now, timeZone) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', { timeZone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      .formatToParts(now).map((part) => [part.type, part.value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 }
 
 /**

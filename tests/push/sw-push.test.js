@@ -93,6 +93,17 @@ test('klik: een venster van een andere site telt niet mee', async () => {
   assert.deepEqual(worker.opened, [`${SCOPE}#/today`]);
 });
 
+test('klik: een review-melding opent Voortgang bij de review, ook in een al open venster', async () => {
+  const url = './#/stats?review=month&date=2026-10-31';
+  const worker = loadWorker();
+  await worker.click(url);
+  assert.deepEqual(worker.opened, [`${SCOPE}#/stats?review=month&date=2026-10-31`]);
+  const log = [];
+  const client = { url: `${SCOPE}#/today`, focus: async () => log.push('focus'), navigate: async (to) => log.push(`navigate ${to}`) };
+  await loadWorker({ clients: [client] }).click(url);
+  assert.deepEqual(log, ['focus', `navigate ${SCOPE}#/stats?review=month&date=2026-10-31`]);
+});
+
 test('klik: een adres buiten de app in het bericht wordt genegeerd', async () => {
   for (const url of ['https://kwaad.example/pagina', '//kwaad.example/', undefined]) {
     const worker = loadWorker();

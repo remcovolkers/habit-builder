@@ -66,9 +66,20 @@ export function buildDayDetail({ snapshot, date, today }) {
   return { date, ...view.progress, items, editable: items.length > 0 && offset >= -BACKFILL_DAYS && offset <= PLAN_AHEAD_DAYS };
 }
 
+/** Hoeveel weken of maanden `start` van de huidige week of maand af ligt: 0 is nu, -1 vorige, 1 volgende. */
+export function periodOffset({ period, start, today }) {
+  if (period === 'week') return Math.round(diffDays(startOfWeek(start), startOfWeek(today)) / 7);
+  return (Number(start.slice(0, 4)) - Number(today.slice(0, 4))) * 12 + (Number(start.slice(5, 7)) - Number(today.slice(5, 7)));
+}
+
+/** Hoeveel taken er van `from` t/m `to` als gedaan zijn afgevinkt (ook de minimale versie). */
+export function countDone(snapshot, from, to) {
+  return snapshot.checkIns.filter((c) => (c.status === 'done' || c.status === 'minimal') && c.date >= from && c.date <= to).length;
+}
+
 /**
  * Overzicht van een week of maand rond `anchor`, als raster (een maand is altijd hele weken).
- * Geeft ook de totalen (alleen tot en met vandaag) en of je een periode terug of vooruit kunt.
+ * Geeft ook de totalen (alleen tot en met vandaag) en de aangrenzende periodes. Je mag onbeperkt terug en vooruit.
  */
 export function buildPeriodOverview({ snapshot, today, period, anchor }) {
   const start = period === 'week' ? startOfWeek(anchor) : startOfMonth(anchor);
@@ -80,9 +91,11 @@ export function buildPeriodOverview({ snapshot, today, period, anchor }) {
   const days = [];
   let done = 0;
   let total = 0;
+  let planned = 0;
   for (let day = gridStart; day <= gridEnd; day = addDays(day, 1)) {
     const inPeriod = day >= start && day <= end;
     const progress = inPeriod ? progressOn(snapshot, prepared, day, today) : { done: 0, total: 0 };
+    planned += progress.total;
     if (inPeriod && day <= today) {
       done += progress.done;
       total += progress.total;
@@ -98,7 +111,6 @@ export function buildPeriodOverview({ snapshot, today, period, anchor }) {
     });
   }
 
-  const earliest = snapshot.habits.map((habit) => habit.startDate).sort()[0] ?? today;
   const previous = period === 'week' ? addDays(start, -7) : addMonths(start, -1);
   const next = period === 'week' ? addDays(start, 7) : addMonths(start, 1);
   return {
@@ -107,7 +119,10 @@ export function buildPeriodOverview({ snapshot, today, period, anchor }) {
     end,
     days,
     totals: { done, total, percent: total === 0 ? null : Math.round((done / total) * 100) },
-    previous: { anchor: previous, enabled: (period === 'week' ? addDays(previous, 6) : endOfMonth(previous)) >= earliest },
-    next: { anchor: next, enabled: next <= today },
+    planned, // alles wat in de hele periode gepland staat, ook na vandaag
+    isCurrent: start <= today && today <= end,
+    isFuture: start > today,
+    previous: { anchor: previous },
+    next: { anchor: next },
   };
 }

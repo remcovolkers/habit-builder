@@ -28,6 +28,13 @@ export function buildExport(snapshot, now = new Date()) {
 
 const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
+// een weekreview (wentWell, wentBad; oudere back-ups hebben nog `adjust`) of een maandreview (adjust, appliedAt)
+const textOk = (value) => value === undefined || (typeof value === 'string' && value.length <= REVIEW_TEXT_MAX);
+function isValidReview(record) {
+  if (record.period === 'month') return isValidDate(record.monthStart) && typeof record.adjust === 'string' && textOk(record.adjust) && (record.appliedAt == null || isValidDate(record.appliedAt));
+  return isValidDate(record.weekStart) && [record.wentWell, record.wentBad, record.adjust].every(textOk);
+}
+
 function validateRecords(name, records, habitIds, problems) {
   const kept = [];
   records.forEach((record, index) => {
@@ -64,7 +71,7 @@ function validateRecords(name, records, habitIds, problems) {
         if (!isValidDate(record.date) || !SLIP_REASONS.includes(record.reason)) return bad('ongeldige reden');
         break;
       case 'reviews':
-        if (!isValidDate(record.weekStart) || [record.wentWell, record.adjust].some((t) => typeof t !== 'string' || t.length > REVIEW_TEXT_MAX)) return bad('ongeldige review');
+        if (!isValidReview(record)) return bad('ongeldige review');
         break;
       default:
         break;

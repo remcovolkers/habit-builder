@@ -1,6 +1,6 @@
 import { h } from '../dom.js';
 import { liveView } from '../live.js';
-import { notifyChanged, state } from '../state.js';
+import { notifyChanged, state, wallClockNow } from '../state.js';
 import { showToast } from '../components/toast.js';
 import { openDialog } from '../components/dialog.js';
 import { entryState, habitCard } from '../components/habit-card.js';
@@ -19,9 +19,11 @@ import { feedbackInviteDue, snoozeFeedbackInvite } from '../feedback-state.js';
 import { clearFirstTip, firstTipPending } from '../intro.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
-import { adjustCounter, clearCheckIn, logCheckIn, planHabit, rateAutomaticity, recordReason, RuleError, togglePart, unplanHabit } from '../../app/actions.js';
+import { adjustCounter, clearCheckIn, completeMonthTask, logCheckIn, planHabit, rateAutomaticity, recordReason, RuleError, togglePart, unplanHabit } from '../../app/actions.js';
 import { buildAttention, forToday } from '../../app/attention.js';
 import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
+import { monthTasks, REVIEW_CLOSING_TIME, reviewNudges } from '../../domain/reviews.js';
+import { dismissReviewNudges, reviewNudgeDismissed } from '../review-nudge-state.js';
 import { counterDoneValue } from '../../domain/counter.js';
 import { habitDayparts, hasMultipleDayparts } from '../../domain/dayparts.js';
 import { charCounter } from '../components/char-counter.js';
@@ -77,13 +79,15 @@ export function todayView({ query }) {
         week: buildWeekStrip({ snapshot, date, today: state.today }),
         attention: date === state.today ? forToday(buildAttention({ snapshot, today: state.today })) : [],
         toPlan: countToPlan(snapshot, state.today), // hoeveel flexibele taken nog dagen nodig hebben (op de knop Plan je week)
+        monthTasks: date === state.today ? monthTasks({ reviews: snapshot.reviews, today: state.today }) : [], // de eenmalige taak uit de maandreview
+        reviewNotes: date === state.today ? reviewNudges({ reviews: snapshot.reviews, now: wallClockNow() }).filter((nudge) => !reviewNudgeDismissed(nudge)) : [], // een review die open staat
       };
     },
-    render: ({ view, week, attention, toPlan }) => renderDay(view, week, attention, toPlan),
+    render: ({ view, week, attention, toPlan, monthTasks: tasks, reviewNotes }) => renderDay(view, week, attention, toPlan, tasks, reviewNotes),
   });
 }
 
-function renderDay(view, week, attention, toPlan = 0) {
+function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = []) {
   const { today } = state;
   const { repo } = state;
   const { date } = view;
@@ -271,6 +275,48 @@ function renderDay(view, week, attention, toPlan = 0) {
       }))))
     : null;
 
+  // De eenmalige taak uit de review van vorige maand: een eigen kaart, los van de habits (telt niet mee in punten, reeksen of voortgang)
+  const m = nl.today.monthTask;
+  const monthTaskSection = tasks.length > 0
+    ? h('section', { class: 'section monthtask', 'aria-labelledby': 'monthtask-title' },
+      h('h2', { id: 'monthtask-title', class: 'visually-hidden' }, m.title),
+      h('ul', { class: 'card-list' }, ...tasks.map((task) => h('li', { class: 'monthtask__card', dataset: { month: task.monthStart } },
+        h('div', { class: 'monthtask__head' },
+          h('span', { class: 'badge badge--monthtask' }, m.badge),
+          h('span', { class: 'kicker' }, m.from(nl.months.long[Number(task.monthStart.slice(5, 7)) - 1]))),
+        h('p', { class: 'monthtask__text' }, task.text),
+        h('button', {
+          type: 'button', class: 'button button--primary monthtask__done', dataset: { focusKey: `monthtask:${task.monthStart}` },
+          onclick: () => perform(() => completeMonthTask(repo, { monthStart: task.monthStart }, today), m.toast),
+        }, m.done)))))
+    : null;
+
+  // "Week review staat vanaf nu open" / "Maand review staat vanaf nu open": een kaart met een knop naar de review (Voortgang markeert hem), tot je hem invult.
+  // "Niet nu" verbergt hem voor deze week of maand.
+  const r = nl.today.reviewNote;
+  const reviewNote = reviewNotes.length > 0 && view.hasHabits
+    ? (() => {
+      const kinds = reviewNotes.map((note) => note.kind);
+      const title = kinds.length === 2 ? r.both : kinds[0] === 'week' ? r.week : r.month;
+      const card = h('section', { class: 'section reviewnote', id: 'reviewNote', 'aria-labelledby': 'reviewnote-title' },
+        h('div', { class: 'reviewnote__card' },
+          h('span', { class: 'badge badge--review' }, r.badge),
+          h('h2', { id: 'reviewnote-title', class: 'reviewnote__title' }, title),
+          h('p', { class: 'xs muted reviewnote__until' }, reviewNotes.map((note) => {
+            const label = `${formatDateLong(note.closesOn)} ${REVIEW_CLOSING_TIME}`;
+            return kinds.length === 1 ? r.until(label) : r.untilKind[note.kind](label);
+          }).join(' ')),
+          h('div', { class: 'reviewnote__actions' },
+            ...reviewNotes.map((note) => h('a', {
+              class: kinds.length === 1 || note.kind === 'week' ? 'button button--primary' : 'button button--secondary',
+              href: `#/stats?review=${note.kind}&date=${note.start}`,
+              dataset: { kind: note.kind },
+            }, note.kind === 'week' ? r.toWeek : r.toMonth)),
+            h('button', { type: 'button', class: 'button button--ghost', onclick: () => { dismissReviewNudges(reviewNotes); card.remove(); } }, r.later))));
+      return card;
+    })()
+    : null;
+
   const nudge = account.status === 'anonymous' && view.hasHabits && view.mode === 'today' && !nudgeDismissed()
     ? nudgeElement((event) => { dismissNudge(); event.target.closest('.nudge').remove(); })
     : null;
@@ -319,6 +365,8 @@ function renderDay(view, week, attention, toPlan = 0) {
   return h('div', { class: 'today__inner page__frame' },
     header(view, week),
     banner(view),
+    // de maandtaak en de review-melding staan boven beide kolommen: zo beginnen de dag links en de stapel rechts op dezelfde hoogte
+    monthTaskSection || reviewNote ? h('div', { class: 'today__notes' }, monthTaskSection, reviewNote) : null,
     view.groups.length === 0 && view.pool.length === 0 ? todayEmpty(view) : null,
     h('div', { class: 'today__columns page__panes' },
       h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections),
