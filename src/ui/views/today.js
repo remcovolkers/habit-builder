@@ -19,9 +19,10 @@ import { feedbackInviteDue, snoozeFeedbackInvite } from '../feedback-state.js';
 import { clearFirstTip, firstTipPending } from '../intro.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
-import { adjustCounter, clearCheckIn, logCheckIn, planHabit, rateAutomaticity, recordReason, RuleError, togglePart, unplanHabit } from '../../app/actions.js';
+import { adjustCounter, clearCheckIn, completeMonthTask, logCheckIn, planHabit, rateAutomaticity, recordReason, RuleError, togglePart, unplanHabit } from '../../app/actions.js';
 import { buildAttention, forToday } from '../../app/attention.js';
 import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
+import { monthTasks } from '../../domain/reviews.js';
 import { counterDoneValue } from '../../domain/counter.js';
 import { habitDayparts, hasMultipleDayparts } from '../../domain/dayparts.js';
 import { charCounter } from '../components/char-counter.js';
@@ -77,13 +78,14 @@ export function todayView({ query }) {
         week: buildWeekStrip({ snapshot, date, today: state.today }),
         attention: date === state.today ? forToday(buildAttention({ snapshot, today: state.today })) : [],
         toPlan: countToPlan(snapshot, state.today), // hoeveel flexibele taken nog dagen nodig hebben (op de knop Plan je week)
+        monthTasks: date === state.today ? monthTasks({ reviews: snapshot.reviews, today: state.today }) : [], // de eenmalige taak uit de maandreview
       };
     },
-    render: ({ view, week, attention, toPlan }) => renderDay(view, week, attention, toPlan),
+    render: ({ view, week, attention, toPlan, monthTasks: tasks }) => renderDay(view, week, attention, toPlan, tasks),
   });
 }
 
-function renderDay(view, week, attention, toPlan = 0) {
+function renderDay(view, week, attention, toPlan = 0, tasks = []) {
   const { today } = state;
   const { repo } = state;
   const { date } = view;
@@ -271,6 +273,22 @@ function renderDay(view, week, attention, toPlan = 0) {
       }))))
     : null;
 
+  // De eenmalige taak uit de review van vorige maand: een eigen kaart, los van de habits (telt niet mee in punten, reeksen of voortgang)
+  const m = nl.today.monthTask;
+  const monthTaskSection = tasks.length > 0
+    ? h('section', { class: 'section monthtask', 'aria-labelledby': 'monthtask-title' },
+      h('h2', { id: 'monthtask-title', class: 'visually-hidden' }, m.title),
+      h('ul', { class: 'card-list' }, ...tasks.map((task) => h('li', { class: 'monthtask__card', dataset: { month: task.monthStart } },
+        h('div', { class: 'monthtask__head' },
+          h('span', { class: 'badge badge--monthtask' }, m.badge),
+          h('span', { class: 'kicker' }, m.from(nl.months.long[Number(task.monthStart.slice(5, 7)) - 1]))),
+        h('p', { class: 'monthtask__text' }, task.text),
+        h('button', {
+          type: 'button', class: 'button button--primary monthtask__done', dataset: { focusKey: `monthtask:${task.monthStart}` },
+          onclick: () => perform(() => completeMonthTask(repo, { monthStart: task.monthStart }, today), m.toast),
+        }, m.done)))))
+    : null;
+
   const nudge = account.status === 'anonymous' && view.hasHabits && view.mode === 'today' && !nudgeDismissed()
     ? nudgeElement((event) => { dismissNudge(); event.target.closest('.nudge').remove(); })
     : null;
@@ -321,7 +339,7 @@ function renderDay(view, week, attention, toPlan = 0) {
     banner(view),
     view.groups.length === 0 && view.pool.length === 0 ? todayEmpty(view) : null,
     h('div', { class: 'today__columns page__panes' },
-      h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections),
+      h('div', { class: 'today__main page__pane' }, firstTip, monthTaskSection, attentionSection, ...groupSections),
       side.length > 0 ? h('div', { class: 'today__side page__pane' }, ...side) : null));
 }
 

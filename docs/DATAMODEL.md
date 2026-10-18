@@ -15,7 +15,7 @@ Eén object store per soort record. Alle records hebben `id`, `createdAt`, `upda
 | `dayPlans` | `habitId\|datum` | `habitId`, `date`: een flexibele habit die voor die dag is meegenomen |
 | `achievements` | `sleutel\|habitId` | `key`, `habitId` (of `null`), `date`; eenmaal ontgrendeld blijft zo |
 | `ratings` | `habitId\|weekStart` | `habitId`, `weekStart`, `score` (1–5, automatisme) |
-| `reviews` | `weekStart` | `weekStart`, `wentWell`, `adjust` (wekelijkse review, max. 1000 tekens elk) |
+| `reviews` | `weekStart` of `month:YYYY-MM` | Twee soorten in één collectie. **Week:** `weekStart`, `wentWell`, `wentBad` (max. 1000 tekens elk; oudere records hebben nog `adjust`, dat de app niet meer toont). **Maand:** `period: 'month'`, `monthStart`, `adjust` ("Wat pas ik aan?", max. 1000 tekens) en `appliedAt` (datum of `null`): het afvinken van de eenmalige taak die op de eerste van de volgende maand op Vandaag komt en blijft staan tot hij is afgevinkt. De maandreview kan pas in de laatste 7 dagen van de maand; de taak zelf wordt niet opgeslagen maar afgeleid (`domain/reviews.js`). Een week hoort bij de maand waarin zijn donderdag valt |
 | `reasons` | `habitId\|datum` | `habitId`, `date` (de dag van de reactie), `reason` (`no_time`/`no_money`/`forgot`/`no_motivation`/`busy_sick`/`wrong_rhythm`/`other`), `note` (optioneel, max. 200 tekens): waarom een taak bleef liggen. Een reactie dekt de signalen die op of vóór die dag begonnen (PLAN §4.9) |
 | `outbox` | `collectie\|id` | wat nog naar de server moet (met een `rev` die bij elke wijziging verandert) |
 | `meta` | `sync` | `userId`, `cursor` (laatste `seq` van de server), `lastSyncAt` |

@@ -24,6 +24,7 @@ import {
   STRONG_RETURN,
   WHY_HABITS_ACHIEVEMENT,
 } from './constants.js';
+import { isWeekReview } from './reviews.js';
 import { computeStreaks } from './streaks.js';
 import { habitDayparts } from './dayparts.js';
 import { isClosed, isPositive } from './units.js';
@@ -242,7 +243,8 @@ export function achievementProgress(input) {
  * friends: het aantal vrienden (komt niet uit de lokale gegevens maar uit de sociale cache; zonder sociaal 0)
  * Geeft [{ key, habitId|null }] van de nieuwe ontgrendelingen, in vaste volgorde.
  */
-export function evaluateAchievements({ today, stats, reviews = [], unlocked = [], habits = [], checkIns = [], pauses = [], ratings = [], friends = 0 }) {
+export function evaluateAchievements({ today, stats, reviews: allReviews = [], unlocked = [], habits = [], checkIns = [], pauses = [], ratings = [], friends = 0 }) {
+  const reviews = allReviews.filter(isWeekReview); // alleen de weekreviews tellen
   const have = new Set(unlocked.map((u) => `${u.key}|${u.habitId ?? ''}`));
   const fresh = [];
   const grant = (key, habitId = null) => {

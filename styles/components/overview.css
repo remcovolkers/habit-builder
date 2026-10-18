@@ -102,16 +102,32 @@ span.weekstrip__day {
 }
 
 .overview__label {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
   margin: 0;
-  font-weight: var(--font-weight-bold);
-  text-transform: capitalize;
 }
 
-.overview__summary {
-  margin: var(--space-1) 0 var(--space-3);
+.overview__label-main {
+  font-weight: var(--font-weight-bold);
+}
+
+.overview__label-main::first-letter {
+  text-transform: uppercase; /* "oktober 2026", "ma 12 okt – zo 18 okt": alleen de eerste letter */
+}
+
+.overview__label-sub {
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  text-align: center;
+}
+
+/* terug naar nu, alleen als je ergens anders staat; staat in de kop naast de keuze week of maand */
+.overview__today {
+  margin-left: auto;
+}
+
+.overview__nav {
+  margin-bottom: var(--space-3);
 }
 
 .overview__dows,
@@ -146,6 +162,17 @@ span.weekstrip__day {
   border-radius: 8px;
   color: var(--color-text);
   text-decoration: none;
+}
+
+/* met een muis (geen tikvlak nodig) zijn de maandvakjes lager, zodat het maandoverzicht minder ruimte inneemt */
+@media (hover: hover) and (pointer: fine) {
+  .overview__grid--month .overview__cell {
+    min-height: 2rem;
+  }
+
+  .overview__grid--month {
+    gap: 3px;
+  }
 }
 
 .overview__grid--week .overview__cell {

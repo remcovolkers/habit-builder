@@ -5,10 +5,11 @@ import { pickTip } from '../../src/app/tips.js';
 import { buildExport, parseImport } from '../../src/app/backup.js';
 import { checkAchievements } from '../../src/app/achievement-runner.js';
 import {
-  graduateHabit, rateAutomaticity, RuleError, saveWeeklyReview, setMaintenance,
+  completeMonthTask, graduateHabit, rateAutomaticity, RuleError, saveMonthlyReview, saveWeeklyReview, setMaintenance,
 } from '../../src/app/actions.js';
 import { ValidationError } from '../../src/data/repository.js';
-import { addDays, eachDay } from '../../src/domain/dates.js';
+import { addDays, eachDay, isoWeek } from '../../src/domain/dates.js';
+import { monthTasks, weeksOfMonth } from '../../src/domain/reviews.js';
 import { TIPS } from '../../src/content/tips.js';
 import { ACHIEVEMENT_INFO } from '../../src/content/achievements.js';
 import { ACHIEVEMENT_KEYS } from '../../src/domain/achievements.js';
@@ -173,14 +174,58 @@ test('rateAutomaticity: huidige week, overschrijven, validatie', async () => {
 
 test('saveWeeklyReview: per week, overschrijven en lengtegrens', async () => {
   const { repo } = testRepo();
-  await saveWeeklyReview(repo, { wentWell: ' lezen ging goed ', adjust: 'eerder beginnen' }, TODAY);
-  await saveWeeklyReview(repo, { wentWell: 'lezen ging goed', adjust: 'eerder opstaan' }, '2026-10-13');
+  await saveWeeklyReview(repo, { wentWell: ' lezen ging goed ', wentBad: 'te laat naar bed' }, TODAY);
+  await saveWeeklyReview(repo, { wentWell: 'lezen ging goed', wentBad: 'te laat opgestaan' }, '2026-10-13');
   const reviews = await repo.listReviews();
   assert.equal(reviews.length, 1);
-  assert.deepEqual([reviews[0].weekStart, reviews[0].adjust], ['2026-10-12', 'eerder opstaan']);
-  await saveWeeklyReview(repo, { wentWell: 'x', adjust: 'y' }, '2026-10-05');
+  assert.deepEqual([reviews[0].weekStart, reviews[0].wentBad], ['2026-10-12', 'te laat opgestaan']);
+  assert.equal('adjust' in reviews[0], false, 'wat pas ik aan hoort niet meer bij de week');
+  await saveWeeklyReview(repo, { wentWell: 'x', wentBad: 'y' }, '2026-10-05'); // een eerdere week alsnog invullen
   assert.deepEqual((await repo.listReviews()).map((r) => r.weekStart), ['2026-10-12', '2026-10-05']); // nieuwste eerst
-  await assert.rejects(() => saveWeeklyReview(repo, { wentWell: 'x'.repeat(1001), adjust: '' }, TODAY), ValidationError);
+  await assert.rejects(() => saveWeeklyReview(repo, { wentWell: 'x'.repeat(1001), wentBad: '' }, TODAY), ValidationError);
+  await assert.rejects(() => saveWeeklyReview(repo, { wentWell: 'x', wentBad: '' }, '2026-10-19', TODAY), (e) => e instanceof RuleError && e.code === 'review_future');
+});
+
+test('saveMonthlyReview: pas in de laatste week van de maand, per maand, en een andere tekst is een nieuwe afspraak', async () => {
+  const { repo } = testRepo();
+  await assert.rejects(() => saveMonthlyReview(repo, { adjust: 'vroeger opstaan' }, '2026-10-20', '2026-10-24'), (e) => e instanceof RuleError && e.code === 'review_locked');
+  await saveMonthlyReview(repo, { adjust: ' vroeger opstaan ' }, '2026-10-20', '2026-10-25'); // 25 t/m 31 oktober is de laatste week
+  let review = await repo.getMonthReview('2026-10-01');
+  assert.deepEqual([review.id, review.period, review.monthStart, review.adjust, review.appliedAt], ['month:2026-10', 'month', '2026-10-01', 'vroeger opstaan', null]);
+  assert.equal((await repo.listReviews()).length, 1);
+  await assert.rejects(() => saveMonthlyReview(repo, { adjust: '   ' }, '2026-10-20', '2026-10-28'), ValidationError);
+  await assert.rejects(() => saveMonthlyReview(repo, { adjust: 'x'.repeat(1001) }, '2026-10-20', '2026-10-28'), ValidationError);
+
+  const done = await completeMonthTask(repo, { monthStart: '2026-10-01' }, '2026-11-02');
+  assert.equal((await repo.getMonthReview('2026-10-01')).appliedAt, '2026-11-02');
+  await saveMonthlyReview(repo, { adjust: 'vroeger opstaan' }, '2026-10-20', '2026-10-30'); // dezelfde tekst: het afvinken blijft
+  assert.equal((await repo.getMonthReview('2026-10-01')).appliedAt, '2026-11-02');
+  await done.undo();
+  assert.equal((await repo.getMonthReview('2026-10-01')).appliedAt, null);
+  await completeMonthTask(repo, { monthStart: '2026-10-01' }, '2026-11-02');
+  await saveMonthlyReview(repo, { adjust: 'eerder naar bed' }, '2026-10-20', '2026-10-30');
+  review = await repo.getMonthReview('2026-10-01');
+  assert.deepEqual([review.adjust, review.appliedAt], ['eerder naar bed', null]);
+});
+
+test('maandtaak: staat klaar vanaf de eerste van de volgende maand tot hij is afgevinkt', async () => {
+  const { repo } = testRepo();
+  await saveMonthlyReview(repo, { adjust: 'vroeger opstaan' }, '2026-10-20', '2026-10-28');
+  await repo.saveReview({ weekStart: '2026-10-26', wentWell: 'a', wentBad: 'b' });
+  const tasks = async (today) => monthTasks({ reviews: await repo.listReviews(), today });
+  assert.deepEqual(await tasks('2026-10-31'), []);
+  assert.deepEqual(await tasks('2026-11-01'), [{ monthStart: '2026-10-01', text: 'vroeger opstaan', availableFrom: '2026-11-01' }]);
+  assert.equal((await tasks('2026-12-15')).length, 1, 'blijft staan tot hij is afgevinkt');
+  await completeMonthTask(repo, { monthStart: '2026-10-01' }, '2026-11-03');
+  assert.deepEqual(await tasks('2026-11-03'), []);
+});
+
+test('weeksOfMonth: een week hoort bij de maand van zijn donderdag, dus bij precies één maand', () => {
+  assert.deepEqual(weeksOfMonth('2026-10-01'), ['2026-09-28', '2026-10-05', '2026-10-12', '2026-10-19', '2026-10-26']);
+  assert.deepEqual(weeksOfMonth('2026-11-01'), ['2026-11-02', '2026-11-09', '2026-11-16', '2026-11-23']);
+  assert.equal(isoWeek('2026-10-15'), 42);
+  assert.equal(isoWeek('2026-01-01'), 1);
+  assert.equal(isoWeek('2027-01-01'), 53);
 });
 
 // --- prestaties opslaan ------------------------------------------------------------------------------
@@ -213,7 +258,7 @@ test('checkAchievements: ontgrendelt, slaat op en geeft de tweede keer niets nie
 
 test('checkAchievements: meerdere reviews achter elkaar geven de review-prestatie', async () => {
   const { repo } = testRepo();
-  for (const week of ['2026-09-14', '2026-09-21', '2026-09-28', '2026-10-05']) await repo.saveReview({ weekStart: week, wentWell: 'a', adjust: 'b' });
+  for (const week of ['2026-09-14', '2026-09-21', '2026-09-28', '2026-10-05']) await repo.saveReview({ weekStart: week, wentWell: 'a', wentBad: 'b' });
   const fresh = await checkAchievements(repo, TODAY);
   assert.ok(fresh.some((a) => a.key === 'review_streak_4'));
 });
@@ -229,7 +274,7 @@ async function filledRepo() {
   await repo.addPause({ habitId: other.id, from: '2026-10-10', to: '2026-10-11' });
   await repo.setDayPlan({ habitId: other.id, date: TODAY });
   await repo.setRating({ habitId: other.id, weekStart: '2026-10-12', score: 4 });
-  await repo.saveReview({ weekStart: '2026-10-12', wentWell: 'goed', adjust: 'vroeger' });
+  await repo.saveReview({ weekStart: '2026-10-12', wentWell: 'goed', wentBad: 'laat' });
   await repo.unlockAchievement({ key: 'first_checkin', date: '2026-10-14' });
   await repo.saveSettings({ displayName: 'Remco', dayStartHour: 3 });
   return { repo, water, other };
@@ -253,6 +298,19 @@ test('export → import: alles komt identiek terug in een lege repository', asyn
   }
   assert.equal(after.settings.displayName, 'Remco');
   assert.equal(after.settings.dayStartHour, 3);
+});
+
+test('back-up: een maandreview en een oude weekreview (met adjust) komen door de import, een kapotte niet', async () => {
+  const { repo } = testRepo();
+  await repo.saveMonthReview({ monthStart: '2026-09-01', adjust: 'vroeger opstaan' });
+  await repo.saveReview({ weekStart: '2026-10-12', wentWell: 'goed', wentBad: 'laat' });
+  const json = buildExport(await repo.snapshot(), new Date('2026-10-15T08:00:00Z'));
+  json.data.reviews.push({ id: '2026-10-05', weekStart: '2026-10-05', wentWell: 'oud', adjust: 'oude aanpassing' });
+  const parsed = parseImport(JSON.stringify(json));
+  assert.equal(parsed.ok, true, JSON.stringify(parsed));
+  assert.equal(parsed.data.reviews.length, 3);
+  json.data.reviews.push({ id: 'month:x', period: 'month', monthStart: 'kapot', adjust: 'x' });
+  assert.equal(parseImport(JSON.stringify(json)).warnings.some((w) => /review/.test(w)), true);
 });
 
 test('export bevat metadata en geen verwijderde records', async () => {

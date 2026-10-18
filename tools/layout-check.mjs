@@ -842,6 +842,93 @@ async function main() {
   await sleep(600);
   const savedOther = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); return (await state.repo.listReasons()).filter((r) => r.reason === 'other').map((r) => r.note); })()`);
   check('"Anders" met een toelichting wordt als reden bewaard', savedOther.includes('Auto kapot'), JSON.stringify(savedOther));
+
+  // Voortgang: week en maand bepalen samen het overzicht, de tegel en de review; bladeren kan onbeperkt; ingevulde reviews staan als kaart; de maandtaak komt op Vandaag
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await nav('stats');
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  const q = (selector) => `document.querySelector(${JSON.stringify(selector)})`;
+  const click = async (selector, wait = 350) => { await ev(`${q(selector)}.click()`); await sleep(wait); };
+  const viewState = () => ev(`(() => ({ tile: document.querySelector('.tiles .tile__label').textContent, title: document.querySelector('.review-card .section__title').textContent, form: !!document.querySelector('.review-card form'), saved: !!document.querySelector('.review-saved'), empty: document.querySelector('.review-empty__title')?.textContent ?? null, prevOff: document.querySelector('[data-focus-key="prev"]').disabled, nextOff: document.querySelector('[data-focus-key="next"]').disabled, overflow: document.documentElement.scrollWidth - innerWidth }))()`);
+  await click('input[name="overviewPeriod"][value="week"]'); // de keuze blijft staan van eerdere controles
+  await click('.overview__today').catch(() => {}); // staat er niets (al op de huidige periode), dan is er niets om terug te gaan
+  let v = await viewState();
+  const weekFields = await ev(`!!document.querySelector('#wentWell') && !!document.querySelector('#wentBad') && !document.querySelector('#adjust')`);
+  check('Voortgang, week: de tegel heet "Laatste 7 dagen" en de weekreview heeft twee velden (goed en slecht), geen "Wat pas ik aan?"', v.tile === 'Laatste 7 dagen' && v.title === 'Wekelijkse review' && v.form && weekFields, JSON.stringify(v));
+  for (let i = 0; i < 4; i++) await click('[data-focus-key="next"]', 250);
+  v = await viewState();
+  check('Voortgang, week: vooruit bladeren kan (4 weken), de tegel toont wat gepland staat en de review is een lege staat zonder formulier', !v.nextOff && v.tile === 'Gepland deze week' && v.empty === 'Nog niet aan de beurt' && !v.form, JSON.stringify(v));
+  await click('.overview__today');
+  for (let i = 0; i < 6; i++) await click('[data-focus-key="prev"]', 250);
+  v = await viewState();
+  check('Voortgang, week: terug bladeren kan (6 weken), ook naar weken zonder gegevens; een week zonder review is een nette lege staat', !v.prevOff && v.tile === 'Gedaan deze week' && v.empty === 'Niet ingevuld' && !v.form, JSON.stringify(v));
+  await click('.overview__today');
+  // de weekreview invullen: het formulier wordt een kaart met "Bewerk"
+  await ev(`(() => { const set = (id, value) => { const i = document.querySelector(id); i.value = value; i.dispatchEvent(new Event('input')); }; set('#wentWell', 'Elke dag water'); set('#wentBad', 'Te laat naar bed'); })()`);
+  await ev(`document.querySelector('.review-card form').requestSubmit()`);
+  await sleep(700);
+  const savedWeek = await ev(`(() => ({ form: !!document.querySelector('.review-card form'), items: [...document.querySelectorAll('.review-saved__text')].map((e) => e.textContent), edit: !!document.querySelector('.review-saved [data-focus-key^="edit:"]') }))()`);
+  check('Voortgang, week: na opslaan staat de review als kaart (goed en slecht) met een "Bewerk"-knop, zonder formulier', !savedWeek.form && savedWeek.items.join('|') === 'Elke dag water|Te laat naar bed' && savedWeek.edit, JSON.stringify(savedWeek));
+  await click('.review-saved [data-focus-key^="edit:"]');
+  const editing = await ev(`({ well: document.querySelector('#wentWell')?.value, cancel: [...document.querySelectorAll('.review-card .button')].some((b) => b.textContent === 'Annuleren') })`);
+  check('Voortgang, week: "Bewerk" opent het formulier met wat er stond en een "Annuleren"', editing.well === 'Elke dag water' && editing.cancel, JSON.stringify(editing));
+  await ev(`[...document.querySelectorAll('.review-card .button')].find((b) => b.textContent === 'Annuleren').click()`);
+  await sleep(300);
+  // maand: tegel, weken van de maand en de maandreview (pas open in de laatste week van de maand)
+  await click('input[name="overviewPeriod"][value="month"]');
+  v = await viewState();
+  const monthInfo = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); const { monthReviewUnlocked } = await import('/src/domain/reviews.js'); const { startOfMonth } = await import('/src/domain/dates.js'); return { unlocked: monthReviewUnlocked(startOfMonth(state.today), state.today), weeks: document.querySelectorAll('.review-weeks__item').length, lockedText: document.querySelector('.review-empty .xs')?.textContent ?? null, adjust: !!document.querySelector('#adjust'), weekField: !!document.querySelector('#wentWell') }; })()`);
+  check('Voortgang, maand: de tegel heet "Laatste 31 dagen", de maandreview vervangt de weekreview en toont de ingevulde week; de maandreview staat op slot tot de laatste week van de maand', v.tile === 'Laatste 31 dagen' && v.title === 'Maandelijkse review' && monthInfo.weeks >= 1 && !monthInfo.weekField
+    && (monthInfo.unlocked ? monthInfo.adjust : (!monthInfo.adjust && /opent op/.test(monthInfo.lockedText ?? ''))), JSON.stringify({ v, monthInfo }));
+  // vorige maand alsnog invullen: een kaart, en meteen een taak op Vandaag
+  await click('[data-focus-key="prev"]');
+  v = await viewState();
+  check('Voortgang, maand: een vorige maand zonder review is een lege staat met "Alsnog invullen"', v.empty === 'Niet ingevuld' && !v.form, JSON.stringify(v));
+  await ev(`[...document.querySelectorAll('.review-card .button')].find((b) => b.textContent === 'Alsnog invullen').click()`);
+  await sleep(350);
+  await ev(`(() => { const i = document.querySelector('#adjust'); i.value = 'Telefoon om 22:00 in de lader'; i.dispatchEvent(new Event('input')); document.querySelector('.review-card form').requestSubmit(); })()`);
+  await sleep(700);
+  const savedMonth = await ev(`(() => ({ form: !!document.querySelector('.review-card form'), text: document.querySelector('.review-saved__text')?.textContent, foot: document.querySelector('.review-saved__foot .xs')?.textContent }))()`);
+  check('Voortgang, maand: na opslaan staat de afspraak als kaart met een "Bewerk"-knop en de melding dat het een taak op Vandaag is', !savedMonth.form && savedMonth.text === 'Telefoon om 22:00 in de lader' && /taak/.test(savedMonth.foot ?? ''), JSON.stringify(savedMonth));
+  await nav('today');
+  await sleep(300);
+  const task = await ev(`(() => { const c = document.querySelector('.monthtask__card'); return { exists: !!c, badge: c?.querySelector('.badge--monthtask')?.textContent, text: c?.querySelector('.monthtask__text')?.textContent }; })()`);
+  check('Vandaag: de maandtaak staat als eigen kaart met "Maandtaak" en de tekst uit de review', task.exists && task.badge === 'Maandtaak' && task.text === 'Telefoon om 22:00 in de lader', JSON.stringify(task));
+  for (const [size, w, h2, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h2, deviceScaleFactor: 2, mobile: true });
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(300);
+    const wide = await ev(`(() => ({ overflow: document.documentElement.scrollWidth - innerWidth, wide: [...document.querySelectorAll('.app__main .monthtask *')].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, tap: Math.round(document.querySelector('.monthtask__done').getBoundingClientRect().height) }))()`);
+    check(`Vandaag, maandtaak · ${size}: past zonder zijwaarts scrollen en de knop is minstens 44 px`, wide.overflow <= 0 && wide.wide === 0 && wide.tap >= 44, JSON.stringify(wide));
+    await nav('stats');
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    for (const period of ['week', 'month']) {
+      await ev(`${q(`input[name="overviewPeriod"][value="${period}"]`)}.click()`);
+      await sleep(300);
+      const fits = await ev(`(() => ({ overflow: document.documentElement.scrollWidth - innerWidth, wide: [...document.querySelectorAll('.app__main .review-card *, .app__main .overview *')].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).map((e) => e.className).slice(0, 4), tiny: [...document.querySelectorAll('.review-card .button, .overview .button, .overview .icon-button')].filter((b) => b.getBoundingClientRect().height < 43).length }))()`);
+      check(`Voortgang, ${period} · ${size}: overzicht en review passen zonder zijwaarts scrollen, knoppen minstens 44 px`, fits.overflow <= 0 && fits.wide.length === 0 && fits.tiny === 0, JSON.stringify(fits));
+    }
+    await nav('today');
+  }
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await sleep(300);
+  await click('.monthtask__done', 600);
+  const taskGone = await ev(`!document.querySelector('.monthtask__card')`);
+  check('Vandaag: de maandtaak afvinken haalt hem weg (eenmalig)', taskGone);
+  // de melding "je review staat klaar": een tik opent Voortgang op die periode, de reviewkaart licht even op en het adres wordt weer schoon
+  const todayIso = await ev(`(async () => (await import('/src/ui/state.js')).state.today)()`);
+  for (const [kind, title] of [['month', 'Maandelijkse review'], ['week', 'Wekelijkse review']]) {
+    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`); // een prestatie-viering van eerdere stappen houdt anders de focus vast
+    await nav('today'); // vanaf een ander scherm, zoals bij een tik op de melding
+    await nav(`stats?review=${kind}&date=${todayIso}`);
+    await sleep(700);
+    const landed = await ev(`(() => { const card = document.querySelector('.review-card'); const box = card?.getBoundingClientRect(); return { title: card?.querySelector('.section__title')?.textContent, lit: card?.classList.contains('review-card--spotlight') ?? false, inView: !!box && box.bottom > 0 && box.top < innerHeight, hash: location.hash, radio: document.querySelector('input[name="overviewPeriod"]:checked')?.value, focused: document.activeElement === card }; })()`);
+    check(`melding "${kind}": Voortgang staat op die periode, de reviewkaart licht op, staat in beeld en het adres is weer schoon`, landed.title === title && landed.lit && landed.inView && landed.hash === '#/stats' && landed.radio === kind && landed.focused, JSON.stringify(landed));
+  }
+  await sleep(3800);
+  const faded = await ev(`!document.querySelector('.review-card--spotlight')`);
+  check('melding: de markering verdwijnt na een paar seconden', faded);
   ws.close();
 }
 

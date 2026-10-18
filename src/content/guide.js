@@ -56,7 +56,8 @@ export const GUIDE_SECTIONS = Object.freeze([
     paragraphs: [
       'Na een gemiste dag zie je een herstelmoment: pak het nu weer op, ook met een klein begin.',
       'Onder "Even kijken" staat wat langer stilligt dan je had afgesproken. Je kunt met één tik zeggen wat je tegenhield, zodat je later ziet waar het misging. Dat is geen verwijt.',
-      'De weekreview laat alleen zien wat er is blijven liggen. Is alles gelukt, dan staat er dat ook.',
+      'De weekreview laat alleen zien wat er is blijven liggen. Is alles gelukt, dan staat er dat ook. Daaronder schrijf je wat goed en wat slecht ging.',
+      'In de laatste week van de maand kun je bij Voortgang (kies Maand) opschrijven wat je aanpast. Dat staat op de eerste van de volgende maand als eenmalige taak op Vandaag, tot je hem afvinkt.',
     ],
   },
   {

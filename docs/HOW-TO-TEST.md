@@ -64,7 +64,9 @@ De kaart **Wekelijkse review**, bovenaan de nieuwe terugblik:
 2. Vier kaarten die aandacht vragen: Rekening betalen (te laat), Bed opmaken (stil), Lezen en Meditatie ("1 dag gemist in de week van ma 5 okt."). Een vijfde, gedempt en direct onder Bed opmaken: **Gordijnen wassen** met "Reden: Vergeten · Stond niet in mijn agenda".
 3. Controle op wat er **niet** staat: Water drinken (de halve dag telt niet als gemist), Dagboek, Hardlopen en de gepauzeerde, gearchiveerde en geplande habits.
 4. Elke kaart heeft een eigen reden-knop. Beantwoord er één en kijk of de teller ("open / beantwoord") meebeweegt.
-5. Daaronder de twee tekstvelden: schrijf een review en sla op ("Review opgeslagen").
+5. Daaronder de twee tekstvelden **Wat ging goed?** en **Wat ging slecht?**: schrijf een review en sla op ("Review opgeslagen"). Het formulier wordt een kaart met een kleine **Bewerk**.
+6. Blader met de pijltjes naar eerdere weken: een ingevulde week toont zijn kaart, een lege week "Niet ingevuld" met **Alsnog invullen**, een week in de toekomst "Nog niet aan de beurt". Bladeren kan onbeperkt.
+7. Kies **Maand**: de tegel heet "Laatste 31 dagen" en de review is de **Maandelijkse review**: de ingevulde weken van die maand en daaronder "Wat pas ik aan?". Die staat op slot tot de laatste 7 dagen van de maand. Vul je een vorige maand alsnog in, dan staat de afspraak meteen als **Maandtaak** bovenaan Vandaag tot je hem afvinkt.
 
 ## E. Ingeburgerd te bevestigen (Water drinken)
 
@@ -99,7 +101,7 @@ De kaart **Wekelijkse review**, bovenaan de nieuwe terugblik:
 
 ## I. Wat je lokaal niet kunt testen
 
-De ochtendmelding (Web Push) bestaat lokaal niet; de knop is er verborgen. Dat test je op de dev-site: kijk in Supabase naar `push_subscriptions.summary`, waar elke dag vier getallen heeft (`[gepland, stapel, aandacht, review]`). Op zondag is het vierde getal 1 zolang de review van die week niet is opgeslagen. De tekstopbouw staat in `tests/push/reminders.test.js`.
+De ochtendmelding (Web Push) bestaat lokaal niet; de knop is er verborgen. Dat test je op de dev-site: kijk in Supabase naar `push_subscriptions.summary`, waar elke dag vijf getallen heeft (`[gepland, stapel, aandacht, review, maandreview]`). Op zondag is het vierde getal 1 zolang de weekreview niet is ingevuld, en op de laatste dag van de maand het vijfde zolang de maandreview niet is ingevuld. Een tik op zo'n melding opent Voortgang op die periode (`#/stats?review=week|month&date=…`), scrolt naar de reviewkaart en laat die even oplichten; staat er ook een review klaar naast gewoontes, dan gaat de tik naar de review. De tekstopbouw staat in `tests/push/reminders.test.js`.
 
 ## J. Scrollen op desktop (scherm breder dan 960 px)
 

@@ -4,7 +4,8 @@
 // [hoeveel gewoontes er gepland staan, hoeveel taken er nog in de stapel liggen]. De server maakt daar de tekst van.
 // Zo staan er geen namen van habits op de server-kant van de herinnering, en blijft de logica van "wat staat er
 // vandaag" op één plek: hier, in de app.
-import { addDays, startOfWeek, weekday } from '../domain/dates.js';
+import { addDays, endOfMonth, startOfMonth, startOfWeek, weekday } from '../domain/dates.js';
+import { monthReviewFor, weekReviewFor, weekReviewHasContent } from '../domain/reviews.js';
 import { DISPLAY_NAME_MAX } from './settings.js';
 import { nudgesOn } from './attention.js';
 import { buildDayView, prepareSnapshot } from './day-view.js';
@@ -25,22 +26,24 @@ export function validateReminderTime(time, dayStartHour) {
 }
 
 /**
- * { name, days: { 'YYYY-MM-DD': [gepland, in de stapel, aandacht, review] } } voor vandaag en de dagen erna.
- *   aandacht  taken die langer liggen dan afgesproken en waar nog niet op is gereageerd (weekelijks opnieuw; zie nudgesOn)
- *   review    1 op een zondag als de review van die week nog niet is opgeslagen
+ * { name, days: { 'YYYY-MM-DD': [gepland, in de stapel, aandacht, review, maandreview] } } voor vandaag en de dagen erna.
+ *   aandacht     taken die langer liggen dan afgesproken en waar nog niet op is gereageerd (weekelijks opnieuw; zie nudgesOn)
+ *   review       1 op een zondag als de review van die week nog niet is ingevuld
+ *   maandreview  1 op de laatste dag van de maand als de maandreview ('Wat pas ik aan?') nog niet is ingevuld
+ * De melding stuurt bij een review door naar Voortgang (zie composeMessage in de Edge Function).
  */
 export function buildReminderSummary({ snapshot, today, settings, days = REMINDER_DAYS }) {
   const entries = {};
   const prepared = prepareSnapshot(snapshot);
-  const reviewed = new Set((snapshot.reviews ?? []).map((review) => review.weekStart));
   for (let i = 0; i < days; i++) {
     const date = addDays(today, i);
     const view = buildDayView({ snapshot, date, today, prepared });
     const planned = view.progress.total;
     const pool = view.pool.filter((entry) => !entry.satisfied).length;
     const attention = nudgesOn({ snapshot, date, prepared });
-    const review = weekday(date) === 6 && !reviewed.has(startOfWeek(date)) ? 1 : 0;
-    entries[date] = [planned, pool, attention, review];
+    const review = weekday(date) === 6 && !weekReviewHasContent(weekReviewFor(snapshot.reviews, startOfWeek(date))) ? 1 : 0;
+    const monthReview = date === endOfMonth(date) && !monthReviewFor(snapshot.reviews, startOfMonth(date))?.adjust?.trim() ? 1 : 0;
+    entries[date] = [planned, pool, attention, review, monthReview];
   }
   return { name: String(settings.displayName ?? '').trim().slice(0, DISPLAY_NAME_MAX), days: entries };
 }

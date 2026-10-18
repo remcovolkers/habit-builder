@@ -41,3 +41,48 @@
   font-weight: var(--font-weight-bold);
 }
 
+
+/* de eenmalige taak uit de maandreview: een eigen kaart met een accentrand, duidelijk iets anders dan een dagelijkse habit */
+.monthtask {
+  margin-bottom: var(--space-6);
+}
+
+.monthtask__card {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+  background: var(--color-accent-10);
+  border: 1px solid var(--color-accent-50);
+  border-left-width: 4px;
+  border-radius: var(--radius-card);
+}
+
+.monthtask__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.monthtask__head .kicker {
+  margin: 0;
+}
+
+.badge--monthtask {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.monthtask__text {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+}
+
+.monthtask__done {
+  justify-self: start;
+  max-width: 100%;
+}

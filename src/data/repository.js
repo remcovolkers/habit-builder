@@ -9,13 +9,15 @@
 //   listDayPlans() / setDayPlan({habitId,date}) / clearDayPlan(habitId, date)
 //   listAchievements() / unlockAchievement({key, habitId?, date})
 //   listRatings(habitId?) / setRating({habitId, weekStart, score})   (automatisme 1–5, per week)
-//   listReviews() / getReview(weekStart) / saveReview({weekStart, wentWell, adjust})
+//   listReviews() / getReview(weekStart) / saveReview({weekStart, wentWell, wentBad})
+//   getMonthReview(monthStart) / saveMonthReview({monthStart, adjust}) / setMonthTaskApplied({monthStart, date})
 //   listReasons(habitId?) / setReason({habitId, date, reason, note?}) / clearReason(habitId, date)   (waarom een taak bleef liggen)
 //   replaceAll(data)  (import: vervangt alles)
 //   snapshot() -> { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons }
 import { COUNTER_MAX } from '../domain/counter.js';
 import { NOTE_MAX_LENGTH } from '../domain/constants.js';
-import { isValidDate } from '../domain/dates.js';
+import { isValidDate, startOfMonth, startOfWeek } from '../domain/dates.js';
+import { monthReviewId } from '../domain/reviews.js';
 import { SLIP_REASONS } from '../domain/attention.js';
 import { CHECK_IN_STATUSES, validParts, validateHabit } from '../domain/habit.js';
 import { defaultSettings, validateSettings } from '../app/settings.js';
@@ -193,22 +195,45 @@ export function createRepository({
       return upsert('ratings', { id: `${habitId}|${weekStart}`, habitId, weekStart, score });
     },
 
-    // --- wekelijkse review ----------------------------------------------------------------------
+    // --- reviews: per week een terugblik, per maand een afspraak met jezelf (zie domain/reviews.js) ---------
     async listReviews() {
-      return (await liveList('reviews')).sort((a, b) => (a.weekStart < b.weekStart ? 1 : -1));
+      const key = (r) => r.weekStart ?? r.monthStart ?? '';
+      return (await liveList('reviews')).sort((a, b) => (key(a) < key(b) ? 1 : -1));
     },
     async getReview(weekStart) {
       const review = await store.get('reviews', weekStart);
       return review && live(review) ? review : null;
     },
-    async saveReview({ weekStart, wentWell = '', adjust = '' }) {
+    async saveReview({ weekStart, wentWell = '', wentBad = '' }) {
       const errors = [];
-      if (!isValidDate(weekStart)) errors.push({ field: 'weekStart', code: 'invalid' });
-      for (const [field, value] of [['wentWell', wentWell], ['adjust', adjust]]) {
+      if (!isValidDate(weekStart) || startOfWeek(weekStart) !== weekStart) errors.push({ field: 'weekStart', code: 'invalid' });
+      for (const [field, value] of [['wentWell', wentWell], ['wentBad', wentBad]]) {
         if (typeof value !== 'string' || value.length > REVIEW_TEXT_MAX) errors.push({ field, code: 'too_long' });
       }
       if (errors.length > 0) throw new ValidationError(errors);
-      return upsert('reviews', { id: weekStart, weekStart, wentWell: wentWell.trim(), adjust: adjust.trim() });
+      return upsert('reviews', { id: weekStart, weekStart, wentWell: wentWell.trim(), wentBad: wentBad.trim() });
+    },
+    async getMonthReview(monthStart) {
+      const review = await store.get('reviews', monthReviewId(monthStart));
+      return review && live(review) ? review : null;
+    },
+    /** De maandreview ("Wat pas ik aan?"). Een andere tekst maakt er een nieuwe afspraak van: het afvinken van de oude vervalt. */
+    async saveMonthReview({ monthStart, adjust = '' }) {
+      const errors = [];
+      if (!isValidDate(monthStart) || startOfMonth(monthStart) !== monthStart) errors.push({ field: 'monthStart', code: 'invalid' });
+      if (typeof adjust !== 'string' || adjust.length > REVIEW_TEXT_MAX) errors.push({ field: 'adjust', code: 'too_long' });
+      else if (adjust.trim() === '') errors.push({ field: 'adjust', code: 'required' });
+      if (errors.length > 0) throw new ValidationError(errors);
+      const existing = await this.getMonthReview(monthStart);
+      const text = adjust.trim();
+      return upsert('reviews', { id: monthReviewId(monthStart), period: 'month', monthStart, adjust: text, appliedAt: existing?.adjust === text ? existing.appliedAt ?? null : null });
+    },
+    /** De eenmalige maandtaak afvinken (date) of terugzetten (null). */
+    async setMonthTaskApplied({ monthStart, date = null }) {
+      const existing = await this.getMonthReview(monthStart);
+      if (!existing) return null;
+      if (date !== null && !isValidDate(date)) throw new ValidationError([{ field: 'date', code: 'invalid' }]);
+      return upsert('reviews', { ...existing, appliedAt: date });
     },
 
     // --- waarom een taak bleef liggen -----------------------------------------------------------

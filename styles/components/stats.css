@@ -458,6 +458,127 @@
   gap: var(--space-4);
 }
 
+.review__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.review__actions .button--primary {
+  flex: 1 1 auto;
+}
+
+.review-card__period {
+  margin: 0 0 var(--space-3);
+}
+
+/* wat je hebt ingevuld: rustig, met een gekleurde rand per soort (goed, slecht, aanpassing) */
+.review-saved {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.review-saved__item,
+.review-weeks__line {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-elevated);
+  border-left: 3px solid var(--color-accent-50);
+  border-radius: var(--radius-card);
+}
+
+.review-saved__item[data-tone='bad'],
+.review-weeks__line[data-tone='bad'] {
+  border-left-color: var(--color-warning);
+}
+
+.review-saved__item[data-tone='plan'] {
+  border-left-color: var(--color-accent);
+  background: var(--color-accent-10);
+}
+
+.review-saved__label {
+  margin: 0 0 2px;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-extra);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.review-saved__text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.review-saved__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.review-saved__foot > .xs {
+  flex: 1 1 10rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.review-empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px dashed var(--color-hairline);
+  border-radius: var(--radius-card);
+}
+
+.review-empty__title,
+.review-empty .xs {
+  margin: 0;
+}
+
+.review-empty__title {
+  font-weight: var(--font-weight-bold);
+}
+
+/* de ingevulde weken in het maandoverzicht: compact, als geheugensteun voor "Wat pas ik aan?" */
+.review-weeks__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-weeks__item {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.review-weeks__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.review-weeks__name {
+  min-width: 0;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-muted);
+}
+
+.review-weeks__line {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
 /* prestaties */
 .achievements {
   display: grid;
@@ -601,4 +722,28 @@
   display: inline-flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+}
+
+/* na een tik op de melding "je review staat klaar": de reviewkaart licht even op (zonder beweging blijft alleen de rand) */
+.review-card--spotlight {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  animation: review-spotlight 1.2s ease-in-out 3;
+}
+
+@keyframes review-spotlight {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgb(var(--accent-rgb) / 0.28), 0 0 28px rgb(var(--accent-rgb) / 0.4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-card--spotlight {
+    animation: none;
+  }
 }

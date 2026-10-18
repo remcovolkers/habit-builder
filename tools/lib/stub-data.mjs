@@ -115,8 +115,8 @@ export async function fillStubAccount(repo, today) {
   await mark(teeth, [today], 'partial', { value: 1, parts: ['morning'] });
 
   // twee eerdere weekreviews
-  await repo.saveReview({ weekStart: startOfWeek(ago(7)), wentWell: 'Elke dag water gehaald', adjust: 'Eerder naar bed' });
-  await repo.saveReview({ weekStart: startOfWeek(ago(14)), wentWell: 'Drie keer hardgelopen', adjust: 'Boek bij het bed leggen' });
+  await repo.saveReview({ weekStart: startOfWeek(ago(7)), wentWell: 'Elke dag water gehaald', wentBad: 'Twee avonden te laat naar bed' });
+  await repo.saveReview({ weekStart: startOfWeek(ago(14)), wentWell: 'Drie keer hardgelopen', wentBad: 'Boek bleef in de tas zitten' });
 
   return created;
 }

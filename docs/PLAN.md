@@ -227,7 +227,7 @@ Eén detector (`src/domain/attention.js`) bepaalt per taak of hij om een reactie
 
 **Drie plekken, steeds kort en neutraal:**
 - **Vandaag, "Even kijken":** stille en mislukte taken (niet per dag) die nog geen reactie hebben, met *Nu afvinken* en *Wat hield je tegen?*. "Te laat" heeft zijn eigen blokje op de kaart van de taak.
-- **Ochtendmelding:** "1 taak vraagt aandacht." Zonder namen van taken (de server kent die niet). Voor elke taak zonder reactie op de dag dat het probleem begon en daarna elke week, nooit dagelijks. Op zondag erbij: "Je weekterugblik staat klaar." als de review van die week nog niet is opgeslagen. De melding komt op het ingestelde tijdstip.
+- **Ochtendmelding:** "1 taak vraagt aandacht." Zonder namen van taken (de server kent die niet). Voor elke taak zonder reactie op de dag dat het probleem begon en daarna elke week, nooit dagelijks. Op zondag erbij: "Je weekterugblik staat klaar." als de review van die week nog niet is ingevuld, en op de laatste dag van de maand "Je maandreview staat klaar." Een tik op de melding opent Voortgang bij die review. De melding komt op het ingestelde tijdstip.
 - **Weekreview (Voortgang):** bovenaan de uitkomst van de week ("12 van 15 gehaald, tot en met vandaag") en alleen de taken die aandacht vragen, ook de al beantwoorde met hun reden. Daaronder de twee tekstvelden.
 
 Bewust nog niet: aanbevelingen op basis van de reden (bij "Ritme klopt niet" het ritme verlagen, bij "Vergeten" een cue voorstellen) en een eigen tijdstip voor de weekreview-melding.

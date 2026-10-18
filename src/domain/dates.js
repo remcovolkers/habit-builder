@@ -38,6 +38,12 @@ export const weekday = (date) => (new Date(toUtc(date)).getUTCDay() + 6) % 7;
 export const startOfWeek = (date) => addDays(date, -weekday(date));
 export const endOfWeek = (date) => addDays(date, 6 - weekday(date));
 
+/** Weeknummer volgens ISO 8601 (de week met de eerste donderdag van het jaar is week 1). */
+export function isoWeek(date) {
+  const thursday = addDays(startOfWeek(date), 3);
+  return Math.floor(diffDays(thursday, `${thursday.slice(0, 4)}-01-01`) / 7) + 1;
+}
+
 export const daysInMonth = (year, month) => new Date(Date.UTC(year, month, 0)).getUTCDate();
 export const dayOfMonth = (date) => Number(date.slice(8, 10));
 

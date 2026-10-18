@@ -1,6 +1,7 @@
 // Handelingen van de gebruiker: domeinregels toepassen en daarna opslaan via de repository.
 // Elke handeling die je ongedaan wilt kunnen maken geeft { undo } terug.
-import { addDays, diffDays, startOfWeek } from '../domain/dates.js';
+import { addDays, diffDays, startOfMonth, startOfWeek } from '../domain/dates.js';
+import { monthReviewUnlocked } from '../domain/reviews.js';
 import { DEFAULT_GRADUATION_DAYS, PLAN_AHEAD_DAYS } from '../domain/constants.js';
 import { clampCounter, counterDoneValue, counterStatus } from '../domain/counter.js';
 import { donePartsOf, habitDayparts, hasMultipleDayparts, partsStatus } from '../domain/dayparts.js';
@@ -189,9 +190,24 @@ export async function recordReason(repo, { habitId, reason, note = null }, today
   return repo.setReason({ habitId, date: today, reason, note });
 }
 
-/** Review van de huidige week (opnieuw opslaan overschrijft). */
-export async function saveWeeklyReview(repo, { wentWell, adjust }, today) {
-  return repo.saveReview({ weekStart: startOfWeek(today), wentWell, adjust });
+/** Review van de week waarin `date` valt (opnieuw opslaan overschrijft). Een week die nog niet begonnen is kan nog niet. */
+export async function saveWeeklyReview(repo, { wentWell, wentBad }, date, today = date) {
+  const weekStart = startOfWeek(date);
+  if (weekStart > today) throw new RuleError('review_future');
+  return repo.saveReview({ weekStart, wentWell, wentBad });
+}
+
+/** Review van de maand waarin `date` valt, vanaf de laatste week van die maand (domain/reviews.js). */
+export async function saveMonthlyReview(repo, { adjust }, date, today) {
+  const monthStart = startOfMonth(date);
+  if (!monthReviewUnlocked(monthStart, today)) throw new RuleError('review_locked');
+  return repo.saveMonthReview({ monthStart, adjust });
+}
+
+/** De eenmalige maandtaak afvinken. Geeft { undo } terug. */
+export async function completeMonthTask(repo, { monthStart }, today) {
+  await repo.setMonthTaskApplied({ monthStart, date: today });
+  return { undo: () => repo.setMonthTaskApplied({ monthStart, date: null }) };
 }
 
 // --- pauzeren, archiveren -----------------------------------------------------------------------

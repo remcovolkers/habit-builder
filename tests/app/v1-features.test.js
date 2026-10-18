@@ -159,14 +159,15 @@ test('levelFor: 0 t/m 4, en -1 als er niets gepland was', () => {
   assert.equal(levelFor({ done: 1, total: 2 }), 2);
 });
 
-test('weekoverzicht: totalen tot en met vandaag, vorige periode kan, volgende niet', () => {
+test('weekoverzicht: totalen tot en met vandaag; vorige en volgende periode zijn altijd vrij', () => {
   const o = buildPeriodOverview({ snapshot: snapshot({ habits: two, checkIns }), today: TODAY, period: 'week', anchor: TODAY });
   assert.equal(o.days.length, 7);
   assert.deepEqual([o.start, o.end], ['2026-10-12', '2026-10-18']);
   assert.deepEqual(o.totals, { done: 3, total: 8, percent: 38 }, 'ma t/m do telt; de toekomst niet');
-  assert.equal(o.previous.enabled, true);
-  assert.equal(o.next.enabled, false);
+  assert.equal(o.previous.anchor, '2026-10-05');
   assert.equal(o.next.anchor, '2026-10-19');
+  assert.equal(o.planned, 14, 'ook wat na vandaag gepland staat');
+  assert.deepEqual([o.isCurrent, o.isFuture], [true, false]);
 });
 
 test('maandoverzicht: een raster van hele weken, dagen buiten de maand tellen niet mee', () => {
@@ -179,13 +180,15 @@ test('maandoverzicht: een raster van hele weken, dagen buiten de maand tellen ni
   assert.equal(o.days.at(-1).state, 'outside');
   // 1 t/m 15 okt: 15 dagen × 2 habits, daarvan 3 gedaan
   assert.deepEqual(o.totals, { done: 3, total: 30, percent: 10 });
-  assert.equal(o.previous.enabled, false, 'er zijn geen gegevens van vóór de eerste habit');
+  assert.equal(o.previous.anchor, '2026-09-01', 'bladeren kan ook naar maanden zonder gegevens');
 });
 
-test('overzicht: vorige maand kan zodra er een eerdere habit is, en een lege periode geeft geen percentage', () => {
+test('overzicht: een lege periode geeft geen percentage, en de toekomst telt alleen wat gepland staat', () => {
   const early = habit('e', { startDate: '2026-08-15', schedules: [{ effectiveFrom: '2026-08-15', schedule: daily }] });
-  const o = buildPeriodOverview({ snapshot: snapshot({ habits: [early] }), today: TODAY, period: 'month', anchor: '2026-10-05' });
-  assert.equal(o.previous.enabled, true);
+  const future = buildPeriodOverview({ snapshot: snapshot({ habits: [early] }), today: TODAY, period: 'week', anchor: '2026-11-04' });
+  assert.deepEqual([future.isFuture, future.isCurrent, future.totals.total, future.planned], [true, false, 0, 7]);
+  const farBack = buildPeriodOverview({ snapshot: snapshot({ habits: [early] }), today: TODAY, period: 'month', anchor: '2020-01-10' });
+  assert.deepEqual([farBack.start, farBack.planned], ['2020-01-01', 0]);
   const none = buildPeriodOverview({ snapshot: snapshot(), today: TODAY, period: 'week', anchor: TODAY });
   assert.equal(none.totals.percent, null);
   assert.ok(none.days.every((d) => d.state === 'empty'));

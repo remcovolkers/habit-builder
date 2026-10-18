@@ -50,7 +50,7 @@ const routes = [
   { path: '/habits/new', render: ({ query }) => habitFormView({ id: null, template: query.template ?? null, intro: query.intro === '1' }) },
   { path: '/habits/:id/edit', render: ({ params }) => habitFormView({ id: params.id }) },
   { path: '/habits/:id', render: ({ params }) => habitDetailView({ id: params.id }) },
-  { path: '/stats', render: () => statsView() },
+  { path: '/stats', render: ({ query }) => statsView({ query }) },
   { path: '/achievements', render: () => achievementsView() },
   { path: '/vrienden', render: () => friendsView() },
   { path: '/vrienden/toevoegen', render: () => friendsAddView() },
