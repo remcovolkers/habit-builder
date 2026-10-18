@@ -83,7 +83,7 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
   // Een taak waarvan alle keren die nog moeten al een dag hebben (covered) is niet meer te plannen: hij dreigt niet te falen en zakt naar beneden
   const withUrgency = (entry) => {
     const covered = !entry.satisfied && entry.plannedDates.length > 0 && entry.missingToPlan === 0;
-    const tight = !entry.satisfied && !covered && isTight({ count: entry.count, target: entry.target, remainingDays: entry.remainingDays, days: entry.unit.days });
+    const tight = !entry.satisfied && !covered && isTight({ count: entry.count, target: entry.target, remainingDays: entry.remainingDays, days: entry.unit.days, activeDays: entry.unit.activeDays });
     const atRisk = entry.atRisk && !covered;
     return { ...entry, covered, tight, atRisk, urgent: !entry.satisfied && !covered && (atRisk || tight) };
   };

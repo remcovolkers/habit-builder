@@ -81,7 +81,7 @@ export function openWeekPlanner() {
 
   function rowElement(row) {
     const { habit } = row;
-    return h('li', { class: 'planner__row', dataset: { color: habit.color, urgent: row.urgent ? 'true' : null, skipped: row.skipped && row.missing > 0 ? 'true' : null } },
+    return h('li', { class: 'planner__row', dataset: { color: habit.color, urgent: row.urgent ? 'true' : null, skipped: row.skipped && row.missing > 0 ? 'true' : null, needs: row.missing > 0 && row.free > 0 && !row.skipped ? 'true' : null } },
       h('div', { class: 'planner__head' },
         h('span', { class: 'planner__icon', 'aria-hidden': 'true' }, habitIcon(habit.icon)),
         h('div', { class: 'planner__title' },
@@ -148,7 +148,8 @@ export function openWeekPlanner() {
     showToast({ message: picks.length === 0 ? p.nothingToSuggest : p.suggested(picks.length) });
   }
 
-  draw();
+  // wat nog ingepland moet worden is gemarkeerd (zie "Nog n taken om in te plannen"); bij het openen scrolt de eerste in beeld
+  draw().then(() => body.querySelector('.planner__row[data-needs="true"]')?.scrollIntoView({ block: 'nearest' }));
   openDialog({
     title: p.title,
     description: p.description,

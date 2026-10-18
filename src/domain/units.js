@@ -70,6 +70,7 @@ export function computeUnits({ habit, checkIns = [], pauses = [], today }) {
       start,
       end,
       days: diffDays(end, start) + 1,
+      activeDays: diffDays(end, dates[0]) + 1, // de eerste periode van een taak die halverwege begint telt vanaf de start (voor domain/tight.js)
       status,
       target,
       count: doneCount,
