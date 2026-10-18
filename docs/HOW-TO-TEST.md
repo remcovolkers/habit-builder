@@ -68,6 +68,16 @@ De kaart **Wekelijkse review**, bovenaan de nieuwe terugblik:
 6. Blader met de pijltjes naar eerdere weken: een ingevulde week toont zijn kaart, een lege week "Niet ingevuld" met **Alsnog invullen**, een week in de toekomst "Nog niet aan de beurt". Bladeren kan onbeperkt.
 7. Kies **Maand**: de tegel heet "Laatste 31 dagen" en de review is de **Maandelijkse review**: de ingevulde weken van die maand en daaronder "Wat pas ik aan?". Die staat op slot tot de laatste 7 dagen van de maand. Vul je een vorige maand alsnog in, dan staat de afspraak meteen als **Maandtaak** bovenaan Vandaag tot je hem afvinkt.
 
+## D2. E-mailherinnering voor de week- en maandreview
+
+Lokaal gaat er nooit echt een mail uit en de functie draait er niet; de logica is getest in `tests/push/review-mails.test.js` en `tests/server/review-mails.test.js`. Op de dev- of productieomgeving (na stap 1 t/m 7 uit `docs/MAIL-HERINNERING.md`):
+
+1. **Droog proberen**: roep de functie aan met het cron-geheim en `{"dryRun": true, "now": "2026-10-23T14:00:00Z"}` (een vrijdag, 16:00 in Nederland). Het antwoord toont per account `zou_mailen` of waarom niet (`geen_mailmoment_vandaag`, `buiten_het_tijdvenster`, `vandaag_al_gemaild`). Er gaat niets de deur uit.
+2. **Echt proberen**: maak een testaccount met je eigen adres, zet in `records` de `updated_at` van zijn rijen op 20 dagen geleden (`update public.records set updated_at = now() - interval '20 days' where user_id = '…'`; de trigger zet hem bij elke wijziging weer op nu) en roep de functie aan op een vrijdag of de 25e rond 16:00 (of met `now`). Je krijgt één mail; een tweede aanroep dezelfde dag geeft `vandaag_al_gemaild`.
+3. In de mail: de knop "Naar je weekreview" opent Voortgang op die week met de reviewkaart gemarkeerd; "Geen mails meer" opent de app met "Je krijgt geen mails meer" en een knop **Toch weer ontvangen**.
+4. **Instellingen** (ingelogd): onder de ochtendherinnering staat "E-mail als je even weg bent" met een schakelaar. Zet je hem uit, dan geeft `dryRun` voor dat account niets meer.
+5. Valt de 25e op een vrijdag (bijvoorbeeld 25 september 2026), dan komt er **één** mail met twee knoppen.
+
 ## E. Ingeburgerd te bevestigen (Water drinken)
 
 1. Open *Water drinken*: "Dag 81 van ~66", bij Ingeburgerd drie haakjes (66 dagen, "53 keer gedaan 75/53", consistentie ≥ 80%) en de knop **Markeer als ingeburgerd** is actief.

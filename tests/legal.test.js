@@ -20,6 +20,11 @@ const COVERED = {
     active_habits: 'aantal habits', last_active: 'voor het laatst iets afvinkte', updated_at: null,
   },
   social_rate: { id: null, user_id: null, action: 'van je zoek-, verzoek- en uitnodigingsacties', at: null },
+  // e-mailherinnering (0008_review_mails.sql): alleen een stand per account; de mail zelf bevat geen gegevens over je habits
+  review_mail_state: {
+    user_id: null, opted_out: 'je hebt afgemeld', last_sent_on: 'dag van de laatste herinneringsmail', last_sent_at: 'tijdstip van de laatste herinneringsmail',
+    unanswered: 'aantal herinneringsmails achter elkaar zonder dat je daarna weer iets deed', updated_at: null,
+  },
   // feedback (0007_feedback.sql): wat een gebruiker stuurt, en alleen met het vinkje ook het adres van het account
   feedback: {
     id: null, created_at: null, kind: 'soort feedback', body: 'de tekst van je feedback', route: 'de pagina waarop je zat', app_version: 'de versie van de app',

@@ -1,6 +1,6 @@
 # Privacyverklaring Habit Builder
 
-Laatst bijgewerkt: oktober 2026, bij versie 1.1 (vrienden en ranglijst toegevoegd)
+Laatst bijgewerkt: oktober 2026 (e-mailherinnering voor je week- en maandreview toegevoegd)
 
 Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen bedrijf). Hij is verantwoordelijk voor de gegevens die je in de app invult. Contact: **remco.volkers1@gmail.com**.
 
@@ -23,6 +23,11 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 - een **kopie van de gegevens hierboven** op de server, gekoppeld aan jouw account en alleen voor jou leesbaar, met als enige uitzondering wat je zelf deelt met vrienden (zie hieronder, en alleen als je meedoet);
 - technische gegevens die nodig zijn om in te loggen (een sessiesleutel in je browser);
 - **alleen als je de ochtendherinnering aanzet**, per apparaat: het adres waar je browser meldingen naartoe laat sturen (met de sleutels om die versleuteld te sturen), het tijdstip dat je koos, je tijdzone, je voornaam, en per dag van de komende week vijf getallen: hoeveel gewoontes er gepland staan, hoeveel taken er in je stapel liggen, hoeveel taken om aandacht vragen en of je week- en maandreview nog openstaan. **De namen van je gewoontes horen daar niet bij.**
+
+**Alleen met een account en als je er een tijd niet was: de e-mailherinnering** (staat standaard aan; je zet hem uit in Instellingen of met de link onderaan elke mail):
+- als je **14 dagen niets** hebt gewijzigd in de app, krijg je op vrijdag een mail voor je weekreview en op de 25e van de maand een mail voor je maandreview (valt de 25e op een vrijdag, dan één mail). Een server kijkt daarvoor automatisch naar **het tijdstip waarop je voor het laatst iets hebt gesynchroniseerd**, je e-mailadres, je voornaam en je tijdzone. Meer niet: **de namen van je gewoontes staan nooit in de mail**;
+- de server bewaart per account of je **je hebt afgemeld**, de **dag van de laatste herinneringsmail**, het **tijdstip van de laatste herinneringsmail** en het **aantal herinneringsmails achter elkaar zonder dat je daarna weer iets deed**. Na drie mails zonder dat je terugkomt stoppen ze vanzelf;
+- zodra je weer iets doet in de app begint het tellen opnieuw. Afmelden kan zonder in te loggen met de link in de mail.
 
 **Alleen als je meedoet met vrienden en de ranglijst** (je zet dat zelf aan, en kunt het weer uitzetten):
 - je **gebruikersnaam** (3 tot 20 tekens, door jou gekozen) en je **weergavenaam**, dezelfde naam als in Instellingen en op Vandaag. Iedereen die je gebruikersnaam precies kent, kan je vinden en je een verzoek sturen. Er is geen lijst van gebruikers en er kan niet gezocht worden op een deel van een naam of op e-mailadres;
@@ -56,6 +61,7 @@ Alleen met de diensten die de app laten draaien (verwerkers):
 |---|---|
 | **Supabase** | opslag van je account en gegevens, en het inloggen |
 | **Google** | inloggen met Google, en het versturen van de inlogcode per e-mail (via Gmail) |
+| **Resend** (bezorgdienst voor e-mail) | het versturen van de e-mailherinnering, alleen als je die niet hebt uitgezet. Resend krijgt je e-mailadres en de tekst van de mail, niets anders |
 | **GitHub** | het aanbieden van de app zelf (GitHub Pages); GitHub ziet daarbij je IP-adres zoals bij elke website |
 | **Iemand met jouw uitnodigingslink** (ook zonder account) | ziet je weergavenaam en niets anders, zolang de link geldt |
 | **Je vrienden** (andere gebruikers van de app, alleen als je meedoet en zij door jou of door een uitnodigingslink als vriend zijn bevestigd) | zien je weergavenaam, gebruikersnaam en de samenvatting hierboven. Zij kunnen je niet vinden zonder je exacte gebruikersnaam of een link die jij deelde |

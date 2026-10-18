@@ -929,6 +929,17 @@ async function main() {
   await sleep(3800);
   const faded = await ev(`!document.querySelector('.review-card--spotlight')`);
   check('melding: de markering verdwijnt na een paar seconden', faded);
+  // de afmeldpagina van de e-mailherinnering: zonder verbinding met de functie zegt hij dat het niet lukte (en past hij op het scherm), met een link terug naar de app
+  for (const [size, w, h2, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h2, deviceScaleFactor: 2, mobile: true });
+    await nav('mail-uit/00000000-0000-4000-8000-000000000001.abc');
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    for (let i = 0; i < 20 && (await ev(`document.querySelector('.mail-unsubscribe .placeholder__title')?.textContent`)) === 'Een momentje…'; i++) await sleep(250); // de aanvraag mislukt zodra de browser merkt dat er niets luistert
+    const unsub = await ev(`(() => ({ title: document.querySelector('.mail-unsubscribe .placeholder__title')?.textContent, back: !!document.querySelector('.mail-unsubscribe a[href="#/today"]'), overflow: document.documentElement.scrollWidth - innerWidth }))()`);
+    check(`afmeldpagina e-mailherinnering · ${size}: meldt dat het niet lukte zonder verbinding, met een link naar de app en zonder zijwaarts scrollen`, unsub.title === 'Dat lukte niet' && unsub.back && unsub.overflow <= 0, JSON.stringify(unsub));
+  }
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   ws.close();
 }
 

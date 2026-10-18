@@ -6,6 +6,7 @@ import { account, onAccountChanged } from '../account.js';
 import * as auth from '../../data/auth.js';
 import { fetchDevUsage } from '../../data/dev-usage.js';
 import { installCard } from '../components/install-card.js';
+import { mailCard } from '../components/mail-card.js';
 import { reminderCard } from '../components/reminder-card.js';
 import { themeFor } from '../../app/themes.js';
 import { themeOptions } from '../components/theme-picker.js';
@@ -208,6 +209,7 @@ export function settingsView() {
       accountCard(),
       installCard(),
       reminderCard(),
+      mailCard(),
       themeSection()),
      h('div', { class: 'settings__col' },
     h('form', { class: 'form', novalidate: true, onsubmit: submit },

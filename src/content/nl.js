@@ -709,6 +709,29 @@ export const nl = {
     iosText: 'Tik in Safari op de knop Delen en kies "Zet op beginscherm". Daarna werkt de app ook zonder internet.',
   },
 
+  // de e-mailherinnering voor de week- en maandreview (docs/MAIL-HERINNERING.md)
+  reviewMail: {
+    title: 'E-mail als je even weg bent',
+    hint: 'Was je 14 dagen niet in de app? Dan sturen we je op vrijdag een mail voor je weekreview en op de 25e een mail voor je maandreview.',
+    label: 'Stuur me die mails',
+    on: 'Je krijgt de herinneringsmail weer.',
+    off: 'Je krijgt geen herinneringsmails meer.',
+    failed: 'Dat lukte niet. Probeer het zo nog eens.',
+    privacy: 'De mail gaat naar het adres van je account en bevat geen namen van gewoontes. Hoogstens drie keer achter elkaar; zodra je weer iets doet in de app begint het opnieuw.',
+    unsubscribe: {
+      title: { working: 'Een momentje…', done: 'Je krijgt geen mails meer', resubscribed: 'Je krijgt de mails weer', invalid: 'Deze link werkt niet', failed: 'Dat lukte niet' },
+      text: {
+        working: 'We melden je af.',
+        done: 'Je hoort niets meer van ons over je week- en maandreview. Je kunt dit altijd weer aanzetten in Instellingen.',
+        resubscribed: 'Je krijgt de herinnering weer als je er een tijd niet was.',
+        invalid: 'De link is niet compleet of is aangepast. Zet de mail uit in Instellingen, onder "E-mail als je even weg bent".',
+        failed: 'Er was geen verbinding met de server. Probeer het later nog eens, of zet de mail uit in Instellingen.',
+      },
+      undo: 'Toch weer ontvangen',
+      open: 'Naar de app',
+    },
+  },
+
   reminder: {
     title: 'Ochtendherinnering',
     hint: 'Elke ochtend een melding met wat er die dag op je lijst staat. Je stelt dit per apparaat in.',

@@ -10,6 +10,7 @@ import { habitsView } from './ui/views/habits.js';
 import { habitFormView } from './ui/views/habit-form.js';
 import { habitDetailView } from './ui/views/habit-detail.js';
 import { statsView } from './ui/views/stats.js';
+import { mailUnsubscribeView } from './ui/views/mail-unsubscribe.js';
 import { achievementsView } from './ui/views/achievements.js';
 import { friendsView } from './ui/views/friends.js';
 import { friendsAddView } from './ui/views/friends-add.js';
@@ -61,6 +62,7 @@ const routes = [
   { path: '/feedback', render: () => feedbackAdminView() },
   { path: '/welkom/:step', render: ({ params }) => welcomeView({ step: params.step }) },
   { path: '/login', render: () => loginView() },
+  { path: '/mail-uit/:token', render: ({ params }) => mailUnsubscribeView({ token: params.token }) },
 ];
 
 // Het tabje Feedback is alleen voor de beheerder en alleen op de computer: het staat verborgen tot de server zegt dat je beheerder bent,

@@ -70,6 +70,19 @@ Zes tabellen die **voor niemand rechtstreeks toegankelijk zijn** (RLS aan, geen 
 
 Een vriend ziet van jou alleen je weergavenaam, gebruikersnaam en de samenvatting. Wie een geldige uitnodigingslink heeft ziet je **weergavenaam** (functie `invite_peek`, ook zonder account) en niets anders. **Nooit** je e-mailadres, habit-namen, notities, cues of check-ins. De samenvatting wordt door de app lokaal berekend en alleen gepubliceerd als sociaal aanstaat. Alles verdwijnt met `delete_my_account()` (cascade).
 
+### E-mailherinnering voor de week- en maandreview (`supabase/migrations/0008_review_mails.sql`)
+
+Eén tabel, `public.review_mail_state`, **voor niemand rechtstreeks toegankelijk** (RLS aan, alle rechten ingetrokken); alles loopt via functies.
+
+| Kolom | |
+|---|---|
+| `user_id` | het account (cascade: weg met het account) |
+| `opted_out` | afgemeld (via de link in de mail of de schakelaar in Instellingen) |
+| `last_sent_on`, `last_sent_at` | dag en tijdstip van de laatste mail |
+| `unanswered` | hoeveel mails achter elkaar zonder dat het account daarna iets schreef; bij 3 stopt het |
+
+Functies: `review_mail_candidates()`, `review_mail_mark_sent()` en `review_mail_set_opt_out()` alleen voor de Edge Function `send-review-mails` (service-sleutel); `review_mail_pref()` en `review_mail_set_pref()` voor een ingelogd account en alleen voor de eigen rij. "Stale" is: het laatste `updated_at` in `records` van het account (of de aanmaakdatum als er nog niets is) is meer dan 14 dagen geleden. Opzet, geheimen en planning: [MAIL-HERINNERING.md](MAIL-HERINNERING.md).
+
 ### Verwijderen
 
 `delete_my_account()` (SQL-functie, alleen voor ingelogde gebruikers) wist de gebruiker in `auth.users`; `records` en `push_subscriptions` verdwijnen mee (cascade).
