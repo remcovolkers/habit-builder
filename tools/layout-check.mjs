@@ -110,7 +110,9 @@ async function main() {
   await nav('today');
 
   // Introductie (docs/ONBOARDING.md): de browser begint met een leeg profiel, dus dit is een nieuwe gebruiker zonder habits
-  const introHash = await ev('location.hash');
+  // de eerste keer laden is koud (veel losse bestanden, een trage CI-machine): wacht tot de app is opgestart in plaats van op een vaste tijd te rekenen
+  let introHash = await ev('location.hash');
+  for (let i = 0; i < 60 && introHash !== '#/welkom/1'; i++) { await sleep(250); introHash = await ev('location.hash'); }
   check('een nieuwe gebruiker zonder habits landt bij het starten op de introductie', introHash === '#/welkom/1', introHash);
   await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 568, deviceScaleFactor: 2, mobile: true });
   await nav('welkom/1');
