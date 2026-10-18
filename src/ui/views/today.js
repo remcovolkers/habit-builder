@@ -246,13 +246,16 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
   const restShown = restPool.slice(0, Math.max(0, POOL_VISIBLE - urgentPool.length));
   const restHidden = restPool.slice(restShown.length);
 
-  const poolSection = view.pool.length > 0
+  // de kop blijft ook staan als de stapel leeg is doordat taken "Niet in deze week" kregen: zo blijft Plan je week bereikbaar om er toch een in te plannen
+  const poolSection = view.pool.length > 0 || view.poolSkipped > 0
     ? h('section', { class: 'section pool', 'aria-labelledby': 'pool-title' },
       h('div', { class: 'section-head' },
         h('h2', { id: 'pool-title', class: 'section__title' }, nl.today.pool.title),
         view.canPlan && toPlan === 0 ? planWeekButton() : h('span', { class: 'kicker' }, poolPeriod)),
       h('p', { class: 'section__hint' }, nl.today.pool.hint),
       view.canPlan && toPlan > 0 ? planWeekPrompt({ toPlan }) : null,
+      // niets meer in te plannen: alles heeft zijn aandacht gehad (ingepland, gedaan of bewust niet deze week)
+      view.canPlan && toPlan === 0 ? h('p', { class: 'pool__all-planned', role: 'status' }, nl.today.pool.allPlanned) : null,
       urgentPool.length > 0
         ? h('div', { class: 'pool__group' }, h('h3', { class: 'pool__group-title pool__group-title--urgent' }, nl.today.pool.urgentTitle), poolList(urgentPool))
         : null,

@@ -164,3 +164,26 @@ test('een vaste dag in de maand die voorbij is en nog niet gedaan, staat als "te
   assert.equal(entry.overdue, true);
   assert.equal(entry.unit.due, '2026-10-03');
 });
+
+// --- "Niet in deze week" (Plan je week) -------------------------------------------------------------------------------------------------
+
+test('"Niet in deze week": de taak staat die week niet in de stapel (en telt als weggehaald), de volgende week wel weer', () => {
+  const flex = (id, over = {}) => habit(id, { schedules: [{ effectiveFrom: '2026-10-01', schedule: weekly(2) }], ...over });
+  const snap = snapshot({ habits: [flex('Blijft'), flex('Later', { noPlanWeek: '2026-10-12' })] }); // TODAY is donderdag 15 oktober; de week begint op 12 oktober
+  const view = buildDayView({ snapshot: snap, date: TODAY, today: TODAY });
+  assert.deepEqual(names(view.pool), ['Blijft']);
+  assert.equal(view.poolSkipped, 1);
+  assert.equal(buildDayView({ snapshot: snap, date: '2026-10-18', today: TODAY }).poolSkipped, 1, 'zondag is nog dezelfde week');
+  const next = buildDayView({ snapshot: snap, date: '2026-10-19', today: TODAY });
+  assert.deepEqual(names(next.pool).sort(), ['Blijft', 'Later'], 'maandag: een nieuwe week');
+  assert.equal(next.poolSkipped, 0);
+});
+
+test('"Niet in deze week": een taak die al op een dag is ingepland of gedaan staat gewoon bij die dag', () => {
+  const later = habit('Later', { schedules: [{ effectiveFrom: '2026-10-01', schedule: weekly(2) }], noPlanWeek: '2026-10-12' });
+  const planned = buildDayView({ snapshot: snapshot({ habits: [later], dayPlans: [{ habitId: 'Later', date: TODAY }] }), date: TODAY, today: TODAY });
+  assert.deepEqual(names(planned.groups.flatMap((g) => g.entries)), ['Later']);
+  assert.equal(planned.poolSkipped, 0);
+  const done = buildDayView({ snapshot: snapshot({ habits: [later], checkIns: [{ habitId: 'Later', date: TODAY, status: 'done' }] }), date: TODAY, today: TODAY });
+  assert.deepEqual(names(done.groups.flatMap((g) => g.entries)), ['Later']);
+});

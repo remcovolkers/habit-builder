@@ -151,3 +151,12 @@ test('samenvatting: de maandreview staat klaar op de laatste dag van de maand zo
   // een maandrecord telt niet als weekreview voor de zondag
   assert.equal(days('2026-10-15', filled)['2026-10-18'][3], 1);
 });
+
+test('samenvatting: een taak met "Niet in deze week" telt die week niet mee in de stapel van de herinnering', () => {
+  const flex = (name, over = {}) => ({ ...habit(name, { type: 'times_per_period', period: 'week', count: 2 }, { startDate: '2026-10-01' }), ...over });
+  const two = buildReminderSummary({ snapshot: snapshot({ habits: [flex('A'), flex('B')] }), today: TODAY, settings });
+  const skipped = buildReminderSummary({ snapshot: snapshot({ habits: [flex('A'), flex('B', { noPlanWeek: '2026-10-12' })] }), today: TODAY, settings });
+  assert.equal(two.days[TODAY][1], 2);
+  assert.equal(skipped.days[TODAY][1], 1, 'deze week niet');
+  assert.equal(skipped.days['2026-10-19'][1], 2, 'maandag: weer aan de beurt');
+});

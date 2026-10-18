@@ -129,6 +129,7 @@ export const nl = {
     pool: {
       title: 'Oningepland',
       hint: 'Taken zonder vaste dag. Neem er een mee in je dag.',
+      allPlanned: 'Alles ingepland',
       thisWeek: 'Deze week',
       thisPeriod: 'Week en maand',
       takeToday: 'Neem mee vandaag',
