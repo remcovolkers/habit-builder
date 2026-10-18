@@ -160,3 +160,11 @@ test('samenvatting: een taak met "Niet in deze week" telt die week niet mee in d
   assert.equal(skipped.days[TODAY][1], 1, 'deze week niet');
   assert.equal(skipped.days['2026-10-19'][1], 2, 'maandag: weer aan de beurt');
 });
+
+test('samenvatting: een taak die al op een andere dag is ingepland telt niet mee in "in je stapel"', () => {
+  const flex = (name) => habit(name, { type: 'times_per_period', period: 'week', count: 1 }, { startDate: '2026-10-01' });
+  const open = buildReminderSummary({ snapshot: snapshot({ habits: [flex('A'), flex('B')] }), today: TODAY, settings });
+  const planned = buildReminderSummary({ snapshot: snapshot({ habits: [flex('A'), flex('B')], dayPlans: [{ habitId: 'B', date: '2026-10-17' }] }), today: TODAY, settings });
+  assert.equal(open.days[TODAY][1], 2);
+  assert.equal(planned.days[TODAY][1], 1, 'B staat al op zaterdag');
+});

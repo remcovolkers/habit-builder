@@ -187,3 +187,65 @@ test('"Niet in deze week": een taak die al op een dag is ingepland of gedaan sta
   const done = buildDayView({ snapshot: snapshot({ habits: [later], checkIns: [{ habitId: 'Later', date: TODAY, status: 'done' }] }), date: TODAY, today: TODAY });
   assert.deepEqual(names(done.groups.flatMap((g) => g.entries)), ['Later']);
 });
+
+// --- al ingepland op een andere dag (stapel op Vandaag) -----------------------------------------------------------------------------------
+
+const flexHabit = (id, count = 2, period = 'week', over = {}) => habit(id, { schedules: [{ effectiveFrom: '2026-10-01', schedule: { type: 'times_per_period', period, count } }], ...over });
+const poolOf = (snap, date = TODAY, today = TODAY) => buildDayView({ snapshot: snap, date, today }).pool;
+const plan = (habitId, date) => ({ habitId, date });
+
+test('een taak die al op een andere dag is ingepland weet wanneer, en is "covered" als alles een dag heeft', () => {
+  // TODAY is donderdag 15 oktober
+  const open = poolOf(snapshot({ habits: [flexHabit('A', 1)] }))[0];
+  assert.deepEqual([open.plannedDates, open.missingToPlan, open.covered], [[], 1, false]);
+
+  const one = poolOf(snapshot({ habits: [flexHabit('A', 1)], dayPlans: [plan('A', '2026-10-16')] }))[0];
+  assert.deepEqual([one.plannedDates, one.missingToPlan, one.covered, one.urgent], [['2026-10-16'], 0, true, false]);
+
+  const half = poolOf(snapshot({ habits: [flexHabit('A', 2)], dayPlans: [plan('A', '2026-10-18')] }))[0];
+  assert.deepEqual([half.plannedDates, half.missingToPlan, half.covered], [['2026-10-18'], 1, false], 'twee keer nodig, één ingepland: "eerste keer ingepland"');
+
+  const both = poolOf(snapshot({ habits: [flexHabit('A', 2)], dayPlans: [plan('A', '2026-10-18'), plan('A', '2026-10-16')] }))[0];
+  assert.deepEqual([both.plannedDates, both.covered], [['2026-10-16', '2026-10-18'], true], 'gesorteerd, en alles gedekt');
+});
+
+test('een plan telt alleen vanaf de echte vandaag, in dezelfde week of maand en op een dag zonder check-in', () => {
+  const snap = snapshot({
+    habits: [flexHabit('A', 3)],
+    dayPlans: [plan('A', '2026-10-13'), plan('A', '2026-10-16'), plan('A', '2026-10-17'), plan('A', '2026-10-20')],
+    checkIns: [{ habitId: 'A', date: '2026-10-17', status: 'done' }],
+  });
+  const entry = poolOf(snap)[0];
+  assert.deepEqual(entry.plannedDates, ['2026-10-16'], 'een plan van dinsdag (voorbij), een gelogde dag en een dag in de volgende week tellen niet');
+  assert.equal(entry.count, 1);
+  assert.equal(entry.missingToPlan, 1, '3 nodig, 1 gedaan, 1 ingepland');
+});
+
+test('de stapel van morgen: wat al op vrijdag of zondag staat toont wanneer in plaats van een plusknop; wat voor morgen zelf is gepland staat bij de dag', () => {
+  const snap = snapshot({ habits: [flexHabit('A', 1), flexHabit('B', 1), flexHabit('C', 1)], dayPlans: [plan('A', '2026-10-18'), plan('B', '2026-10-16')] });
+  const tomorrow = buildDayView({ snapshot: snap, date: '2026-10-16', today: TODAY });
+  assert.deepEqual(names(tomorrow.pool), ['C', 'A'], 'open eerst, dan wat al is ingepland');
+  assert.deepEqual(tomorrow.pool.map((e) => e.covered), [false, true]);
+  assert.deepEqual(names(tomorrow.groups.flatMap((g) => g.entries)), ['B'], 'B is voor morgen zelf ingepland');
+});
+
+test('een volledig ingeplande taak dreigt niet te falen en zakt onder de rest, maar boven wat klaar is', () => {
+  // 7× per week op donderdag: dreigt te falen, tenzij alles al een dag heeft
+  const risky = flexHabit('Dreigt', 3, 'week', { sortOrder: 0 });
+  const snap = (plans) => snapshot({ habits: [risky, flexHabit('Rustig', 1, 'month', { sortOrder: 1 }), flexHabit('Klaar', 1, 'month', { sortOrder: 2 })], checkIns: [{ habitId: 'Klaar', date: '2026-10-05', status: 'done' }], dayPlans: plans });
+  const open = poolOf(snap([]));
+  assert.equal(open[0].habit.name, 'Dreigt');
+  assert.equal(open[0].urgent, true);
+  const planned = poolOf(snap([plan('Dreigt', '2026-10-16'), plan('Dreigt', '2026-10-17'), plan('Dreigt', '2026-10-18')]));
+  assert.deepEqual(names(planned), ['Rustig', 'Dreigt', 'Klaar'], 'open, dan ingepland, dan klaar');
+  const dreigt = planned.find((e) => e.habit.name === 'Dreigt');
+  assert.deepEqual([dreigt.covered, dreigt.urgent, dreigt.atRisk], [true, false, false]);
+});
+
+test('"Niet in deze week" gaat voor: zo\'n taak (ook 2× per maand) heeft geen kaart en dus geen "＋ Vandaag", tot de volgende week', () => {
+  const monthly = flexHabit('Maand', 2, 'month', { noPlanWeek: '2026-10-12' });
+  const snap = snapshot({ habits: [monthly] });
+  assert.deepEqual(names(poolOf(snap)), [], 'donderdag');
+  assert.deepEqual(names(poolOf(snap, '2026-10-16')), [], 'morgen kijken: nog dezelfde week');
+  assert.deepEqual(names(poolOf(snap, '2026-10-19')), ['Maand'], 'maandag: weer een gewone kaart');
+});

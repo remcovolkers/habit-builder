@@ -837,6 +837,13 @@ async function main() {
   await ev(`document.documentElement.style.fontSize = '100%'`);
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  // morgen bekijken: wat al op een andere dag is ingepland toont wanneer (bij alles ingepland zonder "＋ Morgen", met "Wijzig"), in plaats van een uitnodiging om het nog eens in te plannen
+  const tomorrowIso = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); const { addDays } = await import('/src/domain/dates.js'); return addDays(state.today, 1); })()`);
+  await nav(`today?date=${tomorrowIso}`);
+  await sleep(600);
+  const plannedCards = await ev(`(() => { const cards = [...document.querySelectorAll('.pool-card')]; const covered = cards.filter((c) => c.dataset.state === 'planned'); const texts = cards.map((c) => c.querySelector('.pool-card__planned')?.textContent).filter(Boolean);
+    return { cards: cards.length, texts, covered: covered.length, coveredWithPlus: covered.filter((c) => c.querySelector('[data-focus-key^="take:"]')).length, coveredWithChange: covered.filter((c) => c.querySelector('[data-focus-key^="change:"]')).length, partialWithPlus: cards.filter((c) => c.querySelector('.pool-card__planned') && c.dataset.state !== 'planned' && c.querySelector('[data-focus-key^="take:"]')).length, overflow: document.documentElement.scrollWidth - innerWidth }; })()`);
+  check('Vandaag, morgen bekijken: een taak die al is ingepland toont "Ingepland op …" of "Eerste keer ingepland op …"; alles ingepland heeft geen plusknop maar "Wijzig", en een gedeeltelijk ingeplande taak houdt de plusknop', plannedCards.texts.length > 0 && plannedCards.texts.every((t) => /^(Ingepland op|Eerste keer ingepland op) /.test(t)) && plannedCards.coveredWithPlus === 0 && plannedCards.coveredWithChange === plannedCards.covered && plannedCards.overflow <= 0, JSON.stringify(plannedCards));
   // "Niet in deze week": de taken verdwijnen uit "Oningepland" op Vandaag; de kop en de knop Plan je week blijven staan, met "Alles ingepland" eronder
   const poolBefore = await (async () => { await nav('today'); await sleep(500); return ev(`document.querySelectorAll('.pool .pool-card').length`); })();
   const flexAll = await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); const { setPlanSkip } = await import('/src/app/actions.js'); const ids = (await state.repo.listHabits()).filter((h) => h.schedules.some((s) => s.schedule.type === 'times_per_period')).map((h) => h.id); for (const id of ids) await setPlanSkip(state.repo, { habitId: id, skipped: true }, state.today); notifyChanged(); return ids; })()`);
@@ -873,8 +880,8 @@ async function main() {
     const r = await import('/src/domain/reviews.js');
     const d = await import('/src/domain/dates.js');
     const now = wallClockNow();
-    const month = d.startOfMonth(now.slice(0, 10));
-    const week = d.startOfWeek(now.slice(0, 10));
+    const month = d.startOfMonth(state.today); // de periode van de app (met de dagwissel van 04:00), niet van de muurklok: tussen 00:00 en 04:00 is dat nog de vorige dag
+    const week = d.startOfWeek(state.today);
     // een eerdere week (gesloten) en de vorige maand krijgen een review, zodat we de kaarten van gesloten reviews zien
     await state.repo.saveReview({ weekStart: d.addDays(week, -14), wentWell: 'Eerder goed', wentBad: 'Eerder slecht' });
     await state.repo.saveMonthReview({ monthStart: d.addMonths(month, -1), adjust: 'Telefoon om 22:00 in de lader' });

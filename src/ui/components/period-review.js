@@ -253,8 +253,8 @@ export function periodReview(snapshot, today, choice, onChange) {
   const isWeek = choice.period === 'week';
   const now = wallClockNow();
   const card = isWeek
-    ? buildWeekReviewCard({ snapshot, now, date: choice.anchor })
-    : buildMonthReviewCard({ snapshot, now, date: choice.anchor });
+    ? buildWeekReviewCard({ snapshot, now, today, date: choice.anchor })
+    : buildMonthReviewCard({ snapshot, now, today, date: choice.anchor });
   const heading = isWeek
     ? `${nl.stats.overview.weekNumber(isoWeek(card.start))} · ${formatDateShort(card.start)} – ${formatDateShort(card.end)}`
     : `${monthName(card.start)} ${card.start.slice(0, 4)}`;
