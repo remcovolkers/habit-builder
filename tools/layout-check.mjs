@@ -815,14 +815,35 @@ async function main() {
   // "Niet in deze week": de taak telt niet meer mee voor "Nog n taken om in te plannen" en krijgt geen voorstel; terugdraaien kan
   const needCount = () => ev(`Number(/Nog ([0-9]+)/.exec(document.querySelector('.habits .plan-prompt__text strong')?.textContent ?? '')?.[1] ?? 0)`);
   const needBefore = await needCount();
-  await ev(`document.querySelector('dialog.dialog--planner .planner__skip').click()`);
+  await ev(`document.querySelector('dialog.dialog--planner .planner__row:not([data-last-chance="true"]) .planner__skip').click()`);
   await sleep(600);
   const skipped = await ev(`(() => { const row = document.querySelector('dialog.dialog--planner .planner__row[data-skipped="true"]'); const b = row?.querySelector('.planner__skip'); return { row: !!row, pressed: b?.getAttribute('aria-pressed'), label: b?.textContent, summary: row?.querySelector('.planner__summary')?.textContent, focused: document.activeElement === b }; })()`);
   const needSkipped = await needCount();
   await ev(`document.querySelector('dialog.dialog--planner .planner__skip[aria-pressed="true"]').click()`);
   await sleep(600);
   const needAfter = await needCount();
-  check('Plan je week: "Niet in deze week" dempt de rij (geen herinnering meer voor die taak, de focus blijft op de knop) en "Toch deze week plannen" zet het terug', skipped.row && skipped.pressed === 'true' && skipped.label === 'Toch deze week plannen' && /niet in deze week/.test(skipped.summary ?? '') && skipped.focused && needSkipped === needBefore - 1 && needAfter === needBefore, JSON.stringify({ needBefore, needSkipped, needAfter, skipped }));
+  check('Plan je week: "Niet in deze week" dempt de rij (geen herinnering meer voor die taak, de focus blijft op de knop) en "Toch inplannen" zet het terug', skipped.row && skipped.pressed === 'true' && skipped.label === 'Toch inplannen' && /niet in deze week/.test(skipped.summary ?? '') && skipped.focused && needSkipped === needBefore - 1 && needAfter === needBefore, JSON.stringify({ needBefore, needSkipped, needAfter, skipped }));
+  // overslaan als dat het doel onhaalbaar maakt (de laatste kans van de maand; "Dreigt B" wil 31× per maand): eerst een vraag in de rij, daarna een vaste waarschuwing
+  const rowOf = `[...document.querySelectorAll('dialog.dialog--planner .planner__row')].find((r) => r.querySelector('.planner__name')?.textContent === 'Dreigt B')`;
+  const lastInfo = () => ev(`(() => { const r = ${rowOf}; return { exists: !!r, lastChance: r?.dataset.lastChance === 'true', skipped: r?.dataset.skipped === 'true', confirm: r?.querySelector('.planner__confirm')?.textContent ?? null, skipButton: r?.querySelector('.planner__skip')?.textContent ?? null, warning: r?.querySelector('.planner__warning')?.textContent ?? null, focused: document.activeElement?.textContent ?? null }; })()`);
+  await ev(`${rowOf}.querySelector('.planner__skip').click()`);
+  await sleep(500);
+  const asked = await lastInfo();
+  await ev(`[...${rowOf}.querySelectorAll('.planner__confirm .button')].find((b) => b.textContent === 'Dan plan ik hem in').click()`);
+  await sleep(500);
+  const backed = await lastInfo();
+  await ev(`${rowOf}.querySelector('.planner__skip').click()`);
+  await sleep(400);
+  await ev(`${rowOf}.querySelector('.planner__skip-anyway').click()`);
+  await sleep(600);
+  const sure = await lastInfo();
+  check('Plan je week: overslaan in de laatste kans vraagt eerst (in de rij) wat het kost; "Dan plan ik hem in" laat alles zoals het was; "Toch overslaan" dempt de rij met een vaste waarschuwing en "Toch inplannen"', asked.exists && asked.lastChance && !asked.skipped && /kun je je doel niet meer halen \(nog \d+ keer nodig\)/.test(asked.confirm ?? '') && asked.skipButton === null
+    && backed.confirm === null && !backed.skipped && backed.skipButton === 'Niet in deze week'
+    && sure.skipped && /doel van deze maand niet meer/.test(sure.warning ?? '') && sure.skipButton === 'Toch inplannen', JSON.stringify({ asked, backed, sure }));
+  await ev(`${rowOf}.querySelector('.planner__skip').click()`); // terugzetten vraagt niets
+  await sleep(500);
+  const restored = await lastInfo();
+  check('Plan je week: "Toch inplannen" zet het meteen terug, zonder vraag', !restored.skipped && restored.confirm === null && restored.warning === null && restored.skipButton === 'Niet in deze week', JSON.stringify(restored));
   await ev(`[...document.querySelectorAll('dialog.dialog--planner .dialog__actions .button')].find((b) => b.textContent === 'Verdeel voor mij').click()`);
   await sleep(900);
   const afterSuggest = await ev(`({ planned: document.querySelectorAll('dialog.dialog--planner .planner__day[aria-pressed="true"]').length, open: !!document.querySelector('dialog.dialog--planner[open]') })`);
@@ -864,8 +885,8 @@ async function main() {
   const poolBefore = await (async () => { await nav('today'); await sleep(500); return ev(`document.querySelectorAll('.pool .pool-card').length`); })();
   const flexAll = await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); const { setPlanSkip } = await import('/src/app/actions.js'); const ids = (await state.repo.listHabits()).filter((h) => h.schedules.some((s) => s.schedule.type === 'times_per_period')).map((h) => h.id); for (const id of ids) await setPlanSkip(state.repo, { habitId: id, skipped: true }, state.today); notifyChanged(); return ids; })()`);
   await sleep(600);
-  const poolSkipped = await ev(`(() => { const p = document.querySelector('.pool'); return { exists: !!p, cards: p?.querySelectorAll('.pool-card').length ?? 0, title: p?.querySelector('.section__title')?.textContent ?? null, text: p?.querySelector('.pool__all-planned')?.textContent ?? null, button: !!p?.querySelector('.section-head #planWeek'), overflow: document.documentElement.scrollWidth - innerWidth, left: [...(p?.querySelectorAll('.pool-card') ?? [])].map((c) => c.textContent.slice(0, 40)), prompt: p?.querySelector('.plan-prompt__text')?.textContent ?? null }; })()`);
-  check('Vandaag: met "Niet in deze week" verdwijnen de taken uit Oningepland; de kop, de knop Plan je week en "Alles ingepland" blijven staan', poolBefore > 0 && poolSkipped.exists && poolSkipped.cards === 0 && poolSkipped.title === 'Oningepland' && poolSkipped.text === 'Alles ingepland' && poolSkipped.button && poolSkipped.overflow <= 0, JSON.stringify({ poolBefore, poolSkipped }));
+  const poolSkipped = await ev(`(() => { const p = document.querySelector('.pool'); return { exists: !!p, cards: p?.querySelectorAll('.pool-card').length ?? 0, title: p?.querySelector('.section__title')?.textContent ?? null, text: p?.querySelector('.pool__all-planned')?.textContent ?? null, warn: p?.querySelector('.pool__warn')?.textContent ?? null, button: !!p?.querySelector('.section-head #planWeek'), overflow: document.documentElement.scrollWidth - innerWidth, left: [...(p?.querySelectorAll('.pool-card') ?? [])].map((c) => c.textContent.slice(0, 40)), prompt: p?.querySelector('.plan-prompt__text')?.textContent ?? null }; })()`);
+  check('Vandaag: met "Niet in deze week" verdwijnen de taken uit Oningepland; de kop, de knop Plan je week en "Alles ingepland" blijven staan', poolBefore > 0 && poolSkipped.exists && poolSkipped.cards === 0 && poolSkipped.title === 'Oningepland' && (poolSkipped.text === 'Alles ingepland' || /^Laatste kans van de maand/.test(poolSkipped.warn ?? '')) && poolSkipped.button && poolSkipped.overflow <= 0, JSON.stringify({ poolBefore, poolSkipped }));
   await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); const { setPlanSkip } = await import('/src/app/actions.js'); for (const id of ${JSON.stringify(flexAll)}) await setPlanSkip(state.repo, { habitId: id, skipped: false }, state.today); notifyChanged(); })()`);
   // opruimen: de taken weer weg, zodat de controles hierna van dezelfde stand uitgaan
   await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); for (const id of ${JSON.stringify(flexIds)}) { await state.repo.deleteHabit(id); } for (const plan of await state.repo.listDayPlans?.() ?? []) { if (${JSON.stringify(flexIds)}.includes(plan.habitId)) await state.repo.clearDayPlan(plan.habitId, plan.date); } notifyChanged(); })()`);

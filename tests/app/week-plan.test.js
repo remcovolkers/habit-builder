@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildWeekPlan, suggestPlan } from '../../src/app/week-plan.js';
-import { neededInWindow } from '../../src/domain/planning.js';
+import { lastChanceThisWeek, neededInWindow } from '../../src/domain/planning.js';
 import { applyHabitForm, setPlanSkip } from '../../src/app/actions.js';
 import { validateHabit } from '../../src/domain/habit.js';
 import { testRepo, validHabit } from './helpers.js';
@@ -229,4 +229,29 @@ test('2× per maand, nog 13 dagen over: één dag plannen is genoeg voor de heri
 test('2× per maand aan het eind van de maand: dan moeten beide nu een dag', () => {
   const rows = buildWeekPlan({ snapshot: snap({ habits: [flexible('wc', 2, 'month')] }), today: '2026-10-25' });
   assert.equal(row(rows, 'wc').missing, 2, 'nog 7 dagen over: alles moet nu');
+});
+
+// --- overslaan in de laatste kans van de maand ----------------------------------------------------------------------------------------------
+
+test('lastChanceThisWeek: alleen voor een taak per maand waarvan wat nog moet niet meer past in de dagen na deze week', () => {
+  const last = (over) => lastChanceThisWeek({ span: 'month', open: 1, planned: 0, unitEnd: '2026-10-31', weekEnd: '2026-10-25', ...over });
+  assert.deepEqual(last({}), { lastChance: false, daysAfter: 6 }, 'nog 6 dagen na deze week: één keer kan daarna nog');
+  assert.deepEqual(last({ weekEnd: '2026-10-31' }), { lastChance: true, daysAfter: 0 }, 'de laatste week van de maand');
+  assert.deepEqual(last({ open: 2, weekEnd: '2026-10-30' }), { lastChance: true, daysAfter: 1 }, '2 keer nodig en nog 1 dag erna');
+  assert.equal(last({ open: 2, weekEnd: '2026-10-29' }).lastChance, false, '2 keer nodig en nog 2 dagen erna: net aan');
+  assert.equal(last({ weekEnd: '2026-10-31', planned: 1 }).lastChance, false, 'al een dag gepland: overslaan kost niets');
+  assert.equal(last({ weekEnd: '2026-10-31', open: 0 }).lastChance, false, 'al gehaald');
+  assert.equal(last({ span: 'week', weekEnd: '2026-10-31' }).lastChance, false, 'een taak per week: de week is zelf de periode, geen "laatste week van de maand"');
+});
+
+test('Plan je week: de rij van een taak per maand weet in de laatste week dat overslaan het doel onhaalbaar maakt', () => {
+  const habits = [flexible('wc', 1, 'month'), flexible('week', 2, 'week')];
+  const lastWeek = buildWeekPlan({ snapshot: snap({ habits }), today: '2026-10-28' }); // woensdag 28 oktober: de laatste week van de maand
+  assert.deepEqual([row(lastWeek, 'wc').lastChance, row(lastWeek, 'wc').daysAfter, row(lastWeek, 'week').lastChance], [true, 0, false]);
+  const midMonth = buildWeekPlan({ snapshot: snap({ habits }), today: THURSDAY });
+  assert.deepEqual([row(midMonth, 'wc').lastChance, row(midMonth, 'wc').daysAfter], [false, 13]);
+  const planned = buildWeekPlan({ snapshot: snap({ habits, dayPlans: [{ habitId: 'wc', date: '2026-10-29' }] }), today: '2026-10-28' });
+  assert.equal(row(planned, 'wc').lastChance, false, 'al ingepland: overslaan kost niets');
+  const skipped = buildWeekPlan({ snapshot: snap({ habits: [flexible('wc', 1, 'month', { noPlanWeek: '2026-10-26' })] }), today: '2026-10-28' });
+  assert.deepEqual([row(skipped, 'wc').skipped, row(skipped, 'wc').lastChance], [true, true], 'na overslaan blijft de waarschuwing');
 });

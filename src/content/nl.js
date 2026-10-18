@@ -130,6 +130,7 @@ export const nl = {
       title: 'Oningepland',
       hint: 'Taken zonder vaste dag. Neem er een mee in je dag.',
       allPlanned: 'Alles ingepland',
+      skippedLast: (n) => `Laatste kans van de maand: ${n === 1 ? 'een overgeslagen taak haal' : `${n} overgeslagen taken haal`} je zo niet meer. Inplannen kan nog via Plan je week.`,
       // een taak die al op een andere dag is ingepland: wanneer, in plaats van "＋ Vandaag"
       plannedOn: (list) => `Ingepland op ${list}`,
       firstPlanned: (label) => `Eerste keer ingepland op ${label}`,
@@ -636,7 +637,12 @@ export const nl = {
     skipped: (count, target, period) => `${count} van ${target} ${period} · niet in deze week, geen herinnering`,
     starts: (label) => `start ${label}`,
     skipWeek: 'Niet in deze week',
-    unskipWeek: 'Toch deze week plannen',
+    unskipWeek: 'Toch inplannen',
+    // overslaan in de laatste kans van de maand: eerst uitleggen wat het kost
+    lastChance: (daysAfter, open) => `${daysAfter === 0 ? 'Dit is de laatste week van de maand.' : `Na deze week zijn er nog ${daysAfter} ${daysAfter === 1 ? 'dag' : 'dagen'} in de maand.`} Als je deze overslaat, kun je je doel niet meer halen (nog ${open} keer nodig).`,
+    keepPlanning: 'Dan plan ik hem in',
+    skipAnyway: 'Toch overslaan',
+    skippedLast: 'Zo haal je je doel van deze maand niet meer.',
     complete: (count, target, period) => `${count} van ${target} ${period} · klaar`,
     daysFor: (name) => `Dagen voor ${name}`,
     states: { free: 'niet gepland', planned: 'gepland', done: 'gedaan', blocked: 'niet beschikbaar' },
