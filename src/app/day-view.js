@@ -84,7 +84,10 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
     const tight = !entry.satisfied && isTight({ count: entry.count, target: entry.target, remainingDays: entry.remainingDays, days: entry.unit.days });
     return { ...entry, tight, urgent: !entry.satisfied && (entry.atRisk || tight) };
   };
-  const pool = day.pool.map(attach).map(withUrgency).sort(
+  // "Niet in deze week" (Plan je week): zo'n taak staat die week niet in de stapel. Inplannen kan nog via Plan je week; heeft hij al een dag of is hij gedaan, dan staat hij gewoon bij de dag
+  const inPool = day.pool.map(attach);
+  const hidden = inPool.filter((entry) => entry.habit.noPlanWeek === weekStart);
+  const pool = inPool.filter((entry) => entry.habit.noPlanWeek !== weekStart).map(withUrgency).sort(
     (a, b) =>
       Number(a.satisfied) - Number(b.satisfied) ||
       Number(b.urgent) - Number(a.urgent) ||
@@ -102,6 +105,7 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
     canPlan: date >= today,
     groups,
     pool,
+    poolSkipped: hidden.length, // hoeveel taken er door "Niet in deze week" uit de stapel zijn gehaald
     progress: { done: counted.filter((e) => e.doneToday).length, total: counted.length },
   };
 }
