@@ -8,16 +8,25 @@ import { notifyChanged, state } from '../state.js';
 import { nl } from '../../content/nl.js';
 import { buildWeekPlan, suggestPlan } from '../../app/week-plan.js';
 import { planHabit, RuleError, setPlanSkip, unplanHabit } from '../../app/actions.js';
-import { weekday } from '../../domain/dates.js';
+import { diffDays, weekday } from '../../domain/dates.js';
 import { icon } from '../svg.js';
 
 const p = nl.planner;
 
 const dayLabel = (date, today) => (date === today ? p.today : `${nl.weekdays.short[weekday(date)]} ${Number(date.slice(8))}`);
 
-function summary(row) {
-  const { count, target, span } = row.unit;
-  const period = span === 'week' ? p.thisWeek : p.thisMonth;
+/** 'morgen' of de naam van de dag ("zaterdag"): wanneer een taak die later in het venster begint start. */
+const startLabel = (date, today) => (diffDays(date, today) === 1 ? nl.days.tomorrow.toLowerCase() : nl.weekdays.long[weekday(date)]);
+
+function summary(row, today) {
+  const text = progress(row, today);
+  return row.startsOn ? `${text} · ${p.starts(startLabel(row.startsOn, today))}` : text;
+}
+
+function progress(row, today) {
+  const { count, target, span, start } = row.unit;
+  const later = start > today; // een taak die pas in de volgende week of maand begint
+  const period = span === 'week' ? (later ? p.nextWeek : p.thisWeek) : (later ? p.nextMonth : p.thisMonth);
   if (row.skipped && row.missing > 0) return p.skipped(count, target, period);
   if (count >= target) return p.complete(count, target, period);
   return row.missing > 0 ? p.missing(count, target, period, row.missing) : p.covered(count, target, period);
@@ -77,7 +86,7 @@ export function openWeekPlanner() {
         h('span', { class: 'planner__icon', 'aria-hidden': 'true' }, habitIcon(habit.icon)),
         h('div', { class: 'planner__title' },
           h('span', { class: 'planner__name' }, habit.name),
-          h('span', { class: `planner__summary${row.missing > 0 ? ' is-missing' : ''}` }, summary(row)),
+          h('span', { class: `planner__summary${row.missing > 0 ? ' is-missing' : ''}` }, summary(row, state.today)),
           row.urgent ? h('span', { class: 'badge badge--risk' }, nl.today.pool.urgentTitle) : null)),
       h('div', { class: 'planner__days', role: 'group', 'aria-label': p.daysFor(habit.name) },
         ...row.days.map((day) => {

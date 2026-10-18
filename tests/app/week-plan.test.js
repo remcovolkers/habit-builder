@@ -160,3 +160,45 @@ test('de markering blijft staan als je de habit bewerkt (applyHabitForm)', async
   const next = applyHabitForm({ existing: habit, values: { name: 'Anders', icon: habit.icon, color: habit.color, daypart: habit.daypart, schedule: habit.schedules[0].schedule }, today: THURSDAY });
   assert.equal(next.noPlanWeek, '2026-10-12');
 });
+
+// --- taken die in het venster starten ----------------------------------------------------------------------------------------------------
+
+test('een taak die morgen start staat in Plan je week, maar alleen te plannen vanaf zijn startdatum', () => {
+  const rows = buildWeekPlan({ snapshot: snap({ habits: [flexible('nieuw', 2, 'week', { startDate: '2026-10-16' })] }), today: THURSDAY });
+  const nieuw = row(rows, 'nieuw');
+  assert.ok(nieuw, 'er is een rij');
+  assert.equal(nieuw.startsOn, '2026-10-16');
+  assert.equal(states(nieuw).startsWith('15:blocked 16:free 17:free 18:free'), true, states(nieuw));
+  assert.deepEqual([nieuw.unit.count, nieuw.unit.target, nieuw.missing, nieuw.free], [0, 2, 2, 3], 'de week telt vanaf de start: vrijdag, zaterdag en zondag');
+  assert.deepEqual(suggestPlan(rows).map((p) => p.date).sort(), ['2026-10-16', '2026-10-18'], 'het voorstel begint niet voor de start');
+});
+
+test('een taak die pas in de volgende week begint: de eenheid is die week, en de dagen ervoor zijn niet beschikbaar', () => {
+  const rows = buildWeekPlan({ snapshot: snap({ habits: [flexible('maandag', 2, 'week', { startDate: '2026-10-19' })] }), today: THURSDAY });
+  const maandag = row(rows, 'maandag');
+  assert.equal(maandag.unit.start, '2026-10-19');
+  assert.equal(states(maandag).startsWith('15:blocked 16:blocked 17:blocked 18:blocked 19:free 20:free'), true, states(maandag));
+  assert.equal(maandag.free, 4, 'maandag t/m donderdag liggen binnen het venster en in die week');
+  assert.deepEqual(suggestPlan(rows).every((p) => p.date >= '2026-10-19'), true);
+});
+
+test('een taak die te ver weg start, of nooit meer loopt, krijgt geen rij', () => {
+  const far = flexible('ver', 2, 'week', { startDate: '2026-10-24' }); // 9 dagen weg: buiten het venster van 8 dagen
+  const ended = flexible('klaar', 2, 'week', { startDate: '2026-10-16', endDate: '2026-10-14' });
+  const archived = flexible('archief', 2, 'week', { startDate: '2026-10-16', status: 'archived' });
+  const paused = flexible('pauze', 2, 'week', { startDate: '2026-10-16' });
+  const rows = buildWeekPlan({ snapshot: snap({ habits: [far, ended, archived, paused], pauses: [{ habitId: 'pauze', from: '2026-10-10', to: null }] }), today: THURSDAY });
+  assert.deepEqual(rows.map((r) => r.habit.id), []);
+});
+
+test('een taak die op zondag start in een week met één dag: de afspraak telt alleen die dag; per maand telt de rest van de maand', () => {
+  const weekly = buildWeekPlan({ snapshot: snap({ habits: [flexible('zondag', 2, 'week', { startDate: '2026-10-18' })] }), today: THURSDAY });
+  assert.deepEqual([row(weekly, 'zondag').unit.target, row(weekly, 'zondag').missing], [1, 1]);
+  const monthly = buildWeekPlan({ snapshot: snap({ habits: [flexible('maand', 2, 'month', { startDate: '2026-10-16' })] }), today: THURSDAY });
+  assert.deepEqual([row(monthly, 'maand').unit.span, row(monthly, 'maand').unit.target, row(monthly, 'maand').days.every((d) => d.inUnit)], ['month', 2, true]);
+});
+
+test('de herinnering telt een taak die nog niet is gestart mee (hij is nu te plannen)', () => {
+  const rows = buildWeekPlan({ snapshot: snap({ habits: [flexible('nieuw', 2, 'week', { startDate: '2026-10-16' })] }), today: THURSDAY });
+  assert.equal(rows.filter((r) => r.missing > 0 && r.free > 0 && !r.skipped).length, 1);
+});

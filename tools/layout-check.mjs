@@ -837,6 +837,19 @@ async function main() {
   await ev(`document.documentElement.style.fontSize = '100%'`);
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  // een taak die morgen start staat in Plan je week, maar is alleen te plannen vanaf zijn startdatum
+  const startId = await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); const { addDays } = await import('/src/domain/dates.js'); const tomorrow = addDays(state.today, 1);
+    const habit = await state.repo.saveHabit({ icon: '💧', color: 'c3', daypart: 'anytime', status: 'active', name: 'Start morgen', sortOrder: 300, startDate: tomorrow, endDate: null, graduationDays: 66, maintenance: false, counter: null, schedules: [{ effectiveFrom: tomorrow, schedule: { type: 'times_per_period', period: 'month', count: 2 } }] });
+    notifyChanged(); return habit.id; })()`);
+  await nav('habits');
+  await sleep(500);
+  await ev(`document.querySelector('#planWeek').click()`);
+  await sleep(700);
+  const startRow = await ev(`(() => { const row = [...document.querySelectorAll('dialog.dialog--planner .planner__row')].find((r) => r.textContent.includes('Start morgen')); const days = [...(row?.querySelectorAll('.planner__day') ?? [])]; return { exists: !!row, disabled: days.slice(0, 3).map((d) => d.disabled), summary: row?.querySelector('.planner__summary')?.textContent ?? null }; })()`);
+  check('Plan je week: een taak die morgen start staat er ook in, met "start morgen"; vandaag is niet te plannen, vanaf morgen wel', startRow.exists && JSON.stringify(startRow.disabled) === '[true,false,false]' && /start morgen/.test(startRow.summary ?? ''), JSON.stringify(startRow));
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); await state.repo.deleteHabit(${JSON.stringify(startId)}); notifyChanged(); })()`);
+  await sleep(300);
   // morgen bekijken: wat al op een andere dag is ingepland toont wanneer (bij alles ingepland zonder "＋ Morgen", met "Wijzig"), in plaats van een uitnodiging om het nog eens in te plannen
   const tomorrowIso = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); const { addDays } = await import('/src/domain/dates.js'); return addDays(state.today, 1); })()`);
   await nav(`today?date=${tomorrowIso}`);
