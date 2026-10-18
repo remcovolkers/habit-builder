@@ -1,34 +1,46 @@
-// De gegevens voor de review-kaarten op Voortgang: per week en per maand wat er is ingevuld en wat nog kan. Puur.
+// De gegevens voor de review-kaarten op Voortgang: per week en per maand wat er is ingevuld en of invullen kan. Puur.
+// `now` is de lokale muurtijd, 'YYYY-MM-DDTHH:MM' (localNow); een review staat open van vrijdag 00:00 tot maandag 12:00 (week) of van de 25e
+// tot de 2e om 12:00 (maand), zie domain/reviews.js.
 import { addMonths, endOfMonth, endOfWeek, startOfMonth, startOfWeek } from '../domain/dates.js';
 import {
+  monthReviewClosesOn,
   monthReviewFor,
   monthReviewOpensOn,
-  monthReviewUnlocked,
+  monthReviewState,
+  weekReviewClosesOn,
   weekReviewFor,
   weekReviewHasContent,
+  weekReviewOpensOn,
+  weekReviewState,
   weeksOfMonth,
 } from '../domain/reviews.js';
 
-/** 'future' (nog niet begonnen) | 'current' | 'past' */
-const phaseOf = (start, end, today) => (start > today ? 'future' : end >= today ? 'current' : 'past');
-
-/** De weekreview van de week waarin `date` valt: wat er is ingevuld (of null) en of invullen kan. */
-export function buildWeekReviewCard({ snapshot, today, date }) {
+/** De weekreview van de week waarin `date` valt: wat er is ingevuld (of null) en in welke fase hij is ('before' | 'open' | 'closed'). */
+export function buildWeekReviewCard({ snapshot, now, date }) {
   const start = startOfWeek(date);
   const end = endOfWeek(date);
+  const today = now.slice(0, 10);
   const record = weekReviewFor(snapshot.reviews, start);
-  const phase = phaseOf(start, end, today);
-  return { period: 'week', start, end, phase, review: weekReviewHasContent(record) ? record : null, canFill: phase !== 'future' };
+  return {
+    period: 'week',
+    start,
+    end,
+    state: weekReviewState(start, now),
+    isCurrent: start <= today && today <= end,
+    review: weekReviewHasContent(record) ? record : null,
+    opensOn: weekReviewOpensOn(start),
+    closesOn: weekReviewClosesOn(start),
+  };
 }
 
 /**
- * De maandreview van de maand waarin `date` valt: de ingevulde weekreviews van die maand (oudste eerst), de afspraak voor de maand
- * en of die al open is (de laatste week van de maand) en wanneer de taak op Vandaag komt.
+ * De maandreview van de maand waarin `date` valt: de ingevulde weekreviews van die maand (oudste eerst), de afspraak voor de maand,
+ * de fase, en wanneer de taak op Vandaag komt.
  */
-export function buildMonthReviewCard({ snapshot, today, date }) {
+export function buildMonthReviewCard({ snapshot, now, date }) {
   const start = startOfMonth(date);
   const end = endOfMonth(date);
-  const phase = phaseOf(start, end, today);
+  const today = now.slice(0, 10);
   const weeks = weeksOfMonth(start).map((weekStart) => {
     const record = weekReviewFor(snapshot.reviews, weekStart);
     return { start: weekStart, end: endOfWeek(weekStart), review: weekReviewHasContent(record) ? record : null, future: weekStart > today };
@@ -40,12 +52,14 @@ export function buildMonthReviewCard({ snapshot, today, date }) {
     period: 'month',
     start,
     end,
-    phase,
+    state: monthReviewState(start, now),
+    isCurrent: start <= today && today <= end,
+    isFuture: start > today,
     weeks: weeks.filter((week) => week.review),
     weekCount: weeks.filter((week) => !week.future).length,
     review,
-    unlocked: monthReviewUnlocked(start, today),
     opensOn: monthReviewOpensOn(start),
+    closesOn: monthReviewClosesOn(start),
     taskFrom,
     taskState: !review ? null : review.appliedAt ? 'done' : today >= taskFrom ? 'open' : 'coming',
   };

@@ -75,6 +75,18 @@ export function eachDay(from, to) {
 }
 
 /**
+ * De lokale muurtijd in `timeZone` als 'YYYY-MM-DDTHH:MM', zonder dagwissel. Voor momenten die op de klok liggen, zoals het openen en
+ * sluiten van een review (vrijdag 00:00, maandag 12:00). Tekst in dit formaat is op volgorde te vergelijken.
+ */
+export function localNow(now, timeZone) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', { timeZone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      .formatToParts(now).map((part) => [part.type, part.value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+/**
  * De "vandaag" van de gebruiker: lokale muurtijd in `timeZone`, min `dayStartHour` uur.
  * Om 02:00 's nachts met dagwissel 04:00 is het dus nog gisteren. Rekent op de muurklok,
  * dus een zomertijdwissel verschuift niets.

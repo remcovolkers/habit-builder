@@ -57,7 +57,7 @@ export const GUIDE_SECTIONS = Object.freeze([
       'Na een gemiste dag zie je een herstelmoment: pak het nu weer op, ook met een klein begin.',
       'Onder "Even kijken" staat wat langer stilligt dan je had afgesproken. Je kunt met één tik zeggen wat je tegenhield, zodat je later ziet waar het misging. Dat is geen verwijt.',
       'De weekreview laat alleen zien wat er is blijven liggen. Is alles gelukt, dan staat er dat ook. Daaronder schrijf je wat goed en wat slecht ging.',
-      'In de laatste week van de maand kun je bij Voortgang (kies Maand) opschrijven wat je aanpast. Dat staat op de eerste van de volgende maand als eenmalige taak op Vandaag, tot je hem afvinkt.',
+      'De weekreview gaat vrijdag open en sluit maandag om 12:00. De maandreview opent op de 25e en sluit de 2e om 12:00: bij Voortgang (kies Maand) schrijf je op wat je aanpast. Dat staat op de eerste van de volgende maand als eenmalige taak op Vandaag, tot je hem afvinkt. Op Vandaag laat een kaart weten dat een review open staat.',
     ],
   },
   {
