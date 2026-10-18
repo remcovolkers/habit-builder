@@ -215,6 +215,18 @@ export async function completeMonthTask(repo, { monthStart }, today) {
   return { undo: () => repo.setMonthTaskApplied({ monthStart, date: null }) };
 }
 
+/**
+ * "Niet in deze week" bij Plan je week: de herinnering "Nog n taken om in te plannen" en "Verdeel voor mij" slaan deze taak over, voor de
+ * kalenderweek waarin `today` valt. Bijvoorbeeld voor een taak die je later in de maand wilt doen. De afspraak zelf blijft zoals hij was.
+ * `skipped: false` zet het weer terug.
+ */
+export async function setPlanSkip(repo, { habitId, skipped }, today) {
+  const habit = await repo.getHabit(habitId);
+  if (!habit) return null;
+  const { noPlanWeek, ...rest } = habit;
+  return repo.saveHabit(skipped ? { ...rest, noPlanWeek: startOfWeek(today) } : rest);
+}
+
 // --- pauzeren, archiveren -----------------------------------------------------------------------
 
 const openPause = async (repo, habitId) => (await repo.listPauses(habitId)).find((p) => p.to == null);

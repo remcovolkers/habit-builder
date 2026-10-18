@@ -43,8 +43,25 @@
 
 
 /* de eenmalige taak uit de maandreview: een eigen kaart met een accentrand, duidelijk iets anders dan een dagelijkse habit */
-.monthtask {
-  margin-bottom: var(--space-6);
+/* de maandtaak en de review-melding: boven de kolommen (niet erin), zodat de dag links en de stapel rechts op dezelfde hoogte blijven beginnen */
+.today__notes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  flex: none;
+  min-width: 0;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.today__notes > .section {
+  margin: 0;
+}
+
+@media (min-width: 960px) {
+  .today__notes {
+    grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+    margin-top: var(--space-4);
+  }
 }
 
 .monthtask__card {
@@ -88,10 +105,6 @@
 }
 
 /* "Week review staat vanaf nu open": een rustige kaart met knoppen naar de review; stiller dan de maandtaak, want hier hoef je niets af te vinken */
-.reviewnote {
-  margin-bottom: var(--space-6);
-}
-
 .reviewnote__card {
   display: grid;
   justify-items: start;

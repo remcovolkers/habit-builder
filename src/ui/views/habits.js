@@ -6,7 +6,7 @@ import { showToast } from '../components/toast.js';
 import { nl } from '../../content/nl.js';
 import { emptyState } from '../components/empty-state.js';
 import { fab } from '../components/fab.js';
-import { countToPlan, planWeekPrompt } from '../components/week-planner.js';
+import { countPlanSkipped, countToPlan, planWeekPrompt } from '../components/week-planner.js';
 import { formatDateShort, formatSchedule } from '../../app/format.js';
 import { pauseAll, reorderHabit, resumeAll } from '../../app/actions.js';
 import { habitRowInfo, isFlexible } from '../../app/habits-overview.js';
@@ -153,7 +153,7 @@ export function habitsView() {
             })
             : null,
           section('fixed', { title: hasFlexible ? nl.habits.sections.fixed : nl.habits.sections.active }),
-          section('flexible', { title: nl.habits.sections.flexible, hint: nl.habits.flexibleHint, intro: reordering ? null : planWeekPrompt({ toPlan: countToPlan(snapshot, today) }) }),
+          section('flexible', { title: nl.habits.sections.flexible, hint: nl.habits.flexibleHint, intro: reordering ? null : planWeekPrompt({ toPlan: countToPlan(snapshot, today), skipped: countPlanSkipped(snapshot, today) }) }),
           section('paused'),
           section('planned'),
           section('graduated', { collapsed: true }),

@@ -23,7 +23,7 @@ export const validParts = (parts, min = 1) => Array.isArray(parts) && parts.leng
 
 /**
  * Geeft [{ field, code, detail? }]; leeg = geldig.
- * habit: { name, icon, color, daypart, startDate, status, cue?, why?, minimalVersion?, graduationDays?, schedules }
+ * habit: { name, icon, color, daypart, startDate, status, cue?, why?, minimalVersion?, graduationDays?, noPlanWeek?, schedules }
  */
 export function validateHabit(habit) {
   const errors = [];
@@ -39,6 +39,9 @@ export function validateHabit(habit) {
   if (!HABIT_STATUSES.includes(habit.status)) add('status', 'invalid');
   if (!isValidDate(habit.startDate)) add('startDate', 'invalid');
   if (habit.endDate != null && !isValidDate(habit.endDate)) add('endDate', 'invalid');
+
+  // "Niet in deze week" bij Plan je week: de maandag van de week waarvoor de taak niet ingepland hoeft te worden
+  if (habit.noPlanWeek != null && !isValidDate(habit.noPlanWeek)) add('noPlanWeek', 'invalid');
 
   for (const field of ['cue', 'why', 'minimalVersion']) {
     if (habit[field] != null && String(habit[field]).length > TEXT_MAX) add(field, 'too_long');

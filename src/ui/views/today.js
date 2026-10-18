@@ -365,9 +365,11 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
   return h('div', { class: 'today__inner page__frame' },
     header(view, week),
     banner(view),
+    // de maandtaak en de review-melding staan boven beide kolommen: zo beginnen de dag links en de stapel rechts op dezelfde hoogte
+    monthTaskSection || reviewNote ? h('div', { class: 'today__notes' }, monthTaskSection, reviewNote) : null,
     view.groups.length === 0 && view.pool.length === 0 ? todayEmpty(view) : null,
     h('div', { class: 'today__columns page__panes' },
-      h('div', { class: 'today__main page__pane' }, firstTip, monthTaskSection, reviewNote, attentionSection, ...groupSections),
+      h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections),
       side.length > 0 ? h('div', { class: 'today__side page__pane' }, ...side) : null));
 }
 

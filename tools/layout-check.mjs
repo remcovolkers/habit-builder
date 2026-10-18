@@ -809,6 +809,17 @@ async function main() {
     overflow: d ? d.scrollWidth - d.clientWidth : 1, height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight, actions: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].map((b) => b.textContent) }; })()`);
   check('Plan je week: een blad met een rij per flexibele taak (acht dagen elk), de knoppen "Verdeel voor mij" en "Klaar", en niet hoger dan het scherm',
     planner.open && planner.rows >= 8 && planner.days === planner.rows * 8 && planner.overflow <= 0 && planner.height <= planner.vh && planner.actions.includes('Verdeel voor mij') && planner.actions.includes('Klaar'), JSON.stringify(planner));
+  // "Niet in deze week": de taak telt niet meer mee voor "Nog n taken om in te plannen" en krijgt geen voorstel; terugdraaien kan
+  const needCount = () => ev(`Number(/Nog ([0-9]+)/.exec(document.querySelector('.habits .plan-prompt__text strong')?.textContent ?? '')?.[1] ?? 0)`);
+  const needBefore = await needCount();
+  await ev(`document.querySelector('dialog.dialog--planner .planner__skip').click()`);
+  await sleep(600);
+  const skipped = await ev(`(() => { const row = document.querySelector('dialog.dialog--planner .planner__row[data-skipped="true"]'); const b = row?.querySelector('.planner__skip'); return { row: !!row, pressed: b?.getAttribute('aria-pressed'), label: b?.textContent, summary: row?.querySelector('.planner__summary')?.textContent, focused: document.activeElement === b }; })()`);
+  const needSkipped = await needCount();
+  await ev(`document.querySelector('dialog.dialog--planner .planner__skip[aria-pressed="true"]').click()`);
+  await sleep(600);
+  const needAfter = await needCount();
+  check('Plan je week: "Niet in deze week" dempt de rij (geen herinnering meer voor die taak, de focus blijft op de knop) en "Toch deze week plannen" zet het terug', skipped.row && skipped.pressed === 'true' && skipped.label === 'Toch deze week plannen' && /niet in deze week/.test(skipped.summary ?? '') && skipped.focused && needSkipped === needBefore - 1 && needAfter === needBefore, JSON.stringify({ needBefore, needSkipped, needAfter, skipped }));
   await ev(`[...document.querySelectorAll('dialog.dialog--planner .dialog__actions .button')].find((b) => b.textContent === 'Verdeel voor mij').click()`);
   await sleep(900);
   const afterSuggest = await ev(`({ planned: document.querySelectorAll('dialog.dialog--planner .planner__day[aria-pressed="true"]').length, open: !!document.querySelector('dialog.dialog--planner[open]') })`);
@@ -821,7 +832,7 @@ async function main() {
   await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 568, deviceScaleFactor: 2, mobile: true });
   await ev(`document.documentElement.style.fontSize = '200%'`);
   await sleep(500);
-  const plannerSmall = await ev(`(() => { const d = document.querySelector('dialog.dialog--planner[open]'); return { overflow: d ? d.scrollWidth - d.clientWidth : 1, height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight, tiny: [...(d?.querySelectorAll('.planner__day, .dialog__actions .button') ?? [])].filter((b) => b.getBoundingClientRect().height < 44).length }; })()`);
+  const plannerSmall = await ev(`(() => { const d = document.querySelector('dialog.dialog--planner[open]'); return { overflow: d ? d.scrollWidth - d.clientWidth : 1, height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight, tiny: [...(d?.querySelectorAll('.planner__day, .planner__skip, .dialog__actions .button') ?? [])].filter((b) => b.getBoundingClientRect().height < 44).length }; })()`);
   check('Plan je week: past op 320 px met 200% tekst, niet hoger dan het scherm en alle knoppen zijn minstens 44 px', plannerSmall.overflow <= 0 && plannerSmall.height <= plannerSmall.vh && plannerSmall.tiny === 0, JSON.stringify(plannerSmall));
   await ev(`document.documentElement.style.fontSize = '100%'`);
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
@@ -978,6 +989,13 @@ async function main() {
     await ev(`document.documentElement.style.fontSize = '100%'`);
     await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
     await sleep(300);
+    // op desktop staat de melding boven beide kolommen: de dag links en de stapel rechts beginnen op dezelfde hoogte (zie ook "alles gedaan" in social-browser-check)
+    await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+    await sleep(500);
+    const columns = await ev(`(() => { const top = (e) => (e ? Math.round(e.getBoundingClientRect().top) : null); const note = document.querySelector('#reviewNote'); return { aboveColumns: !!note?.closest('.today__notes') && !note.closest('.today__columns'), notesBottom: Math.round(note.getBoundingClientRect().bottom), main: top(document.querySelector('.today__main > :first-child')), side: top(document.querySelector('.today__side > :first-child')), columnsTop: top(document.querySelector('.today__columns')) }; })()`);
+    check('Vandaag op desktop: de review-melding staat boven beide kolommen en de dag links en de stapel rechts beginnen op dezelfde hoogte', columns.aboveColumns && columns.main !== null && columns.side !== null && Math.abs(columns.main - columns.side) <= 2 && columns.columnsTop >= columns.notesBottom, JSON.stringify(columns));
+    await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+    await sleep(400);
     await ev(`[...document.querySelectorAll('#reviewNote .button--ghost')].find((b) => b.textContent === 'Niet nu').click()`);
     await sleep(300);
     const gone = await ev(`!document.querySelector('#reviewNote')`);
