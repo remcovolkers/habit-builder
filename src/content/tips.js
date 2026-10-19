@@ -24,7 +24,7 @@ const TIP_TEXTS = {
   },
   automatic: {
     title: 'Bijna automatisch',
-    text: 'Je zit dicht bij de 66 dagen. Let eens op: doe je dit al zonder erover na te denken? Geef het hieronder een cijfer.',
+    text: 'Je zit dicht bij de 66 dagen. Let eens op: doe je dit al zonder erover na te denken? Geef het een cijfer bij Automatisme.',
   },
   never_miss_twice: {
     title: 'Nooit twee keer missen',

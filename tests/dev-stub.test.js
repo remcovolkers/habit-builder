@@ -19,8 +19,8 @@ async function stub(today) {
 test('het stub-account heeft een habit voor elke toestand', async () => {
   const today = '2026-10-16';
   const { snapshot, created, byName } = await stub(today);
-  assert.equal(created.length, 13);
-  assert.equal(snapshot.habits.length, 13);
+  assert.equal(created.length, 14);
+  assert.equal(snapshot.habits.length, 14);
   assert.equal(snapshot.settings.displayName, 'Remco (stub)');
   assert.equal(snapshot.reviews.length, 2);
 
@@ -44,6 +44,8 @@ test('het stub-account heeft een habit voor elke toestand', async () => {
   assert.equal(detail('Water drinken').canGraduate, true);
   assert.deepEqual(detail('Bed opmaken').progress, { unit: 'times', value: 4, total: 8 });
   assert.equal(detail('Bed opmaken').automaticityRequired, true);
+  assert.equal(detail('Tuin').trial.offer.state, 'available', 'de laatste twee cijfers zijn 3 en 4: een proef zonder app kan beginnen');
+  assert.equal(detail('Tuin').advice, 'cue', 'de helft van de antwoorden noemt een herinnering of de app, en er is nog geen cue');
   assert.equal(detail('Lezen').stats.phase.phase, 'starting');
   assert.equal(detail('Hardlopen').stats.phase.phase, 'building');
 });
@@ -51,6 +53,6 @@ test('het stub-account heeft een habit voor elke toestand', async () => {
 test('het stub-account laat zich op elke dag aanmaken, ook de 1e en de laatste van de maand en rond de jaarwisseling', async () => {
   for (const today of ['2026-11-01', '2026-10-31', '2026-02-28', '2027-01-01', '2026-03-29']) {
     const { snapshot } = await stub(today);
-    assert.equal(snapshot.habits.length, 13, today);
+    assert.equal(snapshot.habits.length, 14, today);
   }
 });

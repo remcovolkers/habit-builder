@@ -22,6 +22,8 @@ export const CONSISTENCY_WINDOW_DAYS = 42;
 export const CONSISTENCY_WINDOW_MIN_PERIODS = 3;
 export const CONSISTENCY_THRESHOLD = 0.8;
 export const AUTOMATICITY_THRESHOLD = 4;
+/** Zo vaak achter elkaar het cijfer AUTOMATICITY_THRESHOLD of hoger voor "ingeburgerd" (één geslaagde proef zonder app telt als één van die keren). */
+export const AUTOMATICITY_CONFIRMATIONS = 2;
 
 /**
  * Ingeburgerd telt ook het aantal keren (PLAN §4.5): het aantal dat je op het ritme van de habit binnen de

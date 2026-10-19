@@ -19,6 +19,7 @@ import { NOTE_MAX_LENGTH } from '../domain/constants.js';
 import { isValidDate, startOfMonth, startOfWeek } from '../domain/dates.js';
 import { monthReviewId } from '../domain/reviews.js';
 import { SLIP_REASONS } from '../domain/attention.js';
+import { validCues } from '../domain/automaticity.js';
 import { CHECK_IN_STATUSES, validParts, validateHabit } from '../domain/habit.js';
 import { defaultSettings, validateSettings } from '../app/settings.js';
 import { DATA_COLLECTIONS } from './memory-store.js';
@@ -186,13 +187,18 @@ export function createRepository({
       const all = await liveList('ratings');
       return habitId === undefined ? all : all.filter((r) => r.habitId === habitId);
     },
-    async setRating({ habitId, weekStart, score }) {
+    /** `cues` (wat hielp, zie domain/automaticity.js) is optioneel; zonder `cues` blijft wat er al stond bij hetzelfde cijfer van die week staan. */
+    async setRating({ habitId, weekStart, score, cues }) {
       const errors = [];
       if (!habitId) errors.push({ field: 'habitId', code: 'required' });
       if (!isValidDate(weekStart)) errors.push({ field: 'weekStart', code: 'invalid' });
       if (!(Number.isInteger(score) && score >= 1 && score <= 5)) errors.push({ field: 'score', code: 'invalid' });
+      if (cues !== undefined && !validCues(cues)) errors.push({ field: 'cues', code: 'invalid' });
       if (errors.length > 0) throw new ValidationError(errors);
-      return upsert('ratings', { id: `${habitId}|${weekStart}`, habitId, weekStart, score });
+      const id = `${habitId}|${weekStart}`;
+      const existing = await store.get('ratings', id);
+      const kept = cues !== undefined ? cues : existing && live(existing) ? existing.cues : undefined;
+      return upsert('ratings', { id, habitId, weekStart, score, ...(kept && kept.length > 0 ? { cues: kept } : {}) });
     },
 
     // --- reviews: per week een terugblik, per maand een afspraak met jezelf (zie domain/reviews.js) ---------

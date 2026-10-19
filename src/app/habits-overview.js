@@ -2,6 +2,8 @@
 import { isTight } from '../domain/tight.js';
 import { scheduleAt } from '../domain/schedule.js';
 import { computeUnits } from '../domain/units.js';
+import { levelOf } from '../domain/automaticity.js';
+import { isOnTrial } from '../domain/trial.js';
 import { statsForHabit } from './habit-detail.js';
 
 /** Is dit een flexibele taak: N× per week of N× per maand, zonder vaste dag? */
@@ -11,13 +13,15 @@ export const isFlexible = (habit, today) => {
 };
 
 /**
- * { phase: { key, unit, day, total } | null, period: { span, count, target, remainingDays, urgent } | null }
+ * { phase: { key, unit, day, total } | null, period: { span, count, target, remainingDays, urgent } | null, level: 'aware'|'coming'|'almost'|'natural'|null, trial: boolean }
  *   phase   de fase uit domain/phases.js met de voortgang in dagen of (bij een zeldzame taak) keren; null voor een habit die nog niet gestart is
  *   period  alleen bij een flexibele taak met een lopende week of maand; urgent = dreigt te falen (atRisk of krap)
+ *   level   het niveau van het laatste automatisme-cijfer (domain/automaticity.js), of null zonder cijfers
+ *   trial   loopt er nu een proef "zonder app" (domain/trial.js)?
  */
 export function habitRowInfo({ habit, snapshot, today }) {
   const { checkIns, pauses, ratings = [] } = snapshot;
-  const { stats } = statsForHabit({ habit, checkIns, pauses, ratings, today });
+  const { stats, latestRating } = statsForHabit({ habit, checkIns, pauses, ratings, today });
   const phase = stats.phase.phase === 'planned' ? null : { key: stats.phase.phase, unit: stats.phase.unit, day: stats.phase.day, total: stats.phase.total };
 
   let period = null;
@@ -35,5 +39,5 @@ export function habitRowInfo({ habit, snapshot, today }) {
       };
     }
   }
-  return { phase, period };
+  return { phase, period, level: latestRating ? levelOf(latestRating.score) : null, trial: isOnTrial(habit, today) };
 }

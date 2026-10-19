@@ -618,12 +618,6 @@
   font-weight: var(--font-weight-bold);
 }
 
-.habit-card__ask .rating {
-  /* op een smal scherm of bij grote tekst komen de knoppen onder elkaar, nooit smaller dan een tikvlak */
-  grid-template-columns: repeat(auto-fit, minmax(var(--size-tap), 1fr));
-  margin-top: var(--space-2);
-}
-
 .habit-card__why {
   color: var(--color-text);
   font-style: italic;

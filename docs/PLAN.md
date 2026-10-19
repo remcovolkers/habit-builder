@@ -170,7 +170,7 @@ Voorstel zodra **alle** voorwaarden gelden:
 1. ≥ 66 actieve dagen sinds de start (instelbaar per habit, gepauzeerde dagen tellen niet mee);
 2. ≥ een aantal keren gedaan, passend bij het ritme (zie hieronder);
 3. consistentie ≥ 80% over het venster uit §4.4;
-4. indien de automatisme-vraag aan staat: laatste score ≥ 4. Bij een **zeldzame** taak (minder dan 1× per week) staat de vraag altijd aan.
+4. indien de automatisme-vraag aan staat: de **laatste twee cijfers ≥ 4**, of één keer ≥ 4 na een geslaagde proef zonder app ([AUTOMATISME.md](AUTOMATISME.md)). Bij een **zeldzame** taak (minder dan 1× per week) staat de vraag altijd aan.
 
 **Aantal keren.** De dagen alleen zeggen weinig bij een taak die 2× per maand terugkomt: 66 dagen zijn dan 4 uitvoeringen, terwijl automatisme uit herhaling komt en niet uit verstreken tijd (Lally et al. onderzochten dagelijkse gewoontes; voor zeldzame taken is er geen sterk bewijs, dus de getallen zijn een keuze). Daarom geldt: `keren = clamp(8, ⌈ritme × 66 dagen × 80%⌉, 66)`, met het ritme van nu en de ingeburgerd-grens van de habit als 66. De 80% is dezelfde marge als bij de consistentie, zodat een dagelijkse habit met een paar gemiste dagen niet later wordt voorgesteld dan voorheen.
 
@@ -185,7 +185,7 @@ Voorstel zodra **alle** voorwaarden gelden:
 
 Bij een zeldzame taak telt de voortgang (fase en de regel "Keer 3 van ~8") ook in keren in plaats van dagen: Opstarten loopt tot ⅓ van het doel, daarna Opbouw. Ook de opbouwbonus in de punten rekent dan per keer (SOCIAAL §4.2). De detailpagina legt dit uit.
 
-**Het automatisme-cijfer bij zeldzame taken.** Een weekvraag past niet bij een taak die maandelijks voorkomt. Daarom vraagt de kaart op Vandaag direct nadat zo'n taak is afgevinkt: "Hoe automatisch voelde dit?" (1–5). Het cijfer hoort bij de week van de dag waarop je afvinkt en kan op die kaart worden aangepast; de kaart vraagt dus alleen in weken waarin de taak is gedaan. De bestaande weekvraag op de detailpagina blijft werken en schrijft naar hetzelfde cijfer. Dit geldt niet voor een ingeburgerde habit.
+**Het automatisme-cijfer bij zeldzame taken.** Een weekvraag past niet bij een taak die maandelijks voorkomt. Daarom vraagt de kaart op Vandaag direct nadat zo'n taak is afgevinkt: "Hoe automatisch voelde dit?" (1–5). Het cijfer hoort bij de week van de dag waarop je afvinkt en kan op die kaart worden aangepast; de kaart vraagt dus alleen in weken waarin de taak is gedaan. De bestaande weekvraag op de detailpagina blijft werken en schrijft naar hetzelfde cijfer. Dit geldt niet voor een ingeburgerde habit. Het cijfer is sinds 2026-10-19 een keuze uit vijf zinnen met optioneel "wat hielp", er staat een verloop bij de habit, en een flexibele taak kan een week of maand "zonder app" geprobeerd worden. Zie [AUTOMATISME.md](AUTOMATISME.md).
 
 **Te laat (dag van de maand).** Staat een taak met een vaste dag in de maand voorbij die dag nog open, dan zegt de kaart dat en vraagt "Wat hield je tegen?". Dat opent een blad met een veld voor de reden en de keuzes *Toch gedaan* of *Deze maand overslaan*; de reden wordt als notitie bij het afvinken of overslaan bewaard. Overslaan haalt de taak uit de telling van die maand (geen misser), net als elke andere overgeslagen eenheid. De regels staan in `src/domain/pace.js` (puur en getest); de getallen in `constants.js`.
 

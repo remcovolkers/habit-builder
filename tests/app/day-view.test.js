@@ -143,9 +143,9 @@ test('een afgevinkte taak 2× per maand vraagt om een cijfer, tot het voor die w
   const base = { habits: [rare], checkIns: [{ habitId: 'Tuin', date: TODAY, status: 'done' }] };
   const entry = (extra = {}) => buildDayView({ snapshot: snapshot({ ...base, ...extra }), date: TODAY, today: TODAY }).groups[0].entries[0];
 
-  assert.deepEqual(entry().automaticity, { score: null });
-  assert.deepEqual(entry({ ratings: [{ habitId: 'Tuin', weekStart: '2026-10-12', score: 4 }] }).automaticity, { score: 4 });
-  assert.deepEqual(entry({ ratings: [{ habitId: 'Tuin', weekStart: '2026-10-05', score: 4 }] }).automaticity, { score: null }); // een andere week telt niet
+  assert.deepEqual(entry().automaticity, { score: null, cues: [] });
+  assert.deepEqual(entry({ ratings: [{ habitId: 'Tuin', weekStart: '2026-10-12', score: 4, cues: ['routine'] }] }).automaticity, { score: 4, cues: ['routine'] });
+  assert.deepEqual(entry({ ratings: [{ habitId: 'Tuin', weekStart: '2026-10-05', score: 4 }] }).automaticity, { score: null, cues: [] }); // een andere week telt niet
 });
 
 test('geen automatisme-vraag voor een dagelijkse taak, een taak die nog open staat of een ingeburgerde taak', () => {

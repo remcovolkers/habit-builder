@@ -114,6 +114,13 @@ export async function fillStubAccount(repo, today) {
   await mark(teeth, [ago(1)], 'done', { value: 2, parts: ['morning', 'evening'] });
   await mark(teeth, [today], 'partial', { value: 1, parts: ['morning'] });
 
+  // 14. klaar voor een proef zonder app: 2× per week, de laatste twee cijfers 3 en 4 (met "wat hielp"). Op de habit staat de kaart "Zonder app proberen".
+  const garden = await habit({ name: 'Tuin', icon: icon('garden'), color: 'c3' }, { type: 'times_per_period', period: 'week', count: 2 }, ago(60),
+    'Klaar voor een proef zonder app: de laatste twee cijfers zijn 3 en 4 (kaart "Zonder app proberen" op de habit)');
+  await mark(garden, [ago(55), ago(50), ago(43), ago(36), ago(29), ago(22), ago(16), ago(9), ago(3)]);
+  await repo.setRating({ habitId: garden.id, weekStart: startOfWeek(ago(14)), score: 3, cues: ['reminder', 'app_plan'] });
+  await repo.setRating({ habitId: garden.id, weekStart: startOfWeek(ago(7)), score: 4, cues: ['routine'] });
+
   // twee eerdere weekreviews
   await repo.saveReview({ weekStart: startOfWeek(ago(7)), wentWell: 'Elke dag water gehaald', wentBad: 'Twee avonden te laat naar bed' });
   await repo.saveReview({ weekStart: startOfWeek(ago(14)), wentWell: 'Drie keer hardgelopen', wentBad: 'Boek bleef in de tas zitten' });

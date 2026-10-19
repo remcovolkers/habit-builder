@@ -14,6 +14,7 @@ import {
 import { addDays, addMonths, diffDays, eachDay, startOfMonth, startOfWeek } from './dates.js';
 import { paceOn, scheduleOn } from './pace.js';
 import { isTracked } from './rules.js';
+import { isOnTrial } from './trial.js';
 import { computeUnits } from './units.js';
 
 export const SLIP_REASONS = Object.freeze(['no_time', 'no_money', 'forgot', 'no_motivation', 'busy_sick', 'wrong_rhythm', 'other']);
@@ -48,6 +49,7 @@ function inFullPeriod(unit, startDate) {
  */
 export function attentionFor({ habit, checkIns = [], pauses = [], today }) {
   if (!isTracked(habit, today)) return [];
+  if (isOnTrial(habit, today)) return []; // in een proef "zonder app" hoort de app niet te wijzen op wat er ligt
   const isPaused = (d) => pauses.some((p) => d >= p.from && (p.to == null || d <= p.to));
   if (isPaused(today)) return [];
 

@@ -8,6 +8,9 @@ import { donePartsOf, habitDayparts, hasMultipleDayparts, partsStatus } from '..
 import { sortDayparts } from '../domain/habit.js';
 import { canBackfill } from '../domain/rules.js';
 import { scheduleAt } from '../domain/schedule.js';
+import { cleanCues } from '../domain/automaticity.js';
+import { TRIALS_KEPT, currentTrial, trialOffer, trialStatus, trialsOf } from '../domain/trial.js';
+import { doneBetween } from './habit-detail.js';
 import { moveHabit } from './ordering.js';
 
 export class RuleError extends Error {
@@ -177,9 +180,55 @@ export async function setMaintenance(repo, habit, maintenance) {
   return repo.saveHabit({ ...habit, maintenance: Boolean(maintenance) });
 }
 
-/** Automatisme-cijfer (1–5) voor de huidige week; opnieuw geven overschrijft. */
-export async function rateAutomaticity(repo, { habitId, score }, today) {
-  return repo.setRating({ habitId, weekStart: startOfWeek(today), score });
+/** Automatisme-cijfer (1–5) voor de huidige week; opnieuw geven overschrijft het cijfer en laat wat er hielp (`cues`) staan, tenzij je dat meegeeft. */
+export async function rateAutomaticity(repo, { habitId, score, cues }, today) {
+  return repo.setRating({ habitId, weekStart: startOfWeek(today), score, ...(cues === undefined ? {} : { cues: cleanCues(cues) }) });
+}
+
+/** Wat hielp er bij het cijfer van deze week (zie domain/automaticity.js)? Er moet al een cijfer zijn. */
+export async function rateCues(repo, { habitId, cues }, today) {
+  const weekStart = startOfWeek(today);
+  const rating = (await repo.listRatings(habitId)).find((r) => r.weekStart === weekStart);
+  if (!rating) throw new RuleError('not_rated');
+  return repo.setRating({ habitId, weekStart, score: rating.score, cues: cleanCues(cues) });
+}
+
+// --- de proef "zonder app" (domain/trial.js) -----------------------------------------------------
+
+/**
+ * Begint een proef: de eerstvolgende hele week of maand doet de app niets voor deze taak (geen kaartje, geen herinnering, niet in Plan je week).
+ * Wat al ingepland stond voor die dagen vervalt. Kan alleen als trialOffer 'available' zegt. `now` is de lokale muurtijd ('YYYY-MM-DDTHH:MM').
+ */
+export async function startTrial(repo, { habitId }, today, now) {
+  const habit = await repo.getHabit(habitId);
+  if (!habit) throw new RuleError('trial_inactive');
+  const offer = trialOffer({ habit, ratings: await repo.listRatings(habitId), today, now });
+  if (offer.state !== 'available') throw new RuleError(`trial_${offer.state}`);
+  const { start, end } = offer.range;
+  for (const plan of (await repo.listDayPlans()).filter((p) => p.habitId === habitId && p.date >= start && p.date <= end)) await repo.clearDayPlan(habitId, plan.date);
+  const trial = { period: offer.period, start, end, result: null, answeredOn: null };
+  return repo.saveHabit({ ...habit, trials: [...trialsOf(habit), trial].slice(-TRIALS_KEPT) });
+}
+
+/** Stopt een proef die nog loopt of nog moet beginnen: de app helpt weer, zonder wachttijd. */
+export async function cancelTrial(repo, { habitId }, today, now) {
+  const habit = await repo.getHabit(habitId);
+  const trial = habit ? currentTrial(habit, today, now) : null;
+  if (!trial) return null;
+  return repo.saveHabit({ ...habit, trials: trialsOf(habit).filter((t) => t !== trial && t.start !== trial.start) });
+}
+
+/**
+ * Het antwoord in de review: gelukt of niet. Alleen zolang de review van die week of maand open staat. "Gelukt" kan alleen als de taak in die
+ * periode ook is afgevinkt (anders is er niets om te beoordelen). "Mislukt" zet de wachttijd in (zie trialCooldownUntil): de app helpt weer.
+ */
+export async function answerTrial(repo, { habitId, start, passed }, today, now) {
+  const habit = await repo.getHabit(habitId);
+  const trial = habit ? trialsOf(habit).find((t) => t.start === start && !t.result) : null;
+  if (!trial || trialStatus(trial, today, now) !== 'answer') throw new RuleError('trial_closed');
+  if (passed && doneBetween(await repo.listCheckIns(habitId), trial.start, trial.end) === 0) throw new RuleError('trial_not_done');
+  const answered = { ...trial, result: passed ? 'passed' : 'failed', answeredOn: today };
+  return repo.saveHabit({ ...habit, trials: trialsOf(habit).map((t) => (t === trial ? answered : t)) });
 }
 
 /**
