@@ -308,9 +308,9 @@ async function main() {
     const label = `zeldzame taak op Vandaag · ${size}`;
     await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`); // een viering (prestatie) opent vanzelf; gemeten wordt de pagina zelf
     await sleep(200);
-    const ask = await ev(`(() => { const a = document.querySelector('.habit-card__ask'); const b = [...(a?.querySelectorAll('.rating button') ?? [])].map((x) => x.getBoundingClientRect());
+    const ask = await ev(`(() => { const a = document.querySelector('.habit-card__ask'); const b = [...(a?.querySelectorAll('.auto-option') ?? [])].map((x) => x.getBoundingClientRect());
       return { asked: !!a, buttons: b.length, minW: Math.min(...b.map((r) => r.width)), minH: Math.min(...b.map((r) => r.height)), inside: a ? a.scrollWidth <= a.clientWidth : false, overflow: document.documentElement.scrollWidth - innerWidth }; })()`);
-    check(`${label}: vraag om het cijfer, vijf knoppen ≥ 44px, past in de kaart`, ask.asked && ask.buttons === 5 && ask.minW >= 44 && ask.minH >= 44 && ask.inside, JSON.stringify(ask));
+    check(`${label}: vraag om het cijfer met vijf zinnen om uit te kiezen, ≥ 44px, past in de kaart`, ask.asked && ask.buttons === 5 && ask.minW >= 44 && ask.minH >= 44 && ask.inside, JSON.stringify(ask));
     if (ask.overflow > 0) console.log(`INFO ${label}: de pagina is ${ask.overflow}px breder dan het scherm (bekend, zie docs/SCROLLEN.md)`);
     const quiet = await ev(`(() => { const c = document.querySelector('.attention-card'); const b = [...(c?.querySelectorAll('button') ?? [])].map((x) => x.getBoundingClientRect());
       return { shown: !!c, buttons: b.length, minH: Math.min(...b.map((r) => r.height)), inside: c ? c.scrollWidth <= c.clientWidth : false, overflow: document.documentElement.scrollWidth - innerWidth, text: c?.querySelector('.attention-card__text')?.textContent }; })()`);
@@ -325,10 +325,62 @@ async function main() {
   await ev(`document.documentElement.style.fontSize = '100%'`);
   await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`); // een prestatie door de testgegevens opent een viering
   await sleep(300);
-  await ev(`document.querySelector('.habit-card__ask .rating button[aria-label="Cijfer 4"]').click()`);
+  await ev(`document.querySelector('.habit-card__ask .auto-option[aria-label^="Cijfer 4"]').click()`);
   await sleep(500);
-  const rated = await ev(`({ title: document.querySelector('.habit-card__ask-title')?.textContent, pressed: document.querySelector('.habit-card__ask [aria-pressed="true"]')?.textContent })`);
-  check('een cijfer geven slaat het op en toont het (aanpasbaar)', rated.title === 'Automatisme: 4 van 5' && rated.pressed === '4', JSON.stringify(rated));
+  const rated = await ev(`({ stored: (async () => { const { state } = await import('/src/ui/state.js'); return (await state.repo.listRatings()).map((r) => r.score); })() }).stored`);
+  check('een cijfer geven slaat het op', JSON.stringify(rated) === '[4]', JSON.stringify(rated));
+  // automatisme en de proef zonder app (docs/AUTOMATISME.md): wat het cijfer verder doet, de uitleg, het verloop en de kaart "Zonder app proberen"
+  const wasRated = await ev(`({ summary: document.querySelector('.habit-card__ask .auto-summary__text')?.textContent ?? null, options: document.querySelectorAll('.habit-card__ask .auto-option').length, link: document.querySelector('.habit-card__ask .auto-feedback__link')?.getAttribute('href') ?? null, chips: document.querySelectorAll('.habit-card__ask .auto-chip').length })`);
+  check('een cijfer geven toont de gekozen zin met "Wijzig", wat er hielp en de link naar het verloop bij de habit', /^4 · Ik wist wat ik moest doen/.test(wasRated.summary ?? '') && wasRated.options === 0 && /^#\/habits\//.test(wasRated.link ?? '') && wasRated.chips === 5, JSON.stringify(wasRated));
+  await ev(`document.querySelector('.habit-card__ask .auto-chip').click()`);
+  await sleep(400);
+  const chip = await ev(`(() => { const c = document.querySelector('.habit-card__ask .auto-chip'); return { pressed: c?.getAttribute('aria-pressed'), h: c?.getBoundingClientRect().height ?? 0 }; })()`);
+  check('"Wat hielp?": een knop aantikken slaat het op, en de knoppen zijn minstens 44 px hoog', chip.pressed === 'true' && chip.h >= 44, JSON.stringify(chip));
+  await ev(`document.querySelector('.habit-card__ask [data-focus-key^="rate-change:"]').click()`);
+  await sleep(400);
+  const changing = await ev(`({ options: document.querySelectorAll('.habit-card__ask .auto-option').length, pressed: document.querySelector('.habit-card__ask .auto-option[aria-pressed="true"]')?.textContent?.slice(0, 1) })`);
+  check('"Wijzig" toont de vijf zinnen weer, met de gekozen zin gemarkeerd', changing.options === 5 && changing.pressed === '4', JSON.stringify(changing));
+  await ev(`document.querySelector('.habit-card__ask .auto-option[aria-label^="Cijfer 4"]').click()`);
+  await sleep(300);
+  // de habit: meter, verloop, uitleg, en de proef (één cijfer is te weinig: de kaart zegt wat er nodig is)
+  const gardenId = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); return (await state.repo.listHabits()).find((x) => x.name === 'Tuin opruimen').id; })()`);
+  for (const [size, w, h, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: true });
+    await nav(`habits/${encodeURIComponent(gardenId)}`);
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(400);
+    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+    const card = await ev(`(() => { const c = document.querySelector('.automaticity'); const t = document.querySelector('.trial'); const opts = [...(c?.querySelectorAll('.auto-chip, .auto-guide-link, .auto-summary .button') ?? [])].map((x) => x.getBoundingClientRect().height);
+      return { card: !!c, meter: !!c?.querySelector('.auto-meter'), bars: c?.querySelectorAll('.auto-bar').length ?? 0, trial: t?.dataset.state ?? null, text: t?.textContent ?? '', minH: Math.min(...opts), inside: c ? c.scrollWidth <= c.clientWidth : false, insideTrial: t ? t.scrollWidth <= t.clientWidth : false, overflow: document.documentElement.scrollWidth - innerWidth }; })()`);
+    check(`automatisme op de habit · ${size}: meter, verloop en bedieningen ≥ 44px, past in de kaart; de proef zegt dat er twee cijfers nodig zijn`, card.card && card.meter && card.bars === 1 && card.minH >= 44 && card.inside && card.insideTrial && card.trial === 'scores' && /twee keer achter elkaar/.test(card.text), JSON.stringify(card));
+    if (card.overflow > 0) console.log(`INFO automatisme op de habit · ${size}: de pagina is ${card.overflow}px breder dan het scherm`);
+  }
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await nav(`habits/${encodeURIComponent(gardenId)}`);
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await sleep(400);
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  await ev(`document.querySelector('.auto-guide-link').click()`);
+  await sleep(400);
+  const autoGuide = await ev(`(() => { const d = document.querySelector('dialog[open]'); return { open: !!d, signs: d?.querySelectorAll('.guide__type').length ?? 0, scale: d?.querySelectorAll('.auto-scale li').length ?? 0, overflow: d ? d.scrollWidth - d.clientWidth : 1, title: d?.querySelector('.dialog__title')?.textContent }; })()`);
+  check('"Wanneer is iets automatisch?" opent een blad met vier kenmerken en de vijf cijfers', autoGuide.open && autoGuide.signs === 4 && autoGuide.scale === 5 && autoGuide.overflow <= 0 && autoGuide.title === 'Wanneer is iets automatisch?', JSON.stringify(autoGuide));
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  // een tweede cijfer (een andere week) en de proef kan beginnen: plannen, de taak verdwijnt, stoppen brengt hem terug
+  await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); const { addDays, startOfWeek } = await import('/src/domain/dates.js'); await state.repo.setRating({ habitId: ${JSON.stringify(gardenId)}, weekStart: addDays(startOfWeek(state.today), -7), score: 3 }); notifyChanged(); })()`);
+  await sleep(500);
+  const offer = await ev(`({ state: document.querySelector('.trial')?.dataset.state, button: document.querySelector('[data-focus-key="trial:start"]')?.textContent ?? null })`);
+  check('met twee cijfers van 3 of hoger kan de proef beginnen (knop "Start de proef volgende maand")', offer.state === 'available' && /^Start de proef (deze|volgende) maand$/.test(offer.button ?? ''), JSON.stringify(offer));
+  await ev(`document.querySelector('[data-focus-key="trial:start"]').click()`);
+  await sleep(600);
+  const planned = await ev(`({ state: document.querySelector('.trial')?.dataset.state, text: document.querySelector('.trial')?.textContent ?? '', cancel: !!document.querySelector('[data-focus-key="trial:cancel"]'), tick: !!document.querySelector('[data-focus-key="trial:tick"]') })`);
+  check('een geplande proef toont wanneer hij begint en kan gestopt worden (afvinken kan pas als hij loopt)', planned.state === 'planned' && /De proef begint/.test(planned.text) && planned.cancel && !planned.tick, JSON.stringify(planned));
+  await ev(`document.querySelector('[data-focus-key="trial:cancel"]').click()`);
+  await sleep(600);
+  const stopped = await ev(`({ state: document.querySelector('.trial')?.dataset.state })`);
+  check('een proef stoppen kan zonder wachttijd', stopped.state === 'available', JSON.stringify(stopped));
+  await nav('today'); // terug naar Vandaag voor het vervolg
+  await sleep(500);
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
   if (rare.late) {
     await ev(`document.querySelector('.habit-card__late button').click()`);
     await sleep(400);

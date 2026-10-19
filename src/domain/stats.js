@@ -9,8 +9,8 @@ import { computeUnits } from './units.js';
 
 /**
  * habit: zie units.js, plus { id, status, graduationDays?, graduatedAt? }
- * automaticityScore: laatste zelfrapportage (1–5) of null; useAutomaticity: weegt mee voor ingeburgerd
- * (bij zeldzame taken altijd, zie pace.js).
+ * automaticityScores: de zelfrapportages (1–5), oudste eerst; trialPassed: is een proef zonder app geslaagd; useAutomaticity: weegt mee voor
+ * ingeburgerd (bij zeldzame taken altijd, zie pace.js).
  */
 export function buildHabitStats({
   habit,
@@ -18,7 +18,8 @@ export function buildHabitStats({
   pauses = [],
   today,
   useAutomaticity = false,
-  automaticityScore = null,
+  automaticityScores = [],
+  trialPassed = false,
 }) {
   const units = computeUnits({ habit, checkIns, pauses, today });
   const consistency = computeConsistency(units, { today });
@@ -54,7 +55,8 @@ export function buildHabitStats({
       requiredRepetitions: pace.requiredRepetitions,
       consistencyRate: consistency.rate,
       useAutomaticity: useAutomaticity || pace.sparse,
-      automaticityScore,
+      automaticityScores,
+      trialPassed,
     }),
     totalDone: doneDates.length,
     lastDoneDate: doneDates.at(-1) ?? null,

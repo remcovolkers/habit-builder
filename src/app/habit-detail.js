@@ -4,6 +4,9 @@ import { startOfWeek } from '../domain/dates.js';
 import { buildHeatmap } from '../domain/heatmap.js';
 import { scheduleAt } from '../domain/schedule.js';
 import { buildHabitStats } from '../domain/stats.js';
+import { adviceFor, sortedRatings } from '../domain/automaticity.js';
+import { currentTrial, hasPassedTrial, trialCooldownUntil, trialOffer, trialStatus, trialsOf } from '../domain/trial.js';
+import { levelOf } from '../domain/automaticity.js';
 import { pickTip } from './tips.js';
 
 export const NOTES_SHOWN = 5;
@@ -18,14 +21,17 @@ export function streakSpan(habit, units, today) {
   return 'month';
 }
 
+/** Hoe vaak is er gedaan (of de minimale versie) tussen twee dagen, grenzen meegerekend? */
+export const doneBetween = (checkIns, from, to) => checkIns.filter((c) => (c.status === 'done' || c.status === 'minimal') && c.date >= from && c.date <= to).length;
+
 const isPausedOn = (pauses, today) => pauses.some((p) => today >= p.from && (p.to == null || today <= p.to));
 
 /**
  * Stats voor één habit, inclusief het optionele automatisme-criterium: dat telt mee voor "ingeburgerd"
- * zodra de gebruiker minstens één keer een cijfer heeft gegeven (dan moet het laatste cijfer ≥ 4 zijn).
+ * zodra de gebruiker minstens één keer een cijfer heeft gegeven (dan moeten de laatste twee cijfers ≥ 4 zijn, of één na een geslaagde proef).
  */
 export function statsForHabit({ habit, checkIns, pauses, ratings, today }) {
-  const mine = ratings.filter((r) => r.habitId === habit.id).sort((a, b) => (a.weekStart < b.weekStart ? -1 : 1));
+  const mine = sortedRatings(ratings.filter((r) => r.habitId === habit.id));
   const latest = mine.at(-1) ?? null;
   return {
     ratings: mine,
@@ -36,7 +42,8 @@ export function statsForHabit({ habit, checkIns, pauses, ratings, today }) {
       pauses: pauses.filter((p) => p.habitId === habit.id),
       today,
       useAutomaticity: mine.length > 0,
-      automaticityScore: latest?.score ?? null,
+      automaticityScores: mine.map((r) => r.score),
+      trialPassed: hasPassedTrial(habit),
     }),
   };
 }
@@ -57,9 +64,9 @@ export function phaseBar({ activeDays, graduationDays, graduated, startingUntil 
 
 /**
  * Alles voor de detailpagina van één habit.
- * snapshot: { checkIns, pauses, ratings }; today: de echte "vandaag".
+ * snapshot: { checkIns, pauses, ratings }; today: de echte "vandaag"; now: de lokale muurtijd ('YYYY-MM-DDTHH:MM', voor de reviewvensters van de proef).
  */
-export function buildHabitDetail({ habit, snapshot, today }) {
+export function buildHabitDetail({ habit, snapshot, today, now = `${today}T12:00` }) {
   const { checkIns, pauses, ratings } = snapshot;
   const mine = { checkIns: checkIns.filter((c) => c.habitId === habit.id), pauses: pauses.filter((p) => p.habitId === habit.id) };
   const { stats, ratings: habitRatings, latestRating } = statsForHabit({ habit, checkIns, pauses, ratings, today });
@@ -69,6 +76,8 @@ export function buildHabitDetail({ habit, snapshot, today }) {
   const { phase } = stats;
   const counted = phase.unit === 'times';
   const requiredRepetitions = stats.pace.requiredRepetitions;
+
+  const trialNow = currentTrial(habit, today, now);
 
   return {
     habit,
@@ -93,6 +102,16 @@ export function buildHabitDetail({ habit, snapshot, today }) {
     pausedNow,
     notes: mine.checkIns.filter((c) => typeof c.note === 'string' && c.note !== '').sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, NOTES_SHOWN).map((c) => ({ date: c.date, status: c.status, note: c.note })),
     useAutomaticity: habitRatings.length > 0,
+    ratings: habitRatings,
+    level: latestRating ? levelOf(latestRating.score) : null,
+    advice: adviceFor({ ratings: habitRatings, habit }),
+    trial: {
+      offer: trialOffer({ habit, ratings: habitRatings, today, now }),
+      current: trialNow ? { ...trialNow, status: trialStatus(trialNow, today, now), done: doneBetween(mine.checkIns, trialNow.start, trialNow.end) } : null,
+      passed: hasPassedTrial(habit),
+      cooldownUntil: trialCooldownUntil(habit),
+      count: trialsOf(habit).length,
+    },
     latestRating,
     ratingThisWeek: habitRatings.find((r) => r.weekStart === thisWeek) ?? null,
     canGraduate: habit.status === 'active' && stats.graduation.eligible,

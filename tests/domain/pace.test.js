@@ -83,7 +83,7 @@ test('stats: een taak 2× per maand wordt pas na 8 keer én 66 dagen voorgesteld
   const h = habit(perMonth(2), '2026-01-01');
   const checkIns = (n) => everyOtherWeek('2026-01-01', n);
 
-  const few = buildHabitStats({ habit: h, checkIns: checkIns(6), today: TODAY, useAutomaticity: false, automaticityScore: null });
+  const few = buildHabitStats({ habit: h, checkIns: checkIns(6), today: TODAY, useAutomaticity: false, automaticityScores: [] });
   assert.equal(few.pace.sparse, true);
   assert.equal(few.phase.unit, 'times');
   assert.deepEqual([few.phase.day, few.phase.total], [6, 8]);
@@ -92,10 +92,12 @@ test('stats: een taak 2× per maand wordt pas na 8 keer én 66 dagen voorgesteld
   // 8 keer gedaan, maar nog geen automatisme-cijfer
   const noRating = buildHabitStats({ habit: h, checkIns: checkIns(8), today: TODAY });
   assert.equal(noRating.graduation.criteria.find((c) => c.key === 'repetitions').met, true);
-  assert.deepEqual(noRating.graduation.criteria.find((c) => c.key === 'automaticity'), { key: 'automaticity', met: false, value: null, required: 4 });
+  assert.deepEqual(noRating.graduation.criteria.find((c) => c.key === 'automaticity'), { key: 'automaticity', met: false, value: null, required: 4, confirmed: 0, needed: 2, trialPassed: false });
   assert.equal(noRating.graduation.eligible, false);
 
-  const rated = buildHabitStats({ habit: h, checkIns: checkIns(8), today: TODAY, automaticityScore: 4 });
+  const once = buildHabitStats({ habit: h, checkIns: checkIns(8), today: TODAY, automaticityScores: [4] });
+  assert.equal(once.graduation.criteria.find((c) => c.key === 'automaticity').met, false); // één keer is te weinig
+  const rated = buildHabitStats({ habit: h, checkIns: checkIns(8), today: TODAY, automaticityScores: [3, 4, 4] });
   assert.equal(rated.graduation.criteria.find((c) => c.key === 'automaticity').met, true);
 });
 

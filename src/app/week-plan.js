@@ -5,6 +5,7 @@ import { addDays, diffDays, eachDay, endOfWeek, startOfWeek } from '../domain/da
 import { isTracked } from '../domain/rules.js';
 import { lastChanceThisWeek, neededInWindow } from '../domain/planning.js';
 import { isTight } from '../domain/tight.js';
+import { isOnTrial } from '../domain/trial.js';
 import { computeUnits } from '../domain/units.js';
 
 const counts = (status) => status === 'done' || status === 'minimal';
@@ -37,6 +38,8 @@ export function buildWeekPlan({ snapshot, today }) {
     const startsLater = habit.startDate > today && habit.startDate <= lastDay;
     const asOf = startsLater ? habit.startDate : today;
     if (!isTracked(habit, asOf)) continue;
+    // een taak in een proef "zonder app" is niet aan de beurt: geen rij, dus ook niet meegeteld en niet in "Verdeel voor mij"
+    if (isOnTrial(habit, today)) continue;
     const mine = snapshot.checkIns.filter((c) => c.habitId === habit.id);
     const pauses = snapshot.pauses.filter((p) => p.habitId === habit.id);
     const paused = (date) => pauses.some((p) => date >= p.from && (p.to == null || date <= p.to));

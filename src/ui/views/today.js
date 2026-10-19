@@ -19,7 +19,8 @@ import { feedbackInviteDue, snoozeFeedbackInvite } from '../feedback-state.js';
 import { clearFirstTip, firstTipPending } from '../intro.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
-import { adjustCounter, clearCheckIn, completeMonthTask, logCheckIn, planHabit, rateAutomaticity, recordReason, RuleError, togglePart, unplanHabit } from '../../app/actions.js';
+import { adjustCounter, clearCheckIn, completeMonthTask, logCheckIn, planHabit, rateAutomaticity, rateCues, recordReason, RuleError, togglePart, unplanHabit } from '../../app/actions.js';
+import { noteRated } from '../components/automaticity.js';
 import { buildAttention, forToday } from '../../app/attention.js';
 import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
 import { monthTasks, REVIEW_CLOSING_TIME, reviewNudges } from '../../domain/reviews.js';
@@ -158,8 +159,14 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
   // het cijfer hoort bij de week van de gekozen dag, ook bij terugwerkend invullen
   async function rate(entry, score) {
     await rateAutomaticity(repo, { habitId: entry.habitId, score }, date);
+    noteRated();
     notifyChanged();
-    showToast({ message: nl.today.automaticity.saved(score) });
+  }
+
+  // wat er hielp bij dat cijfer (optioneel); hoort bij dezelfde week als het cijfer
+  async function rateHelped(entry, cues) {
+    await rateCues(repo, { habitId: entry.habitId, cues }, date);
+    notifyChanged();
   }
 
   // een reden vastleggen; de reactie hoort bij de echte vandaag (zie domain/attention.js)
@@ -212,7 +219,7 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
     });
   }
 
-  const cardOptions = { canLog: view.canLog, onToggle: toggle, onMore: more, onAdjust: adjust, onRate: rate, onLate: late };
+  const cardOptions = { canLog: view.canLog, onToggle: toggle, onMore: more, onAdjust: adjust, onRate: rate, onCues: rateHelped, onLate: late };
 
   const tally = (entries) => {
     const counted = entries.filter((e) => e.loggedToday !== 'skipped');

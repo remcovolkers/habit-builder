@@ -1,0 +1,398 @@
+/* Automatisme en de proef "zonder app" (docs/AUTOMATISME.md). Alles mag bij een smal scherm of grote tekst onder elkaar en afbreken: geen zijwaarts scrollen. */
+
+/* ---- het cijfer: vijf zinnen om uit te kiezen ---- */
+.auto-picker {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.auto-picker p {
+  margin: 0;
+}
+
+.auto-options {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.auto-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--size-tap);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-button);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.auto-option__num {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-10);
+  color: var(--color-accent);
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-bold);
+}
+
+.auto-option__text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.auto-option[aria-pressed='true'] {
+  background: var(--color-accent-16);
+  border-color: var(--color-border);
+}
+
+.auto-option:focus-visible,
+.auto-chip:focus-visible,
+.auto-guide-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+
+@media (hover: hover) {
+  .auto-option:hover,
+  .auto-chip:hover {
+    border-color: var(--color-accent-50);
+  }
+}
+
+/* na het kiezen: alleen de gekozen zin, met "Wijzig" */
+.auto-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.auto-summary__text {
+  min-width: 0;
+  flex: 1 1 12rem;
+  overflow-wrap: anywhere;
+  font-size: var(--font-size-sm);
+}
+
+.auto-summary__text b {
+  color: var(--color-accent);
+}
+
+/* wat hielp */
+.auto-helped {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.auto-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.auto-chip {
+  min-height: var(--size-tap);
+  max-width: 100%;
+  padding: 0 var(--space-3);
+  background: var(--color-elevated);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.auto-chip[aria-pressed='true'] {
+  background: var(--color-accent-16);
+  border-color: var(--color-border);
+  color: var(--color-accent);
+}
+
+/* de regel onder het cijfer en de link naar de uitleg */
+.auto-feedback {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.auto-feedback__link,
+.auto-guide-link {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-bold);
+}
+
+.auto-guide-link {
+  justify-self: start;
+  min-height: var(--size-tap);
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.auto-scale {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  font-size: var(--font-size-sm);
+}
+
+.auto-scale li {
+  overflow-wrap: anywhere;
+}
+
+/* ---- de kaart op de habit-pagina ---- */
+.automaticity {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.automaticity > * {
+  min-width: 0;
+}
+
+.auto-advice {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.automaticity .button--small {
+  justify-self: start;
+}
+
+.auto-now {
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-hairline);
+}
+
+.auto-now p {
+  margin: 0;
+}
+
+/* vier stappen met namen */
+.auto-meter {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.auto-meter__bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.auto-meter__bar i {
+  height: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-hairline-strong);
+}
+
+.auto-meter__bar i.is-on {
+  background: var(--color-accent);
+}
+
+.auto-meter__labels {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-1);
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-faint);
+  text-align: center;
+}
+
+.auto-meter__labels span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.auto-meter__labels .on {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-bold);
+}
+
+/* de cijfers van keer tot keer, met de doellijn bij 4 */
+.auto-chart {
+  position: relative;
+}
+
+.auto-bars {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+}
+
+/* de doellijn bij 4: 80% van de staafhoogte (5rem), boven de datumrij (1.25rem) */
+.auto-bars::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: calc(1.25rem + 4rem);
+  border-top: 1px dashed var(--color-accent-50);
+}
+
+.auto-bars__goal {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: var(--font-size-2xs);
+  color: var(--color-accent);
+}
+
+.auto-bars__col {
+  display: grid;
+  flex: 1 1 0;
+  grid-template-rows: 1rem 5rem 1.25rem;
+  justify-items: center;
+  align-items: end;
+  min-width: 0;
+}
+
+.auto-bars__score,
+.auto-bars__date {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.auto-bar {
+  display: block;
+  width: min(1.5rem, 80%);
+  height: calc(var(--v) * 100%);
+  min-height: 0.25rem;
+  background: var(--color-accent-50);
+  border-radius: var(--radius-pill) var(--radius-pill) 2px 2px;
+}
+
+.auto-bar.is-goal {
+  background: var(--color-accent);
+}
+
+/* ---- de proef zonder app ---- */
+.trial {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.trial > * {
+  min-width: 0;
+}
+
+.trial p {
+  margin: 0;
+}
+
+.trial .detail__actions {
+  align-items: center;
+}
+
+.trial__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.trial__head .section__title {
+  margin: 0;
+}
+
+.badge--trial {
+  background: var(--color-accent-10);
+  color: var(--color-accent);
+}
+
+.habit-row__level {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.checklist__note {
+  flex-basis: 100%;
+}
+
+/* in de review: de vraag, het antwoord en het aanbod */
+.review-trial {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.review-trial__list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trial-ask,
+.trial-offer {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-accent-10);
+  border-radius: var(--radius-button);
+}
+
+.trial-ask p,
+.trial-offer p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.trial-ask__question {
+  font-weight: var(--font-weight-bold);
+}
+
+.trial-ask__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.trial-ask__buttons > * {
+  flex: 1 1 10rem;
+}
+
+.trial-offer {
+  background: transparent;
+  border: 1px dashed var(--color-accent-50);
+}
+
+.trial-offer .button {
+  justify-self: start;
+}
+
+.trial-done {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}

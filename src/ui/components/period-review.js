@@ -5,6 +5,7 @@ import { notifyChanged, state, wallClockNow } from '../state.js';
 import { showToast } from './toast.js';
 import { charCounter } from './char-counter.js';
 import { attentionCard, openReasonSheet, reasonLabel } from './attention.js';
+import { trialReviewBlock } from './trial.js';
 import { nl } from '../../content/nl.js';
 import { recordReason, RuleError, saveMonthlyReview, saveWeeklyReview } from '../../app/actions.js';
 import { buildWeekReview } from '../../app/attention.js';
@@ -187,7 +188,9 @@ function weekBody({ snapshot, today, card }) {
       onSave: (values) => saveWeeklyReview(state.repo, values, card.start, wallClockNow()),
     });
   }
-  return h('div', { class: 'stack' }, lookback, content);
+  // "heb je het gedaan zonder de app?" voor een proef van deze week, en een aanbod voor taken die zover zijn (alleen als de review open staat)
+  const trial = trialReviewBlock({ snapshot, today, period: 'week', start: card.start, open: card.state === 'open' });
+  return h('div', { class: 'stack' }, trial, lookback, content);
 }
 
 // --- maand -------------------------------------------------------------------------------------------
@@ -208,7 +211,7 @@ function weeksSummary(card, onOpenWeek) {
         week.review.wentBad ? h('p', { class: 'review-weeks__line', dataset: { tone: 'bad' } }, week.review.wentBad) : null))));
 }
 
-function monthBody({ card, onOpenWeek }) {
+function monthBody({ snapshot, today, card, onOpenWeek }) {
   const m = t.month;
   const key = monthKey(card.start);
   const form = editing === key;
@@ -240,8 +243,10 @@ function monthBody({ card, onOpenWeek }) {
       onSave: (values) => saveMonthlyReview(state.repo, values, card.start, wallClockNow()),
     });
   }
+  const trial = trialReviewBlock({ snapshot, today, period: 'month', start: card.start, open: card.state === 'open' });
   return h('div', { class: 'stack' },
     weeksSummary(card, onOpenWeek),
+    trial,
     card.state === 'open' ? h('p', { class: 'section__hint' }, m.adjustHint) : null,
     content);
 }
@@ -263,5 +268,5 @@ export function periodReview(snapshot, today, choice, onChange) {
     h('p', { class: 'kicker review-card__period' }, heading),
     isWeek
       ? weekBody({ snapshot, today, card })
-      : monthBody({ card, onOpenWeek: (start) => onChange({ period: 'week', anchor: start }) }));
+      : monthBody({ snapshot, today, card, onOpenWeek: (start) => onChange({ period: 'week', anchor: start }) }));
 }

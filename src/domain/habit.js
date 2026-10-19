@@ -2,6 +2,7 @@
 import { COUNTER_MAX, COUNTER_UNIT_MAX } from './counter.js';
 import { isValidDate } from './dates.js';
 import { validateSchedules } from './schedule.js';
+import { validateTrials } from './trial.js';
 
 export const DAYPARTS = Object.freeze(['morning', 'afternoon', 'evening', 'anytime']);
 /** De dagdelen waarop een habit er meerdere kan hebben ("tandenpoetsen 's ochtends en 's avonds"). "Overdag" is geen dagdeel om te combineren. */
@@ -23,7 +24,7 @@ export const validParts = (parts, min = 1) => Array.isArray(parts) && parts.leng
 
 /**
  * Geeft [{ field, code, detail? }]; leeg = geldig.
- * habit: { name, icon, color, daypart, startDate, status, cue?, why?, minimalVersion?, graduationDays?, noPlanWeek?, schedules }
+ * habit: { name, icon, color, daypart, startDate, status, cue?, why?, minimalVersion?, graduationDays?, noPlanWeek?, trials?, schedules }
  */
 export function validateHabit(habit) {
   const errors = [];
@@ -42,6 +43,9 @@ export function validateHabit(habit) {
 
   // "Niet in deze week" bij Plan je week: de maandag van de week waarvoor de taak niet ingepland hoeft te worden
   if (habit.noPlanWeek != null && !isValidDate(habit.noPlanWeek)) add('noPlanWeek', 'invalid');
+
+  // proeven "zonder app" (domain/trial.js)
+  for (const error of validateTrials(habit.trials)) add(error.field, error.code);
 
   for (const field of ['cue', 'why', 'minimalVersion']) {
     if (habit[field] != null && String(habit[field]).length > TEXT_MAX) add(field, 'too_long');

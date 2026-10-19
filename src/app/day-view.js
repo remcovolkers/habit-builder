@@ -5,6 +5,7 @@ import { DAYPARTS } from '../domain/habit.js';
 import { donePartsOf, habitDayparts, hasMultipleDayparts } from '../domain/dayparts.js';
 import { paceOn } from '../domain/pace.js';
 import { isTight } from '../domain/tight.js';
+import { isOnTrial } from '../domain/trial.js';
 import { canBackfill } from '../domain/rules.js';
 import { buildToday } from '../domain/today.js';
 
@@ -63,10 +64,11 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
     const { habit } = entry;
     if (!entry.doneToday || habit.status !== 'active' || !paceOn(habit, date).sparse) return entry;
     const rating = ratings.find((r) => r.habitId === habit.id && r.weekStart === weekStart);
-    return { ...entry, automaticity: { score: rating?.score ?? null } };
+    return { ...entry, automaticity: { score: rating?.score ?? null, cues: rating?.cues ?? [] } };
   };
 
-  const entries = [...day.scheduled, ...day.planned].map(attach).map(withAutomaticity).sort(byHabitOrder);
+  // een taak in een proef "zonder app" (domain/trial.js) staat nergens op Vandaag: geen kaartje, ook niet als hij nog ingepland stond
+  const entries = [...day.scheduled, ...day.planned].map(attach).filter((e) => !isOnTrial(e.habit, date)).map(withAutomaticity).sort(byHabitOrder);
 
   // Een habit met meerdere dagdelen staat in elk dagdeel, met een eigen vinkje: `part` is het dagdeel van deze kaart, `partDone` of dat gedaan is,
   // en `doneToday` volgt dat dagdeel (zodat de teller per dagdeel klopt). `partsDone` en `partsTotal` zijn de stand van de hele dag.
@@ -91,7 +93,7 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
   // "Niet in deze week" (Plan je week): zo'n taak staat die week niet in de stapel. Inplannen kan nog via Plan je week; heeft hij al een dag of is hij gedaan, dan staat hij gewoon bij de dag
   const inPool = day.pool.map(attach);
   const hidden = inPool.filter((entry) => entry.habit.noPlanWeek === weekStart);
-  const pool = inPool.filter((entry) => entry.habit.noPlanWeek !== weekStart).map(withUrgency).sort(
+  const pool = inPool.filter((entry) => entry.habit.noPlanWeek !== weekStart && !isOnTrial(entry.habit, date)).map(withUrgency).sort(
     (a, b) =>
       Number(a.satisfied) - Number(b.satisfied) ||
       Number(a.covered) - Number(b.covered) ||

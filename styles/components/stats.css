@@ -395,32 +395,6 @@
   flex: 1 1 8rem;
 }
 
-/* automatisme 1–5 */
-.rating {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-}
-
-.rating button {
-  min-height: var(--size-tap);
-  background: var(--color-elevated);
-  border: 1px solid var(--color-hairline-strong);
-  border-radius: var(--radius-button);
-  color: var(--color-text-muted);
-  font-family: var(--font-display);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  cursor: pointer;
-}
-
-.rating button[aria-pressed='true'] {
-  background: var(--color-accent-16);
-  border-color: var(--color-border);
-  color: var(--color-accent);
-}
-
 /* voortgang-overzicht */
 .overview-row {
   display: grid;

@@ -1,7 +1,7 @@
 import { habitIcon, uiIcon } from '../components/habit-icon.js';
 import { h } from '../dom.js';
 import { liveView } from '../live.js';
-import { notifyChanged, state } from '../state.js';
+import { notifyChanged, state, wallClockNow } from '../state.js';
 import { showToast } from '../components/toast.js';
 import { openDialog } from '../components/dialog.js';
 import { icon } from '../svg.js';
@@ -13,8 +13,10 @@ import { TIPS } from '../../content/tips.js';
 import { buildHabitDetail } from '../../app/habit-detail.js';
 import { formatDateShort, formatSchedule } from '../../app/format.js';
 import {
-  archiveHabit, graduateHabit, pauseHabit, rateAutomaticity, resumeHabit, setMaintenance, unarchiveHabit,
+  archiveHabit, graduateHabit, pauseHabit, rateAutomaticity, rateCues, resumeHabit, setMaintenance, unarchiveHabit,
 } from '../../app/actions.js';
+import { automaticityChart, automaticityMeter, automaticityPicker, cueLine, guideLink, noteRated } from '../components/automaticity.js';
+import { trialCard } from '../components/trial.js';
 import { currentSchedule } from './habits.js';
 import { habitDayparts } from '../../domain/dayparts.js';
 
@@ -91,9 +93,11 @@ function criterionRow(criterion, detail) {
   }
   return h('li', null,
     h('i', { class: `ck ${criterion.met ? 'ck--ok' : criterion.value === null ? '' : 'ck--part'}` }, criterion.met ? '✓' : criterion.value === null ? '?' : '·'),
-    detail.automaticityRequired ? h('span', null, g.automaticity, ' ', h('span', { class: 'xs muted' }, g.required)) : g.automaticity,
+    h('span', null,
+      g.automaticity, ' ', h('span', { class: 'xs muted' }, g.automaticityTwice, detail.automaticityRequired ? ` ${g.required}` : ''),
+      criterion.met || detail.trial.passed ? h('span', { class: 'xs muted checklist__note' }, g.automaticityTrial) : null),
     h('span', { class: `checklist__value${criterion.met ? ' checklist__value--ok' : ''}` },
-      criterion.value === null ? g.notEntered : `${criterion.value}/5${criterion.met ? ' ✓' : ''}`));
+      criterion.value === null ? g.notEntered : `${g.automaticityProgress(criterion.confirmed, criterion.needed)}${criterion.met ? ' ✓' : ''}`));
 }
 
 function graduationCard(detail, refresh) {
@@ -161,25 +165,43 @@ function notesCard(detail) {
       h('p', { class: 'notes__text' }, n.note)))));
 }
 
+/**
+ * Automatisme: waar sta je (de meter), hoe ging het van keer tot keer, wat de app daarvan vindt, en het cijfer van deze week.
+ * Het cijfer is hetzelfde als op Vandaag na het afvinken van een zeldzame taak.
+ */
 function automaticityCard(detail) {
-  const { habit, ratingThisWeek } = detail;
+  const { habit, ratingThisWeek, ratings } = detail;
   if (habit.status !== 'active' && habit.status !== 'graduated') return null;
-  const a = nl.detail.automaticity;
-  return h('section', { class: 'card card--quiet' },
-    h('h2', { class: 'section__title' }, a.title),
-    h('p', { class: 'xs muted card__text' }, a.hint),
-    h('div', { class: 'rating', role: 'group', 'aria-label': a.title },
-      ...[1, 2, 3, 4, 5].map((score) => h('button', {
-        type: 'button',
-        'aria-pressed': ratingThisWeek?.score === score ? 'true' : 'false',
-        'aria-label': a.scoreLabel(score),
-        dataset: { focusKey: `rate:${score}` },
-        onclick: async () => {
+  const a = nl.automaticity;
+  const latest = ratings.at(-1) ?? null;
+  const advice = detail.advice;
+  const editLink = (label) => h('a', { class: 'button button--ghost button--small', href: `#/habits/${encodeURIComponent(habit.id)}/edit` }, label);
+  return h('section', { class: 'card card--quiet automaticity' },
+    h('h2', { class: 'section__title' }, a.history.title),
+    latest ? automaticityMeter(latest.score) : h('p', { class: 'xs muted card__text' }, a.history.empty),
+    latest ? automaticityChart(ratings) : null,
+    advice ? h('p', { class: 'card__text auto-advice' }, a.advice[advice]) : null,
+    advice === 'cue' || (advice === 'effort' && !habit.minimalVersion) ? editLink(advice === 'cue' ? a.editCue : a.editHabit) : null,
+    cueLine(ratings),
+    h('div', { class: 'auto-now' },
+      h('p', { class: 'kicker' }, ratingThisWeek ? a.thisWeek(ratingThisWeek.score) : a.title),
+      automaticityPicker({
+        habitId: habit.id,
+        score: ratingThisWeek?.score ?? null,
+        cues: ratingThisWeek?.cues ?? [],
+        intro: a.introWeek,
+        onRate: async (score) => {
           await rateAutomaticity(state.repo, { habitId: habit.id, score }, state.today);
+          noteRated();
           notifyChanged();
           showToast({ message: a.saved(score) });
         },
-      }, String(score)))));
+        onCues: async (cues) => {
+          await rateCues(state.repo, { habitId: habit.id, cues }, state.today);
+          notifyChanged();
+        },
+      })),
+    guideLink());
 }
 
 function renderDetail(detail) {
@@ -232,6 +254,7 @@ function renderDetail(detail) {
      h('div', { class: 'detail__secondary page__pane' },
       graduationCard(detail),
       automaticityCard(detail),
+      trialCard(detail),
       notesCard(detail),
 
       habit.why ? h('section', { class: 'card card--quiet' }, h('span', { class: 'kicker' }, nl.detail.personal.why), h('p', { class: 'quote' }, `“${habit.why}”`)) : null,
@@ -266,7 +289,7 @@ export function habitDetailView({ id }) {
     load: async () => {
       const snapshot = await state.repo.snapshot();
       const habit = snapshot.habits.find((x) => x.id === id) ?? null;
-      return habit ? buildHabitDetail({ habit, snapshot, today: state.today }) : null;
+      return habit ? buildHabitDetail({ habit, snapshot, today: state.today, now: wallClockNow() }) : null;
     },
     render: (detail) => detail
       ? renderDetail(detail)

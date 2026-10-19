@@ -123,7 +123,7 @@ test('detail: een taak 2× per maand telt de voortgang in keren en vraagt automa
   assert.equal(dense.remainingRepetitions, 20); // 53 nodig, 33 gedaan
 });
 
-test('automatisme is optioneel maar wordt bindend zodra je een cijfer geeft (laatste cijfer ≥ 4)', () => {
+test('automatisme is optioneel maar wordt bindend zodra je een cijfer geeft (de laatste twee cijfers ≥ 4, of één na een geslaagde proef)', () => {
   const habit = validHabit({ id: 'h', startDate: '2026-08-01', schedules: [{ effectiveFrom: '2026-08-01', schedule: daily }] });
   const checkIns = doneRange('h', '2026-08-01', '2026-10-14');
   const rate = (weekStart, score) => ({ habitId: 'h', weekStart, score });
@@ -134,8 +134,14 @@ test('automatisme is optioneel maar wordt bindend zodra je een cijfer geeft (laa
   const low = base([rate('2026-10-05', 3)]);
   assert.equal(low.canGraduate, false);
   assert.equal(low.useAutomaticity, true);
-  assert.equal(base([rate('2026-09-28', 2), rate('2026-10-05', 4)]).canGraduate, true); // het laatste cijfer telt
-  assert.equal(base([rate('2026-09-28', 5), rate('2026-10-05', 3)]).canGraduate, false);
+  assert.equal(base([rate('2026-09-28', 2), rate('2026-10-05', 4)]).canGraduate, false); // één keer 4 is te weinig
+  assert.equal(base([rate('2026-09-28', 4), rate('2026-10-05', 5)]).canGraduate, true); // twee keer achter elkaar
+  assert.equal(base([rate('2026-09-28', 5), rate('2026-10-05', 3)]).canGraduate, false); // het laatste cijfer telt
+  assert.equal(base([rate('2026-09-21', 5), rate('2026-09-28', 3), rate('2026-10-05', 4)]).canGraduate, false);
+  // een geslaagde proef zonder app telt als één van de twee keren
+  const passed = { ...habit, trials: [{ period: 'week', start: '2026-09-28', end: '2026-10-04', result: 'passed', answeredOn: '2026-10-02' }] };
+  assert.equal(buildHabitDetail({ habit: passed, snapshot: snapshotFor(passed, checkIns, [rate('2026-10-05', 4)]), today: TODAY }).canGraduate, true);
+  assert.equal(buildHabitDetail({ habit: passed, snapshot: snapshotFor(passed, checkIns, [rate('2026-10-05', 3)]), today: TODAY }).canGraduate, false);
   assert.equal(base([rate('2026-10-12', 4)]).ratingThisWeek.score, 4); // huidige week = maandag 12 okt
   assert.equal(base([rate('2026-10-05', 4)]).ratingThisWeek, null);
 });
@@ -433,6 +439,28 @@ test('import: een ongeldige habit weigert het geheel; wees-records worden weggel
   assert.equal(ok.ok, true);
   assert.equal(ok.data.checkIns.length, exported.data.checkIns.length);
   assert.equal(ok.warnings.length, 2);
+});
+
+test('back-up: een cijfer met "wat hielp" en een habit met proeven komen door de export en import; foute waarden niet', async () => {
+  const { repo } = testRepo();
+  const habit = await repo.saveHabit(validHabit({
+    name: 'Tuin', trials: [{ period: 'week', start: '2026-10-05', end: '2026-10-11', result: 'passed', answeredOn: '2026-10-09' }],
+  }));
+  await repo.setRating({ habitId: habit.id, weekStart: '2026-10-12', score: 4, cues: ['routine', 'someone'] });
+  const exported = buildExport(await repo.snapshot(), new Date('2026-10-15T08:00:00Z'));
+  const parsed = parseImport(JSON.stringify(exported));
+  assert.equal(parsed.ok, true, JSON.stringify(parsed));
+  assert.deepEqual(parsed.data.ratings[0].cues, ['routine', 'someone']);
+  assert.equal(parsed.data.habits[0].trials[0].result, 'passed');
+
+  const badCues = structuredClone(exported);
+  badCues.data.ratings[0].cues = ['magic'];
+  assert.equal(parseImport(JSON.stringify(badCues)).warnings.some((w) => /cijfer/.test(w)), true, 'een cijfer met onbekende "wat hielp" valt weg met een waarschuwing');
+  const badTrial = structuredClone(exported);
+  badTrial.data.habits[0].trials[0].result = 'misschien';
+  const refused = parseImport(JSON.stringify(badTrial));
+  assert.equal(refused.ok, false);
+  assert.ok(refused.details.some((d) => d.includes('trials.invalid')));
 });
 
 test('import: ongeldige instellingen en waarden worden geweigerd of weggelaten', async () => {

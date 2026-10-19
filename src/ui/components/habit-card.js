@@ -1,4 +1,5 @@
 import { habitIcon } from './habit-icon.js';
+import { automaticityFeedback, automaticityPicker, guideLink } from './automaticity.js';
 import { h } from '../dom.js';
 import { icon } from '../svg.js';
 import { nl } from '../../content/nl.js';
@@ -65,7 +66,7 @@ function counterControl(entry, { canLog, onAdjust }) {
 }
 
 /** Eén habit in de lijst van vandaag: icoon, naam, afvinkknop (of teller) en een menu voor meer acties. */
-export function habitCard(entry, { canLog, onToggle, onMore, onAdjust, onRate, onLate }) {
+export function habitCard(entry, { canLog, onToggle, onMore, onAdjust, onRate, onCues = () => {}, onLate }) {
   const { habit } = entry;
   // dezelfde habit staat bij meerdere dagdelen op de pagina: de sleutel voor de focus (live.js) moet per kaart verschillen
   const key = (name) => `${name}:${habit.id}${entry.part ? `:${entry.part}` : ''}`;
@@ -102,11 +103,11 @@ export function habitCard(entry, { canLog, onToggle, onMore, onAdjust, onRate, o
     onclick: () => onMore(entry),
   }, '⋯'),
   isCounter ? counterControl(entry, { canLog, onAdjust }) : null,
-  extras(entry, state, { canLog, onRate, onLate }));
+  extras(entry, state, { canLog, onRate, onCues, onLate }));
 }
 
 /** Onder de kaart over de volle breedte: het herstelmoment (alleen als de habit nog open staat), "te laat", het automatisme-cijfer en de notitie van vandaag. */
-function extras(entry, state, { canLog, onRate, onLate }) {
+function extras(entry, state, { canLog, onRate, onCues, onLate }) {
   const { habit } = entry;
   const blocks = [];
   if (entry.recovery === true && state === 'open') {
@@ -126,25 +127,20 @@ function extras(entry, state, { canLog, onRate, onLate }) {
         onclick: () => onLate(entry),
       }, nl.today.late.button)));
   }
-  if (entry.automaticity && canLog) blocks.push(automaticityAsk(entry, onRate));
+  if (entry.automaticity && canLog) blocks.push(automaticityAsk(entry, { onRate, onCues }));
   if (entry.noteToday) blocks.push(h('p', { class: 'habit-card__note' }, `“${entry.noteToday}”`));
   return blocks.length > 0 ? h('div', { class: 'habit-card__extra' }, ...blocks) : null;
 }
 
-/** Het cijfer voor "hoe automatisch voelde dit?": een vraag zolang er nog geen cijfer is, daarna het cijfer (en aanpasbaar). */
-function automaticityAsk(entry, onRate) {
-  const a = nl.today.automaticity;
-  const { score } = entry.automaticity;
-  const label = nl.detail.automaticity.scoreLabel;
+/**
+ * "Hoe automatisch voelde dit?" onder een zeldzame taak die je net hebt afgevinkt: vijf zinnen om uit te kiezen, daarna het gekozen cijfer, wat er hielp
+ * en een regel die zegt dat je het bij de habit terugziet (zie ui/components/automaticity.js).
+ */
+function automaticityAsk(entry, { onRate, onCues }) {
+  const a = nl.automaticity;
+  const { score, cues } = entry.automaticity;
   return h('div', { class: 'habit-card__ask', role: 'group', 'aria-label': a.question },
-    h('p', { class: 'habit-card__ask-title' }, score === null ? a.question : a.saved(score)),
-    score === null ? h('p', { class: 'xs muted' }, a.hint) : null,
-    h('div', { class: 'rating' },
-      ...[1, 2, 3, 4, 5].map((value) => h('button', {
-        type: 'button',
-        'aria-pressed': score === value ? 'true' : 'false',
-        'aria-label': label(value),
-        dataset: { focusKey: `rate:${entry.habitId}:${value}` },
-        onclick: () => onRate(entry, value),
-      }, String(value)))));
+    h('p', { class: 'habit-card__ask-title' }, a.question),
+    automaticityPicker({ habitId: entry.habitId, score, cues, onRate: (value) => onRate(entry, value), onCues: (next) => onCues(entry, next) }),
+    score === null ? guideLink() : automaticityFeedback(entry.habitId));
 }

@@ -2,6 +2,7 @@
 import { isValidDate } from '../domain/dates.js';
 import { COUNTER_MAX } from '../domain/counter.js';
 import { SLIP_REASONS } from '../domain/attention.js';
+import { validCues } from '../domain/automaticity.js';
 import { CHECK_IN_STATUSES, validParts, validateHabit } from '../domain/habit.js';
 import { validateSettings } from './settings.js';
 
@@ -66,6 +67,7 @@ function validateRecords(name, records, habitIds, problems) {
         break;
       case 'ratings':
         if (!isValidDate(record.weekStart) || !(Number.isInteger(record.score) && record.score >= 1 && record.score <= 5)) return bad('ongeldig cijfer');
+        if (record.cues != null && !validCues(record.cues)) return bad('ongeldig cijfer');
         break;
       case 'reasons':
         if (!isValidDate(record.date) || !SLIP_REASONS.includes(record.reason)) return bad('ongeldige reden');

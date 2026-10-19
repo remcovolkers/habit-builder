@@ -64,6 +64,8 @@ function statusLine(habit, section, info) {
       h('span', null, span === 'week' ? nl.today.progressWeek(count, target) : nl.today.progressMonth(count, target))));
     if (urgent) chips.push(h('span', { class: 'badge badge--risk' }, nl.today.pool.urgentTitle));
   }
+  if (section === 'active' && info.trial) chips.push(h('span', { class: 'badge badge--trial' }, nl.trial.badge));
+  if (section === 'active' && info.level) chips.push(h('span', { class: 'habit-row__level' }, nl.automaticity.rowLevel(nl.automaticity.levels[info.level])));
   return chips.length > 0 ? h('span', { class: 'habit-row__status' }, ...chips) : null;
 }
 

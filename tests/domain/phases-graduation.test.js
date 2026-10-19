@@ -67,14 +67,31 @@ test('ingeburgerd: eigen aantal dagen per habit', () => {
   assert.equal(evaluateGraduation({ activeDays: 100, graduationDays: 100, consistencyRate: 1 }).eligible, true);
 });
 
-test('ingeburgerd: automatisme telt alleen mee als het aan staat, en moet ≥ 4 zijn', () => {
+test('ingeburgerd: automatisme telt alleen mee als het aan staat, en de laatste twee cijfers moeten ≥ 4 zijn', () => {
   const base = { activeDays: 80, consistencyRate: 0.9 };
-  assert.equal(evaluateGraduation({ ...base, automaticityScore: 1 }).eligible, true); // uit
-  assert.equal(evaluateGraduation({ ...base, useAutomaticity: true, automaticityScore: 3 }).eligible, false);
-  assert.equal(evaluateGraduation({ ...base, useAutomaticity: true, automaticityScore: 4 }).eligible, true);
-  assert.equal(evaluateGraduation({ ...base, useAutomaticity: true, automaticityScore: null }).eligible, false);
-  const result = evaluateGraduation({ ...base, useAutomaticity: true, automaticityScore: 3 });
+  const eligible = (extra) => evaluateGraduation({ ...base, useAutomaticity: true, ...extra }).eligible;
+  assert.equal(evaluateGraduation({ ...base, automaticityScores: [1] }).eligible, true); // uit
+  assert.equal(eligible({ automaticityScores: [3] }), false);
+  assert.equal(eligible({ automaticityScores: [4] }), false, 'één keer is te weinig');
+  assert.equal(eligible({ automaticityScores: [4, 4] }), true);
+  assert.equal(eligible({ automaticityScores: [5, 4] }), true);
+  assert.equal(eligible({ automaticityScores: [5, 3] }), false);
+  assert.equal(eligible({ automaticityScores: [2, 4, 5] }), true, 'alleen de laatste twee tellen');
+  assert.equal(eligible({ automaticityScores: [5, 5, 3] }), false);
+  assert.equal(eligible({ automaticityScores: [3, 4, 4] }), true);
+  assert.equal(eligible({ automaticityScores: [] }), false);
+  const result = evaluateGraduation({ ...base, useAutomaticity: true, automaticityScores: [3] });
   assert.deepEqual(result.criteria.map((c) => [c.key, c.met]), [['days', true], ['consistency', true], ['automaticity', false]]);
+});
+
+test('ingeburgerd: een geslaagde proef zonder app telt als één van de twee keren, maar alleen bij een goed laatste cijfer', () => {
+  const base = { activeDays: 80, consistencyRate: 0.9, useAutomaticity: true };
+  assert.equal(evaluateGraduation({ ...base, automaticityScores: [4], trialPassed: true }).eligible, true);
+  assert.equal(evaluateGraduation({ ...base, automaticityScores: [3], trialPassed: true }).eligible, false);
+  assert.equal(evaluateGraduation({ ...base, automaticityScores: [], trialPassed: true }).eligible, false);
+  assert.equal(evaluateGraduation({ ...base, automaticityScores: [4], trialPassed: false }).eligible, false);
+  const criterion = evaluateGraduation({ ...base, automaticityScores: [4], trialPassed: true }).criteria.at(-1);
+  assert.deepEqual([criterion.confirmed, criterion.needed, criterion.trialPassed], [2, 2, true]);
 });
 
 test('terugwerkend invullen: vandaag t/m 14 dagen terug, nooit in de toekomst', () => {
