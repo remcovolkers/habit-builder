@@ -13,7 +13,7 @@ import { currentSchedule } from './habits.js';
 import { TEMPLATES } from '../../content/templates.js';
 import { COUNTER_MAX, COUNTER_UNIT_MAX } from '../../domain/counter.js';
 import { ICONS } from '../../content/icons.js';
-import { DEFAULT_ICON_KEY, iconForEmoji, iconForKey, searchIcons } from '../../app/icons.js';
+import { DEFAULT_ICON_KEY, STRUCK_ICON_KEYS, hasBlockMark, iconForEmoji, iconForKey, isBlockedIcon, searchIcons, suggestIcons, withBlock } from '../../app/icons.js';
 import { icon } from '../svg.js';
 import { habitIcon } from '../components/habit-icon.js';
 import { GUIDE_TYPES } from '../../content/guide.js';
@@ -80,37 +80,66 @@ async function mount(root, id, templateKey = null, intro = false) {
   // icoon: een knop naast de naam met het gekozen icoon; die opent een blad met alle iconen per onderwerp, met zoeken
   const known = iconForEmoji(base.icon);
   // een onbekende emoji (oude versie of import) toont als het standaardicoon en wordt dat ook als je de habit opslaat
-  let chosenIcon = known?.emoji ?? (base.icon ? iconForKey(DEFAULT_ICON_KEY).emoji : ICONS[0].emoji);
-  const iconName = () => (iconForEmoji(chosenIcon) ?? iconForKey(DEFAULT_ICON_KEY)).name;
+  let chosenIcon = known ? withBlock(known.emoji, hasBlockMark(base.icon)) : (base.icon ? iconForKey(DEFAULT_ICON_KEY).emoji : ICONS[0].emoji);
+  // een nieuwe habit krijgt het icoon dat bij de naam past, tot je zelf een icoon kiest; een bestaande habit houdt zijn icoon
+  let iconTouched = Boolean(base.icon);
+  const iconName = () => {
+    const name = (iconForEmoji(chosenIcon) ?? iconForKey(DEFAULT_ICON_KEY)).name;
+    return isBlockedIcon(chosenIcon) ? nl.form.iconBlocked(name) : name;
+  };
   const iconTrigger = h('button', { type: 'button', id: 'iconTrigger', class: 'icon-trigger', 'aria-haspopup': 'dialog', onclick: () => openIconPicker() });
   const drawTrigger = () => {
     iconTrigger.setAttribute('aria-label', nl.form.iconChange(iconName()));
     fill(iconTrigger, h('span', { class: 'icon-trigger__art' }, habitIcon(chosenIcon)), h('span', { class: 'icon-trigger__hint', 'aria-hidden': 'true' }, icon('edit')));
   };
   drawTrigger();
+  name.addEventListener('input', () => {
+    if (iconTouched) return;
+    const [best] = suggestIcons(name.value, 1);
+    if (best && best.emoji !== chosenIcon) { chosenIcon = best.emoji; drawTrigger(); }
+  });
 
   function openIconPicker() {
+    let blocked = hasBlockMark(chosenIcon);
     const search = h('input', {
       id: 'iconSearch', class: 'input', type: 'search', autocomplete: 'off', autocapitalize: 'none', spellcheck: 'false',
       'aria-label': nl.form.iconSearch, placeholder: nl.form.iconSearchPlaceholder, oninput: () => redraw(),
     });
+    // "Doorstrepen": dezelfde tekening met een streep erdoor, voor iets wat je niet meer doet of overslaat ("geen alcohol")
+    const blockToggle = h('label', { class: 'switch icon-picker__block' },
+      h('input', {
+        id: 'iconBlock', type: 'checkbox', checked: blocked,
+        onchange: (event) => { blocked = event.target.checked; chosenIcon = withBlock(chosenIcon, blocked); iconTouched = true; drawTrigger(); redraw(); },
+      }),
+      h('span', { class: 'icon-picker__block-text' },
+        h('strong', null, nl.form.iconBlock),
+        h('span', { class: 'xs muted' }, nl.form.iconBlockHint)));
     const list = h('div', { class: 'icon-picker__list' });
     let picker = null;
+    const chosenKey = () => iconForEmoji(chosenIcon)?.key ?? null;
+    const tile = (item) => {
+      const struck = blocked || STRUCK_ICON_KEYS.includes(item.key);
+      return h('button', {
+        type: 'button', class: 'icon-picker__tile', title: item.name, 'aria-label': struck ? nl.form.iconBlocked(item.name) : item.name, 'aria-pressed': item.key === chosenKey() ? 'true' : 'false',
+        onclick: () => { chosenIcon = withBlock(item.emoji, blocked); iconTouched = true; drawTrigger(); picker.close(); iconTrigger.focus(); },
+      }, habitIcon(withBlock(item.emoji, blocked)));
+    };
+    const section = (label, icons) => h('section', { class: 'icon-picker__group', 'aria-label': label },
+      h('h3', { class: 'icon-picker__name' }, label),
+      h('div', { class: 'icon-picker__grid' }, ...icons.map(tile)));
     const redraw = () => {
-      const groups = searchIcons(search.value);
+      const query = search.value.trim();
+      const groups = searchIcons(query);
+      const suggested = query === '' ? suggestIcons(name.value) : [];
       fill(list,
         groups.length === 0 ? h('p', { class: 'field__hint', role: 'status' }, nl.form.iconNone) : null,
-        ...groups.map((group) => h('section', { class: 'icon-picker__group', 'aria-label': group.label },
-          h('h3', { class: 'icon-picker__name' }, group.label),
-          h('div', { class: 'icon-picker__grid' }, ...group.icons.map((item) => h('button', {
-            type: 'button', class: 'icon-picker__tile', title: item.name, 'aria-label': item.name, 'aria-pressed': item.emoji === chosenIcon ? 'true' : 'false',
-            onclick: () => { chosenIcon = item.emoji; drawTrigger(); picker.close(); iconTrigger.focus(); },
-          }, habitIcon(item.emoji)))))));
+        suggested.length > 0 ? section(nl.form.iconSuggested, suggested) : null,
+        ...groups.map((group) => section(group.label, group.icons)));
     };
     redraw();
     picker = openDialog({
       title: nl.form.iconPickTitle,
-      content: h('div', { class: 'icon-picker' }, h('div', { class: 'icon-picker__search' }, search), list),
+      content: h('div', { class: 'icon-picker' }, h('div', { class: 'icon-picker__search' }, search, blockToggle), list),
       actions: [], cancelLabel: nl.app.close, className: 'dialog--picker',
     });
     // het gekozen icoon in beeld brengen

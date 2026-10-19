@@ -2,7 +2,11 @@
 
 Hoort bij [ITERATIE-1.2.md](ITERATIE-1.2.md) §6. **Eén iconenset voor alle thema's** (besluit Remco, 2026-10-16): de kleuren komen uit het thema (`currentColor` en `--icon-accent`), niet uit de tekening. Het doel is dat de app geen emoji van het toestel meer toont; alles komt uit deze set.
 
-## Stand: de set is compleet (2026-10-16)
+## Stand: de set is compleet (2026-10-16, aangevuld 2026-10-19)
+**Aanvulling 2026-10-19:** er zijn **73 habit-iconen bijgekomen** (60 → 133; samen met de 50 voor prestaties, tips en tekens, waaronder `ui-all-planned`, is dat 183 in de sprite): voorwerpen voor het huishouden (toilet, koelkast, ...), een groep Persoonlijke verzorging, meer eten en drinken, beweging, werk en geld, en een groep Algemeen. Die zijn **niet door Moda maar met de hand getekend** in dezelfde stijl (bron: `docs/icons/icons-complete.html`, onder de koppen "Aanvulling 2026-10-19"). Wil je er een door Moda laten overdoen, geef dan met de prompt onderaan alleen die sleutel en zet de uitvoer als apart bestand in `docs/icons/`: het laatst gewijzigde bestand wint.
+
+**Doorgestreept (de "anti"-stand):** elk habit-icoon kan met een streep erdoor ("geen alcohol", "ontbijt overslaan"). Dat is geen apart icoon maar een stand: in `habit.icon` staat de emoji met U+20E0 (het verbodsteken) erachter, en de app tekent zelf één diagonale streep in de accentkleur over het icoon. `no-sugar`, `no-smoking` en `screen-off` zijn **altijd doorgestreept**: hun tekening in de set heeft zelf **geen streep meer** (die is op 2026-10-19 uit `docs/icons/icons-complete.html` gehaald), de app tekent hem met dezelfde logica als bij elk ander icoon (`STRUCK_ICON_KEYS` in `src/app/icons.js`). Bestaande habits met zo'n icoon blijven dus ongewijzigd doorgestreept, ook zonder teken in `habit.icon`. Dit vraagt niets aan Moda; teken bij een nieuw icoon nooit zelf een streep.
+
 **109 van 109 iconen zijn gemaakt en staan in de app** (`icons/set.svg`, gebouwd met `npm run icons:build` uit `docs/icons/icons-complete.html`). Ze zijn gemaakt met **één prompt**, de **"Alles in één keer"-prompt** onderaan dit document. Die gaf de goede uitvoer in één keer: **gebruik hem als basis voor elke nieuwe aanvraag** (bijvoorbeeld voor een nieuwe prestatie of een extra habit-icoon), met alleen de nieuwe sleutels in de lijst. De vier batches hieronder zijn de terugvalroute als een set te groot wordt.
 
 Een nieuw icoon toevoegen: sleutel in `src/content/icons.js` of `src/content/ui-icons.js` en in de tabellen hieronder, het icoon aan Moda vragen met die prompt, de uitvoer onder `docs/icons/` zetten, `npm run icons:build`. De test "de iconenset is compleet" faalt tot de sprite alle sleutels heeft.
@@ -17,7 +21,7 @@ Dat kan ook: één prompt voor alle 97 iconen (zie "Alles in één keer" onderaa
 4. Zeg het, of draai zelf `npm run icons:build`. Dat controleert elk icoon (viewBox, geen scripts, geen vaste kleuren, formaat), bouwt `icons/set.svg` en meldt welke sleutels nog ontbreken. Een icoon dat in de set staat vervangt direct de emoji in de app; wat ontbreekt blijft emoji tot het er is.
 5. Een nieuwe sleutel (bijvoorbeeld bij een nieuwe prestatie) voeg je toe in `src/content/icons.js` of `src/content/ui-icons.js` en in de tabellen hieronder; een test bewaakt dat ze gelijk blijven.
 
-## De 60 sleutels (habits)
+## De 133 sleutels (habits)
 | Sleutel | Nederlands | Emoji (terugval) | Wat tekenen | Stand |
 |---|---|---|---|---|
 | **Beweging** | | | | |
@@ -33,7 +37,7 @@ Dat kan ook: één prompt voor alle 97 iconen (zie "Alles in één keer" onderaa
 | `water` | water drinken | 💧 | a water drop or a glass of water | klaar |
 | `salad` | gezond eten | 🥗 | a bowl of salad/greens | klaar |
 | `fruit` | fruit eten | 🍎 | an apple or a few pieces of fruit | klaar |
-| `no-sugar` | geen suiker | 🍬 | a sweet/candy crossed out | klaar |
+| `no-sugar` | geen suiker | 🍬 | a sweet/candy (the strike is drawn by the app, see "Doorgestreept") | klaar |
 | `tea` | thee drinken | 🍵 | a cup of tea with steam | klaar |
 | `cook` | koken | 🍳 | a pan or pot with a spoon | klaar |
 | `meal-prep` | maaltijden voorbereiden | 🥡 | a lunch box or containers | klaar |
@@ -51,7 +55,7 @@ Dat kan ook: één prompt voor alle 97 iconen (zie "Alles in één keer" onderaa
 | `floss` | flossen | 🧵 | floss between two teeth | klaar |
 | `pill` | medicijnen | 💊 | a capsule | klaar |
 | `vitamins` | vitamines | 🍊 | a vitamin pill bottle or citrus slice | klaar |
-| `no-smoking` | niet roken | 🚭 | a cigarette crossed out | klaar |
+| `no-smoking` | niet roken | 🚭 | a cigarette (the strike is drawn by the app) | klaar |
 | **Geest en leren** | | | | |
 | `book` | lezen | 📖 | an open book | klaar |
 | `brain` | leren | 🧠 | a brain | klaar |
@@ -61,7 +65,7 @@ Dat kan ook: één prompt voor alle 97 iconen (zie "Alles in één keer" onderaa
 | `gratitude` | dankbaarheid | 🙏 | a heart in hands or a heart with a sparkle | klaar |
 | `note` | aantekening maken | 📝 | a note/page with a pencil | klaar |
 | `focus` | focus | 🎯 | a target or crosshair | klaar |
-| `screen-off` | scherm uit | 📵 | a phone with a slash | klaar |
+| `screen-off` | scherm uit | 📵 | a phone (the strike is drawn by the app) | klaar |
 | `plan` | plannen | 📅 | a calendar with a check | klaar |
 | **Huis** | | | | |
 | `clean` | schoonmaken | 🧹 | a broom | klaar |
@@ -89,6 +93,90 @@ Dat kan ook: één prompt voor alle 97 iconen (zie "Alles in één keer" onderaa
 | `dog` | hond uitlaten | 🐕 | a dog or a paw print with a leash | klaar |
 | `outdoors` | naar buiten | 🌲 | a tree and a path or a mountain | klaar |
 | `sprout` | nieuw begin | 🌱 | a seedling | klaar |
+| **Beweging (aanvulling 2026-10-19)** | | | | |
+| `dance` | dansen | 💃 | a dancing figure with raised arms | klaar (met de hand getekend) |
+| `hike` | hiken | 🥾 | a hiking backpack | klaar (met de hand getekend) |
+| `football` | voetbal | ⚽ | a football | klaar (met de hand getekend) |
+| `racket` | tennis | 🎾 | a tennis racket and a ball | klaar (met de hand getekend) |
+| `stairs` | trap nemen | 🪜 | a staircase with an arrow up | klaar (met de hand getekend) |
+| `rope` | touwtje springen | 🪢 | a jump rope with two handles | klaar (met de hand getekend) |
+| `boxing` | boksen | 🥊 | a boxing glove | klaar (met de hand getekend) |
+| `climb` | klimmen | 🧗 | a climbing wall with holds and a route | klaar (met de hand getekend) |
+| **Eten en drinken (aanvulling 2026-10-19)** | | | | |
+| `meal` | maaltijd | 🍲 | a bowl with steam | klaar (met de hand getekend) |
+| `breakfast` | ontbijt | 🍞 | a slice of bread with a pat of butter | klaar (met de hand getekend) |
+| `lunch` | lunch | 🥪 | a sandwich | klaar (met de hand getekend) |
+| `coffee` | koffie | ☕ | a takeaway coffee cup | klaar (met de hand getekend) |
+| `alcohol` | alcohol | 🍷 | a glass of wine | klaar (met de hand getekend) |
+| `soda` | frisdrank | 🥤 | a can | klaar (met de hand getekend) |
+| `snack` | snack | 🍪 | a cookie with a bite out of it | klaar (met de hand getekend) |
+| `vegetables` | groente | 🥕 | a carrot | klaar (met de hand getekend) |
+| `fasting` | vasten | ⏳ | a plate with clock hands | klaar (met de hand getekend) |
+| `groceries` | boodschappen doen | 🥫 | a shopping basket with a leaf | klaar (met de hand getekend) |
+| `bottle` | waterfles | 🍶 | a water bottle | klaar (met de hand getekend) |
+| **Slaap en rust (aanvulling 2026-10-19)** | | | | |
+| `alarm` | wekker | ⏰ | an alarm clock with bells | klaar (met de hand getekend) |
+| `sofa` | even rusten | 🛋️ | a sofa | klaar (met de hand getekend) |
+| **Gezondheid (aanvulling 2026-10-19)** | | | | |
+| `scale` | wegen | ⚖️ | a bathroom scale with a dial | klaar (met de hand getekend) |
+| `heartbeat` | hart en conditie | 💓 | a heart with a heartbeat line | klaar (met de hand getekend) |
+| `stethoscope` | arts | 🩺 | a stethoscope | klaar (met de hand getekend) |
+| `mood` | stemming | 🙂 | a smiley face | klaar (met de hand getekend) |
+| **Persoonlijke verzorging (aanvulling 2026-10-19)** | | | | |
+| `tube` | crème of zalf | 🧴 | a cream tube | klaar (met de hand getekend) |
+| `soap` | zeep | 🧼 | a bar of soap with bubbles | klaar (met de hand getekend) |
+| `sunscreen` | zonnebrand | 🏖️ | a sunscreen bottle with a sun | klaar (met de hand getekend) |
+| `razor` | scheren | 🪒 | a razor | klaar (met de hand getekend) |
+| `hairbrush` | haar borstelen | 💇 | a hairbrush | klaar (met de hand getekend) |
+| `nails` | nagels | 💅 | a bottle of nail polish | klaar (met de hand getekend) |
+| `bath` | bad | 🛁 | a bathtub with bubbles | klaar (met de hand getekend) |
+| **Geest en leren (aanvulling 2026-10-19)** | | | | |
+| `plan-day` | dag inplannen | 📋 | a clipboard with a clip, a ticked line and a few lines | klaar (met de hand getekend) |
+| `headphones` | luisteren | 🎧 | over-ear headphones with a sparkle between the cups | klaar (met de hand getekend) |
+| `code` | programmeren | 🖥️ | angle brackets with a slash | klaar (met de hand getekend) |
+| `puzzle` | puzzelen | 🧩 | one jigsaw piece | klaar (met de hand getekend) |
+| `newspaper` | nieuws | 📰 | a folded newspaper with a headline | klaar (met de hand getekend) |
+| `checklist` | afvinklijst | ✅ | a list with two ticks and an empty box | klaar (met de hand getekend) |
+| `timer` | timer | ⏲️ | a stopwatch | klaar (met de hand getekend) |
+| `tv` | tv kijken | 📺 | a television on a stand with an antenna | klaar (met de hand getekend) |
+| `gamepad` | gamen | 🎮 | a game controller | klaar (met de hand getekend) |
+| `social` | sociale media | 📱 | a speech bubble with a heart | klaar (met de hand getekend) |
+| **Huis (aanvulling 2026-10-19)** | | | | |
+| `toilet` | toilet | 🚽 | a toilet seen from the front with a cistern | klaar (met de hand getekend) |
+| `fridge` | koelkast | 🧊 | a fridge with two doors and a leaf | klaar (met de hand getekend) |
+| `bathroom` | badkamer | 🚰 | a washbasin with a tap | klaar (met de hand getekend) |
+| `trash` | afval | 🗑️ | a waste bin with a lid | klaar (met de hand getekend) |
+| `bed-make` | bed opmaken | 🛏️ | a bed with a pillow and a smooth blanket | klaar (met de hand getekend) |
+| `windows` | ramen zemen | 🪟 | a window with four panes and a sill | klaar (met de hand getekend) |
+| `vacuum` | stofzuigen | 🌪️ | a canister vacuum cleaner with a hose | klaar (met de hand getekend) |
+| `mop` | dweilen | 🪣 | a mop | klaar (met de hand getekend) |
+| `iron` | strijken | 👔 | a clothes iron | klaar (met de hand getekend) |
+| `garden` | tuin | 🧑‍🌾 | a spade standing in the ground with a leaf | klaar (met de hand getekend) |
+| `car` | auto | 🚗 | a car seen from the side | klaar (met de hand getekend) |
+| **Werk en geld (aanvulling 2026-10-19)** | | | | |
+| `mail` | e-mail | ✉️ | an envelope | klaar (met de hand getekend) |
+| `meeting` | vergadering | 🤝 | a presentation board with a rising line | klaar (met de hand getekend) |
+| `folder` | administratie | 📁 | a document folder | klaar (met de hand getekend) |
+| `bill` | rekeningen betalen | 🧾 | a document with a euro sign | klaar (met de hand getekend) |
+| `invest` | beleggen | 📈 | a chart with a rising line and an arrow | klaar (met de hand getekend) |
+| `wallet` | portemonnee | 👛 | a wallet with a clasp | klaar (met de hand getekend) |
+| `cart` | winkelen | 🛒 | a shopping trolley with a leaf | klaar (met de hand getekend) |
+| **Creatief (aanvulling 2026-10-19)** | | | | |
+| `yarn` | breien en haken | 🧶 | a ball of yarn with a loose end | klaar (met de hand getekend) |
+| `bake` | bakken | 🧁 | a cupcake | klaar (met de hand getekend) |
+| **Sociaal en natuur (aanvulling 2026-10-19)** | | | | |
+| `cat` | huisdier verzorgen | 🐈 | a cat face | klaar (met de hand getekend) |
+| `letter` | kaartje sturen | 💌 | a postcard with a stamp | klaar (met de hand getekend) |
+| `gift` | cadeau | 🎁 | a gift box with a bow | klaar (met de hand getekend) |
+| **Algemeen (aanvulling 2026-10-19)** | | | | |
+| `check` | afgevinkt | ✔️ | a circle with a tick | klaar (met de hand getekend) |
+| `star` | ster | ⭐ | a star | klaar (met de hand getekend) |
+| `heart` | hart | ❤️ | a heart | klaar (met de hand getekend) |
+| `flag` | vlag | 🚩 | a flag on a pole | klaar (met de hand getekend) |
+| `bolt` | energie | ⚡ | a lightning bolt | klaar (met de hand getekend) |
+| `clock` | klok | 🕐 | a clock | klaar (met de hand getekend) |
+| `trophy` | beker | 🏆 | a trophy cup | klaar (met de hand getekend) |
+| `home` | thuis | 🏠 | a house | klaar (met de hand getekend) |
 
 ## De 50 sleutels (prestaties, tips en tekens)
 Een prestatie `first_checkin` heet in de set `ach-first-checkin`, een tip `never_miss_twice` heet `tip-never-miss-twice`. De prestaties onder "gepland" hebben nog geen regel in de app ([ITERATIE-1.2.md](ITERATIE-1.2.md) §5); hun icoon wordt alvast gemaakt zodat de set in één keer af is.

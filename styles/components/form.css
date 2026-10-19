@@ -686,6 +686,27 @@ select.input {
   padding-block: var(--space-2);
 }
 
+/* "Doorstrepen" onder het zoekveld van het icoonblad: de uitleg mag onder de titel afbreken (smal scherm, grote tekst) */
+.icon-picker__block {
+  align-items: flex-start;
+  padding-block: var(--space-2) 0;
+}
+
+.icon-picker__block-text {
+  display: grid;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.icon-picker__block input {
+  margin-top: 0.125rem;
+}
+
+/* de streep over een doorgestreept icoon (zie ui/components/habit-icon.js) */
+.theme-icon__slash {
+  pointer-events: none;
+}
+
 .icon-picker__group {
   margin-top: var(--space-3);
 }

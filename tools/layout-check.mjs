@@ -377,7 +377,7 @@ async function main() {
     await sleep(400);
     const open = await ev(`(() => { const d = document.querySelector('dialog.dialog--picker'); const tiles = [...d.querySelectorAll('.icon-picker__tile')]; const r = tiles[0].getBoundingClientRect();
       return { open: d.open, tiles: tiles.length, groups: d.querySelectorAll('.icon-picker__group').length, w: r.width, h: r.height, drawn: [...d.querySelectorAll('.icon-picker__tile .theme-icon use')].length, overflow: d.scrollWidth - d.clientWidth, keyboard: document.activeElement?.tagName }; })()`);
-    check(`${label}: blad met 60 iconen in 9 onderwerpen, tegels ≥ 44px, geen overflow, focus niet in het zoekveld`, open.open && open.tiles === 60 && open.groups === 9 && open.w >= 44 && open.h >= 44 && open.drawn === 60 && open.overflow <= 0 && open.keyboard !== 'INPUT', JSON.stringify(open));
+    check(`${label}: blad met 133 iconen in 11 onderwerpen, tegels ≥ 44px, geen overflow, focus niet in het zoekveld`, open.open && open.tiles === 133 && open.groups === 11 && open.w >= 44 && open.h >= 44 && open.drawn === 133 && open.overflow <= 0 && open.keyboard !== 'INPUT', JSON.stringify(open));
     await ev(`(() => { const i = document.querySelector('#iconSearch'); i.value = 'gitaar'; i.dispatchEvent(new Event('input')); })()`);
     const found = await ev(`[...document.querySelectorAll('.icon-picker__tile')].map((t) => t.title)`);
     check(`${label}: zoeken op "gitaar" vindt alleen de gitaar`, found.length === 1 && found[0] === 'Gitaar spelen', JSON.stringify(found));
@@ -461,6 +461,52 @@ async function main() {
   await sleep(1000);
   const saved = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); return (await state.repo.listHabits()).map((x) => x.icon + ' ' + x.name); })()`);
   check('een gekozen icoon wordt bij de habit opgeslagen (als emoji, zodat sync en export ongewijzigd blijven)', saved.includes('🚴 Naar werk fietsen'), JSON.stringify(saved));
+  // doorstrepen: dezelfde tekening met een streep erdoor, voor iets wat je niet meer doet; opgeslagen als de emoji met U+20E0 erachter
+  for (const [size, w, h, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: true });
+    await nav('today'); // een andere pagina eerst: bij dezelfde pagina blijft het formulier met het vorige icoon staan
+    await nav('habits/new');
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    await ev(`document.querySelector('#iconTrigger').click()`);
+    await sleep(400);
+    const before = await ev(`({ struck: [...document.querySelectorAll('.icon-picker__tile')].filter((t) => t.querySelector('.theme-icon__slash')).map((t) => t.title) })`);
+    check(`doorstrepen · ${size}: zonder de schakelaar hebben alleen Geen suiker, Niet roken en Scherm uit een streep`, JSON.stringify(before.struck.sort()) === JSON.stringify(['Geen suiker', 'Niet roken', 'Scherm uit']), JSON.stringify(before));
+    const toggle = await ev(`(() => { const t = document.querySelector('#iconBlock'); const row = t?.closest('label'); const r = row?.getBoundingClientRect(); return { exists: !!t, h: r?.height ?? 0, overflow: document.querySelector('dialog.dialog--picker').scrollWidth - document.querySelector('dialog.dialog--picker').clientWidth, text: row?.textContent ?? '' }; })()`);
+    check(`doorstrepen · ${size}: de schakelaar staat bij het zoekveld, is groot genoeg en past`, toggle.exists && toggle.h >= 44 && toggle.overflow <= 0 && /Doorstrepen/.test(toggle.text), JSON.stringify(toggle));
+    await ev(`document.querySelector('#iconBlock').click()`);
+    await sleep(300);
+    const struck = await ev(`(() => { const tiles = [...document.querySelectorAll('.icon-picker__tile')]; return { tiles: tiles.length, slashes: document.querySelectorAll('.icon-picker__tile .theme-icon__slash').length, withoutSlash: tiles.filter((t) => !t.querySelector('.theme-icon__slash')).map((t) => t.title) }; })()`);
+    check(`doorstrepen · ${size}: met de schakelaar aan krijgt elke tegel een streep`, struck.slashes === struck.tiles && struck.withoutSlash.length === 0, JSON.stringify(struck));
+    await ev(`[...document.querySelectorAll('.icon-picker__tile')].find((t) => t.getAttribute('aria-label').startsWith('Alcohol')).click()`);
+    await sleep(300);
+    const picked = await ev(`({ closed: !document.querySelector('dialog'), label: document.querySelector('#iconTrigger').getAttribute('aria-label'), slash: !!document.querySelector('#iconTrigger .theme-icon__slash') })`);
+    check(`doorstrepen · ${size}: kiezen zet het icoon met streep op de knop en noemt dat in het label`, picked.closed && /Alcohol, doorgestreept/.test(picked.label) && picked.slash, JSON.stringify(picked));
+  }
+  await ev(`(() => { const n = document.querySelector('#name'); n.value = 'Geen alcohol'; n.dispatchEvent(new Event('input')); document.querySelector('form').requestSubmit(); })()`);
+  await sleep(1000);
+  const savedStruck = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); return (await state.repo.listHabits()).filter((x) => x.name === 'Geen alcohol').map((x) => x.icon); })()`);
+  check('een doorgestreept icoon wordt bij de habit opgeslagen als de emoji met U+20E0 erachter', savedStruck.length === 1 && savedStruck[0] === '🍷⃠', JSON.stringify(savedStruck));
+  await nav('habits');
+  await sleep(600);
+  const listed = await ev(`({ slashes: document.querySelectorAll('.habit-row__icon .theme-icon__slash').length, overflow: document.documentElement.scrollWidth - innerWidth })`);
+  check('Habits: de doorgestreepte habit toont zijn icoon met streep', listed.slashes >= 1 && listed.overflow <= 0, JSON.stringify(listed));
+  // suggesties: de naam bepaalt het icoon zolang je er zelf geen koos, en het blad zet de passende iconen bovenaan
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await nav('habits/new');
+  await ev(`(() => { const n = document.querySelector('#name'); n.value = 'Toiletten schoonmaken'; n.dispatchEvent(new Event('input')); })()`);
+  await sleep(300);
+  const suggested = await ev(`document.querySelector('#iconTrigger').getAttribute('aria-label')`);
+  check('nieuwe habit: het icoon volgt de naam ("Toiletten schoonmaken" geeft het toilet)', /Toilet/.test(suggested), suggested);
+  await ev(`document.querySelector('#iconTrigger').click()`);
+  await sleep(400);
+  const first = await ev(`(() => { const g = document.querySelector('dialog.dialog--picker .icon-picker__group'); return { label: g?.getAttribute('aria-label'), first: g?.querySelector('.icon-picker__tile')?.title, count: g?.querySelectorAll('.icon-picker__tile').length }; })()`);
+  check('icoonblad: bovenaan "Past bij je naam" met het toilet voorop', first.label === 'Past bij je naam' && first.first === 'Toilet' && first.count >= 2, JSON.stringify(first));
+  await ev(`[...document.querySelectorAll('.icon-picker__tile')].find((t) => t.title === 'Fietsen').click()`);
+  await sleep(300);
+  await ev(`(() => { const n = document.querySelector('#name'); n.value = 'Koelkast opruimen'; n.dispatchEvent(new Event('input')); })()`);
+  await sleep(200);
+  const keptIcon = await ev(`document.querySelector('#iconTrigger').getAttribute('aria-label')`);
+  check('nieuwe habit: een zelf gekozen icoon blijft staan als je de naam daarna nog verandert', /Fietsen/.test(keptIcon), keptIcon);
   // desktop (docs/SCROLLEN.md): de pagina scrolt zelf niet; de kop blijft staan en alleen de kolommen scrollen
   await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 600, deviceScaleFactor: 1, mobile: false });
   // een pagina met kolommen (`.page`) laat het werkvlak niet scrollen: wat niet in een kolom of lijst staat die zelf scrolt, wordt afgeknipt. `clipped` meet dat.

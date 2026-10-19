@@ -272,6 +272,10 @@ export const nl = {
     iconSearch: 'Icoon zoeken',
     iconSearchPlaceholder: 'Zoek een icoon, bijvoorbeeld "water"',
     iconNone: 'Geen icoon gevonden. Probeer een ander woord.',
+    iconSuggested: 'Past bij je naam',
+    iconBlock: 'Doorstrepen',
+    iconBlockHint: 'Voor iets wat je niet meer doet of overslaat, zoals "geen alcohol".',
+    iconBlocked: (name) => `${name}, doorgestreept`,
     color: 'Kleur',
     schedule: 'Herhaling',
     scheduleTypes: {
