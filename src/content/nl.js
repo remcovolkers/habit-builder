@@ -129,14 +129,13 @@ export const nl = {
     pool: {
       title: 'Oningepland',
       hint: 'Taken zonder vaste dag. Neem er een mee in je dag.',
-      allPlanned: 'Alles ingepland',
+      allPlanned: 'Alles ingepland, goed gedaan!',
+      allPlannedHint: 'Je week staat. Iets verschuiven kan via Plan je week.',
       skippedLast: (n) => `Laatste kans van de maand: ${n === 1 ? 'een overgeslagen taak haal' : `${n} overgeslagen taken haal`} je zo niet meer. Inplannen kan nog via Plan je week.`,
       // een taak die al op een andere dag is ingepland: wanneer, in plaats van "＋ Vandaag"
       plannedOn: (list) => `Ingepland op ${list}`,
       firstPlanned: (label) => `Eerste keer ingepland op ${label}`,
       plannedDays: (n) => `${n} dagen`,
-      change: 'Wijzig',
-      changeLabel: (name) => `Wijzig de planning van ${name}`,
       thisWeek: 'Deze week',
       thisPeriod: 'Week en maand',
       takeToday: 'Neem mee vandaag',

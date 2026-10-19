@@ -32,7 +32,7 @@ export const UI_ICON_GROUPS = Object.freeze([
     label: 'Tips',
     keys: Object.freeze(from('tip', ['planned', 'start-small', 'dip', 'cue', 'identity', 'automatic', 'never-miss-twice', 'maintain', 'paused'])),
   },
-  { id: 'ui', label: 'In de app', keys: Object.freeze(['ui-streak', 'ui-celebrate']) },
+  { id: 'ui', label: 'In de app', keys: Object.freeze(['ui-streak', 'ui-celebrate', 'ui-all-planned']) },
 ]);
 
 export const UI_ICON_KEYS = Object.freeze(UI_ICON_GROUPS.flatMap((group) => group.keys));

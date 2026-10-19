@@ -90,7 +90,7 @@ Dat kan ook: één prompt voor alle 97 iconen (zie "Alles in één keer" onderaa
 | `outdoors` | naar buiten | 🌲 | a tree and a path or a mountain | klaar |
 | `sprout` | nieuw begin | 🌱 | a seedling | klaar |
 
-## De 49 sleutels (prestaties, tips en tekens)
+## De 50 sleutels (prestaties, tips en tekens)
 Een prestatie `first_checkin` heet in de set `ach-first-checkin`, een tip `never_miss_twice` heet `tip-never-miss-twice`. De prestaties onder "gepland" hebben nog geen regel in de app ([ITERATIE-1.2.md](ITERATIE-1.2.md) §5); hun icoon wordt alvast gemaakt zodat de set in één keer af is.
 
 | Sleutel | Nederlands | Wat tekenen | Stand |
@@ -148,6 +148,7 @@ Een prestatie `first_checkin` heet in de set `ach-first-checkin`, een tip `never
 | **In de app** | | | |
 | `ui-streak` | Reeks (klein, naast tekst) | a flame; used inline next to text at the size of the letters (16px), so it must stay simple | klaar |
 | `ui-celebrate` | Alles gedaan vandaag | a leaf with a few sparkles; shown big (40px) on the 'alles gedaan' card | klaar |
+| `ui-all-planned` | Alles ingepland (Oningepland op Vandaag) | a calendar page with a check in an accent circle; shown at about 40px in the 'alles ingepland' box. Drawn by hand in the set's style, not by Moda; replace it if Moda makes a nicer one | klaar |
 
 ## Eerste prompt (batch 1)
 Plak alles tussen de streepjes.

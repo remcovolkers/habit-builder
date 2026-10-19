@@ -239,25 +239,34 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
     if (view.canLog) actions.push({ label: nl.today.pool.alreadyDone, onClick: () => perform(() => log(entry.habitId, 'done'), nl.today.toasts.done(habit.name)) });
     openDialog({ title: habit.name, description: periodSummary(entry), actions, cancelLabel: nl.app.close });
   }
-  const poolOptions = { date, today, canPlan: view.canPlan, canMore: view.canPlan || view.canLog, onPlan: (e) => planOnDay(e, date), onMore: poolMore, onChange: () => openWeekPlanner() };
+  const poolOptions = { date, today, canPlan: view.canPlan, canMore: view.canPlan || view.canLog, onPlan: (e) => planOnDay(e, date), onMore: poolMore };
   const poolList = (entries) => h('ul', { class: 'card-list' }, ...entries.map((entry) => poolCard(entry, poolOptions)));
-  const urgentPool = view.pool.filter((e) => e.urgent);
-  const restPool = view.pool.filter((e) => !e.urgent);
+  // Een taak die al genoeg dagen heeft (covered) staat hier niet meer: dat is alleen ruis. Aanpassen kan alleen via Plan je week.
+  const openPool = view.pool.filter((e) => !e.covered);
+  const urgentPool = openPool.filter((e) => e.urgent);
+  const restPool = openPool.filter((e) => !e.urgent);
   const restShown = restPool.slice(0, Math.max(0, POOL_VISIBLE - urgentPool.length));
   const restHidden = restPool.slice(restShown.length);
+  // niets meer in te plannen: alles heeft zijn aandacht gehad (ingepland, gedaan of bewust niet deze week)
+  const allPlanned = view.canPlan && toPlan === 0 && !(view.poolSkippedLast > 0) && openPool.every((e) => e.satisfied);
 
   // de kop blijft ook staan als de stapel leeg is doordat taken "Niet in deze week" kregen: zo blijft Plan je week bereikbaar om er toch een in te plannen
-  const poolSection = view.pool.length > 0 || view.poolSkipped > 0
+  const poolSection = openPool.length > 0 || view.poolSkipped > 0 || (view.canPlan && view.pool.length > 0)
     ? h('section', { class: 'section pool', 'aria-labelledby': 'pool-title' },
       h('div', { class: 'section-head' },
         h('h2', { id: 'pool-title', class: 'section__title' }, nl.today.pool.title),
         view.canPlan && toPlan === 0 ? planWeekButton() : h('span', { class: 'kicker' }, poolPeriod)),
-      h('p', { class: 'section__hint' }, nl.today.pool.hint),
+      allPlanned ? null : h('p', { class: 'section__hint' }, nl.today.pool.hint),
       view.canPlan && toPlan > 0 ? planWeekPrompt({ toPlan }) : null,
-      // niets meer in te plannen: alles heeft zijn aandacht gehad (ingepland, gedaan of bewust niet deze week)
       // taken die je deze week hebt overgeslagen terwijl dit de laatste kans van de maand is: dat blijft zichtbaar, want ze staan niet meer in de stapel
       view.canPlan && view.poolSkippedLast > 0 ? h('p', { class: 'pool__warn', role: 'status' }, nl.today.pool.skippedLast(view.poolSkippedLast)) : null,
-      view.canPlan && toPlan === 0 && !(view.poolSkippedLast > 0) ? h('p', { class: 'pool__all-planned', role: 'status' }, nl.today.pool.allPlanned) : null,
+      allPlanned
+        ? h('div', { class: 'pool__all-planned', role: 'status' },
+          h('span', { class: 'pool__all-planned-icon', 'aria-hidden': 'true' }, uiIcon('ui-all-planned')),
+          h('div', { class: 'pool__all-planned-body' },
+            h('strong', { class: 'pool__all-planned-title' }, nl.today.pool.allPlanned),
+            h('span', { class: 'pool__all-planned-hint' }, nl.today.pool.allPlannedHint)))
+        : null,
       urgentPool.length > 0
         ? h('div', { class: 'pool__group' }, h('h3', { class: 'pool__group-title pool__group-title--urgent' }, nl.today.pool.urgentTitle), poolList(urgentPool))
         : null,
