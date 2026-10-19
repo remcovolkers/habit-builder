@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { ICON_GROUPS, ICONS } from '../../src/content/icons.js';
 import { ICON_SET_KEYS } from '../../src/content/icon-set.js';
-import { DEFAULT_ICON_KEY, iconForEmoji, iconForKey, iconKeyFor, habitIconHref, searchIcons, uiIconHref } from '../../src/app/icons.js';
+import { BLOCK_MARK, DEFAULT_ICON_KEY, STRUCK_ICON_KEYS, hasBlockMark, iconForEmoji, iconForKey, iconKeyFor, habitIconHref, isBlockedIcon, searchIcons, suggestIcons, uiIconHref, withBlock } from '../../src/app/icons.js';
 import { UI_ICON_GROUPS, UI_ICON_KEYS, achievementIconKey, tipIconKey } from '../../src/content/ui-icons.js';
 import { ACHIEVEMENT_GROUPS, ACHIEVEMENT_INFO } from '../../src/content/achievements.js';
 import { ACHIEVEMENT_KEYS } from '../../src/domain/achievements.js';
@@ -18,8 +18,8 @@ const plain = (emoji) => emoji.replace(/️/g, '');
 // de 24 emoji die de app had vóór de catalogus: bestaande habits moeten hun icoon houden
 const LEGACY = ['💧', '📖', '🏃', '🧘', '🥗', '😴', '💪', '🎸', '🧹', '📞', '✍️', '🚴', '🧠', '🌱', '☀️', '🦷', '💊', '🚭', '📝', '🎨', '🐕', '🧺', '💻', '🛌'];
 
-test('de catalogus: 60 iconen, elke sleutel en elke emoji precies één keer, sleutels in kebab-case', () => {
-  assert.equal(ICONS.length, 60);
+test('de catalogus: 133 iconen, elke sleutel en elke emoji precies één keer, sleutels in kebab-case', () => {
+  assert.equal(ICONS.length, 133);
   assert.equal(new Set(ICONS.map((i) => i.key)).size, ICONS.length, 'dubbele sleutel');
   assert.equal(new Set(ICONS.map((i) => plain(i.emoji))).size, ICONS.length, 'dubbele emoji: de sleutel volgt uit de emoji, dus die moet uniek zijn');
   for (const icon of ICONS) {
@@ -49,7 +49,7 @@ test('een emoji wordt gevonden met en zonder variatiekenmerk; een eigen emoji is
 
 test('docs/MODA-ICONS.md noemt precies de sleutels van de catalogus (de lijst voor Moda loopt niet uit de pas)', () => {
   const doc = read('docs/MODA-ICONS.md');
-  const table = doc.slice(doc.indexOf('## De 60 sleutels'), doc.indexOf('## De 50 sleutels'));
+  const table = doc.slice(doc.indexOf('## De 133 sleutels'), doc.indexOf('## De 50 sleutels'));
   const keys = [...table.matchAll(/^\| `([a-z0-9-]+)` \|/gm)].map((m) => m[1]);
   assert.deepEqual([...keys].sort(), ICONS.map((i) => i.key).sort());
   for (const icon of ICONS) assert.ok(table.includes(`| \`${icon.key}\` |`) && table.includes(icon.emoji), `${icon.key}: emoji komt niet overeen`);
@@ -69,7 +69,7 @@ test('zoeken: op naam, zoekwoord en sleutel, zonder letterkast en accenten; alle
 });
 
 test('zoeken: zonder zoekopdracht alles in dezelfde groepen; groepen zonder treffer vallen weg', () => {
-  assert.equal(searchIcons('').flatMap((g) => g.icons).length, 60);
+  assert.equal(searchIcons('').flatMap((g) => g.icons).length, 133);
   assert.equal(searchIcons('  ').length, ICON_GROUPS.length);
   const groups = searchIcons('hond');
   assert.deepEqual(groups.map((g) => g.id), ['social']);
@@ -102,7 +102,7 @@ test('ui-iconen: 50 unieke sleutels in kebab-case, zonder overlap met de habit-i
     assert.match(key, /^(ach|tip|ui)(-[a-z0-9]+)+$/, key);
     assert.equal(iconForKey(key), null, `${key} botst met een habit-icoon`);
   }
-  assert.equal(new Set(ALL_ICON_KEYS).size, 60 + 50);
+  assert.equal(new Set(ALL_ICON_KEYS).size, 133 + 50);
 });
 
 test('elke prestatie en elke tip in de app heeft een icoon in de lijst (de lijst loopt niet uit de pas)', () => {
@@ -235,4 +235,81 @@ test('de pagina Prestaties toont elke prestatie in precies één groep', () => {
   const inGroups = ACHIEVEMENT_GROUPS.flatMap((group) => group.keys);
   assert.equal(new Set(inGroups).size, inGroups.length, 'een sleutel staat in twee groepen');
   assert.deepEqual([...inGroups].sort(), [...ACHIEVEMENT_KEYS].sort());
+});
+
+test('doorgestreept: dezelfde emoji met U+20E0 erachter; het icoon blijft hetzelfde, alleen de stand verschilt', () => {
+  const struck = withBlock('🍷', true);
+  assert.equal(struck, `🍷${BLOCK_MARK}`);
+  assert.equal(isBlockedIcon(struck), true);
+  assert.equal(isBlockedIcon('🍷'), false);
+  assert.equal(iconKeyFor(struck), 'alcohol', 'de sleutel volgt uit de emoji, ook met streep');
+  assert.equal(habitIconHref(struck, ['alcohol']), 'icons/set.svg#alcohol');
+  assert.equal(withBlock(struck, false), '🍷');
+  assert.equal(withBlock(struck, true), struck, 'twee keer doorstrepen blijft één streep');
+  // ook met het variatiekenmerk uit de catalogus (☀️, ✍️)
+  assert.equal(iconKeyFor(withBlock('☀️', true)), 'sun');
+});
+
+test('doorgestreept: geen suiker, niet roken en scherm uit zijn altijd doorgestreept (de app tekent de streep, ook bij bestaande habits zonder teken)', () => {
+  assert.deepEqual([...STRUCK_ICON_KEYS], ['no-sugar', 'no-smoking', 'screen-off']);
+  for (const key of STRUCK_ICON_KEYS) {
+    const { emoji } = iconForKey(key);
+    assert.equal(isBlockedIcon(emoji), true, `${key}: zonder teken opgeslagen is hij doorgestreept`);
+    assert.equal(hasBlockMark(emoji), false, `${key}: het teken is er niet, de schakelaar staat uit`);
+    assert.equal(withBlock(emoji, true), emoji, `${key}: er komt geen teken bij`);
+    assert.equal(withBlock(emoji, false), emoji, key);
+  }
+});
+
+test('doorgestreept: een onbekende emoji of een lege waarde is nooit doorgestreept', () => {
+  assert.equal(withBlock('🦄', true), '🦄');
+  assert.equal(isBlockedIcon(`🦄${BLOCK_MARK}`), false);
+  assert.equal(hasBlockMark(`🦄${BLOCK_MARK}`), false);
+  assert.equal(isBlockedIcon(undefined), false);
+  assert.equal(hasBlockMark(withBlock('🍷', true)), true);
+});
+
+test('de tekeningen van de altijd doorgestreepte iconen hebben zelf geen streep (de app tekent die)', () => {
+  const sprite = read('icons/set.svg');
+  for (const key of STRUCK_ICON_KEYS) {
+    const start = sprite.indexOf(`<symbol id="${key}"`);
+    const symbol = sprite.slice(start, sprite.indexOf('</symbol>', start));
+    assert.ok(start >= 0, `${key} ontbreekt in de sprite`);
+    assert.ok(!/M3 3l18 18|M4 4l16 16|M4 20L20 4/.test(symbol), `${key}: er zit nog een diagonale streep in`);
+  }
+});
+
+test('doorgestreept: geen emoji in de catalogus bevat het teken al, en de vaste iconen staan in de catalogus', () => {
+  for (const icon of ICONS) assert.ok(!icon.emoji.includes(BLOCK_MARK), icon.key);
+  for (const key of STRUCK_ICON_KEYS) assert.ok(iconForKey(key), `${key} staat niet in de catalogus`);
+});
+
+test('zoeken: meervoud en werkwoordsvormen vinden het voorwerp ("toiletten" vindt het toilet), maar een kort woord niet een lang woord', () => {
+  const keysOf = (query) => searchIcons(query).flatMap((g) => g.icons.map((i) => i.key));
+  assert.deepEqual(keysOf('toiletten'), ['toilet']);
+  assert.ok(keysOf('koelkasten').includes('fridge'));
+  assert.ok(!keysOf('huisdieren').includes('home'), '"huis" is te kort om als stam te tellen');
+  assert.ok(keysOf('huisdieren').includes('cat'));
+});
+
+test('suggesties bij een habitnaam: het voorwerp eerst, de handeling erna', () => {
+  const keys = (name) => suggestIcons(name).map((i) => i.key);
+  assert.equal(keys('Toiletten schoonmaken')[0], 'toilet');
+  assert.ok(keys('Toiletten schoonmaken').includes('clean'));
+  assert.equal(keys('Koelkast opruimen')[0], 'fridge');
+  assert.equal(keys('Voeten insmeren')[0], 'tube');
+  assert.equal(keys('Dag inplannen')[0], 'plan-day');
+  assert.equal(keys('Ontbijt overslaan')[0], 'breakfast');
+  assert.equal(keys('Bed opmaken')[0], 'bed-make');
+  assert.deepEqual(keys('Gitaar spelen'), ['guitar']);
+  assert.deepEqual(keys('xyz qqq'), []);
+  assert.deepEqual(suggestIcons(''), []);
+  assert.equal(suggestIcons('Hardlopen', 1).length, 1);
+});
+
+test('elke sleutel heeft zoekwoorden of een eigen naam waarmee hij te vinden is', () => {
+  for (const icon of ICONS) {
+    const found = searchIcons(icon.name).flatMap((g) => g.icons.map((i) => i.key));
+    assert.ok(found.includes(icon.key), `${icon.key} is niet te vinden op zijn eigen naam "${icon.name}"`);
+  }
 });

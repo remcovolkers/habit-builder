@@ -190,6 +190,13 @@ Heeft een draaiende Supabase nodig met migratie 0007 (lokaal doet `npm run db:st
 8. **Het tabje voor jou** (alleen op de computer, ingelogd als beheerder): in de zijbalk staat **Feedback** met het aantal nieuwe berichten. De lijst heeft de filters Nieuw, Afgehandeld en Alles (met aantallen) en een soort. Per bericht: soort, datum, tekst, afzender ("Anoniem" of een mailadres), pagina en versie. **Afgehandeld** verplaatst het bericht; **Verwijderen** vraagt eerst om bevestiging. Een gewone gebruiker ziet het tabje niet; opent hij `#/feedback` toch, dan staat er dat het alleen voor de beheerder is.
 9. **Grote tekst**: het blad op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout` controleert dit, ook met een nagebootste server voor jouw lijst).
 
+## P. Iconen: meer keuze, doorstrepen en suggesties (docs/MODA-ICONS.md)
+1. **Nieuwe habit:** typ als naam "Toiletten schoonmaken". Het icoon naast de naam wordt vanzelf het toilet. Typ daarna "Koelkast opruimen": de koelkast. Kies je zelf een icoon (bijvoorbeeld Fietsen), dan blijft dat staan als je de naam nog verandert.
+2. **Open het icoonblad:** bovenaan staat "Past bij je naam" met het toilet voorop, daaronder alle iconen per onderwerp (nu 133, met de nieuwe groepen Persoonlijke verzorging en Algemeen). Zoek "toiletten", "koelkast", "insmeren" of "ontbijt": je vindt het voorwerp, ook bij een meervoud.
+3. **Doorstrepen:** zet onder het zoekveld **Doorstrepen** aan. Alle tegels krijgen een streep in de accentkleur. Geen suiker, Niet roken en Scherm uit hebben die streep altijd, ook met de schakelaar uit (hun tekening heeft zelf geen streep meer; de app tekent hem). Kies Alcohol: de knop naast de naam toont het glas met streep ("Alcohol, doorgestreept"). Sla de habit op: het icoon staat met streep op Vandaag, Habits en in de detailpagina, in beide thema's.
+4. **Terug:** open de habit opnieuw en zet Doorstrepen uit: de streep is weg, het icoon blijft hetzelfde.
+5. **Dag inplannen** staat als klembord met lijstje (Geest en leren); de zonsopgang blijft Vroeg opstaan.
+
 ## Automatische controles
 
 ```
