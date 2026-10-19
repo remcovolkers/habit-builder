@@ -12,8 +12,10 @@ const FEEDBACK_KEY = 'hb-automaticity-rated';
 const LEVELS = ['aware', 'coming', 'almost', 'natural'];
 const CHART_MAX = 8; // zoveel cijfers staan in het verloop
 
-// de habits waarvan de vijf zinnen weer openstaan (na "Wijzig"); een scherm dat zich ververst begint anders weer met alleen het cijfer
+// de habits waarvan de vijf zinnen weer openstaan (na "Wijzig" bij het cijfer), en die van "wat hielp" (na "Wijzig" bij wat hielp);
+// een scherm dat zich ververst begint anders weer met alleen het gekozen cijfer en een vergrendeld antwoord
 const reopened = new Set();
+const reopenedCues = new Set();
 
 /** Hoe vaak is er al een cijfer gegeven op dit apparaat? De eerste keren legt de regel onder het cijfer uit waar je het terugziet. */
 function ratedBefore() {
@@ -30,15 +32,13 @@ export function automaticityFeedback(habitId) {
     h('a', { class: 'auto-feedback__link', href: `#/habits/${encodeURIComponent(habitId)}` }, a.feedback.link));
 }
 
-const toggleCue = (cues, cue) => {
-  if (cue === 'nothing') return cues.includes('nothing') ? [] : ['nothing'];
-  const rest = cues.filter((c) => c !== 'nothing');
-  return rest.includes(cue) ? rest.filter((c) => c !== cue) : [...rest, cue];
-};
+/** Wat hielp is één keuze: de gekozen knop nog eens aantikken haalt hem weg, een andere vervangt hem. */
+const pickCue = (cues, cue) => (cues.includes(cue) ? [] : [cue]);
 
 /**
  * Het cijfer: vijf zinnen om uit te kiezen (een zin zegt meer dan een getal), en na het kiezen alleen de gekozen zin met "Wijzig".
- * Daaronder een paar knoppen voor wat er hielp (een herinnering, het plan van de app, ...): optioneel, en het geeft de raad bij het automatisme.
+ * Daaronder de knoppen voor wat er het meest hielp (een herinnering, het plan van de app, ...): optioneel, één keuze, en het geeft de raad bij het
+ * automatisme. Is er een keuze gemaakt, dan staan de knoppen vast (je ziet wat je koos) tot je op "Wijzig" tikt.
  * onRate(score) en onCues(cues) slaan op; het scherm ververst daarna zelf.
  */
 export function automaticityPicker({ habitId, score, cues = [], onRate, onCues, intro = a.intro }) {
@@ -60,14 +60,25 @@ export function automaticityPicker({ habitId, score, cues = [], onRate, onCues, 
       dataset: { focusKey: `rate-change:${habitId}` },
       onclick: () => { reopened.add(habitId); notifyChanged(); },
     }, a.change));
-  const helped = score === null ? null : h('div', { class: 'auto-helped', role: 'group', 'aria-label': a.helped.title },
-    h('p', { class: 'xs muted' }, a.helped.title),
+  const locked = cues.length > 0 && !reopenedCues.has(habitId);
+  const helped = score === null ? null : h('div', { class: `auto-helped${locked ? ' is-locked' : ''}`, role: 'group', 'aria-label': a.helped.title },
+    h('div', { class: 'auto-helped__head' },
+      h('p', { class: 'xs muted' }, a.helped.title),
+      locked
+        ? h('button', {
+          type: 'button',
+          class: 'button button--ghost button--small',
+          dataset: { focusKey: `cues-change:${habitId}` },
+          onclick: () => { reopenedCues.add(habitId); notifyChanged(); },
+        }, a.change)
+        : null),
     h('div', { class: 'auto-chips' }, ...RATING_CUES.map((cue) => h('button', {
       type: 'button',
       class: 'auto-chip',
       'aria-pressed': cues.includes(cue) ? 'true' : 'false',
+      disabled: locked,
       dataset: { focusKey: `cue:${habitId}:${cue}` },
-      onclick: () => onCues(toggleCue(cues, cue)),
+      onclick: () => { reopenedCues.delete(habitId); onCues(pickCue(cues, cue)); },
     }, a.helped[cue]))));
   return h('div', { class: 'auto-picker' },
     open ? h('p', { class: 'xs muted' }, intro) : null,
