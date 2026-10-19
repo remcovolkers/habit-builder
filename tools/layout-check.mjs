@@ -336,6 +336,14 @@ async function main() {
   await sleep(400);
   const chip = await ev(`(() => { const c = document.querySelector('.habit-card__ask .auto-chip'); return { pressed: c?.getAttribute('aria-pressed'), h: c?.getBoundingClientRect().height ?? 0 }; })()`);
   check('"Wat hielp?": een knop aantikken slaat het op, en de knoppen zijn minstens 44 px hoog', chip.pressed === 'true' && chip.h >= 44, JSON.stringify(chip));
+  const lockedChips = await ev(`(() => { const chips = [...document.querySelectorAll('.habit-card__ask .auto-chip')]; return { disabled: chips.filter((c) => c.disabled).length, total: chips.length, pressed: chips.filter((c) => c.getAttribute('aria-pressed') === 'true').length, change: !!document.querySelector('.habit-card__ask [data-focus-key^="cues-change:"]') }; })()`);
+  check('"Wat hielp?": na een keuze staan de knoppen vast (je ziet wat je koos) en past alleen "Wijzig" het aan', lockedChips.disabled === 5 && lockedChips.total === 5 && lockedChips.pressed === 1 && lockedChips.change, JSON.stringify(lockedChips));
+  await ev(`document.querySelector('.habit-card__ask [data-focus-key^="cues-change:"]').click()`);
+  await sleep(400);
+  await ev(`document.querySelectorAll('.habit-card__ask .auto-chip')[2].click()`);
+  await sleep(400);
+  const single = await ev(`(() => { const chips = [...document.querySelectorAll('.habit-card__ask .auto-chip')]; return { pressed: chips.map((c, i) => (c.getAttribute('aria-pressed') === 'true' ? i : null)).filter((i) => i !== null), disabled: chips.filter((c) => c.disabled).length }; })()`);
+  check('"Wat hielp?" is één keuze: een andere knop vervangt de vorige, en daarna staan ze weer vast', JSON.stringify(single.pressed) === '[2]' && single.disabled === 5, JSON.stringify(single));
   await ev(`document.querySelector('.habit-card__ask [data-focus-key^="rate-change:"]').click()`);
   await sleep(400);
   const changing = await ev(`({ options: document.querySelectorAll('.habit-card__ask .auto-option').length, pressed: document.querySelector('.habit-card__ask .auto-option[aria-pressed="true"]')?.textContent?.slice(0, 1) })`);

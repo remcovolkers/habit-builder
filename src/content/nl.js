@@ -470,7 +470,7 @@ export const nl = {
     thisWeek: (score) => `Deze week: ${score} van 5`,
     saved: (score) => `Automatisme: ${score} van 5`,
     helped: {
-      title: 'Wat hielp? (overslaan mag)',
+      title: 'Wat hielp het meest? (overslaan mag)',
       reminder: 'Een herinnering',
       app_plan: 'Het plan van de app',
       routine: 'Een vaste plek of moment',
