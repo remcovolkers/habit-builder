@@ -49,7 +49,7 @@ test('een emoji wordt gevonden met en zonder variatiekenmerk; een eigen emoji is
 
 test('docs/MODA-ICONS.md noemt precies de sleutels van de catalogus (de lijst voor Moda loopt niet uit de pas)', () => {
   const doc = read('docs/MODA-ICONS.md');
-  const table = doc.slice(doc.indexOf('## De 60 sleutels'), doc.indexOf('## De 49 sleutels'));
+  const table = doc.slice(doc.indexOf('## De 60 sleutels'), doc.indexOf('## De 50 sleutels'));
   const keys = [...table.matchAll(/^\| `([a-z0-9-]+)` \|/gm)].map((m) => m[1]);
   assert.deepEqual([...keys].sort(), ICONS.map((i) => i.key).sort());
   for (const icon of ICONS) assert.ok(table.includes(`| \`${icon.key}\` |`) && table.includes(icon.emoji), `${icon.key}: emoji komt niet overeen`);
@@ -95,14 +95,14 @@ test('icon-set.js: bestaande sleutels, zonder dubbelen, en een sprite (icons/set
   }
 });
 
-test('ui-iconen: 49 unieke sleutels in kebab-case, zonder overlap met de habit-iconen', () => {
-  assert.equal(UI_ICON_KEYS.length, 49);
+test('ui-iconen: 50 unieke sleutels in kebab-case, zonder overlap met de habit-iconen', () => {
+  assert.equal(UI_ICON_KEYS.length, 50);
   assert.equal(new Set(UI_ICON_KEYS).size, UI_ICON_KEYS.length);
   for (const key of UI_ICON_KEYS) {
     assert.match(key, /^(ach|tip|ui)(-[a-z0-9]+)+$/, key);
     assert.equal(iconForKey(key), null, `${key} botst met een habit-icoon`);
   }
-  assert.equal(new Set(ALL_ICON_KEYS).size, 60 + 49);
+  assert.equal(new Set(ALL_ICON_KEYS).size, 60 + 50);
 });
 
 test('elke prestatie en elke tip in de app heeft een icoon in de lijst (de lijst loopt niet uit de pas)', () => {
@@ -124,7 +124,7 @@ test('elke prestatie en elke tip in de app heeft een icoon in de lijst (de lijst
 
 test('docs/MODA-ICONS.md noemt ook precies de ui-sleutels', () => {
   const doc = read('docs/MODA-ICONS.md');
-  const table = doc.slice(doc.indexOf('## De 49 sleutels'), doc.indexOf('## Eerste prompt'));
+  const table = doc.slice(doc.indexOf('## De 50 sleutels'), doc.indexOf('## Eerste prompt'));
   const keys = [...table.matchAll(/^\| `([a-z0-9-]+)` \|/gm)].map((m) => m[1]);
   assert.deepEqual([...keys].sort(), [...UI_ICON_KEYS].sort());
 });

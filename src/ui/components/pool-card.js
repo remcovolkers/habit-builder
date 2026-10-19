@@ -38,7 +38,7 @@ export function periodLabel(entry) {
  * Een flexibele habit in de stapel "Oningepland", compact: één regel met de voortgang en één knop. De rest (een andere dag, al gedaan) zit achter "⋯".
  * Wat dreigt te falen (entry.urgent, zie domain/tight.js) valt op: een andere rand en de hoofdknop.
  */
-export function poolCard(entry, { date, today, canPlan, canMore, onPlan, onMore, onChange }) {
+export function poolCard(entry, { date, today, canPlan, canMore, onPlan, onMore }) {
   const { habit } = entry;
   const state = entry.satisfied ? 'satisfied' : entry.covered ? 'planned' : entry.urgent ? 'risk' : 'open';
   const planned = plannedText(entry, today);
@@ -55,16 +55,7 @@ export function poolCard(entry, { date, today, canPlan, canMore, onPlan, onMore,
         entry.atRisk ? h('span', { class: 'badge badge--risk' }, nl.today.pool.atRisk) : null),
       planned ? h('div', { class: 'pool-card__planned' }, planned) : null),
     entry.satisfied ? null : h('div', { class: 'pool-card__actions' },
-      // alles al ingepland: geen "＋ Vandaag" (de taak staat al op een andere dag), wel "Wijzig" om dat aan te passen
-      canPlan && entry.covered && onChange
-        ? h('button', {
-          type: 'button',
-          class: 'button button--ghost button--small',
-          dataset: { focusKey: `change:${habit.id}` },
-          'aria-label': nl.today.pool.changeLabel(habit.name),
-          onclick: () => onChange(entry),
-        }, nl.today.pool.change)
-        : null,
+      // een taak die al genoeg dagen heeft staat niet in de stapel (zie today.js), dus hier is de plusknop altijd goed
       canPlan && !entry.covered
         ? h('button', {
           type: 'button',
