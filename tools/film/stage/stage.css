@@ -1,0 +1,73 @@
+/* De set van het uitlegfilmpje: 1920×1080, links een telefoon met de echte app, rechts de uitleg. */
+:root {
+  --bg-1: #0f1c18;
+  --bg-2: #0a1210;
+  --bg-3: #060808;
+  --accent: #29ffb9;
+  --accent-soft: rgb(41 255 185 / 0.14);
+  --text: #eef2f6;
+  --muted: #9aa3ad;
+  --line: rgb(255 255 255 / 0.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: "Manrope", system-ui, sans-serif; color: var(--text); }
+
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; transform-origin: 0 0; background: var(--bg-3); }
+.bg { position: absolute; inset: 0; background:
+  radial-gradient(900px 700px at 22% 55%, rgb(41 255 185 / 0.13), transparent 70%),
+  radial-gradient(1000px 800px at 90% 5%, rgb(46 211 198 / 0.07), transparent 70%),
+  linear-gradient(160deg, var(--bg-1), var(--bg-2) 55%, var(--bg-3)); }
+
+/* telefoon */
+.phone { position: absolute; left: 150px; top: 60px; width: 458px; height: 960px; border-radius: 68px; padding: 14px; background: #050606;
+  box-shadow: 0 0 0 2px #2b3330, 0 0 0 5px #0b0d0d, 0 40px 90px rgb(0 0 0 / 0.65), 0 0 120px rgb(41 255 185 / 0.12); }
+.phone__screen { position: relative; width: 430px; height: 932px; border-radius: 54px; overflow: hidden; background: #000; }
+.phone__screen::after { content: ""; position: absolute; left: 50%; top: 10px; width: 118px; height: 30px; margin-left: -59px; border-radius: 20px; background: #000; z-index: 3; pointer-events: none; }
+#app { width: 430px; height: 864px; border: 0; display: block; background: #090c0c; }
+.statusbar { height: 44px; padding: 14px 34px 0 38px; display: flex; justify-content: space-between; align-items: center; background: #090c0c; font-size: 16px; font-weight: 700; color: #fff; letter-spacing: 0.01em; }
+.statusbar__icons { display: flex; gap: 7px; align-items: center; }
+.statusbar__icons i { display: block; background: #fff; }
+.statusbar__icons .sig { width: 18px; height: 11px; clip-path: polygon(0 100%, 0 70%, 22% 70%, 22% 100%, 26% 100%, 26% 45%, 48% 45%, 48% 100%, 52% 100%, 52% 20%, 74% 20%, 74% 100%, 78% 100%, 78% 0, 100% 0, 100% 100%); }
+.statusbar__icons .wifi { width: 16px; height: 11px; border-radius: 16px 16px 2px 2px; clip-path: polygon(50% 100%, 0 25%, 20% 5%, 50% 0, 80% 5%, 100% 25%); }
+.statusbar__icons .bat { width: 25px; height: 12px; border-radius: 4px; background: transparent; box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.55), inset 17px 0 0 -0.5px #fff; }
+.homebar { height: 24px; background: #090c0c; display: flex; justify-content: center; align-items: center; }
+.homebar i { width: 140px; height: 5px; border-radius: 3px; background: rgb(255 255 255 / 0.8); }
+
+/* een tik */
+.tap { position: absolute; width: 76px; height: 76px; margin: -38px 0 0 -38px; border-radius: 50%; pointer-events: none; opacity: 0; z-index: 5;
+  background: radial-gradient(circle, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.18) 55%, transparent 70%); box-shadow: 0 0 0 3px rgb(255 255 255 / 0.55); }
+.tap.is-down { opacity: 1; transform: scale(0.8); transition: opacity 120ms, transform 120ms; }
+.tap.is-up { opacity: 0; transform: scale(1.7); transition: opacity 420ms, transform 420ms; }
+
+/* uitleg */
+.panel { position: absolute; left: 740px; top: 0; width: 1050px; height: 1000px; display: flex; flex-direction: column; justify-content: center; gap: 22px; padding-bottom: 20px; }
+.panel > * { transition: opacity 380ms ease, transform 380ms ease; }
+.panel.is-out > * { opacity: 0; transform: translateY(14px); }
+.panel__kicker { font-family: "Chakra Petch", "Manrope", sans-serif; font-weight: 700; font-size: 26px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--accent); }
+.panel__title { font-family: "Chakra Petch", "Manrope", sans-serif; font-weight: 700; font-size: 76px; line-height: 1.04; letter-spacing: 0.01em; }
+.panel__body { font-size: 38px; line-height: 1.42; font-weight: 500; color: #d3dae1; max-width: 960px; }
+.panel__points { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+.panel__points li { position: relative; padding: 18px 26px 18px 64px; border-radius: 18px; background: rgb(255 255 255 / 0.05); border: 1px solid var(--line); font-size: 32px; line-height: 1.3; font-weight: 600; max-width: 960px; }
+.panel__points li::before { content: ""; position: absolute; left: 26px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 18px var(--accent); }
+.panel__points li em { font-style: normal; color: var(--accent); }
+.panel__points:empty { display: none; }
+.panel__body:empty, .panel__title:empty, .panel__kicker:empty { display: none; }
+.panel b { color: #fff; font-weight: 800; }
+.panel em { color: var(--accent); font-style: normal; }
+
+/* voortgang onderaan */
+.progress { position: absolute; left: 740px; right: 130px; bottom: 44px; display: flex; gap: 10px; }
+.progress__item { flex: 1; transition: flex 500ms ease, color 400ms, border-color 400ms; font-size: 20px; font-weight: 700; letter-spacing: 0.04em; color: #6f7a82; padding-top: 14px; border-top: 4px solid var(--line); transition: color 400ms, border-color 400ms; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.progress__item.is-done { border-top-color: rgb(41 255 185 / 0.45); color: #8d979e; }
+.progress__item.is-now { flex: 4.5; border-top-color: var(--accent); color: var(--accent); }
+
+/* titelkaart */
+.card { position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; text-align: center; opacity: 0; pointer-events: none; transition: opacity 600ms ease;
+  background: radial-gradient(1100px 800px at 50% 45%, rgb(41 255 185 / 0.16), transparent 70%), linear-gradient(160deg, var(--bg-1), var(--bg-2) 55%, var(--bg-3)); }
+.card.is-on { opacity: 1; }
+.card__icon { width: 190px; height: 190px; border-radius: 44px; box-shadow: 0 0 80px rgb(41 255 185 / 0.35); }
+.card__icon[src=""], .card__icon:not([src]) { display: none; }
+.card__kicker { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: 30px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); }
+.card__title { font-family: "Chakra Petch", sans-serif; font-weight: 700; font-size: 112px; line-height: 1.04; letter-spacing: 0.02em; max-width: 1500px; }
+.card__sub { font-size: 40px; line-height: 1.4; font-weight: 500; color: #c4ccd3; max-width: 1300px; }
+.card__kicker:empty, .card__sub:empty { display: none; }

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="nl">
+<head><meta charset="utf-8"><title>seed</title><script src="clock.js"></script></head>
+<body>
+<script type="module">
+  // Maakt de opslag van de app leeg en vult hem met voorbeeldgegevens (?kind=empty|demo&today=YYYY-MM-DD&intro=seen). Draait in een verborgen iframe,
+  // zodat de verbinding met IndexedDB sluit zodra het iframe weg is.
+  const params = new URLSearchParams(location.search);
+  const done = (message) => parent.postMessage({ film: 'seeded', message }, '*');
+  try {
+    for (const db of await indexedDB.databases()) {
+      await new Promise((resolve) => { const request = indexedDB.deleteDatabase(db.name); request.onsuccess = request.onerror = request.onblocked = resolve; });
+    }
+    localStorage.clear();
+    if (params.get('intro') === 'seen') localStorage.setItem('hb-intro-seen', '1');
+    if (params.get('theme')) localStorage.setItem('hb-theme', params.get('theme'));
+    if (params.get('kind') === 'demo') {
+      const { openRepository } = await import('/src/data/index.js');
+      const { fillDemo } = await import('./data.js');
+      await fillDemo(await openRepository(), params.get('today'), { theme: params.get('theme'), variant: params.get('variant') ?? 'full' });
+    }
+    done('ok');
+  } catch (error) {
+    done(`fout: ${error?.stack ?? error}`);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <title>Habit Builder – uitlegfilmpje</title>
+  <script src="clock.js"></script>
+  <link rel="stylesheet" href="/styles/fonts.css">
+  <link rel="stylesheet" href="stage.css">
+</head>
+<body>
+  <div id="stage">
+    <div class="bg"></div>
+
+    <div class="phone" id="phone">
+      <div class="phone__screen">
+        <div class="statusbar"><span id="clock">8:12</span><span class="statusbar__icons"><i class="sig"></i><i class="wifi"></i><i class="bat"></i></span></div>
+        <iframe id="app" title="Habit Builder" src="about:blank"></iframe>
+        <div class="homebar"><i></i></div>
+      </div>
+      <div class="tap" id="tap"></div>
+    </div>
+
+    <section class="panel" id="panel">
+      <p class="panel__kicker" id="kicker"></p>
+      <h2 class="panel__title" id="title"></h2>
+      <p class="panel__body" id="body"></p>
+      <ul class="panel__points" id="points"></ul>
+    </section>
+
+    <footer class="progress" id="progress"></footer>
+
+    <div class="card" id="card">
+      <img class="card__icon" id="cardIcon" alt="">
+      <p class="card__kicker" id="cardKicker"></p>
+      <h1 class="card__title" id="cardTitle"></h1>
+      <p class="card__sub" id="cardSub"></p>
+    </div>
+  </div>
+  <script type="module" src="film.js"></script>
+</body>
+</html>
