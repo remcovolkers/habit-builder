@@ -1175,6 +1175,92 @@ async function main() {
     check('Vandaag: "Niet nu" verbergt de review-melding, ook na een nieuwe keer openen van Vandaag', gone && stays);
     await ev(`localStorage.removeItem('hb-review-nudge-dismissed')`);
   }
+
+  // Losse afspraken (docs/LOSSE-AFSPRAKEN.md): een ingang per dag op Vandaag, een kaart in het dagdeel, doorschuiven, wijzigen en verwijderen
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  const appt = {
+    today: await ev(`(async () => (await import('/src/ui/state.js')).state.today)()`),
+    plus: (n) => ev(`(async () => { const { state } = await import('/src/ui/state.js'); const { addDays } = await import('/src/domain/dates.js'); return addDays(state.today, ${n}); })()`),
+  };
+  const apptDay = await appt.plus(2);
+  await nav(`today?date=${apptDay}`);
+  await sleep(400);
+  const addButton = await ev(`(() => { const b = document.querySelector('.appointment-add__button'); return { exists: !!b, label: b?.getAttribute('aria-label') ?? null, text: b?.textContent ?? null, height: b ? Math.round(b.getBoundingClientRect().height) : 0, inMain: !!b?.closest('.today__main') }; })()`);
+  check('Vandaag, een dag vooruit: onder de dagdelen staat de knop "＋ Afspraak" (minstens 44 px hoog)', addButton.exists && addButton.text === '＋ Afspraak' && addButton.height >= 44 && addButton.inMain && /^Afspraak toevoegen voor /.test(addButton.label), JSON.stringify(addButton));
+  await click('.appointment-add__button', 500);
+  const sheet = await ev(`(() => { const d = document.querySelector('dialog[open]'); const date = d?.querySelector('#appointmentDate'); return { title: d?.querySelector('.dialog__title')?.textContent, radios: d?.querySelectorAll('input[name="appointmentDaypart"]').length, checked: d?.querySelector('input[name="appointmentDaypart"]:checked')?.value, date: date?.value, focused: document.activeElement?.id, actions: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].map((x) => x.textContent) }; })()`);
+  check('"＋ Afspraak" opent een blad met de dag die je bekijkt voorgevuld, vier dagdelen (Overdag gekozen) en meteen de cursor in het tekstveld', sheet.title === 'Nieuwe afspraak' && sheet.radios === 4 && sheet.checked === 'anytime' && sheet.date === apptDay && sheet.focused === 'appointmentTitle' && sheet.actions.join('|') === 'Toevoegen|Annuleren', JSON.stringify({ sheet, apptDay }));
+  await ev(`[...document.querySelectorAll('.dialog__actions .button')].find((x) => x.textContent === 'Toevoegen').click()`);
+  await sleep(300);
+  const empty = await ev(`({ still: !!document.querySelector('dialog[open]'), error: document.querySelector('#appointmentTitleError')?.hidden === false, text: document.querySelector('#appointmentTitleError')?.textContent, focused: document.activeElement?.id })`);
+  check('zonder tekst blijft het blad open met een melding bij het veld en de focus erop', empty.still && empty.error && empty.focused === 'appointmentTitle', JSON.stringify(empty));
+  await ev(`(() => { const d = document.querySelector('dialog[open]'); const i = d.querySelector('#appointmentTitle'); i.value = 'Bellen met Anna'; i.dispatchEvent(new Event('input')); d.querySelector('input[name="appointmentDaypart"][value="afternoon"]').click(); i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); })()`);
+  await sleep(700);
+  const added = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); const list = await state.repo.listAppointments(); const card = document.querySelector('.appointment-card'); const group = card?.closest('section'); return { stored: list.map((a) => [a.title, a.date, a.daypart]), closed: !document.querySelector('dialog[open]'), group: group?.querySelector('.section__title')?.textContent, count: group?.querySelector('.section-head .xs')?.textContent ?? null, habitCards: group?.querySelectorAll('.habit-card:not(.appointment-card)').length ?? 0, meta: card?.querySelector('.habit-card__meta')?.textContent, ring: !!document.querySelector('.ring') }; })()`);
+  check('Enter in het tekstveld bewaart de afspraak voor die dag; hij staat in Middag, met het woord "Afspraak", en de teller bij de kop telt alleen habits', JSON.stringify(added.stored) === JSON.stringify([['Bellen met Anna', apptDay, 'afternoon']]) && added.closed && added.group === 'Middag' && added.meta === 'Afspraak' && added.count === `0 van ${added.habitCards}`, JSON.stringify(added));
+
+  // op vandaag zelf: onder de habits van het dagdeel, afvinken telt niet mee in de ring
+  await nav('today');
+  await sleep(500);
+  const notToday = await ev(`!document.querySelector('.appointment-card')`);
+  check('de afspraak voor een andere dag staat niet op vandaag', notToday);
+  const ringBefore = await ev(`document.querySelector('.ring')?.textContent ?? null`);
+  await click('.appointment-add__button', 500);
+  const todaySheet = await ev(`document.querySelector('#appointmentDate')?.value`);
+  check('de knop op vandaag vult vandaag in', todaySheet === appt.today, String(todaySheet));
+  await ev(`(() => { const d = document.querySelector('dialog[open]'); const i = d.querySelector('#appointmentTitle'); i.value = 'Pakketje ophalen'; i.dispatchEvent(new Event('input')); d.querySelector('input[name="appointmentDaypart"][value="anytime"]').click(); [...d.querySelectorAll('.dialog__actions .button')].find((x) => x.textContent === 'Toevoegen').click(); })()`);
+  await sleep(700);
+  await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); const { addDays } = await import('/src/domain/dates.js'); await state.repo.saveAppointment({ title: 'Gemist telefoontje', date: addDays(state.today, -1), daypart: 'evening' }); notifyChanged(); })()`);
+  await sleep(600);
+  const onToday = await ev(`(() => { const cards = [...document.querySelectorAll('.appointment-card')]; return { titles: cards.map((c) => c.querySelector('.habit-card__name').textContent), metas: cards.map((c) => c.querySelector('.habit-card__meta').textContent), overdue: cards.some((c) => c.dataset.overdue === 'true'), groups: cards.map((c) => c.closest('section').querySelector('.section__title').textContent), lastInList: cards.every((c) => { const kids = [...c.parentElement.children]; const first = kids.findIndex((k) => k.classList.contains('appointment-card')); return kids.slice(first).every((k) => k.classList.contains('appointment-card')); }) }; })()`);
+  check('op vandaag: een afspraak staat onder de habits van zijn dagdeel, en een gemiste van gisteren schuift stil door ("Van gisteren", niet als te laat)',
+    onToday.titles.length === 2 && onToday.titles.includes('Pakketje ophalen') && onToday.titles.includes('Gemist telefoontje') && onToday.metas.includes('Afspraak') && onToday.metas.includes('Afspraak · Van gisteren')
+    && !onToday.overdue && onToday.groups.includes('Overdag') && onToday.groups.includes('Avond') && onToday.lastInList, JSON.stringify(onToday));
+  await ev(`document.querySelector('.appointment-card .check').click()`);
+  await sleep(500);
+  const ticked = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); const list = await state.repo.listAppointments(); return { done: list.filter((a) => a.doneOn !== null).map((a) => [a.title, a.doneOn]), pressed: [...document.querySelectorAll('.appointment-card .check')].map((c) => c.getAttribute('aria-pressed')), ring: document.querySelector('.ring')?.textContent ?? null, toast: document.querySelector('.toast')?.textContent ?? '' }; })()`);
+  check('een afspraak afvinken legt de dag vast, verandert de ring niet en biedt "Ongedaan maken" aan', ticked.done.length === 1 && ticked.done[0][1] === appt.today && ticked.pressed.includes('true') && ticked.ring === ringBefore && /Ongedaan maken/.test(ticked.toast), JSON.stringify({ ticked, ringBefore }));
+
+  // wijzigen en verwijderen via ⋯
+  await ev(`[...document.querySelectorAll('.appointment-card')].find((c) => c.textContent.includes('Gemist telefoontje')).querySelector('.habit-card__more').click()`);
+  await sleep(400);
+  const edit = await ev(`(() => { const d = document.querySelector('dialog[open]'); return { title: d?.querySelector('.dialog__title')?.textContent, value: d?.querySelector('#appointmentTitle')?.value, daypart: d?.querySelector('input[name="appointmentDaypart"]:checked')?.value, actions: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].map((x) => x.textContent) }; })()`);
+  check('⋯ op een afspraak opent hetzelfde blad om te wijzigen, met Opslaan en Verwijderen', edit.title === 'Afspraak bewerken' && edit.value === 'Gemist telefoontje' && edit.daypart === 'evening' && edit.actions.join('|') === 'Opslaan|Verwijderen|Annuleren', JSON.stringify(edit));
+  await ev(`[...document.querySelectorAll('.dialog__actions .button')].find((x) => x.textContent === 'Verwijderen').click()`);
+  await sleep(600);
+  const removed = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); return { cards: [...document.querySelectorAll('.appointment-card .habit-card__name')].map((e) => e.textContent), stored: (await state.repo.listAppointments()).length }; })()`);
+  check('Verwijderen haalt de afspraak van het scherm en uit de opslag', JSON.stringify(removed.cards) === JSON.stringify(['Pakketje ophalen']) && removed.stored === 2, JSON.stringify(removed));
+
+  // een dag die voorbij is: geen ingang
+  const past = await appt.plus(-1);
+  await nav(`today?date=${past}`);
+  await sleep(400);
+  const noAdd = await ev(`!document.querySelector('.appointment-add__button')`);
+  check('op een dag die voorbij is staat geen "＋ Afspraak"', noAdd);
+
+  // past op elk formaat, ook bij 200% tekst: de pagina en het blad scrollen niet zijwaarts en alles is minstens 44 px
+  await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); await state.repo.saveAppointment({ title: 'Lange afspraak over Verzekeringsmaatschappijaansprakelijkheidsverzekering bellen', date: state.today, daypart: 'morning' }); notifyChanged(); })()`);
+  for (const [size, w, h2, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h2, deviceScaleFactor: 2, mobile: true });
+    await nav('today');
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(400);
+    const fit = await ev(`(() => { const tiny = [...document.querySelectorAll('.appointment-card .check, .appointment-card .habit-card__more, .appointment-add__button')].filter((b) => { const r = b.getBoundingClientRect(); return r.height < 43 || r.width < 43; }).length; return { overflow: document.documentElement.scrollWidth - innerWidth, wide: [...document.querySelectorAll('.appointment-card *, .appointment-add *')].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, tiny, cards: document.querySelectorAll('.appointment-card').length }; })()`);
+    check(`Vandaag, afspraken · ${size}: past zonder zijwaarts scrollen, ook met een lange tekst, en de knoppen zijn minstens 44 px`, fit.cards >= 2 && fit.overflow <= 0 && fit.wide === 0 && fit.tiny === 0, JSON.stringify(fit));
+    await click('.appointment-add__button', 500);
+    const dialogFit = await ev(`(() => { const d = document.querySelector('dialog[open]'); const box = d?.getBoundingClientRect(); const faces = [...(d?.querySelectorAll('.segmented__face') ?? [])].map((f) => f.getBoundingClientRect()); return { open: !!d, overflow: d ? d.scrollWidth - d.clientWidth : 1, inside: !!box && box.right <= innerWidth + 1 && box.bottom <= innerHeight + 1, minH: Math.min(...faces.map((r) => r.height)), buttons: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].filter((b) => b.getBoundingClientRect().height < 43).length }; })()`);
+    check(`Afspraak-blad · ${size}: past op het scherm zonder zijwaarts scrollen, de dagdelen en knoppen zijn minstens 44 px`, dialogFit.open && dialogFit.overflow <= 0 && dialogFit.inside && dialogFit.minH >= 43 && dialogFit.buttons === 0, JSON.stringify(dialogFit));
+    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  }
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+  await nav('today');
+  await sleep(500);
+  const desktop = await ev(`(() => { const b = document.querySelector('.appointment-add__button'); return { inMain: !!b?.closest('.today__main'), card: !!document.querySelector('.today__main .appointment-card') }; })()`);
+  check('Vandaag op desktop: de afspraken en "＋ Afspraak" staan in de linkerkolom bij de dag', desktop.inMain && desktop.card, JSON.stringify(desktop));
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   ws.close();
 }
 

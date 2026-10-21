@@ -19,7 +19,9 @@ import { feedbackInviteDue, snoozeFeedbackInvite } from '../feedback-state.js';
 import { clearFirstTip, firstTipPending } from '../intro.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView } from '../../app/day-view.js';
-import { adjustCounter, clearCheckIn, completeMonthTask, logCheckIn, planHabit, rateAutomaticity, rateCues, recordReason, RuleError, togglePart, unplanHabit } from '../../app/actions.js';
+import { addAppointment, adjustCounter, clearCheckIn, completeMonthTask, editAppointment, logCheckIn, planHabit, rateAutomaticity, rateCues, recordReason, removeAppointment, RuleError, setAppointmentDone, togglePart, unplanHabit } from '../../app/actions.js';
+import { appointmentCard } from '../components/appointment-card.js';
+import { openAppointmentSheet } from '../components/appointment-sheet.js';
 import { noteRated } from '../components/automaticity.js';
 import { buildAttention, forToday } from '../../app/attention.js';
 import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
@@ -27,6 +29,7 @@ import { monthTasks, REVIEW_CLOSING_TIME, reviewNudges } from '../../domain/revi
 import { dismissReviewNudges, reviewNudgeDismissed } from '../review-nudge-state.js';
 import { counterDoneValue } from '../../domain/counter.js';
 import { habitDayparts, hasMultipleDayparts } from '../../domain/dayparts.js';
+import { APPOINTMENT_AHEAD_DAYS } from '../../domain/appointments.js';
 import { charCounter } from '../components/char-counter.js';
 import { datesBetween, formatDateLong, greetingFor, localHour, relativeDayLabel } from '../../app/format.js';
 import { addDays, diffDays, isValidDate } from '../../domain/dates.js';
@@ -64,7 +67,9 @@ async function perform(action, message = null) {
     }
   } catch (error) {
     if (!(error instanceof RuleError)) throw error;
-    showToast({ message: error.code === 'plan_window' ? nl.today.toasts.planWindow : nl.today.toasts.backfillWindow });
+    const known = { plan_window: nl.today.toasts.planWindow, appointment_missing: nl.today.appointments.errors.missing, appointment_window: nl.today.appointments.errors.date.window(APPOINTMENT_AHEAD_DAYS) };
+    showToast({ message: known[error.code] ?? nl.today.toasts.backfillWindow });
+    if (error.code === 'appointment_missing') notifyChanged(); // op een ander toestel verwijderd: de lijst klopt weer
   }
 }
 
@@ -228,14 +233,42 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
   const allDone = view.progress.total > 0 && view.progress.done === view.progress.total;
   const poolPeriod = view.pool.every((e) => e.span === 'week') ? nl.today.pool.thisWeek : nl.today.pool.thisPeriod;
 
+  // Losse afspraken (docs/LOSSE-AFSPRAKEN.md): onder de habits van hun dagdeel. De teller bij de kop en de ring gaan alleen over habits.
+  const t = nl.today.appointments;
+  const appointmentSheet = (existing = null) => openAppointmentSheet({
+    existing,
+    date: existing?.date ?? date,
+    today,
+    onSave: (values) => (existing
+      ? perform(() => editAppointment(repo, { id: existing.id, ...values }, today), t.toasts.saved)
+      : perform(() => addAppointment(repo, values, today), t.toasts.added(values.title))),
+    onRemove: (item) => perform(() => removeAppointment(repo, { id: item.id }), t.toasts.removed),
+  });
+  const toggleAppointment = (item) => perform(
+    () => setAppointmentDone(repo, { id: item.id, date, done: !item.done }, today),
+    item.done ? t.toasts.reopened(item.title) : t.toasts.done(item.title),
+  );
+  const appointmentOptions = { canLog: view.canLog, today, onToggle: toggleAppointment, onEdit: appointmentSheet };
+
   const groupSections = view.groups.map((group) => {
     const { done, total } = tally(group.entries);
     return h('section', { class: 'section', 'aria-labelledby': `dp-${group.daypart}` },
       h('div', { class: 'section-head' },
         h('h2', { id: `dp-${group.daypart}`, class: 'section__title' }, nl.dayparts[group.daypart]),
-        h('span', { class: 'xs muted' }, nl.today.sectionCount(done, total))),
-      h('ul', { class: 'card-list' }, ...group.entries.map((entry) => habitCard(entry, cardOptions))));
+        total > 0 ? h('span', { class: 'xs muted' }, nl.today.sectionCount(done, total)) : null),
+      h('ul', { class: 'card-list' },
+        ...group.entries.map((entry) => habitCard(entry, cardOptions)),
+        ...group.appointments.map((item) => appointmentCard(item, appointmentOptions))));
   });
+  // De ingang staat op elke dag van vandaag af (niet op dagen die voorbij zijn) en niet bij de introductie voor wie nog niets heeft.
+  const appointmentAdd = view.canPlan && (view.hasHabits || view.hasAppointments)
+    ? h('div', { class: 'appointment-add' },
+      h('button', {
+        type: 'button', class: 'button button--ghost appointment-add__button', dataset: { focusKey: 'appointment-add' },
+        'aria-label': t.addFor(relativeDayLabel(date, today).toLowerCase()),
+        onclick: () => appointmentSheet(),
+      }, t.add))
+    : null;
 
   // De stapel: wat dreigt te falen staat bovenaan en altijd in beeld; de rest toont hoogstens POOL_VISIBLE kaarten en de overige zitten ingeklapt.
   // Elke kaart is één regel met één knop; "een andere dag" en "al gedaan" zitten achter ⋯.
@@ -390,7 +423,7 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
     monthTaskSection || reviewNote ? h('div', { class: 'today__notes' }, monthTaskSection, reviewNote) : null,
     view.groups.length === 0 && view.pool.length === 0 ? todayEmpty(view) : null,
     h('div', { class: 'today__columns page__panes' },
-      h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections),
+      h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections, appointmentAdd),
       side.length > 0 ? h('div', { class: 'today__side page__pane' }, ...side) : null));
 }
 

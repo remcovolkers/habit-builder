@@ -1,7 +1,7 @@
 // Opslag in het geheugen. Gebruikt in tests en als vangnet wanneer IndexedDB niet beschikbaar is
 // (bv. sommige privévensters). Zelfde interface als idb-store.js.
 // Records die gesynct worden, plus twee interne stores: 'outbox' (nog te versturen wijzigingen) en 'meta' (sync-status).
-export const DATA_COLLECTIONS = Object.freeze(['settings', 'habits', 'checkIns', 'pauses', 'dayPlans', 'achievements', 'ratings', 'reviews', 'reasons']);
+export const DATA_COLLECTIONS = Object.freeze(['settings', 'habits', 'checkIns', 'pauses', 'dayPlans', 'achievements', 'ratings', 'reviews', 'reasons', 'appointments']);
 export const INTERNAL_COLLECTIONS = Object.freeze(['outbox', 'meta']);
 export const COLLECTIONS = Object.freeze([...DATA_COLLECTIONS, ...INTERNAL_COLLECTIONS]);
 

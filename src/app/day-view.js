@@ -2,6 +2,7 @@
 import { endOfWeek, startOfWeek } from '../domain/dates.js';
 import { lastChanceThisWeek } from '../domain/planning.js';
 import { DAYPARTS } from '../domain/habit.js';
+import { appointmentsOn } from '../domain/appointments.js';
 import { donePartsOf, habitDayparts, hasMultipleDayparts } from '../domain/dayparts.js';
 import { paceOn } from '../domain/pace.js';
 import { isTight } from '../domain/tight.js';
@@ -43,7 +44,7 @@ export function prepareSnapshot(snapshot, from = null) {
 }
 
 /**
- * snapshot: { habits, checkIns, pauses, dayPlans }
+ * snapshot: { habits, checkIns, pauses, dayPlans, appointments? }
  * date: de dag die getoond wordt; today: de echte "vandaag" (met dagwissel).
  *
  * mode: 'past' | 'today' | 'future'
@@ -77,10 +78,15 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
     const done = donePartsOf(entry.habit, { status: entry.loggedToday, parts: entry.partsToday });
     return { ...entry, part, partDone: done.includes(part), partsDone: done.length, partsTotal: habitDayparts(entry.habit).length, doneToday: done.includes(part) };
   };
+  // Losse afspraken staan in hun dagdeel onder de habits. Ze tellen nergens mee (niet in `progress`, het feest of de punten); een dagdeel met alleen
+  // afspraken bestaat wel (docs/LOSSE-AFSPRAKEN.md).
+  const allAppointments = snapshot.appointments ?? [];
+  const appointments = appointmentsOn({ appointments: allAppointments, date, today });
   const groups = DAYPARTS.map((daypart) => ({
     daypart,
     entries: entries.filter((e) => habitDayparts(e.habit).includes(daypart)).map((e) => forPart(e, daypart)),
-  })).filter((g) => g.entries.length > 0);
+    appointments: appointments.filter((a) => a.daypart === daypart),
+  })).filter((g) => g.entries.length > 0 || g.appointments.length > 0);
 
   // een taak in de stapel dreigt te falen als het echt niet meer kan (atRisk) of al krap wordt (domain/tight.js); die komen bovenaan
   // Een taak waarvan alle keren die nog moeten al een dag hebben (covered) is niet meer te plannen: hij dreigt niet te falen en zakt naar beneden
@@ -107,6 +113,7 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
   return {
     date,
     hasHabits: habits.length > 0,
+    hasAppointments: allAppointments.length > 0, // ook als er op deze dag niets staat: dan blijft "Afspraak toevoegen" bereikbaar
     mode: date < today ? 'past' : date === today ? 'today' : 'future',
     canLog: date <= today && canBackfill(date, today),
     canPlan: date >= today,

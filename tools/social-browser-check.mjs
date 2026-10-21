@@ -446,7 +446,12 @@ async function main() {
   await rpc(elsewhere, 'delete_my_account');
   await send('Page.reload');
   await waitFor(`localStorage.getItem('sb-localhost-auth-token') === null`, 'sessie opgeruimd na een elders verwijderd account', 20000);
-  check('een sessie van een elders verwijderd account wordt bij het openen herkend: de app is uitgelogd in plaats van 409-fouten te geven', (await ev(`import('/src/ui/account.js').then((m) => m.account.status)`)) === 'anonymous');
+  // De sleutel is weg zodra de sessie lokaal wordt afgemeld; de status van de app volgt een moment later (via de auth-gebeurtenis, één na één verwerkt).
+  // Dus wachten tot hij bijgewerkt is in plaats van hem direct te lezen: dat was een race die af en toe een rode run gaf.
+  const accountStatus = () => ev(`import('/src/ui/account.js').then((m) => m.account.status)`);
+  let status = await accountStatus();
+  for (let i = 0; i < 100 && status !== 'anonymous'; i++) { await sleep(100); status = await accountStatus(); }
+  check('een sessie van een elders verwijderd account wordt bij het openen herkend: de app is uitgelogd in plaats van 409-fouten te geven', status === 'anonymous', `status: ${status}`);
 
   // opruimen
   for (const u of Object.values(people)) await rpc(u, 'delete_my_account');
