@@ -1,6 +1,7 @@
 // Handelingen van de gebruiker: domeinregels toepassen en daarna opslaan via de repository.
 // Elke handeling die je ongedaan wilt kunnen maken geeft { undo } terug.
-import { addDays, diffDays, startOfMonth, startOfWeek } from '../domain/dates.js';
+import { addDays, diffDays, isValidDate, startOfMonth, startOfWeek } from '../domain/dates.js';
+import { inAppointmentWindow } from '../domain/appointments.js';
 import { monthReviewState, weekReviewState } from '../domain/reviews.js';
 import { DEFAULT_GRADUATION_DAYS, PLAN_AHEAD_DAYS } from '../domain/constants.js';
 import { clampCounter, counterDoneValue, counterStatus } from '../domain/counter.js';
@@ -101,6 +102,45 @@ export async function planHabit(repo, { habitId, date }, today) {
 export async function unplanHabit(repo, { habitId, date }) {
   await repo.clearDayPlan(habitId, date);
   return { undo: () => repo.setDayPlan({ habitId, date }) };
+}
+
+// --- losse afspraken ----------------------------------------------------------------------------
+// Een eenmalige herinnering met een datum en een dagdeel (domain/appointments.js). Los van de habits: geen check-ins, punten of prestaties.
+
+/** Zet een afspraak op een dag (vandaag of later). Geeft { appointment, undo } terug. */
+export async function addAppointment(repo, { title, date, daypart = 'anytime' }, today) {
+  if (isValidDate(date) && !inAppointmentWindow(date, today)) throw new RuleError('appointment_window');
+  const appointment = await repo.saveAppointment({ title, date, daypart });
+  return { appointment, undo: () => repo.deleteAppointment(appointment.id) };
+}
+
+/**
+ * Wijzigt de tekst, de dag of het dagdeel. Kiest de gebruiker een andere dag, dan vervalt het afvinken: het is dan weer een open afspraak.
+ * Een afspraak die al op een dag uit het verleden stond mag die dag houden (hij schuift dan stil door naar vandaag).
+ */
+export async function editAppointment(repo, { id, title, date, daypart }, today) {
+  const previous = await repo.getAppointment(id);
+  if (!previous) throw new RuleError('appointment_missing');
+  const moved = date !== previous.date;
+  if (moved && isValidDate(date) && !inAppointmentWindow(date, today)) throw new RuleError('appointment_window');
+  const appointment = await repo.saveAppointment({ ...previous, title, date, daypart, doneOn: moved ? null : previous.doneOn });
+  return { appointment, undo: () => repo.saveAppointment(previous) };
+}
+
+/** Een afspraak afvinken (`done: true`, op de dag die je bekijkt) of weer openzetten. */
+export async function setAppointmentDone(repo, { id, date, done }, today) {
+  if (!canBackfill(date, today)) throw new RuleError('backfill_window');
+  const previous = await repo.getAppointment(id);
+  if (!previous) throw new RuleError('appointment_missing');
+  await repo.saveAppointment({ ...previous, doneOn: done ? date : null });
+  return { undo: () => repo.saveAppointment(previous) };
+}
+
+export async function removeAppointment(repo, { id }) {
+  const previous = await repo.getAppointment(id);
+  if (!previous) throw new RuleError('appointment_missing');
+  await repo.deleteAppointment(id);
+  return { undo: () => repo.saveAppointment(previous) };
 }
 
 // --- habit aanmaken en bewerken ---------------------------------------------------------------

@@ -67,6 +67,42 @@ export const nl = {
       done: 'Doorgevoerd, afvinken',
       toast: 'Maandtaak afgevinkt',
     },
+    // een losse afspraak: een eenmalige herinnering met een dag en een dagdeel, geen habit (docs/LOSSE-AFSPRAKEN.md)
+    appointments: {
+      badge: 'Afspraak',
+      add: '＋ Afspraak',
+      addFor: (dayLabel) => `Afspraak toevoegen voor ${dayLabel}`,
+      from: (label) => `Van ${label}`,
+      check: (title) => `Afvinken: ${title}`,
+      uncheck: (title) => `Afvinken ongedaan maken: ${title}`,
+      edit: (title) => `Afspraak bewerken: ${title}`,
+      states: { done: 'Gedaan', open: 'Open' },
+      sheet: {
+        titleNew: 'Nieuwe afspraak',
+        titleEdit: 'Afspraak bewerken',
+        intro: 'Een losse afspraak met jezelf, op één dag. Hij staat op Vandaag en telt nergens mee; een afspraak die je mist schuift stil door naar de volgende dag.',
+        what: 'Wat moet er gebeuren?',
+        whatPlaceholder: 'Bijvoorbeeld: bellen met Anna',
+        daypart: 'Moment van de dag',
+        date: 'Op welke dag?',
+        add: 'Toevoegen',
+        save: 'Opslaan',
+        remove: 'Verwijderen',
+      },
+      errors: {
+        title: { required: 'Vul in wat er moet gebeuren.', too_long: (max) => `Maximaal ${max} tekens.` },
+        date: { invalid: 'Kies een dag.', window: (days) => `Kies een dag vanaf vandaag, tot ${days} dagen vooruit.` },
+        daypart: { invalid: 'Kies een moment van de dag.' },
+        missing: 'Deze afspraak bestaat niet meer.',
+      },
+      toasts: {
+        added: (title) => `Afspraak toegevoegd: ${title}`,
+        saved: 'Afspraak aangepast',
+        removed: 'Afspraak verwijderd',
+        done: (title) => `Afgevinkt: ${title}`,
+        reopened: (title) => `Weer open: ${title}`,
+      },
+    },
     // de melding dat een review open staat (week: vrijdag tot maandag 12:00; maand: de 25e tot de 2e om 12:00)
     reviewNote: {
       badge: 'Review',

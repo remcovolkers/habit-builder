@@ -12,9 +12,11 @@
 //   listReviews() / getReview(weekStart) / saveReview({weekStart, wentWell, wentBad})
 //   getMonthReview(monthStart) / saveMonthReview({monthStart, adjust}) / setMonthTaskApplied({monthStart, date})
 //   listReasons(habitId?) / setReason({habitId, date, reason, note?}) / clearReason(habitId, date)   (waarom een taak bleef liggen)
+//   listAppointments() / getAppointment(id) / saveAppointment({id?, title, date, daypart?, doneOn?}) / deleteAppointment(id)   (losse afspraken, geen habits)
 //   replaceAll(data)  (import: vervangt alles)
-//   snapshot() -> { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons }
+//   snapshot() -> { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments }
 import { COUNTER_MAX } from '../domain/counter.js';
+import { validateAppointment } from '../domain/appointments.js';
 import { NOTE_MAX_LENGTH } from '../domain/constants.js';
 import { isValidDate, startOfMonth, startOfWeek } from '../domain/dates.js';
 import { monthReviewId } from '../domain/reviews.js';
@@ -263,6 +265,24 @@ export function createRepository({
       return softDelete('reasons', `${habitId}|${date}`);
     },
 
+    // --- losse afspraken ------------------------------------------------------------------------
+    // Eenmalig, met een datum en een dagdeel; los van de habits (zie domain/appointments.js).
+    async listAppointments() {
+      return (await liveList('appointments')).sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.createdAt).localeCompare(String(b.createdAt)));
+    },
+    async getAppointment(id) {
+      const record = await store.get('appointments', id);
+      return record && live(record) ? record : null;
+    },
+    async saveAppointment({ id, title, date, daypart = 'anytime', doneOn = null }) {
+      const errors = validateAppointment({ title, date, daypart, doneOn });
+      if (errors.length > 0) throw new ValidationError(errors);
+      return upsert('appointments', { id: id ?? uuid(), title: title.trim(), date, daypart, doneOn });
+    },
+    async deleteAppointment(id) {
+      return softDelete('appointments', id);
+    },
+
     // --- import: alles vervangen ----------------------------------------------------------------
     async replaceAll(data) {
       const stamp = now();
@@ -276,6 +296,7 @@ export function createRepository({
         ratings: data.ratings,
         reviews: data.reviews,
         reasons: data.reasons,
+        appointments: data.appointments,
       };
       for (const collection of DATA_COLLECTIONS) {
         const incoming = sets[collection] ?? [];
@@ -297,7 +318,7 @@ export function createRepository({
 
     // --- alles voor de schermen -------------------------------------------------------------
     async snapshot() {
-      const [settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons] = await Promise.all([
+      const [settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments] = await Promise.all([
         this.getSettings(),
         this.listHabits(),
         this.listCheckIns(),
@@ -307,8 +328,9 @@ export function createRepository({
         this.listRatings(),
         this.listReviews(),
         this.listReasons(),
+        this.listAppointments(),
       ]);
-      return { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons };
+      return { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments };
     },
   };
 }

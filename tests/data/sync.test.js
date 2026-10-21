@@ -450,3 +450,29 @@ test('isUserGoneError: alleen een verwijderd account telt, geen netwerkfout of v
     assert.equal(isUserGoneError(other), false, JSON.stringify(other));
   }
 });
+
+// --- losse afspraken (docs/LOSSE-AFSPRAKEN.md) ------------------------------------------------------------
+
+test('losse afspraken gaan naar de server en komen op een tweede apparaat aan; verwijderen gaat als grafsteen mee', async () => {
+  const server = createFakeServer();
+  const a = device(server, 'a');
+  const b = device(server, 'b');
+  const saved = await a.repo.saveAppointment({ title: 'Bellen met Anna', date: '2026-10-17', daypart: 'afternoon' });
+  await a.engine.request();
+  assert.equal(server.rows.get(`appointments|${saved.id}`).collection, 'appointments');
+
+  await b.engine.request();
+  const onB = await b.repo.getAppointment(saved.id);
+  assert.deepEqual([onB.title, onB.date, onB.daypart, onB.doneOn], ['Bellen met Anna', '2026-10-17', 'afternoon', null]);
+
+  await b.repo.saveAppointment({ ...onB, doneOn: '2026-10-17' });
+  await b.engine.request();
+  await a.engine.request();
+  assert.equal((await a.repo.getAppointment(saved.id)).doneOn, '2026-10-17');
+
+  await a.repo.deleteAppointment(saved.id);
+  await a.engine.request();
+  await b.engine.request();
+  assert.equal(await b.repo.getAppointment(saved.id), null);
+  assert.deepEqual(await b.repo.listAppointments(), []);
+});

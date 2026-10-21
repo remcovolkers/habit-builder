@@ -206,6 +206,20 @@ Heeft een draaiende Supabase nodig met migratie 0007 (lokaal doet `npm run db:st
 6. **De vraag in de review (vrijdag t/m maandag 12:00 voor een weektaak, de 25e t/m de 2e voor een maandtaak):** open Voortgang. Bovenaan de review staat **Zonder app**: *Heb je "Tuin" gedaan zonder de app?* met **Ja, zonder de app** en **Nee, ik had de app nodig**. "Ja" kan alleen als je de taak in de proef hebt afgevinkt (anders staat er "Vink hem eerst af"). "Nee" laat de app direct weer helpen: de taak staat weer in de stapel, en een nieuwe proef kan pas na 4 hele weken (weektaak) of 2 hele maanden (maandtaak); op de habit staat wanneer. Sluit de review zonder antwoord, dan verloopt de proef zonder wachttijd.
 7. **Een nieuwe proef aanbieden:** staat de review open en heeft een taak twee cijfers van 3 of hoger, dan staat in de review een regel *"Tuin" gaat goed. Probeer het volgende week zonder de app.* met **Plan de proef**.
 
+## R. Losse afspraken (docs/LOSSE-AFSPRAKEN.md)
+
+Werkt ook zonder account. Met een account en lokale Supabase (migratie 0008, `npm run db:start` of `npm run db:reset`) controleer je ook de sync.
+
+1. **De ingang**: onder de dagdelen op Vandaag staat **＋ Afspraak**. Hij staat er ook op de dagen erna (blader met de pijl of tik een dag in de weekstrook), niet op een dag die voorbij is. Op Habits en in de zwevende knop staat niets over afspraken.
+2. **Toevoegen voor donderdag**: blader naar donderdag, tik **＋ Afspraak**. Het blad staat op donderdag, "Overdag" is gekozen en de cursor staat in het tekstveld. Kies **Middag**, typ "Bellen met Anna" en druk Enter (of tik **Toevoegen**). De afspraak staat onder de habits van Middag, met het woord **Afspraak**, een accentrand en geen icoon. Zonder tekst blijft het blad open met een melding.
+3. **Telt niet mee**: de ring, "0 van n" bij de kop van het dagdeel en de felicitatie gaan alleen over habits. Vink alle habits af terwijl de afspraak open staat: "Alles gedaan" komt gewoon. Punten, prestaties en de ranglijst veranderen niet door afspraken.
+4. **Afvinken**: tik het rondje. Er komt "Gedaan" en een melding met **Ongedaan maken**. Op een dag in de toekomst staat het rondje uit (net als bij habits).
+5. **Doorschuiven**: maak een afspraak voor vandaag en zet de dag van het toestel een dag door (of maak er een in een eerdere dag via `await state.repo.saveAppointment(...)` in de console). Een open afspraak van gisteren staat op vandaag met "Afspraak · Van gisteren", zonder oranje of waarschuwing. Vink je hem af, dan blijft hij vandaag staan en is hij morgen weg.
+6. **Wijzigen en verwijderen**: tik ⋯ op een afspraak. Hetzelfde blad opent met **Opslaan** en **Verwijderen**. Een andere dag kiezen zet hem op die dag (en maakt hem weer open). **Verwijderen** haalt hem weg met een melding **Ongedaan maken**.
+7. **Back-up**: Instellingen → exporteren; het bestand bevat een lijst `appointments`. Importeer het in een leeg account: de afspraken komen terug.
+8. **Sync** (met account): zet een afspraak op het ene apparaat, ververs op het andere. Studio (`http://localhost:54323`), tabel `records`, filter op `collection` = `appointments`: één rij per afspraak.
+9. **Grote tekst**: de knop, de kaarten en het blad op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout` controleert dit).
+
 ## Automatische controles
 
 ```
