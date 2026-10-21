@@ -15,7 +15,7 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 ## Welke gegevens
 
 **Zonder account** (alleen op je apparaat, in de opslag van je browser):
-- je habits, check-ins, pauzes, planning, prestaties, automatisme-cijfers, wekelijkse reviews en de redenen die je geeft als een taak bleef liggen (met je eventuele toelichting);
+- je habits, check-ins, pauzes, planning, prestaties, automatisme-cijfers, wekelijkse reviews, je losse afspraken (de tekst, de dag en het dagdeel) en de redenen die je geeft als een taak bleef liggen (met je eventuele toelichting);
 - je instellingen (naam voor de begroeting, tijdzone, dagwissel).
 
 **Met een account** komt daar bij:
@@ -36,9 +36,9 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 - **het e-mailadres van je account**, en alleen als je bent ingelogd én "Je mag me hierover mailen" aanvinkt. Dan is het bericht ook aan je account gekoppeld, en verdwijnt het als je je account verwijdert. Zonder het vinkje (of zonder account) is het bericht anoniem: er wordt niets bijgehouden over wie het stuurde, ook niet hoe vaak;
 - het bericht is alleen te lezen door mij als beheerder van de app. Ik gebruik het om de app te verbeteren en, als je het vinkje aanzette, om je te antwoorden. Ik bewaar het tot ik het heb afgehandeld en verwijder het daarna, uiterlijk na een jaar.
 
-**Wat je vrienden niet zien:** je e-mailadres, de namen van je habits, je cues, "waarom"-teksten, notities en reviews, wat je op welk tijdstip afvinkt, en je andere gegevens.
+**Wat je vrienden niet zien:** je e-mailadres, de namen van je habits, je losse afspraken, je cues, "waarom"-teksten, notities en reviews, wat je op welk tijdstip afvinkt, en je andere gegevens.
 
-Je habit-namen, cues, "waarom"-teksten, notities, reviews en de toelichting bij een reden zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
+Je habit-namen, de tekst van je losse afspraken, cues, "waarom"-teksten, notities, reviews en de toelichting bij een reden zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
 
 ## Waarvoor
 

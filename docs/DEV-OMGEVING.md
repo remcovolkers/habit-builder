@@ -88,7 +88,7 @@ De inhoud staat in `tools/lib/stub-data.mjs`; `tests/dev-stub.test.js` bewaakt d
 
 ## Controleren dat het goed staat
 
-GitHub draait dezelfde controles in de workflow **Integratie** (lokale Supabase in Docker plus een echte browser) op elke push naar `develop` en `feature/**`.
+GitHub draait dezelfde controles in de workflow **Integratie** (lokale Supabase in Docker plus een echte browser) op elke push naar `develop` en `feature/**`. De workflow houdt de poorten 54321 t/m 54329 vrij voor Supabase (anders kan een uitgaande verbinding er toevallig een bezetten, met "address already in use" bij de start) en probeert `db:start` bij een mislukking één keer opnieuw.
 
 `node tools/live-check.mjs --dev` controleert de lokale database (migraties aanwezig, niet-ingelogde bezoekers kunnen niets lezen of schrijven).
 

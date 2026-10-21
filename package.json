@@ -23,6 +23,7 @@
     "dev:code": "node tools/dev-accounts.mjs code",
     "check:layout": "node tools/layout-check.mjs",
     "audit:scroll": "node tools/scroll-audit.mjs",
+    "film": "node tools/film/record.mjs",
     "icons:build": "node tools/build-icons.mjs",
     "icons:gallery": "node tools/icon-gallery.mjs"
   },

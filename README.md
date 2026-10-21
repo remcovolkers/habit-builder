@@ -31,7 +31,7 @@ npm run stage   # kopieert de publiceerbare bestanden naar _site/ en vult de ser
 | `vendor/` | Vastgepinde externe code (supabase-js, als één bestand gebundeld); zie `vendor/README.md`. |
 | `supabase/` | SQL-migraties (`migrations/`), hun beveiligingstest (`tests/`) en de Edge Function voor de ochtendherinnering (`functions/send-reminders`, één bestand zonder imports). Zet-op-instructies: `docs/M4-SETUP.md` (inloggen en sync) en `docs/M7-SETUP.md` (herinnering). |
 | `tests/` | `node:test` voor domein, app-logica, sync, PWA, thema's, push en guardrails. |
-| `tools/` | Dev-server, staging, `live-check.mjs` (controle van de echte Supabase) en `generate-vapid.mjs` (sleutels voor de herinnering), zonder dependencies. |
+| `tools/` | Dev-server, staging, `live-check.mjs` (controle van de echte Supabase), `generate-vapid.mjs` (sleutels voor de herinnering) en `film/` (het uitlegfilmpje, opgenomen uit de echte app: `npm run film`, zie `tools/film/README.md`), zonder dependencies. |
 
 ## Deployen
 

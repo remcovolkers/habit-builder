@@ -2,6 +2,7 @@
 import { isValidDate } from '../domain/dates.js';
 import { COUNTER_MAX } from '../domain/counter.js';
 import { SLIP_REASONS } from '../domain/attention.js';
+import { validateAppointment } from '../domain/appointments.js';
 import { validCues } from '../domain/automaticity.js';
 import { CHECK_IN_STATUSES, validParts, validateHabit } from '../domain/habit.js';
 import { validateSettings } from './settings.js';
@@ -10,7 +11,7 @@ export const BACKUP_APP = 'habit-builder';
 export const BACKUP_VERSION = 1;
 const REVIEW_TEXT_MAX = 1000;
 
-const COLLECTIONS = ['habits', 'checkIns', 'pauses', 'dayPlans', 'achievements', 'ratings', 'reviews', 'reasons'];
+const COLLECTIONS = ['habits', 'checkIns', 'pauses', 'dayPlans', 'achievements', 'ratings', 'reviews', 'reasons', 'appointments'];
 
 /** snapshot: uitvoer van repo.snapshot(); alleen levende records, zonder interne verwijdermarkeringen. */
 export function buildExport(snapshot, now = new Date()) {
@@ -75,11 +76,15 @@ function validateRecords(name, records, habitIds, problems) {
       case 'reviews':
         if (!isValidReview(record)) return bad('ongeldige review');
         break;
+      case 'appointments':
+        if (validateAppointment(record).length > 0) return bad('ongeldige afspraak');
+        break;
       default:
         break;
     }
     // records die naar een onbekende habit verwijzen zijn wees: weglaten in plaats van de hele import te weigeren
-    if (name !== 'habits' && name !== 'reviews' && name !== 'achievements' && !habitIds.has(record.habitId)) {
+    // (een losse afspraak hoort bij geen habit)
+    if (name !== 'habits' && name !== 'reviews' && name !== 'achievements' && name !== 'appointments' && !habitIds.has(record.habitId)) {
       problems.push(`${where}: verwijst naar een onbekende habit (weggelaten)`);
       return;
     }

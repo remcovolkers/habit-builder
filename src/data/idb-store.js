@@ -2,7 +2,7 @@
 import { COLLECTIONS } from './memory-store.js';
 
 const DB_NAME = 'habit-builder';
-const DB_VERSION = 4; // v2: achievements, ratings, reviews; v3: outbox, meta (sync); v4: reasons
+const DB_VERSION = 5; // v2: achievements, ratings, reviews; v3: outbox, meta (sync); v4: reasons; v5: appointments
 
 function request(req) {
   return new Promise((resolve, reject) => {

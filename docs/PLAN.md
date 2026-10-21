@@ -37,6 +37,7 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | M7 ochtendherinnering (Web Push): server ingericht, geplande melding en testmelding komen aan op een echte telefoon (Android); batterij-uitleg en ontwikkelaarsopties voor het testen | klaar |
 | FAB, lege toestanden, weekstrook, week-/maandoverzicht, notities, herstelmoment, volgorde van habits, privacylink in de app | klaar |
 | Vrienden en ranglijst (S1–S5, [SOCIAAL.md](SOCIAAL.md)): punten, server, data-laag, schermen, privacyverklaring en voorwaarden | klaar, versie 1.1 ([RELEASE-v1.1.md](RELEASE-v1.1.md)) |
+| Losse afspraken: een eenmalige herinnering met een dag en een dagdeel op Vandaag, los van de habits ([LOSSE-AFSPRAKEN.md](LOSSE-AFSPRAKEN.md)) | gebouwd op `feature/losse-afspraken`, nog niet uitgerold (eerst migratie 0008 op productie) |
 
 ## Dekking van de eisen (stand versie 1)
 

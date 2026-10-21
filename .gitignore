@@ -8,3 +8,5 @@ supabase/.temp/
 supabase/.branches/
 
 docs/icons/galerij.html
+tools/film/out/
+tools/film/.venv/

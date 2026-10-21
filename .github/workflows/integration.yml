@@ -27,6 +27,11 @@ jobs:
       CI: 'true'
     steps:
       - uses: actions/checkout@v4
+      # De poorten van de lokale Supabase (54321 t/m 54329) liggen in het bereik dat Linux uitdeelt aan uitgaande verbindingen (32768-60999).
+      # Zit er toevallig een verbinding op 54324 als Docker die poort wil binden, dan faalt de start met "address already in use".
+      # Reserveren houdt die poorten vrij voor Supabase; direct binden blijft gewoon werken.
+      - name: Poorten van de lokale Supabase vrijhouden
+        run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=54321-54329
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -34,7 +39,13 @@ jobs:
       - name: Lay-out in een echte browser (ruimte onder de lijst, zwevende knop)
         run: npm run check:layout
       - name: Lokale Supabase starten (migraties worden vanzelf toegepast)
-        run: npm run db:start
+        # Zekerheid bovenop het vrijhouden van de poorten: mislukt de start toch (een Docker-hapering), dan eerst opruimen en één keer opnieuw
+        run: |
+          npm run db:start || {
+            echo "::warning title=Supabase starten mislukte::opruimen en nog één keer proberen"
+            npm run db:stop || true
+            npm run db:start
+          }
       - name: De sociale functies via de echte API
         run: npm run db:check-social
       - name: De hele keten van de app (echte SDK, data-laag, besturing)

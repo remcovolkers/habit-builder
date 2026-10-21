@@ -183,3 +183,28 @@
   font-weight: var(--font-weight-bold);
   color: var(--color-warning);
 }
+
+/* losse afspraken (docs/LOSSE-AFSPRAKEN.md): een kaart als een habit, maar zonder icoon en met een accentrand, zodat je ziet dat het geen habit is */
+.appointment-card {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  border-left: 4px solid var(--color-accent-50);
+}
+
+.appointment-card__title {
+  overflow-wrap: anywhere;
+}
+
+/* de ingang onder de dagdelen: een rustige knop, geen kaart */
+.appointment-add {
+  display: flex;
+  margin-top: var(--space-4);
+}
+
+.appointment-add__button {
+  max-width: 100%;
+}
+
+/* het blad voor een afspraak: de dagdelen zijn hier de hoofdzaak en krijgen een volwaardig tikvlak (de gedeelde keuze is 2,5 rem) */
+.dialog--appointment .segmented__face {
+  min-height: var(--size-tap);
+}
