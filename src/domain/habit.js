@@ -9,7 +9,8 @@ export const DAYPARTS = Object.freeze(['morning', 'afternoon', 'evening', 'anyti
 export const SPLIT_DAYPARTS = Object.freeze(['morning', 'afternoon', 'evening']);
 export const HABIT_STATUSES = Object.freeze(['planned', 'active', 'graduated', 'archived']);
 export const HABIT_COLORS = Object.freeze(['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8']);
-export const CHECK_IN_STATUSES = Object.freeze(['done', 'minimal', 'skipped', 'partial']);
+// 'wont' = "ga ik niet doen": de gebruiker geeft een taak op (met reden); telt als gemist, nu al (docs/WONT-DO.md)
+export const CHECK_IN_STATUSES = Object.freeze(['done', 'minimal', 'skipped', 'partial', 'wont']);
 
 export const NAME_MAX = 60;
 export const TEXT_MAX = 200;

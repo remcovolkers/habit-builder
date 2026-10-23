@@ -7,12 +7,13 @@ import { charCounter } from './char-counter.js';
 import { attentionCard, openReasonSheet, reasonLabel } from './attention.js';
 import { trialReviewBlock } from './trial.js';
 import { nl } from '../../content/nl.js';
-import { recordReason, RuleError, saveMonthlyReview, saveWeeklyReview } from '../../app/actions.js';
+import { declineHabit, recordReason, RuleError, saveMonthlyReview, saveWeeklyReview } from '../../app/actions.js';
 import { buildWeekReview } from '../../app/attention.js';
 import { buildPeriodOverview } from '../../app/overview.js';
 import { buildMonthReviewCard, buildWeekReviewCard } from '../../app/reviews.js';
 import { formatDateLong, formatDateShort } from '../../app/format.js';
 import { REVIEW_TEXT_MAX, ValidationError } from '../../data/repository.js';
+import { wontSpan } from '../../domain/attention.js';
 import { isoWeek } from '../../domain/dates.js';
 import { REVIEW_CLOSING_TIME } from '../../domain/reviews.js';
 
@@ -148,6 +149,17 @@ function weekBody({ snapshot, today, card }) {
         showToast({ message: nl.attention.sheet.saved(reasonLabel(reason)) });
       },
     });
+    // "ga ik niet doen": de taak opgeven voor vandaag (bij een week- of maandtaak: de rest van die periode), met reden en plan
+    const wont = (item) => openReasonSheet({
+      habit: item.habit,
+      current: item.reason,
+      wont: { span: wontSpan(item.habit, today) },
+      onSave: async ({ reason, note, plan }) => {
+        const { undo } = await declineHabit(state.repo, { habitId: item.habit.id, date: today, reason, note, plan }, today);
+        notifyChanged();
+        showToast({ message: nl.today.toasts.wont(item.habit.name), actionLabel: nl.app.undo, onAction: async () => { await undo(); notifyChanged(); } });
+      },
+    });
     lookback = h('div', { class: 'review__lookback' },
       h('p', { class: 'kicker' }, a.title),
       review.week.total > 0 ? h('p', { class: 'xs muted' }, a.summary(review.week.done, review.week.total)) : null,
@@ -155,7 +167,7 @@ function weekBody({ snapshot, today, card }) {
         ? h('p', { class: 'card__text muted' }, a.nothing)
         : h('div', { class: 'stack' },
           h('p', { class: 'xs muted' }, a.count(review.open, review.handled)),
-          h('ul', { class: 'card-list' }, ...review.items.map((item) => attentionCard(item, { today, onWhy: why })))));
+          h('ul', { class: 'card-list' }, ...review.items.map((item) => attentionCard(item, { today, onWhy: why, onWont: wont })))));
   } else {
     const { totals } = buildPeriodOverview({ snapshot, today, period: 'week', anchor: card.start });
     if (totals.total > 0) lookback = h('p', { class: 'xs muted' }, w.outcome(totals.done, totals.total));

@@ -23,6 +23,7 @@ export function attentionText(signal) {
     case 'silent':
       return d.lastDone === null ? t.silentNever : t.silent(d.days);
     case 'failed':
+      if (d.givenUp) return nl.attention.wontGivenUp;
       if (d.span === 'day') return t.failedDays(formatDateShort(d.start), d.missed);
       if (d.span === 'month') return t.failedMonth(capitalize(nl.months.long[Number(d.start.slice(5, 7)) - 1]), d.count, d.target);
       return t.failedWeek(formatDateShort(d.start), d.count, d.target);
@@ -37,10 +38,15 @@ export function attentionText(signal) {
  * Het blad "Wat hield je tegen?": vijf redenen met één tik en een optionele toelichting.
  * onSave({ reason, note }) bewaart de reden. `extras` zijn knoppen die er ook iets mee doen (bijv. alsnog afvinken of overslaan):
  * run({ reason, note }) krijgt de gekozen reden (of null als je er geen koos).
+ *
+ * Met `wont: { span }` ('day' | 'week' | 'month') is het het blad van "Ga ik niet doen" (docs/WONT-DO.md): een eerlijke uitleg, de reden is verplicht
+ * en er is een optioneel plan ("wat ga je doen zodat je dit niet nog eens hoeft te falen?"). onSave krijgt dan ook { plan }.
  */
-export function openReasonSheet({ habit, current = null, onSave, extras = [] }) {
-  const s = nl.attention.sheet;
+export function openReasonSheet({ habit, current = null, onSave, extras = [], wont = null }) {
+  const s = wont ? nl.attention.wontSheet : nl.attention.sheet;
   let chosen = current?.reason ?? null;
+  const planInput = wont ? h('input', { id: 'reasonPlan', type: 'text', class: 'input', value: current?.plan ?? '', placeholder: s.planPlaceholder }) : null;
+  const plan = () => planInput?.value.trim() || null;
   const noteLabel = h('label', { class: 'field__label', for: 'reasonNote' }, chosen === 'other' ? s.noteOther : s.note);
   const error = h('p', { class: 'field__error', role: 'alert', hidden: true }, s.choose);
   const noteInput = h('input', { id: 'reasonNote', type: 'text', class: 'input', value: current?.note ?? '', placeholder: s.notePlaceholder });
@@ -61,10 +67,11 @@ export function openReasonSheet({ habit, current = null, onSave, extras = [] }) 
 
   return openDialog({
     title: s.title(habit.name),
-    description: s.description,
+    description: wont ? s.description(wont.span) : s.description,
     content: h('div', { class: 'stack' },
       group,
       h('div', { class: 'field' }, noteLabel, noteInput, charCounter(noteInput, NOTE_MAX_LENGTH)),
+      planInput ? h('div', { class: 'field' }, h('label', { class: 'field__label', for: 'reasonPlan' }, s.plan), planInput, charCounter(planInput, NOTE_MAX_LENGTH)) : null,
       error),
     actions: [
       {
@@ -72,11 +79,11 @@ export function openReasonSheet({ habit, current = null, onSave, extras = [] }) 
         variant: 'primary',
         onClick: async () => {
           if (chosen === null) { error.hidden = false; return false; }
-          await onSave({ reason: chosen, note: note() });
+          await onSave({ reason: chosen, note: note(), plan: plan() });
           return true;
         },
       },
-      ...extras.map(({ label, variant = 'secondary', run }) => ({ label, variant, onClick: () => run({ reason: chosen, note: note() }) })),
+      ...extras.map(({ label, variant = 'secondary', run }) => ({ label, variant, onClick: () => run({ reason: chosen, note: note(), plan: plan() }) })),
     ],
     cancelLabel: s.later,
   });
@@ -84,10 +91,10 @@ export function openReasonSheet({ habit, current = null, onSave, extras = [] }) 
 
 /**
  * Eén taak die aandacht vraagt. item: { habit, signal, reason, handled } uit app/attention.js.
- * onWhy(item) opent het blad; onTick(item) (optioneel) vinkt de taak nu af.
- * Een taak waar al op gereageerd is toont de reden en een knop om die te wijzigen.
+ * onWhy(item) opent het blad; onTick(item) (optioneel) vinkt de taak nu af; onWont(item) (optioneel) geeft de taak op ("ga ik niet doen").
+ * Een taak waar al op gereageerd is toont de reden (en het plan) en een knop om die te wijzigen.
  */
-export function attentionCard(item, { today, onWhy, onTick = null }) {
+export function attentionCard(item, { today, onWhy, onTick = null, onWont = null }) {
   const { habit, signal, reason, handled } = item;
   const schedule = formatSchedule(scheduleOn(habit, today));
   const buttons = handled
@@ -95,6 +102,9 @@ export function attentionCard(item, { today, onWhy, onTick = null }) {
     : [
       onTick ? h('button', { type: 'button', class: 'button button--primary button--small', dataset: { focusKey: `tick:${habit.id}` }, onclick: () => onTick(item) }, nl.attention.tickNow) : null,
       h('button', { type: 'button', class: 'button button--secondary button--small', dataset: { focusKey: `why:${habit.id}` }, onclick: () => onWhy(item) }, nl.attention.why),
+      onWont
+        ? h('button', { type: 'button', class: 'button button--ghost button--small', dataset: { focusKey: `wont:${habit.id}` }, onclick: () => onWont(item) }, nl.attention.wont)
+        : null,
     ].filter(Boolean);
 
   return h('li', { class: 'pool-card attention-card', dataset: { state: handled ? 'satisfied' : 'open', color: habit.color, kind: signal.kind } },
@@ -104,6 +114,7 @@ export function attentionCard(item, { today, onWhy, onTick = null }) {
     h('div', { class: 'pool-card__body' },
       h('p', { class: 'attention-card__text' }, attentionText(signal)),
       h('p', { class: 'attention-card__agreed xs muted' }, nl.attention.agreed(schedule)),
-      handled ? h('p', { class: 'attention-card__reason' }, nl.attention.reasonGiven(reasonLabel(reason.reason)), reason.note ? ` · ${reason.note}` : '') : null),
+      handled ? h('p', { class: 'attention-card__reason' }, nl.attention.reasonGiven(reasonLabel(reason.reason)), reason.note ? ` · ${reason.note}` : '') : null,
+      handled && reason.plan ? h('p', { class: 'attention-card__reason' }, nl.attention.planGiven(reason.plan)) : null),
     h('div', { class: 'pool-card__actions' }, h('div', { class: 'pool-card__more' }, ...buttons)));
 }

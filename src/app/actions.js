@@ -10,6 +10,7 @@ import { sortDayparts } from '../domain/habit.js';
 import { canBackfill } from '../domain/rules.js';
 import { scheduleAt } from '../domain/schedule.js';
 import { cleanCues } from '../domain/automaticity.js';
+import { computeUnits } from '../domain/units.js';
 import { TRIALS_KEPT, currentTrial, trialOffer, trialStatus, trialsOf } from '../domain/trial.js';
 import { doneBetween } from './habit-detail.js';
 import { moveHabit } from './ordering.js';
@@ -73,8 +74,41 @@ export async function togglePart(repo, { habit, date, part }, today) {
 export async function clearCheckIn(repo, { habitId, date }, today) {
   if (!canBackfill(date, today)) throw new RuleError('backfill_window');
   const previous = await repo.getCheckIn(habitId, date);
+  // wie "ga ik niet doen" terugdraait, haalt ook de reden en het plan weg die daarbij hoorden
+  const reason = previous?.status === 'wont' ? (await repo.listReasons(habitId)).find((r) => r.date === date) ?? null : null;
   await repo.clearCheckIn(habitId, date);
-  return { undo: () => restoreCheckIn(repo, habitId, date, previous) };
+  if (reason) await repo.clearReason(habitId, date);
+  return { undo: async () => { await restoreCheckIn(repo, habitId, date, previous); if (reason) await restoreReason(repo, reason); } };
+}
+
+async function restoreReason(repo, reason) {
+  await repo.setReason({ habitId: reason.habitId, date: reason.date, reason: reason.reason, note: reason.note ?? null, plan: reason.plan ?? null });
+}
+
+/**
+ * "Ga ik niet doen": de gebruiker geeft een taak op en zegt waarom (verplicht) en wat er anders moet zodat hij dit niet nog eens hoeft te falen (`plan`, optioneel).
+ * Zet een check-in 'wont' op `date`: dat telt als gemist, bij een week- of maandtaak voor de rest van die periode (domain/units.js). De reden en het plan
+ * staan bij dezelfde taak en dag in `reasons` en beantwoorden daarmee ook het signaal in "Even kijken". Een notitie die er al stond blijft staan.
+ * Geeft { undo } terug.
+ */
+export async function declineHabit(repo, { habitId, date, reason, note = null, plan = null }, today) {
+  if (!canBackfill(date, today)) throw new RuleError('backfill_window');
+  const habit = await repo.getHabit(habitId);
+  if (!habit) throw new RuleError('habit_missing');
+  const previous = await repo.getCheckIn(habitId, date);
+  const previousReason = (await repo.listReasons(habitId)).find((r) => r.date === date) ?? null;
+  await repo.setReason({ habitId, date, reason, note, plan }); // eerst de reden: een ongeldige reden laat de dag ongemoeid
+  // Alleen als er op die dag iets open staat dat kan worden opgegeven (een geplande dag, of een lopende week of maand); anders (bv. een taak die
+  // alleen "stil" is op een dag zonder afspraak) blijft het bij de reden en het plan.
+  const units = computeUnits({ habit, checkIns: await repo.listCheckIns(habitId), pauses: await repo.listPauses(habitId), today: date });
+  if (units.some((u) => (u.status === 'open' || u.status === 'skipped') && u.start <= date && date <= u.end)) await repo.setCheckIn({ habitId, date, status: 'wont', note: previous?.note ?? null });
+  return {
+    undo: async () => {
+      await restoreCheckIn(repo, habitId, date, previous);
+      if (previousReason) await restoreReason(repo, previousReason);
+      else await repo.clearReason(habitId, date);
+    },
+  };
 }
 
 // --- volgorde van habits -----------------------------------------------------------------------

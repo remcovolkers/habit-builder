@@ -314,7 +314,7 @@ async function main() {
     if (ask.overflow > 0) console.log(`INFO ${label}: de pagina is ${ask.overflow}px breder dan het scherm (bekend, zie docs/SCROLLEN.md)`);
     const quiet = await ev(`(() => { const c = document.querySelector('.attention-card'); const b = [...(c?.querySelectorAll('button') ?? [])].map((x) => x.getBoundingClientRect());
       return { shown: !!c, buttons: b.length, minH: Math.min(...b.map((r) => r.height)), inside: c ? c.scrollWidth <= c.clientWidth : false, overflow: document.documentElement.scrollWidth - innerWidth, text: c?.querySelector('.attention-card__text')?.textContent }; })()`);
-    check(`${label}: "Even kijken" met de stille taak, knoppen ≥ 44px, past in de kaart`, quiet.shown && quiet.buttons === 2 && quiet.minH >= 44 && quiet.inside, JSON.stringify(quiet));
+    check(`${label}: "Even kijken" met de stille taak, knoppen ≥ 44px, past in de kaart`, quiet.shown && quiet.buttons === 3 && quiet.minH >= 44 && quiet.inside, JSON.stringify(quiet));
     if (rare.late) {
       const late = await ev(`(() => { const l = document.querySelector('.habit-card__late'); const b = l?.querySelector('button')?.getBoundingClientRect(); return { shown: !!l, h: b?.height, inside: l ? l.scrollWidth <= l.clientWidth : false, overflow: document.documentElement.scrollWidth - innerWidth }; })()`);
       check(`${label}: "te laat" met knop ≥ 44px, past in de kaart`, late.shown && late.h >= 44 && late.inside, JSON.stringify(late));
@@ -1260,6 +1260,50 @@ async function main() {
   await sleep(500);
   const desktop = await ev(`(() => { const b = document.querySelector('.appointment-add__button'); return { inMain: !!b?.closest('.today__main'), card: !!document.querySelector('.today__main .appointment-card') }; })()`);
   check('Vandaag op desktop: de afspraken en "＋ Afspraak" staan in de linkerkolom bij de dag', desktop.inMain && desktop.card, JSON.stringify(desktop));
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+
+  // "Ga ik niet doen" (docs/WONT-DO.md): via ⋯ op een kaart, met een verplichte reden en een optioneel plan; de kaart toont reden en plan
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await nav('today');
+  await sleep(400);
+  const openCard = `(() => [...document.querySelectorAll('.habit-card:not(.appointment-card)')].find((c) => c.dataset.state === 'open' && c.dataset.counter !== 'true'))()`;
+  const wontName = await ev(`${openCard}?.querySelector('.habit-card__name').textContent ?? null`);
+  await ev(`${openCard}.querySelector('.habit-card__more').click()`);
+  await sleep(400);
+  const wontMenu = await ev(`[...document.querySelectorAll('dialog[open] .dialog__actions .button')].map((x) => x.textContent)`);
+  check('⋯ op een open taak heeft "Ga ik niet doen" naast Overslaan', wontMenu.includes('Ga ik niet doen') && wontMenu.includes('Overslaan'), JSON.stringify(wontMenu));
+  await ev(`[...document.querySelectorAll('dialog[open] .dialog__actions .button')].find((x) => x.textContent === 'Ga ik niet doen').click()`);
+  await sleep(500);
+  const wontSheet = await ev(`(() => { const d = document.querySelector('dialog[open]'); return { title: d?.querySelector('.dialog__title')?.textContent, radios: d?.querySelectorAll('input[name="reason"]').length, plan: !!d?.querySelector('#reasonPlan'), actions: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].map((x) => x.textContent) }; })()`);
+  check('"Ga ik niet doen" opent het blad met de zeven redenen, een plan-veld en de knoppen "Ga ik niet doen" en "Toch niet"', wontSheet.title === `${wontName}: ga ik niet doen` && wontSheet.radios === 7 && wontSheet.plan && wontSheet.actions.join('|') === 'Ga ik niet doen|Toch niet', JSON.stringify(wontSheet));
+  await ev(`[...document.querySelectorAll('dialog[open] .dialog__actions .button')].find((x) => x.textContent === 'Ga ik niet doen').click()`);
+  await sleep(300);
+  const noReason = await ev(`(() => { const d = document.querySelector('dialog[open]'); return { still: !!d, error: d?.querySelector('.field__error')?.hidden === false }; })()`);
+  check('zonder reden blijft het blad open met een melding', noReason.still && noReason.error, JSON.stringify(noReason));
+  await ev(`(() => { const d = document.querySelector('dialog[open]'); d.querySelector('input[name="reason"][value="no_time"]').click(); const p = d.querySelector('#reasonPlan'); p.value = 'Vanavond tien minuten'; p.dispatchEvent(new Event('input')); [...d.querySelectorAll('.dialog__actions .button')].find((x) => x.textContent === 'Ga ik niet doen').click(); })()`);
+  await sleep(600);
+  const wontDone = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); const card = [...document.querySelectorAll('.habit-card')].find((c) => c.querySelector('.habit-card__name')?.textContent === ${JSON.stringify(wontName)}); return { closed: !document.querySelector('dialog[open]'), state: card?.dataset.state, label: card?.querySelector('.habit-card__state')?.textContent, lines: [...(card?.querySelectorAll('.habit-card__wont p') ?? [])].map((p) => p.textContent), face: card?.querySelector('.check')?.textContent, toast: document.querySelector('.toast')?.textContent ?? '', stored: (await state.repo.listCheckIns()).filter((c) => c.status === 'wont').length }; })()`);
+  check('na "Ga ik niet doen" toont de kaart de status, de reden en het plan, en staat er een check-in "wont" in de opslag', wontDone.closed && wontDone.state === 'wont' && wontDone.label === 'Ga ik niet doen' && wontDone.lines.join('|') === 'Reden: Geen tijd|Plan: Vanavond tien minuten' && wontDone.face === '×' && wontDone.stored === 1 && wontDone.toast.includes('ga ik niet doen'), JSON.stringify(wontDone));
+
+  // past op elk formaat, ook bij 200% tekst: de kaart met reden en plan en het blad scrollen niet zijwaarts en alles is minstens 44 px
+  await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); const c = (await state.repo.listCheckIns()).find((x) => x.status === 'wont'); const r = (await state.repo.listReasons()).find((x) => x.habitId === c.habitId); await state.repo.setReason({ habitId: r.habitId, date: r.date, reason: 'other', note: 'Een heel lange toelichting over Verzekeringsmaatschappijaansprakelijkheidsverzekering', plan: 'Een even lang plan over Verzekeringsmaatschappijaansprakelijkheidsverzekering uitzoeken' }); notifyChanged(); })()`);
+  for (const [size, w, h2, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h2, deviceScaleFactor: 2, mobile: true });
+    await nav('today');
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(400);
+    const fit = await ev(`(() => { const card = document.querySelector('.habit-card[data-state="wont"]'); return { overflow: document.documentElement.scrollWidth - innerWidth, wide: [...(card?.querySelectorAll('*') ?? [])].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, tiny: [...(card?.querySelectorAll('.check, .habit-card__more') ?? [])].filter((b) => { const r = b.getBoundingClientRect(); return r.height < 43 || r.width < 43; }).length, found: !!card }; })()`);
+    check(`Vandaag, "ga ik niet doen" · ${size}: de kaart past zonder zijwaarts scrollen, ook met lange tekst, en de knoppen zijn minstens 44 px`, fit.found && fit.overflow <= 0 && fit.wide === 0 && fit.tiny === 0, JSON.stringify(fit));
+    await ev(`document.querySelector('.habit-card[data-state="wont"] .habit-card__more').click()`);
+    await sleep(400);
+    await ev(`[...document.querySelectorAll('dialog[open] .dialog__actions .button')].find((x) => x.textContent === 'Reden of plan aanpassen').click()`);
+    await sleep(500);
+    const dialogFit = await ev(`(() => { const d = document.querySelector('dialog[open]'); const box = d?.getBoundingClientRect(); return { open: !!d, prefilled: d?.querySelector('#reasonPlan')?.value?.startsWith('Een even lang plan') ?? false, overflow: d ? d.scrollWidth - d.clientWidth : 1, wide: [...(d?.querySelectorAll('*') ?? [])].filter((e) => e.getBoundingClientRect().right > box.right + 0.5).slice(0, 4).map((e) => e.className + ':' + Math.round(e.getBoundingClientRect().right - box.right)), inside: !!box && box.right <= innerWidth + 1 && box.bottom <= innerHeight + 1, buttons: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].filter((b) => b.getBoundingClientRect().height < 43).length, choices: [...(d?.querySelectorAll('.choice__face') ?? [])].filter((f) => f.getBoundingClientRect().height < 43).length }; })()`);
+    check(`Blad "ga ik niet doen" · ${size}: past op het scherm zonder zijwaarts scrollen, met het plan voorgevuld, en alles is minstens 44 px`, dialogFit.open && dialogFit.prefilled && dialogFit.overflow <= 0 && dialogFit.inside && dialogFit.buttons === 0 && dialogFit.choices === 0, JSON.stringify(dialogFit));
+    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  }
+  await ev(`document.documentElement.style.fontSize = '100%'`);
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   ws.close();
 }

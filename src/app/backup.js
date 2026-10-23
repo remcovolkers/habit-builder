@@ -1,6 +1,7 @@
 // Export en import van alle gegevens als één JSON-bestand (je vangnet: de gratis Supabase heeft geen back-ups).
 import { isValidDate } from '../domain/dates.js';
 import { COUNTER_MAX } from '../domain/counter.js';
+import { NOTE_MAX_LENGTH } from '../domain/constants.js';
 import { SLIP_REASONS } from '../domain/attention.js';
 import { validateAppointment } from '../domain/appointments.js';
 import { validCues } from '../domain/automaticity.js';
@@ -72,6 +73,7 @@ function validateRecords(name, records, habitIds, problems) {
         break;
       case 'reasons':
         if (!isValidDate(record.date) || !SLIP_REASONS.includes(record.reason)) return bad('ongeldige reden');
+        if (record.plan != null && (typeof record.plan !== 'string' || record.plan.length > NOTE_MAX_LENGTH)) return bad('ongeldige reden');
         break;
       case 'reviews':
         if (!isValidReview(record)) return bad('ongeldige review');

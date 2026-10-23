@@ -130,11 +130,13 @@
 }
 
 .habit-card[data-state='done'] .habit-card__name,
-.habit-card[data-state='skipped'] .habit-card__name {
+.habit-card[data-state='skipped'] .habit-card__name,
+.habit-card[data-state='wont'] .habit-card__name {
   color: var(--color-text-muted);
 }
 
-.habit-card[data-state='skipped'] {
+.habit-card[data-state='skipped'],
+.habit-card[data-state='wont'] {
   border-color: var(--color-hairline);
   box-shadow: none;
 }
@@ -208,6 +210,12 @@
   border-color: var(--color-paused);
   border-style: dashed;
   color: var(--color-paused);
+}
+
+/* "ga ik niet doen": een kruisje, dat telt als gemist maar zonder alarmkleur */
+.check[data-state='wont'] {
+  border-color: var(--color-text-muted);
+  color: var(--color-text-muted);
 }
 
 .check__label {
@@ -635,6 +643,18 @@
   font-size: var(--font-size-sm);
   font-style: italic;
   overflow-wrap: anywhere;
+}
+
+.habit-card__wont {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.habit-card__wont p {
+  margin: 0;
 }
 
 /* ---- volgorde aanpassen ---- */
