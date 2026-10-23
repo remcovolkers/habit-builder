@@ -10,6 +10,7 @@ export function entryState(entry) {
   if (entry.loggedToday === 'done') return 'done';
   if (entry.loggedToday === 'minimal') return 'minimal';
   if (entry.loggedToday === 'skipped') return 'skipped';
+  if (entry.loggedToday === 'wont') return 'wont';
   if (entry.loggedToday === 'partial') return 'partial';
   return 'open';
 }
@@ -19,6 +20,7 @@ function checkFace(state) {
   if (state === 'done') return icon('check', { strokeWidth: 3 });
   if (state === 'minimal') return h('span', { class: 'check__label' }, '½');
   if (state === 'skipped') return h('span', { class: 'check__label' }, '–');
+  if (state === 'wont') return h('span', { class: 'check__label' }, '×');
   return null;
 }
 
@@ -126,6 +128,13 @@ function extras(entry, state, { canLog, onRate, onCues, onLate }) {
         dataset: { focusKey: `late:${habit.id}` },
         onclick: () => onLate(entry),
       }, nl.today.late.button)));
+  }
+  if (entry.wontToday) {
+    // "ga ik niet doen": de reden en, als er een is, het plan
+    const { reason, note, plan } = entry.wontToday;
+    blocks.push(h('div', { class: 'habit-card__wont' },
+      h('p', null, nl.attention.reasonGiven(nl.attention.reasons[reason] ?? ''), note ? ` · ${note}` : ''),
+      plan ? h('p', null, nl.attention.planGiven(plan)) : null));
   }
   if (entry.automaticity && canLog) blocks.push(automaticityAsk(entry, { onRate, onCues }));
   if (entry.noteToday) blocks.push(h('p', { class: 'habit-card__note' }, `“${entry.noteToday}”`));

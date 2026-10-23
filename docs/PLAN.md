@@ -37,6 +37,7 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | M7 ochtendherinnering (Web Push): server ingericht, geplande melding en testmelding komen aan op een echte telefoon (Android); batterij-uitleg en ontwikkelaarsopties voor het testen | klaar |
 | FAB, lege toestanden, weekstrook, week-/maandoverzicht, notities, herstelmoment, volgorde van habits, privacylink in de app | klaar |
 | Vrienden en ranglijst (S1–S5, [SOCIAAL.md](SOCIAAL.md)): punten, server, data-laag, schermen, privacyverklaring en voorwaarden | klaar, versie 1.1 ([RELEASE-v1.1.md](RELEASE-v1.1.md)) |
+| "Ga ik niet doen": een taak opgeven met een reden en een optioneel plan, telt als gemist ([WONT-DO.md](WONT-DO.md)) | gebouwd op `feature/losse-afspraken`, geen servermigratie nodig |
 | Losse afspraken: een eenmalige herinnering met een dag en een dagdeel op Vandaag, los van de habits ([LOSSE-AFSPRAKEN.md](LOSSE-AFSPRAKEN.md)) | gebouwd op `feature/losse-afspraken`, nog niet uitgerold (eerst migratie 0008 op productie) |
 
 ## Dekking van de eisen (stand versie 1)
@@ -230,6 +231,8 @@ Eén detector (`src/domain/attention.js`) bepaalt per taak of hij om een reactie
 - **Vandaag, "Even kijken":** stille en mislukte taken (niet per dag) die nog geen reactie hebben, met *Nu afvinken* en *Wat hield je tegen?*. "Te laat" heeft zijn eigen blokje op de kaart van de taak.
 - **Ochtendmelding:** "1 taak vraagt aandacht." Zonder namen van taken (de server kent die niet). Voor elke taak zonder reactie op de dag dat het probleem begon en daarna elke week, nooit dagelijks. Op zondag erbij: "Je weekterugblik staat klaar." als de review van die week nog niet is ingevuld, en op de laatste dag van de maand "Je maandreview staat klaar." Een tik op de melding opent Voortgang bij die review. De melding komt op het ingestelde tijdstip.
 - **Weekreview (Voortgang):** bovenaan de uitkomst van de week ("12 van 15 gehaald, tot en met vandaag") en alleen de taken die aandacht vragen, ook de al beantwoorde met hun reden. Daaronder de twee tekstvelden.
+
+**Opgeven.** Naast een reactie achteraf kan de gebruiker een taak vooraf opgeven met *Ga ik niet doen* (⋯ op de kaart, in de stapel, en op de aandachtskaart): een reden (verplicht) en een plan (optioneel), en de taak telt als gemist. Zie [WONT-DO.md](WONT-DO.md).
 
 Bewust nog niet: aanbevelingen op basis van de reden (bij "Ritme klopt niet" het ritme verlagen, bij "Vergeten" een cue voorstellen) en een eigen tijdstip voor de weekreview-melding.
 

@@ -18,6 +18,13 @@ import { isOnTrial } from './trial.js';
 import { computeUnits } from './units.js';
 
 export const SLIP_REASONS = Object.freeze(['no_time', 'no_money', 'forgot', 'no_motivation', 'busy_sick', 'wrong_rhythm', 'other']);
+/** Waarover "ga ik niet doen" gaat voor deze taak op `date`: 'day' (vaste weekdagen), 'week' of 'month'. */
+export function wontSpan(habit, date) {
+  const schedule = scheduleOn(habit, date);
+  if (schedule?.type === 'day_of_month') return 'month';
+  return schedule?.type === 'times_per_period' ? schedule.period : 'day';
+}
+
 export const ATTENTION_KINDS = Object.freeze(['late', 'silent', 'failed', 'behind']); // volgorde = belang
 
 const counts = (status) => status === 'done' || status === 'minimal';
@@ -77,7 +84,9 @@ export function attentionFor({ habit, checkIns = [], pauses = [], today }) {
       }
       dayMisses.set(week, entry);
     } else if (unit.status === 'missed' && unit.kind === 'period' && unit.end >= windowStart && inFullPeriod(unit, habit.startDate)) {
-      signals.push({ kind: 'failed', habitId, key: `failed:${unit.start}`, since: unit.end, episode: addDays(unit.end, 1), detail: { span: unit.span, count: unit.count, target: unit.target, start: unit.start, end: unit.end } });
+      // een periode die de gebruiker zelf opgaf ("ga ik niet doen") is bij het opgeven al beantwoord: `since` is die dag, niet het einde van de periode
+      const since = unit.givenUp ? unit.givenUpOn : unit.end;
+      signals.push({ kind: 'failed', habitId, key: `failed:${unit.start}`, since, episode: unit.givenUp ? since : addDays(unit.end, 1), detail: { span: unit.span, count: unit.count, target: unit.target, start: unit.start, end: unit.end, givenUp: unit.givenUp === true } });
     }
   }
   for (const [week, entry] of dayMisses) {

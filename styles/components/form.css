@@ -761,7 +761,7 @@ select.input {
 /* de redenen op het blad "Wat hield je tegen?": twee naast elkaar, bij grote tekst of een smal scherm onder elkaar */
 .choices--reasons {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr)); /* min(): bij 200% tekst is 9rem breder dan een smal scherm */
   gap: var(--space-2);
 }
 

@@ -64,7 +64,8 @@ export function buildToday({ bundles, dayPlans = [], today, now = today }) {
     }
 
     const periodUnit = units.find((u) => u.type === 'times_per_period' && u.start <= today && today <= u.end);
-    if (periodUnit && (loggedToday !== undefined || (periodUnit.status !== 'paused' && periodUnit.status !== 'skipped'))) {
+    // een opgegeven periode ("ga ik niet doen") staat alleen nog op de dag waarop je dat koos
+    if (periodUnit && (loggedToday !== undefined || (periodUnit.status !== 'paused' && periodUnit.status !== 'skipped' && !periodUnit.givenUp))) {
       const plannedToday = dayPlans.some((p) => p.habitId === habit.id && p.date === today);
       // de andere dagen waarop hij al is ingepland: vanaf de echte vandaag (een plan van gisteren zonder check-in telt niet), in deze week of maand en niet op een dag die al is gelogd
       const logged = new Set(checkIns.map((c) => c.date));

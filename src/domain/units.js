@@ -4,6 +4,7 @@
 //   kind 'period' – een week of maand: 'times_per_period' (N×) of 'day_of_month' (dag X, uiterlijk einde maand)
 //
 // Status: 'done' | 'minimal' (telt als gedaan) | 'skipped' | 'paused' | 'missed' | 'open'.
+// Een check-in 'wont' ("ga ik niet doen") maakt een eenheid meteen 'missed': bij een dag die dag, bij een week of maand de héle periode (`givenUp`, `givenUpOn`).
 //
 // Welk schema geldt, en wie "claimt" welke dagen (deterministisch, ook bij cadence-wijzigingen):
 //   1. Per kalendermaand: is het schema op de LAATSTE dag van de maand 'day_of_month' of 'N× per maand',
@@ -23,7 +24,7 @@ export const isClosed = (unit) => counts(unit.status) || unit.status === 'missed
 
 /**
  * habit: { startDate, endDate?, schedules: [{ effectiveFrom, schedule }] }
- * checkIns: [{ date, status: 'done'|'minimal'|'skipped' }]  (per datum telt de laatste)
+ * checkIns: [{ date, status: 'done'|'minimal'|'skipped'|'wont' }]  (per datum telt de laatste)
  * pauses: [{ from, to|null }]
  */
 export function computeUnits({ habit, checkIns = [], pauses = [], today }) {
@@ -36,6 +37,8 @@ export function computeUnits({ habit, checkIns = [], pauses = [], today }) {
   const statusOn = (d) => byDate.get(d);
   const isPaused = (d) => pauses.some((p) => d >= p.from && (p.to == null || d <= p.to));
   const isActive = (d) => d >= startDate && (endDate === null || d <= endDate);
+  /** De laatste dag in `dates` waarop de gebruiker de taak opgaf ("ga ik niet doen"), of null. */
+  const lastWont = (dates) => dates.filter((d) => statusOn(d) === 'wont').at(-1) ?? null;
 
   const claimedMonths = new Set();
   const claimedWeeks = new Set();
@@ -51,10 +54,12 @@ export function computeUnits({ habit, checkIns = [], pauses = [], today }) {
     ).length;
     const target = Math.min(schedule.count, availableDays);
     const effectiveEnd = endDate !== null && endDate < end ? endDate : end;
+    const givenUpOn = lastWont(dates);
 
     let status;
     if (doneCount > 0 && doneCount >= target) status = 'done';
     else if (endDate !== null && endDate < end) return null; // gearchiveerd voordat de periode klaar was
+    else if (givenUpOn !== null) status = 'missed'; // opgegeven: de rest van de periode telt niet meer, ook al loopt hij nog
     else if (target === 0) status = pausedCount > 0 ? 'paused' : 'skipped';
     else status = effectiveEnd < today ? 'missed' : 'open';
 
@@ -78,6 +83,8 @@ export function computeUnits({ habit, checkIns = [], pauses = [], today }) {
       availableDays,
       remainingDays,
       atRisk: status === 'open' && target - doneCount > remainingDays,
+      givenUp: givenUpOn !== null && status === 'missed',
+      givenUpOn: status === 'missed' ? givenUpOn : null,
     };
   }
 
@@ -86,9 +93,11 @@ export function computeUnits({ habit, checkIns = [], pauses = [], today }) {
     if (due < startDate || due > last) return null;
     const dueWindow = eachDay(due, monthEnd).filter(isActive);
     const hit = dueWindow.some((d) => counts(statusOn(d)));
+    const givenUpOn = lastWont(dueWindow);
     let status;
     if (hit) status = 'done';
     else if (endDate !== null && endDate < monthEnd) return null;
+    else if (givenUpOn !== null) status = 'missed';
     else if (dueWindow.some((d) => statusOn(d) === 'skipped')) status = 'skipped';
     else if (dueWindow.length > 0 && dueWindow.every(isPaused)) status = 'paused';
     else status = monthEnd < today ? 'missed' : 'open';
@@ -105,6 +114,8 @@ export function computeUnits({ habit, checkIns = [], pauses = [], today }) {
       count: hit ? 1 : 0,
       minimalCount: dueWindow.filter((d) => statusOn(d) === 'minimal').length,
       overdue: status === 'open' && today > due,
+      givenUp: givenUpOn !== null && status === 'missed',
+      givenUpOn: status === 'missed' ? givenUpOn : null,
     };
   }
 
@@ -144,6 +155,7 @@ export function computeUnits({ habit, checkIns = [], pauses = [], today }) {
     let status;
     if (counts(logged)) status = logged;
     else if (logged === 'skipped') status = 'skipped';
+    else if (logged === 'wont') status = 'missed';
     else if (isPaused(d)) status = 'paused';
     else status = d < today ? 'missed' : 'open';
     units.push({

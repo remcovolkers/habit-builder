@@ -15,7 +15,7 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 ## Welke gegevens
 
 **Zonder account** (alleen op je apparaat, in de opslag van je browser):
-- je habits, check-ins, pauzes, planning, prestaties, automatisme-cijfers, wekelijkse reviews, je losse afspraken (de tekst, de dag en het dagdeel) en de redenen die je geeft als een taak bleef liggen (met je eventuele toelichting);
+- je habits, check-ins, pauzes, planning, prestaties, automatisme-cijfers, wekelijkse reviews, je losse afspraken (de tekst, de dag en het dagdeel) en de redenen die je geeft als een taak bleef liggen of je hem opgaf (met je eventuele toelichting en je plan);
 - je instellingen (naam voor de begroeting, tijdzone, dagwissel).
 
 **Met een account** komt daar bij:
@@ -38,7 +38,7 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 
 **Wat je vrienden niet zien:** je e-mailadres, de namen van je habits, je losse afspraken, je cues, "waarom"-teksten, notities en reviews, wat je op welk tijdstip afvinkt, en je andere gegevens.
 
-Je habit-namen, de tekst van je losse afspraken, cues, "waarom"-teksten, notities, reviews en de toelichting bij een reden zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
+Je habit-namen, de tekst van je losse afspraken, cues, "waarom"-teksten, notities, reviews en de toelichting en het plan bij een reden zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
 
 ## Waarvoor
 

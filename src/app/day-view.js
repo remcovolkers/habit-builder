@@ -10,6 +10,9 @@ import { isOnTrial } from '../domain/trial.js';
 import { canBackfill } from '../domain/rules.js';
 import { buildToday } from '../domain/today.js';
 
+/** Een kaart die overgeslagen of opgegeven is telt niet mee in "x van y" (en niet in de ring). */
+export const isSetAside = (entry) => entry.loggedToday === 'skipped' || entry.loggedToday === 'wont';
+
 const byHabitOrder = (a, b) =>
   (a.habit.sortOrder ?? 0) - (b.habit.sortOrder ?? 0) || a.habit.name.localeCompare(b.habit.name, 'nl');
 
@@ -69,7 +72,15 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
   };
 
   // een taak in een proef "zonder app" (domain/trial.js) staat nergens op Vandaag: geen kaartje, ook niet als hij nog ingepland stond
-  const entries = [...day.scheduled, ...day.planned].map(attach).filter((e) => !isOnTrial(e.habit, date)).map(withAutomaticity).sort(byHabitOrder);
+  // "Ga ik niet doen" (docs/WONT-DO.md): de reden en het plan die bij die dag horen, voor onder de kaart
+  const reasons = snapshot.reasons ?? [];
+  const withWont = (entry) => {
+    if (entry.loggedToday !== 'wont') return entry;
+    const found = reasons.find((r) => r.habitId === entry.habitId && r.date === date);
+    return { ...entry, wontToday: found ? { reason: found.reason, note: found.note ?? null, plan: found.plan ?? null } : null };
+  };
+
+  const entries = [...day.scheduled, ...day.planned].map(attach).filter((e) => !isOnTrial(e.habit, date)).map(withAutomaticity).map(withWont).sort(byHabitOrder);
 
   // Een habit met meerdere dagdelen staat in elk dagdeel, met een eigen vinkje: `part` is het dagdeel van deze kaart, `partDone` of dat gedaan is,
   // en `doneToday` volgt dat dagdeel (zodat de teller per dagdeel klopt). `partsDone` en `partsTotal` zijn de stand van de hele dag.
@@ -109,7 +120,8 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
       byHabitOrder(a, b),
   );
 
-  const counted = entries.filter((e) => e.loggedToday !== 'skipped');
+  // wat je hebt overgeslagen of opgegeven ("ga ik niet doen") staat niet meer open: de teller en "alles gedaan" gaan over wat nog kan
+  const counted = entries.filter((e) => !isSetAside(e));
   return {
     date,
     hasHabits: habits.length > 0,

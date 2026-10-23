@@ -220,6 +220,20 @@ Werkt ook zonder account. Met een account en lokale Supabase (migratie 0008, `np
 8. **Sync** (met account): zet een afspraak op het ene apparaat, ververs op het andere. Studio (`http://localhost:54323`), tabel `records`, filter op `collection` = `appointments`: één rij per afspraak.
 9. **Grote tekst**: de knop, de kaarten en het blad op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout` controleert dit).
 
+## S. Ga ik niet doen (docs/WONT-DO.md)
+
+Werkt ook zonder account; er is geen servermigratie voor nodig.
+
+1. **De ingang**: tik ⋯ op een open taak op Vandaag. Naast *Overslaan* staat **Ga ik niet doen**. Bij een taak die al gedaan is (of half, bij een teller of meerdere dagdelen) staat hij er niet.
+2. **Het blad**: titel "… : ga ik niet doen", dezelfde zeven redenen als bij "Wat hield je tegen?", een toelichting en **Wat ga je doen zodat je dit niet nog eens hoeft te falen? (optioneel)**. Zonder reden blijft het blad open met een melding; **Toch niet** sluit het zonder iets te doen.
+3. **De kaart**: na **Ga ik niet doen** staat de taak op "Ga ik niet doen" met een ×, en eronder "Reden: …" en (als je het invulde) "Plan: …". De teller bij het dagdeel, de ring en "Alles gedaan" tellen de taak niet meer mee. Er komt een melding met **Ongedaan maken**.
+4. **Telt als gemist**: de reeks van een dagelijkse taak valt terug naar 0 (een gemiste dag had hetzelfde gedaan, alleen later) en op de heatmap van de habit staat die dag als gemist. De punten veranderen die dag nog niet.
+5. **Terugdraaien**: tik het rondje of kies **Wissen** in ⋯: de taak staat weer open en de reden en het plan van die dag zijn weg. **Reden of plan aanpassen** in ⋯ opent het blad weer, voorgevuld.
+6. **Een week- of maandtaak** (bijv. Hardlopen 3× per week): in de stapel opent ⋯ **Ga ik niet doen deze week**. De taak is voor de rest van die week gemist en staat alleen nog op de dag waarop je hem opgaf; de volgende week begint hij weer gewoon.
+7. **Even kijken en de weekterugblik**: elke kaart waar nog niet op is gereageerd heeft naast *Wat hield je tegen?* de knop **Ga ik niet doen**. Een opgegeven taak staat daarna als beantwoord in de weekterugblik, met reden en plan ("Opgegeven met ga ik niet doen.").
+8. **Back-up en sync**: de status en het plan gaan mee in het back-upbestand en in de sync (Studio, tabel `records`: `collection` = `checkIns` met `status` = `wont`, en `reasons` met een `plan`).
+9. **Grote tekst**: de kaart en het blad op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout`).
+
 ## Automatische controles
 
 ```
