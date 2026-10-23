@@ -11,7 +11,7 @@
 //   listRatings(habitId?) / setRating({habitId, weekStart, score})   (automatisme 1–5, per week)
 //   listReviews() / getReview(weekStart) / saveReview({weekStart, wentWell, wentBad})
 //   getMonthReview(monthStart) / saveMonthReview({monthStart, adjust}) / setMonthTaskApplied({monthStart, date})
-//   listReasons(habitId?) / setReason({habitId, date, reason, note?}) / clearReason(habitId, date)   (waarom een taak bleef liggen)
+//   listReasons(habitId?) / setReason({habitId, date, reason, note?, plan?}) / clearReason(habitId, date)   (waarom een taak bleef liggen of werd opgegeven)
 //   listAppointments() / getAppointment(id) / saveAppointment({id?, title, date, daypart?, doneOn?}) / deleteAppointment(id)   (losse afspraken, geen habits)
 //   replaceAll(data)  (import: vervangt alles)
 //   snapshot() -> { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments }
@@ -250,16 +250,20 @@ export function createRepository({
       const all = await liveList('reasons');
       return habitId === undefined ? all : all.filter((r) => r.habitId === habitId);
     },
-    async setReason({ habitId, date, reason, note = null }) {
+    // `plan` (optioneel) is bij "ga ik niet doen" het antwoord op "wat ga je doen zodat je dit niet nog eens hoeft te falen?"; het veld staat alleen in het record als het er is
+    async setReason({ habitId, date, reason, note = null, plan = null }) {
       const errors = [];
       if (!habitId) errors.push({ field: 'habitId', code: 'required' });
       if (!isValidDate(date)) errors.push({ field: 'date', code: 'invalid' });
       if (!SLIP_REASONS.includes(reason)) errors.push({ field: 'reason', code: 'invalid' });
       if (note !== null && typeof note !== 'string') errors.push({ field: 'note', code: 'invalid' });
       else if (note !== null && note.trim().length > NOTE_MAX_LENGTH) errors.push({ field: 'note', code: 'too_long' });
+      if (plan !== null && typeof plan !== 'string') errors.push({ field: 'plan', code: 'invalid' });
+      else if (plan !== null && plan.trim().length > NOTE_MAX_LENGTH) errors.push({ field: 'plan', code: 'too_long' });
       if (errors.length > 0) throw new ValidationError(errors);
       const cleanNote = note === null || note.trim() === '' ? null : note.trim();
-      return upsert('reasons', { id: `${habitId}|${date}`, habitId, date, reason, note: cleanNote });
+      const cleanPlan = plan === null || plan.trim() === '' ? null : plan.trim();
+      return upsert('reasons', { id: `${habitId}|${date}`, habitId, date, reason, note: cleanNote, ...(cleanPlan === null ? {} : { plan: cleanPlan }) });
     },
     async clearReason(habitId, date) {
       return softDelete('reasons', `${habitId}|${date}`);

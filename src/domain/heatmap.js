@@ -27,6 +27,7 @@ export function buildHeatmap({ habit, checkIns = [], pauses = [], today, weeks =
     if (status === 'done') return 'done';
     if (status === 'minimal') return 'minimal';
     if (status === 'skipped') return 'skipped';
+    if (status === 'wont') return 'missed';
     const unit = dayUnits.get(date);
     if (unit === 'missed' || unit === 'open') return unit;
     if (unit === 'paused' || unit === 'skipped') return unit;

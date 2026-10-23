@@ -18,13 +18,14 @@ import { openFeedbackSheet } from '../components/feedback-sheet.js';
 import { feedbackInviteDue, snoozeFeedbackInvite } from '../feedback-state.js';
 import { clearFirstTip, firstTipPending } from '../intro.js';
 import { nl } from '../../content/nl.js';
-import { buildDayView } from '../../app/day-view.js';
-import { addAppointment, adjustCounter, clearCheckIn, completeMonthTask, editAppointment, logCheckIn, planHabit, rateAutomaticity, rateCues, recordReason, removeAppointment, RuleError, setAppointmentDone, togglePart, unplanHabit } from '../../app/actions.js';
+import { buildDayView, isSetAside } from '../../app/day-view.js';
+import { addAppointment, adjustCounter, clearCheckIn, completeMonthTask, declineHabit, editAppointment, logCheckIn, planHabit, rateAutomaticity, rateCues, recordReason, removeAppointment, RuleError, setAppointmentDone, togglePart, unplanHabit } from '../../app/actions.js';
 import { appointmentCard } from '../components/appointment-card.js';
 import { openAppointmentSheet } from '../components/appointment-sheet.js';
 import { noteRated } from '../components/automaticity.js';
 import { buildAttention, forToday } from '../../app/attention.js';
 import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
+import { wontSpan } from '../../domain/attention.js';
 import { monthTasks, REVIEW_CLOSING_TIME, reviewNudges } from '../../domain/reviews.js';
 import { dismissReviewNudges, reviewNudgeDismissed } from '../review-nudge-state.js';
 import { counterDoneValue } from '../../domain/counter.js';
@@ -111,7 +112,7 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
     if (entry.part) {
       const open = entryState(entry) === 'open';
       // een minimale of overgeslagen dag staat voor alle dagdelen: tik je er een aan, dan wordt de hele dag weer leeg en begin je opnieuw
-      const resets = entry.loggedToday === 'minimal' || entry.loggedToday === 'skipped';
+      const resets = entry.loggedToday === 'minimal' || entry.loggedToday === 'skipped' || entry.loggedToday === 'wont';
       return perform(
         () => (resets ? clearCheckIn(repo, { habitId: entry.habitId, date }, today) : togglePart(repo, { habit: entry.habit, date, part: entry.part }, today)),
         open ? nl.today.toasts.done(name) : nl.today.toasts.cleared(name),
@@ -143,6 +144,13 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
         label: nl.today.actions.skip,
         onClick: () => perform(() => log(habit.id, 'skipped', note()), nl.today.toasts.skipped(habit.name)),
       });
+      // een taak die je al deels of helemaal hebt gedaan geef je niet op; een opgegeven taak kun je hier wel aanpassen
+      if (['open', 'skipped', 'wont'].includes(entryState(entry))) {
+        actions.push({
+          label: entry.loggedToday === 'wont' ? nl.today.actions.wontEdit : nl.today.actions.wont,
+          onClick: () => wontSheet({ habit, span: entry.unit.span, current: entry.wontToday ?? null }),
+        });
+      }
       if (logged) {
         actions.push({
           label: nl.today.actions.saveNote,
@@ -179,6 +187,17 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
     await recordReason(repo, { habitId, reason, note }, today);
     notifyChanged();
     showToast({ message: nl.attention.sheet.saved(reasonLabel(reason)) });
+  }
+
+  // "Ga ik niet doen" (docs/WONT-DO.md): reden (verplicht) en plan (optioneel) kiezen, dan telt de taak als gemist. Bij een week- of maandtaak voor de rest van die periode.
+  // Een dag-taak geef je op voor de dag die je bekijkt; een taak uit "Even kijken" of de stapel altijd voor vandaag.
+  function wontSheet({ habit, span, current = null }) {
+    openReasonSheet({
+      habit,
+      current,
+      wont: { span },
+      onSave: ({ reason, note, plan }) => perform(() => declineHabit(repo, { habitId: habit.id, date, reason, note, plan }, today), nl.today.toasts.wont(habit.name)),
+    });
   }
 
   function why(item) {
@@ -227,7 +246,7 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
   const cardOptions = { canLog: view.canLog, onToggle: toggle, onMore: more, onAdjust: adjust, onRate: rate, onCues: rateHelped, onLate: late };
 
   const tally = (entries) => {
-    const counted = entries.filter((e) => e.loggedToday !== 'skipped');
+    const counted = entries.filter((e) => !isSetAside(e));
     return { done: counted.filter((e) => e.doneToday).length, total: counted.length };
   };
   const allDone = view.progress.total > 0 && view.progress.done === view.progress.total;
@@ -277,6 +296,7 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
     const actions = [];
     if (view.canPlan && date === today) actions.push({ label: nl.today.pool.otherDay, onClick: () => planOther(entry) });
     if (view.canLog) actions.push({ label: nl.today.pool.alreadyDone, onClick: () => perform(() => log(entry.habitId, 'done'), nl.today.toasts.done(habit.name)) });
+    if (view.canLog && !entry.satisfied) actions.push({ label: nl.today.pool.wont[entry.span], onClick: () => wontSheet({ habit, span: entry.span }) });
     openDialog({ title: habit.name, description: periodSummary(entry), actions, cancelLabel: nl.app.close });
   }
   const poolOptions = { date, today, canPlan: view.canPlan, canMore: view.canPlan || view.canLog, onPlan: (e) => planOnDay(e, date), onMore: poolMore };
@@ -326,6 +346,7 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
         today,
         onWhy: why,
         onTick: view.canLog ? (i) => perform(() => log(i.habit.id, 'done'), nl.today.toasts.done(i.habit.name)) : null,
+        onWont: view.canLog ? (i) => wontSheet({ habit: i.habit, span: wontSpan(i.habit, today) }) : null,
       }))))
     : null;
 
