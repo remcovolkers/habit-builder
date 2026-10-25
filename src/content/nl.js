@@ -804,7 +804,7 @@ export const nl = {
     skippedLast: 'Zo haal je je doel van deze maand niet meer.',
     complete: (count, target, period) => `${count} van ${target} ${period} · klaar`,
     daysFor: (name) => `Dagen voor ${name}`,
-    states: { free: 'niet gepland', planned: 'gepland', done: 'gedaan', blocked: 'niet beschikbaar' },
+    states: { free: 'niet gepland', planned: 'gepland', done: 'gedaan', blocked: 'niet beschikbaar', past: 'voorbij' },
     empty: 'Je hebt geen taken zonder vaste dag. Maak een taak met "X keer per week" of "X keer per maand" en hij verschijnt hier.',
     suggest: 'Verdeel voor mij',
     suggested: (n) => `${n} ${n === 1 ? 'dag' : 'dagen'} ingepland`,

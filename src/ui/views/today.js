@@ -85,7 +85,7 @@ export function todayView({ query }) {
         view: buildDayView({ snapshot, date, today: state.today }),
         week: buildWeekStrip({ snapshot, date, today: state.today }),
         attention: date === state.today ? forToday(buildAttention({ snapshot, today: state.today })) : [],
-        toPlan: countToPlan(snapshot, state.today), // hoeveel flexibele taken nog dagen nodig hebben (op de knop Plan je week)
+        toPlan: countToPlan(snapshot, state.today, date), // hoeveel flexibele taken nog dagen nodig hebben (op de knop Plan je week)
         monthTasks: date === state.today ? monthTasks({ reviews: snapshot.reviews, today: state.today }) : [], // de eenmalige taak uit de maandreview
         reviewNotes: date === state.today ? reviewNudges({ reviews: snapshot.reviews, now: wallClockNow() }).filter((nudge) => !reviewNudgeDismissed(nudge)) : [], // een review die open staat
       };
@@ -315,9 +315,9 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
     ? h('section', { class: 'section pool', 'aria-labelledby': 'pool-title' },
       h('div', { class: 'section-head' },
         h('h2', { id: 'pool-title', class: 'section__title' }, nl.today.pool.title),
-        view.canPlan && toPlan === 0 ? planWeekButton() : h('span', { class: 'kicker' }, poolPeriod)),
+        view.canPlan && toPlan === 0 ? planWeekButton({ date }) : h('span', { class: 'kicker' }, poolPeriod)),
       allPlanned ? null : h('p', { class: 'section__hint' }, nl.today.pool.hint),
-      view.canPlan && toPlan > 0 ? planWeekPrompt({ toPlan }) : null,
+      view.canPlan && toPlan > 0 ? planWeekPrompt({ toPlan, date }) : null,
       // taken die je deze week hebt overgeslagen terwijl dit de laatste kans van de maand is: dat blijft zichtbaar, want ze staan niet meer in de stapel
       view.canPlan && view.poolSkippedLast > 0 ? h('p', { class: 'pool__warn', role: 'status' }, nl.today.pool.skippedLast(view.poolSkippedLast)) : null,
       allPlanned

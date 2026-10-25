@@ -1,6 +1,6 @@
 // Het view-model voor het Vandaag-scherm: snapshot + datum in, gegroepeerde lijsten uit. Puur.
 import { endOfWeek, startOfWeek } from '../domain/dates.js';
-import { lastChanceThisWeek } from '../domain/planning.js';
+import { lastChanceThisWeek, planSkippedIn } from '../domain/planning.js';
 import { DAYPARTS } from '../domain/habit.js';
 import { appointmentsOn } from '../domain/appointments.js';
 import { donePartsOf, habitDayparts, hasMultipleDayparts } from '../domain/dayparts.js';
@@ -109,8 +109,8 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
   };
   // "Niet in deze week" (Plan je week): zo'n taak staat die week niet in de stapel. Inplannen kan nog via Plan je week; heeft hij al een dag of is hij gedaan, dan staat hij gewoon bij de dag
   const inPool = day.pool.map(attach);
-  const hidden = inPool.filter((entry) => entry.habit.noPlanWeek === weekStart);
-  const pool = inPool.filter((entry) => entry.habit.noPlanWeek !== weekStart && !isOnTrial(entry.habit, date)).map(withUrgency).sort(
+  const hidden = inPool.filter((entry) => planSkippedIn(entry.habit, weekStart));
+  const pool = inPool.filter((entry) => !planSkippedIn(entry.habit, weekStart) && !isOnTrial(entry.habit, date)).map(withUrgency).sort(
     (a, b) =>
       Number(a.satisfied) - Number(b.satisfied) ||
       Number(a.covered) - Number(b.covered) ||

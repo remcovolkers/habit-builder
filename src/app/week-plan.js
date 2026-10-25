@@ -3,7 +3,7 @@
 import { PLAN_AHEAD_DAYS } from '../domain/constants.js';
 import { addDays, diffDays, eachDay, endOfWeek, startOfWeek } from '../domain/dates.js';
 import { isTracked } from '../domain/rules.js';
-import { lastChanceThisWeek, neededInWindow } from '../domain/planning.js';
+import { lastChanceThisWeek, neededInWindow, planSkippedIn } from '../domain/planning.js';
 import { isTight } from '../domain/tight.js';
 import { isOnTrial } from '../domain/trial.js';
 import { computeUnits } from '../domain/units.js';
@@ -14,7 +14,8 @@ const byOrder = (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.loca
 /**
  * Eén rij per taak die in een week of maand gehaald moet worden en nu loopt:
  *   unit        { span, count, target, end, days }  de week of maand van vandaag
- *   days        [{ date, state, inUnit }]  vandaag t/m over zeven dagen; state: 'done' | 'planned' | 'free' | 'blocked' (gepauzeerd, overgeslagen of buiten de looptijd)
+ *   days        [{ date, state, inUnit }]  maandag van de week die je plant t/m over zeven dagen; state: 'done' | 'planned' | 'free' | 'blocked' (gepauzeerd, overgeslagen of
+ *               buiten de looptijd) | 'past' (een dag die al geweest is en waarop de taak niet is gedaan; een geweest-en-gedaan dag is 'done')
  *   anchors     de dagen waarop de taak in deze periode al is gedaan of gepland (voor het verdelen)
  *   planned     hoeveel dagen er in deze periode al gepland zijn
  *   free        hoeveel vrije dagen er in deze periode nog zijn om te plannen
@@ -25,18 +26,22 @@ const byOrder = (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.loca
  *               (domain/planning.js); daysAfter zegt hoeveel dagen er na deze week nog in de maand zitten
  *   startsOn    de startdatum als de taak pas later in het venster begint (anders null); de dagen ervoor zijn 'blocked'.
  *               Begint hij pas in de volgende week of maand, dan is dat ook de `unit` (unit.start > vandaag)
- *   skipped     de gebruiker koos "Niet in deze week" (habit.noPlanWeek is de maandag van deze week): geen herinnering en geen voorstel voor deze taak.
+ *   skipped     de gebruiker koos "Niet in deze week" (habit.noPlanWeeks bevat de maandag van deze week): geen herinnering en geen voorstel voor deze taak.
  *               Dat verandert niets aan de afspraak zelf: de taak blijft staan en kan later in de maand nog gedaan of ingepland worden.
+ *               Kijk je in Vandaag naar een dag in de volgende week (`date`), dan plan je die week en staat de keuze voor die week er los van.
  */
-export function buildWeekPlan({ snapshot, today }) {
+export function buildWeekPlan({ snapshot, today, date = today }) {
   const lastDay = addDays(today, PLAN_AHEAD_DAYS);
-  const dates = eachDay(today, lastDay);
+  // De week die je plant: die van `date` (de dag die Vandaag toont). Kijk je naar een dag in de volgende week, dan is dat die week vanaf maandag,
+  // met een eigen "Niet in deze week"; op zondag zelf geldt nog die van de lopende week.
+  const from = planningStart({ today, date });
+  const dates = eachDay(startOfWeek(from), lastDay);
   const rows = [];
   for (const habit of [...snapshot.habits].sort(byOrder)) {
     // Een taak die binnen het venster start (morgen, overmorgen, ...) staat er ook in, alleen te plannen vanaf zijn startdatum: de rekening gaat dan
     // vanaf die dag (`asOf`), zodat de eerste week of maand maar telt vanaf de start.
-    const startsLater = habit.startDate > today && habit.startDate <= lastDay;
-    const asOf = startsLater ? habit.startDate : today;
+    const startsLater = habit.startDate > from && habit.startDate <= lastDay;
+    const asOf = startsLater ? habit.startDate : from;
     if (!isTracked(habit, asOf)) continue;
     // een taak in een proef "zonder app" is niet aan de beurt: geen rij, dus ook niet meegeteld en niet in "Verdeel voor mij"
     if (isOnTrial(habit, today)) continue;
@@ -53,7 +58,8 @@ export function buildWeekPlan({ snapshot, today }) {
     const days = dates.map((date) => {
       const status = statusOn.get(date);
       let state = 'free';
-      if (date < habit.startDate || (habit.endDate != null && date > habit.endDate) || paused(date) || status === 'skipped') state = 'blocked';
+      if (date < today) state = counts(status) ? 'done' : 'past';
+      else if (date < habit.startDate || (habit.endDate != null && date > habit.endDate) || paused(date) || status === 'skipped') state = 'blocked';
       else if (counts(status)) state = 'done';
       else if (planned.has(date)) state = 'planned';
       return { date, state, inUnit: date <= unit.end };
@@ -69,12 +75,21 @@ export function buildWeekPlan({ snapshot, today }) {
       free: days.filter((d) => d.state === 'free' && d.inUnit).length,
       missing: Math.max(0, neededInWindow({ span: unit.span, open: unit.target - unit.count, remainingDays: unit.remainingDays }) - plannedHere.length),
       urgent: unit.count < unit.target && (unit.atRisk || isTight(unit)),
-      skipped: habit.noPlanWeek === startOfWeek(today),
+      skipped: planSkippedIn(habit, startOfWeek(from)),
       startsOn: startsLater ? habit.startDate : null,
-      ...lastChanceThisWeek({ span: unit.span, open: unit.target - unit.count, planned: plannedHere.length, unitEnd: unit.end, weekEnd: endOfWeek(today) }),
+      ...lastChanceThisWeek({ span: unit.span, open: unit.target - unit.count, planned: plannedHere.length, unitEnd: unit.end, weekEnd: endOfWeek(from) }),
     });
   }
   return rows;
+}
+
+/**
+ * Vanaf welke dag reken je met het plannen: vandaag, of de maandag van de week van `date` als je naar een dag in een latere week kijkt.
+ * Ook de dag voor "Niet in deze week" (setPlanSkip): die hoort bij de week van deze dag.
+ */
+export function planningStart({ today, date = today }) {
+  const weekStart = startOfWeek(date);
+  return weekStart > today ? weekStart : today;
 }
 
 /**

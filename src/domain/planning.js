@@ -2,7 +2,7 @@
 // Bij "N× per week" alle keren die nog moeten: de week is zelf het venster van Plan je week. Bij "N× per maand" maar je deel van het venster:
 // de rest plan je later in de maand, anders blijft de herinnering "Nog 1 taak om in te plannen" staan voor iets dat nog weken de tijd heeft.
 import { PLAN_AHEAD_DAYS } from './constants.js';
-import { diffDays } from './dates.js';
+import { addDays, diffDays } from './dates.js';
 
 /** Het venster van Plan je week: vandaag en PLAN_AHEAD_DAYS dagen vooruit. */
 export const PLAN_WINDOW_DAYS = PLAN_AHEAD_DAYS + 1;
@@ -28,4 +28,22 @@ export function lastChanceThisWeek({ span, open, planned = 0, unitEnd, weekEnd }
   const daysAfter = Math.max(0, diffDays(unitEnd, weekEnd));
   if (span !== 'month' || !(open > 0)) return { lastChance: false, daysAfter };
   return { lastChance: Math.max(0, open - planned) > daysAfter, daysAfter };
+}
+
+/**
+ * "Niet in deze week" (Plan je week) is per week: `habit.noPlanWeeks` bevat de maandagen waarvoor de taak niet ingepland hoeft te worden.
+ * (`noPlanWeek`, één maandag, is het oudere veld: het telt nog mee en verdwijnt zodra de keuze wordt aangepast.)
+ */
+export const planSkippedIn = (habit, weekStart) => habit.noPlanWeek === weekStart || (habit.noPlanWeeks ?? []).includes(weekStart);
+
+/**
+ * De habit met de keuze voor de week van `weekStart` aan of uit; de keuzes voor andere weken blijven staan, behalve wat al voorbij is
+ * (alleen de week ervoor, de lopende en de volgende kunnen nog gekozen zijn: oudere weken worden opgeruimd).
+ */
+export function withPlanSkip(habit, weekStart, skipped) {
+  const { noPlanWeek, noPlanWeeks, ...rest } = habit;
+  const oldest = addDays(weekStart, -7);
+  const weeks = [...new Set([...(noPlanWeeks ?? []), ...(noPlanWeek ? [noPlanWeek] : [])])].filter((week) => week >= oldest && week !== weekStart);
+  if (skipped) weeks.push(weekStart);
+  return weeks.length > 0 ? { ...rest, noPlanWeeks: weeks.sort() } : rest;
 }

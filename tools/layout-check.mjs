@@ -977,7 +977,7 @@ async function main() {
   await sleep(500);
   await ev(`document.querySelector('#planWeek').click()`);
   await sleep(700);
-  const startRow = await ev(`(() => { const row = [...document.querySelectorAll('dialog.dialog--planner .planner__row')].find((r) => r.textContent.includes('Start morgen')); const days = [...(row?.querySelectorAll('.planner__day') ?? [])]; return { exists: !!row, disabled: days.slice(0, 3).map((d) => d.disabled), summary: row?.querySelector('.planner__summary')?.textContent ?? null }; })()`);
+  const startRow = await ev(`(() => { const row = [...document.querySelectorAll('dialog.dialog--planner .planner__row')].find((r) => r.textContent.includes('Start morgen')); const days = [...(row?.querySelectorAll('.planner__day:not([data-past="true"])') ?? [])]; return { exists: !!row, disabled: days.slice(0, 3).map((d) => d.disabled), summary: row?.querySelector('.planner__summary')?.textContent ?? null }; })()`);
   check('Plan je week: een taak die morgen start staat er ook in, met "start morgen"; vandaag is niet te plannen, vanaf morgen wel', startRow.exists && JSON.stringify(startRow.disabled) === '[true,false,false]' && /start morgen/.test(startRow.summary ?? ''), JSON.stringify(startRow));
   await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
   await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); await state.repo.deleteHabit(${JSON.stringify(startId)}); notifyChanged(); })()`);
