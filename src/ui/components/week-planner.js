@@ -29,6 +29,8 @@ function progress(row, today) {
   const period = span === 'week' ? (later ? p.nextWeek : p.thisWeek) : (later ? p.nextMonth : p.thisMonth);
   if (row.skipped && row.missing > 0) return p.skipped(count, target, period);
   if (count >= target) return p.complete(count, target, period);
+  if (row.unreachable && row.free === 0) return p.unreachable(count, target, period);
+  if (row.missing > 0 && row.free === 0) return p.noFreeDay(count, target, period); // wat nog moet kan in deze week niet meer: dat komt in een latere week
   return row.missing > 0 ? p.missing(count, target, period, row.missing) : p.covered(count, target, period);
 }
 
@@ -92,7 +94,7 @@ export function openWeekPlanner({ date = null } = {}) {
           h('span', { class: 'planner__name' }, habit.name),
           h('span', { class: `planner__summary${row.missing > 0 ? ' is-missing' : ''}` }, summary(row, state.today)),
           row.skipped && row.lastChance ? h('span', { class: 'planner__warning' }, p.skippedLast) : null,
-          row.urgent ? h('span', { class: 'badge badge--risk' }, nl.today.pool.urgentTitle) : null)),
+          row.unreachable ? h('span', { class: 'badge badge--risk' }, p.unreachableTitle) : row.urgent ? h('span', { class: 'badge badge--risk' }, nl.today.pool.urgentTitle) : null)),
       h('div', { class: 'planner__days', role: 'group', 'aria-label': p.daysFor(habit.name) },
         ...row.days.map((day) => {
           const key = `plan:${habit.id}:${day.date}`;

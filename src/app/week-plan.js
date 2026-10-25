@@ -14,33 +14,34 @@ const byOrder = (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.loca
 /**
  * Eén rij per taak die in een week of maand gehaald moet worden en nu loopt:
  *   unit        { span, count, target, end, days }  de week of maand van vandaag
- *   days        [{ date, state, inUnit }]  maandag van de week die je plant t/m over zeven dagen; state: 'done' | 'planned' | 'free' | 'blocked' (gepauzeerd, overgeslagen of
- *               buiten de looptijd) | 'past' (een dag die al geweest is en waarop de taak niet is gedaan; een geweest-en-gedaan dag is 'done')
+ *   days        [{ date, state, inUnit }]  de zeven dagen van de week die je plant; state: 'done' | 'planned' | 'free' | 'blocked' (gepauzeerd, overgeslagen,
+ *               buiten de looptijd of verder weg dan je kunt plannen) | 'past' (een dag die al geweest is en waarop de taak niet is gedaan; een geweest-en-gedaan dag is 'done')
  *   anchors     de dagen waarop de taak in deze periode al is gedaan of gepland (voor het verdelen)
  *   planned     hoeveel dagen er in deze periode al gepland zijn
  *   free        hoeveel vrije dagen er in deze periode nog zijn om te plannen
  *   missing     hoeveel keren er nu nog een dag moeten krijgen: wat nog moet min wat gepland is. Bij een taak per maand alleen je deel van dit venster
  *               (domain/planning.js): de rest plan je later in de maand
  *   urgent      dreigt te falen (atRisk of krap, zie domain/tight.js)
+ *   unreachable de periode eindigt in deze week en wat nog moet past niet meer in de vrije dagen die er zijn (gedaan en gepland meegeteld): zo haal je het niet meer
  *   lastChance  deze week is de laatste kans: slaat de gebruiker de taak (per maand) deze week over, dan haalt hij zijn doel niet meer
  *               (domain/planning.js); daysAfter zegt hoeveel dagen er na deze week nog in de maand zitten
- *   startsOn    de startdatum als de taak pas later in het venster begint (anders null); de dagen ervoor zijn 'blocked'.
- *               Begint hij pas in de volgende week of maand, dan is dat ook de `unit` (unit.start > vandaag)
+ *   startsOn    de startdatum als de taak pas later in deze week begint (anders null); de dagen ervoor zijn 'blocked'
  *   skipped     de gebruiker koos "Niet in deze week" (habit.noPlanWeeks bevat de maandag van deze week): geen herinnering en geen voorstel voor deze taak.
  *               Dat verandert niets aan de afspraak zelf: de taak blijft staan en kan later in de maand nog gedaan of ingepland worden.
  *               Kijk je in Vandaag naar een dag in de volgende week (`date`), dan plan je die week en staat de keuze voor die week er los van.
  */
 export function buildWeekPlan({ snapshot, today, date = today }) {
-  const lastDay = addDays(today, PLAN_AHEAD_DAYS);
-  // De week die je plant: die van `date` (de dag die Vandaag toont). Kijk je naar een dag in de volgende week, dan is dat die week vanaf maandag,
-  // met een eigen "Niet in deze week"; op zondag zelf geldt nog die van de lopende week.
+  const lastDay = addDays(today, PLAN_AHEAD_DAYS); // verder vooruit kan een dag niet gepland worden
+  // De week die je plant: die van `date` (de dag die Vandaag toont), van maandag tot en met zondag. Kijk je naar een dag in de volgende week, dan is dat
+  // die week, met een eigen "Niet in deze week"; op zondag zelf geldt nog die van de lopende week.
   const from = planningStart({ today, date });
-  const dates = eachDay(startOfWeek(from), lastDay);
+  const weekEnd = endOfWeek(from);
+  const dates = eachDay(startOfWeek(from), weekEnd);
   const rows = [];
   for (const habit of [...snapshot.habits].sort(byOrder)) {
-    // Een taak die binnen het venster start (morgen, overmorgen, ...) staat er ook in, alleen te plannen vanaf zijn startdatum: de rekening gaat dan
-    // vanaf die dag (`asOf`), zodat de eerste week of maand maar telt vanaf de start.
-    const startsLater = habit.startDate > from && habit.startDate <= lastDay;
+    // Een taak die later in deze week start (morgen, overmorgen, ...) staat er ook in, alleen te plannen vanaf zijn startdatum: de rekening gaat dan
+    // vanaf die dag (`asOf`), zodat de eerste week of maand maar telt vanaf de start. Begint hij pas volgende week, dan staat hij in het blad van die week.
+    const startsLater = habit.startDate > from && habit.startDate <= weekEnd;
     const asOf = startsLater ? habit.startDate : from;
     if (!isTracked(habit, asOf)) continue;
     // een taak in een proef "zonder app" is niet aan de beurt: geen rij, dus ook niet meegeteld en niet in "Verdeel voor mij"
@@ -55,26 +56,31 @@ export function buildWeekPlan({ snapshot, today, date = today }) {
 
     const statusOn = new Map(mine.map((c) => [c.date, c.status]));
     const planned = new Set(snapshot.dayPlans.filter((p) => p.habitId === habit.id).map((p) => p.date));
+    const unavailable = (date) => date > lastDay || date < habit.startDate || (habit.endDate != null && date > habit.endDate) || paused(date) || statusOn.get(date) === 'skipped';
     const days = dates.map((date) => {
       const status = statusOn.get(date);
       let state = 'free';
       if (date < today) state = counts(status) ? 'done' : 'past';
-      else if (date < habit.startDate || (habit.endDate != null && date > habit.endDate) || paused(date) || status === 'skipped') state = 'blocked';
+      else if (unavailable(date)) state = 'blocked';
       else if (counts(status)) state = 'done';
       else if (planned.has(date)) state = 'planned';
       return { date, state, inUnit: date <= unit.end };
     });
     const doneBefore = mine.filter((c) => counts(c.status) && c.date >= unit.start && c.date <= asOf).map((c) => c.date);
-    const plannedHere = days.filter((d) => d.state === 'planned' && d.inUnit).map((d) => d.date);
+    // Wat al gepland is telt in de hele periode, ook buiten de week die het blad toont: een maandtaak die je volgende week plande heeft zijn dag al
+    const plannedHere = [...planned].filter((d) => d >= today && d >= unit.start && d <= unit.end && !unavailable(d) && !counts(statusOn.get(d))).sort();
+    const free = days.filter((d) => d.state === 'free' && d.inUnit).length;
+    const missing = Math.max(0, neededInWindow({ span: unit.span, open: unit.target - unit.count, remainingDays: unit.remainingDays }) - plannedHere.length);
     rows.push({
       habit,
       unit: { span: unit.span, count: unit.count, target: unit.target, start: unit.start, end: unit.end, days: unit.days, remainingDays: unit.remainingDays },
       days,
       anchors: [...new Set([...doneBefore, ...plannedHere])],
       planned: plannedHere.length,
-      free: days.filter((d) => d.state === 'free' && d.inUnit).length,
-      missing: Math.max(0, neededInWindow({ span: unit.span, open: unit.target - unit.count, remainingDays: unit.remainingDays }) - plannedHere.length),
+      free,
+      missing,
       urgent: unit.count < unit.target && (unit.atRisk || isTight(unit)),
+      unreachable: unit.count < unit.target && unit.end <= weekEnd && missing > free,
       skipped: planSkippedIn(habit, startOfWeek(from)),
       startsOn: startsLater ? habit.startDate : null,
       ...lastChanceThisWeek({ span: unit.span, open: unit.target - unit.count, planned: plannedHere.length, unitEnd: unit.end, weekEnd: endOfWeek(from) }),
