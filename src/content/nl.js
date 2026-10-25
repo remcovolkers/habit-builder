@@ -806,6 +806,8 @@ export const nl = {
     skipAnyway: 'Toch overslaan',
     skippedLast: 'Zo haal je je doel van deze maand niet meer.',
     complete: (count, target, period) => `${count} van ${target} ${period} · klaar`,
+    completeTitle: 'Klaar',
+    completeHint: 'Je kunt hem nog wel op meer dagen plannen.',
     daysFor: (name) => `Dagen voor ${name}`,
     states: { free: 'niet gepland', planned: 'gepland', done: 'gedaan', blocked: 'niet beschikbaar', past: 'voorbij' },
     empty: 'Je hebt geen taken zonder vaste dag. Maak een taak met "X keer per week" of "X keer per maand" en hij verschijnt hier.',
