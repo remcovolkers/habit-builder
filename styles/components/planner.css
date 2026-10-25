@@ -179,6 +179,22 @@
   color: var(--color-text-muted);
 }
 
+/* de afspraak is gehaald (bijvoorbeeld 1 van 1 deze maand): een vinkje en een tint, de dagen blijven aan te tikken voor wie hem nog vaker wil doen */
+.planner__row[data-complete='true'] {
+  background: linear-gradient(var(--color-accent-10), var(--color-accent-10)), var(--color-surface);
+  border-color: var(--color-accent-50);
+}
+
+.planner__row[data-complete='true'] .planner__summary {
+  color: var(--color-accent);
+}
+
+.planner__complete .icon,
+.planner__complete svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
 /* wat nog ingepland moet worden (de taken van "Nog n taken om in te plannen"): een accentrand en een glans; zodra de taak genoeg dagen heeft verdwijnt de markering */
 .planner__row[data-needs='true'] {
   border-color: var(--color-accent);

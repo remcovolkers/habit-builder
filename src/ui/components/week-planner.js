@@ -87,13 +87,15 @@ export function openWeekPlanner({ date = null } = {}) {
 
   function rowElement(row) {
     const { habit } = row;
-    return h('li', { class: 'planner__row', dataset: { color: habit.color, urgent: row.urgent ? 'true' : null, lastChance: row.lastChance ? 'true' : null, skipped: row.skipped && row.missing > 0 ? 'true' : null, needs: row.missing > 0 && row.free > 0 && !row.skipped ? 'true' : null } },
+    const complete = row.unit.count >= row.unit.target;
+    return h('li', { class: 'planner__row', dataset: { color: habit.color, complete: complete ? 'true' : null, urgent: row.urgent ? 'true' : null, lastChance: row.lastChance ? 'true' : null, skipped: row.skipped && row.missing > 0 ? 'true' : null, needs: row.missing > 0 && row.free > 0 && !row.skipped ? 'true' : null } },
       h('div', { class: 'planner__head' },
         h('span', { class: 'planner__icon', 'aria-hidden': 'true' }, habitIcon(habit.icon)),
         h('div', { class: 'planner__title' },
           h('span', { class: 'planner__name' }, habit.name),
           h('span', { class: `planner__summary${row.missing > 0 ? ' is-missing' : ''}` }, summary(row, state.today)),
           row.skipped && row.lastChance ? h('span', { class: 'planner__warning' }, p.skippedLast) : null,
+          complete ? h('span', { class: 'badge badge--ok planner__complete', title: p.completeHint }, icon('check', { strokeWidth: 3 }), p.completeTitle) : null,
           row.unreachable ? h('span', { class: 'badge badge--risk' }, p.unreachableTitle) : row.urgent ? h('span', { class: 'badge badge--risk' }, nl.today.pool.urgentTitle) : null)),
       h('div', { class: 'planner__days', role: 'group', 'aria-label': p.daysFor(habit.name) },
         ...row.days.map((day) => {
