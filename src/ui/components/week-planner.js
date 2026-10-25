@@ -6,7 +6,7 @@ import { habitIcon } from './habit-icon.js';
 import { showToast } from './toast.js';
 import { notifyChanged, state } from '../state.js';
 import { nl } from '../../content/nl.js';
-import { buildWeekPlan, suggestPlan } from '../../app/week-plan.js';
+import { buildWeekPlan, planningStart, suggestPlan } from '../../app/week-plan.js';
 import { planHabit, RuleError, setPlanSkip, unplanHabit } from '../../app/actions.js';
 import { diffDays, weekday } from '../../domain/dates.js';
 import { icon } from '../svg.js';
@@ -29,6 +29,8 @@ function progress(row, today) {
   const period = span === 'week' ? (later ? p.nextWeek : p.thisWeek) : (later ? p.nextMonth : p.thisMonth);
   if (row.skipped && row.missing > 0) return p.skipped(count, target, period);
   if (count >= target) return p.complete(count, target, period);
+  if (row.unreachable && row.free === 0) return p.unreachable(count, target, period);
+  if (row.missing > 0 && row.free === 0) return p.noFreeDay(count, target, period); // wat nog moet kan in deze week niet meer: dat komt in een latere week
   return row.missing > 0 ? p.missing(count, target, period, row.missing) : p.covered(count, target, period);
 }
 
@@ -36,13 +38,13 @@ function progress(row, today) {
  * De knop die het blad opent. Een gewone knop met een kalender (geen "aan"-stand: hij opent een blad, hij zet geen stand aan).
  * `primary`: een rustige maar duidelijke knop in een melding; anders een stille knop (bijvoorbeeld in een kop).
  */
-export function planWeekButton({ primary = false } = {}) {
+export function planWeekButton({ primary = false, date = null } = {}) {
   return h('button', {
     type: 'button',
     id: 'planWeek',
     class: `button ${primary ? 'button--secondary' : 'button--ghost'} button--small plan-week`,
     'aria-haspopup': 'dialog',
-    onclick: () => openWeekPlanner(),
+    onclick: () => openWeekPlanner({ date }),
   }, icon('calendar'), p.title);
 }
 
@@ -50,28 +52,31 @@ export function planWeekButton({ primary = false } = {}) {
  * Wat er te doen is, in woorden: "Nog 2 taken om in te plannen" met de knop Plan je week ernaast. Is alles ingepland of gedaan, dan zegt hij dat
  * en blijft de knop stil staan. `toPlan` = aantal taken dat nog dagen nodig heeft (zie countToPlan).
  */
-export function planWeekPrompt({ toPlan = 0, skipped = 0 } = {}) {
+export function planWeekPrompt({ toPlan = 0, skipped = 0, date = null } = {}) {
   const needed = toPlan > 0;
   return h('div', { class: `plan-prompt${needed ? ' plan-prompt--needed' : ''}`, role: 'group', 'aria-label': p.title },
     h('p', { class: 'plan-prompt__text' },
       h('strong', null, needed ? p.needs(toPlan) : skipped > 0 ? p.allPlannedSkipped(skipped) : p.allPlanned),
       needed ? h('span', { class: 'plan-prompt__hint' }, p.needsHint) : null),
-    planWeekButton({ primary: needed }));
+    planWeekButton({ primary: needed, date }));
 }
 
 /** Hoeveel flexibele taken hebben nog dagen nodig, en ook nog vrije dagen om ze op te plannen? (Een gepauzeerde taak staat er niet bij.) */
-export const countToPlan = (snapshot, today) => buildWeekPlan({ snapshot, today }).filter((row) => row.missing > 0 && row.free > 0 && !row.skipped).length;
+export const countToPlan = (snapshot, today, date = today) => buildWeekPlan({ snapshot, today, date }).filter((row) => row.missing > 0 && row.free > 0 && !row.skipped).length;
 
 /** Bij hoeveel taken die nog dagen nodig hebben koos de gebruiker "Niet in deze week"? (Voor de zin als er verder niets te plannen is.) */
-export const countPlanSkipped = (snapshot, today) => buildWeekPlan({ snapshot, today }).filter((row) => row.missing > 0 && row.free > 0 && row.skipped).length;
+export const countPlanSkipped = (snapshot, today, date = today) => buildWeekPlan({ snapshot, today, date }).filter((row) => row.missing > 0 && row.free > 0 && row.skipped).length;
 
-export function openWeekPlanner() {
+/** `date`: de dag die Vandaag toont; kijk je naar een dag in de volgende week, dan plan je die week (zie planningStart). */
+export function openWeekPlanner({ date = null } = {}) {
   const body = h('div', { class: 'planner' });
+  // de dag waarvan de week "Niet in deze week" krijgt: vandaag, of de maandag van de volgende week
+  const planFrom = () => planningStart({ today: state.today, date: date ?? state.today });
   let confirming = null; // de taak waarbij we vragen of overslaan echt de bedoeling is (de laatste kans van de maand)
 
   async function draw(focusKey = null) {
     const snapshot = await state.repo.snapshot();
-    const rows = buildWeekPlan({ snapshot, today: state.today });
+    const rows = buildWeekPlan({ snapshot, today: state.today, date: date ?? state.today });
     fill(body,
       rows.length === 0
         ? h('p', { class: 'planner__empty' }, p.empty)
@@ -89,15 +94,16 @@ export function openWeekPlanner() {
           h('span', { class: 'planner__name' }, habit.name),
           h('span', { class: `planner__summary${row.missing > 0 ? ' is-missing' : ''}` }, summary(row, state.today)),
           row.skipped && row.lastChance ? h('span', { class: 'planner__warning' }, p.skippedLast) : null,
-          row.urgent ? h('span', { class: 'badge badge--risk' }, nl.today.pool.urgentTitle) : null)),
+          row.unreachable ? h('span', { class: 'badge badge--risk' }, p.unreachableTitle) : row.urgent ? h('span', { class: 'badge badge--risk' }, nl.today.pool.urgentTitle) : null)),
       h('div', { class: 'planner__days', role: 'group', 'aria-label': p.daysFor(habit.name) },
         ...row.days.map((day) => {
           const key = `plan:${habit.id}:${day.date}`;
-          const blocked = day.state === 'blocked' || day.state === 'done';
+          const past = day.date < state.today;
+          const blocked = past || day.state === 'blocked' || day.state === 'done';
           return h('button', {
             type: 'button',
             class: 'planner__day',
-            dataset: { state: day.state, nextPeriod: day.inUnit ? null : 'true', focusKey: key },
+            dataset: { state: day.state, past: past ? 'true' : null, nextPeriod: day.inUnit ? null : 'true', focusKey: key },
             'aria-pressed': day.state === 'planned' ? 'true' : 'false',
             'aria-label': `${habit.name}, ${dayLabel(day.date, state.today)}: ${p.states[day.state]}`,
             disabled: blocked,
@@ -127,7 +133,7 @@ export function openWeekPlanner() {
 
   async function applySkip(row) {
     confirming = null;
-    await setPlanSkip(state.repo, { habitId: row.habit.id, skipped: !row.skipped }, state.today);
+    await setPlanSkip(state.repo, { habitId: row.habit.id, skipped: !row.skipped }, planFrom());
     notifyChanged();
     await draw(`skip:${row.habit.id}`);
   }
@@ -149,7 +155,7 @@ export function openWeekPlanner() {
       if (day.state === 'planned') await unplanHabit(state.repo, { habitId: habit.id, date: day.date });
       else {
         await planHabit(state.repo, { habitId: habit.id, date: day.date }, state.today);
-        if (row.skipped) await setPlanSkip(state.repo, { habitId: habit.id, skipped: false }, state.today); // een dag kiezen betekent: wel deze week
+        if (row.skipped) await setPlanSkip(state.repo, { habitId: habit.id, skipped: false }, planFrom()); // een dag kiezen betekent: wel deze week
       }
       notifyChanged();
       await draw(key);

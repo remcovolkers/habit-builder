@@ -1,7 +1,7 @@
 // "Plan je week": de rijen per flexibele taak en het voorstel dat de ontbrekende keren verdeelt.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildWeekPlan, suggestPlan } from '../../src/app/week-plan.js';
+import { buildWeekPlan, planningStart, suggestPlan } from '../../src/app/week-plan.js';
 import { lastChanceThisWeek, neededInWindow } from '../../src/domain/planning.js';
 import { applyHabitForm, setPlanSkip } from '../../src/app/actions.js';
 import { validateHabit } from '../../src/domain/habit.js';
@@ -22,20 +22,20 @@ test('alleen flexibele taken krijgen een rij; vaste dagen en een dag van de maan
   assert.deepEqual(rows.map((r) => r.habit.id), ['a']);
 });
 
-test('een rij toont de zeven dagen vanaf vandaag en wat er al gedaan of gepland is', () => {
+test('een rij toont de week van maandag t/m zondag, en wat er al gedaan of gepland is', () => {
   const rows = buildWeekPlan({
     snapshot: snap({
       habits: [flexible('a')],
-      checkIns: [{ habitId: 'a', date: THURSDAY, status: 'done' }],
+      checkIns: [{ habitId: 'a', date: THURSDAY, status: 'done' }, { habitId: 'a', date: '2026-10-13', status: 'done' }],
       dayPlans: [{ habitId: 'a', date: '2026-10-17' }],
     }),
     today: THURSDAY,
   });
   const a = row(rows, 'a');
-  assert.equal(a.days.length, 8, 'vandaag en zeven dagen vooruit (PLAN_AHEAD_DAYS)');
-  assert.equal(states(a).startsWith('15:done 16:free 17:planned 18:free'), true, states(a));
-  assert.deepEqual(a.days.map((d) => d.inUnit), [true, true, true, true, false, false, false, false], 'tot en met zondag hoort bij deze week');
-  assert.deepEqual([a.unit.count, a.unit.target, a.planned, a.missing], [1, 2, 1, 0], 'één gedaan en één gepland: de afspraak is dekkend');
+  assert.equal(a.days.length, 7, 'de week van maandag t/m zondag, niet meer');
+  assert.equal(states(a).startsWith('12:past 13:done 14:past 15:done 16:free 17:planned 18:free'), true, states(a));
+  assert.deepEqual(a.days.map((d) => d.inUnit), [true, true, true, true, true, true, true], 'de hele week hoort bij deze week');
+  assert.deepEqual([a.unit.count, a.unit.target, a.planned, a.missing], [2, 2, 1, 0], 'twee gedaan en één gepland: de afspraak is dekkend');
 });
 
 test('wat nog ontbreekt, gepauzeerde en overgeslagen dagen en een taak die dreigt te falen', () => {
@@ -49,8 +49,8 @@ test('wat nog ontbreekt, gepauzeerde en overgeslagen dagen en een taak die dreig
   });
   assert.equal(row(rows, 'a').missing, 2);
   assert.equal(row(rows, 'a').urgent, true, 'donderdag 0 van 2 is krap');
-  assert.equal(row(rows, 'a').days[1].state, 'blocked');
-  assert.deepEqual(row(rows, 'b').days.slice(2, 4).map((d) => d.state), ['blocked', 'blocked']);
+  assert.equal(row(rows, 'a').days[4].state, 'blocked');
+  assert.deepEqual(row(rows, 'b').days.slice(5, 7).map((d) => d.state), ['blocked', 'blocked']);
 });
 
 test('voorstel: donderdag 0 van 2 geeft donderdag en zondag (zo ver mogelijk uit elkaar), en niets buiten de week', () => {
@@ -109,7 +109,7 @@ test('een pauze die al verlopen is telt niet; een pauze die later in de week beg
     today: THURSDAY,
   });
   assert.deepEqual(rows.map((r) => r.habit.id), ['x', 'y']);
-  assert.deepEqual(row(rows, 'y').days.slice(2).map((d) => d.state).every((s) => s === 'blocked'), true);
+  assert.deepEqual(row(rows, 'y').days.slice(5).map((d) => d.state).every((s) => s === 'blocked'), true);
   assert.equal(row(rows, 'y').free, 2, 'donderdag en vrijdag zijn nog vrij');
   assert.equal(row(rows, 'x').free, 4);
 });
@@ -141,19 +141,126 @@ test('"Niet in deze week" geldt alleen voor die week: een oudere markering telt 
   assert.equal(row(next, 'a').skipped, false, 'maandag 19 oktober: een nieuwe week');
 });
 
+test('"Niet in deze week" blijft de hele week staan, ook op zondag', () => {
+  const habits = [flexible('a', 2, 'week', { noPlanWeek: '2026-10-12' })];
+  for (const today of ['2026-10-17', '2026-10-18']) assert.equal(row(buildWeekPlan({ snapshot: snap({ habits }), today }), 'a').skipped, true, today);
+  assert.equal(row(buildWeekPlan({ snapshot: snap({ habits }), today: '2026-10-19' }), 'a').skipped, false, 'maandag: een nieuwe week');
+});
+
+test('op zondag plan je met de dag van de volgende week voor ogen: die week begint zonder slotje en met een eigen keuze', () => {
+  const SUNDAY = '2026-10-25';
+  const habits = [flexible('a', 2, 'week', { noPlanWeek: '2026-10-19' })]; // "niet in deze week" gekozen voor de week van 19 oktober
+  const now = row(buildWeekPlan({ snapshot: snap({ habits }), today: SUNDAY }), 'a');
+  assert.equal(now.skipped, true, 'zondag zelf: het slotje geldt nog');
+  const next = buildWeekPlan({ snapshot: snap({ habits }), today: SUNDAY, date: '2026-10-26' });
+  const a = row(next, 'a');
+  assert.equal(a.skipped, false, 'maandag 26 oktober bekeken: geen slotje');
+  assert.deepEqual([a.unit.start, a.unit.end, a.missing, a.free], ['2026-10-26', '2026-11-01', 2, 7], 'de volgende week, volledig te plannen');
+  assert.equal(states(a), '26:free 27:free 28:free 29:free 30:free 31:free 01:free', 'alleen de dagen van die week, niets voorbij');
+  assert.deepEqual(suggestPlan(next).every((p) => p.date >= '2026-10-26'), true);
+  // en daar kan je opnieuw "niet in deze week" kiezen: de markering hoort bij de maandag van die week
+  const marked = [flexible('a', 2, 'week', { noPlanWeek: '2026-10-26' })];
+  assert.equal(row(buildWeekPlan({ snapshot: snap({ habits: marked }), today: SUNDAY, date: '2026-10-26' }), 'a').skipped, true);
+  assert.equal(row(buildWeekPlan({ snapshot: snap({ habits: marked }), today: SUNDAY }), 'a').skipped, false, 'en de lopende week blijft er buiten');
+});
+
+test('planningStart: vandaag, of de maandag van de week van de bekeken dag als die later begint', () => {
+  assert.equal(planningStart({ today: '2026-10-25' }), '2026-10-25');
+  assert.equal(planningStart({ today: '2026-10-25', date: '2026-10-25' }), '2026-10-25');
+  assert.equal(planningStart({ today: '2026-10-22', date: '2026-10-24' }), '2026-10-22', 'zelfde week: vandaag');
+  assert.equal(planningStart({ today: '2026-10-22', date: '2026-10-28' }), '2026-10-26', 'volgende week: maandag');
+});
+
+test('een maandtaak die je voor volgende week plande, telt als gepland in het blad van deze week (en andersom)', () => {
+  const habits = [flexible('m', 1, 'month')];
+  const dayPlans = [{ habitId: 'm', date: '2026-10-19' }];
+  const sunday = buildWeekPlan({ snapshot: snap({ habits, dayPlans }), today: '2026-10-18' });
+  assert.deepEqual([row(sunday, 'm').planned, row(sunday, 'm').missing], [1, 0], 'zondag 18: de dag van maandag 19 telt mee, al staat hij niet in het blad');
+  assert.equal(states(row(sunday, 'm')).includes('19'), false, 'het blad toont alleen deze week');
+  const monday = buildWeekPlan({ snapshot: snap({ habits, dayPlans }), today: '2026-10-18', date: '2026-10-19' });
+  assert.deepEqual([row(monday, 'm').planned, row(monday, 'm').missing, row(monday, 'm').days[0].state], [1, 0, 'planned']);
+  const past = buildWeekPlan({ snapshot: snap({ habits, dayPlans: [{ habitId: 'm', date: '2026-10-13' }] }), today: THURSDAY });
+  assert.deepEqual([row(past, 'm').planned, row(past, 'm').missing], [0, 1], 'een dag die voorbij is telt niet meer als gepland');
+});
+
+test('onhaalbaar: de periode eindigt deze week en wat nog moet past niet meer in de vrije dagen (gedaan en gepland tellen mee)', () => {
+  const SUNDAY = '2026-10-25';
+  const done = { habitId: 'a', date: '2026-10-19', status: 'done' };
+  // 1 van 3 gedaan en vandaag (zondag) gepland: nog 1 keer te weinig dagen
+  const stuck = buildWeekPlan({ snapshot: snap({ habits: [flexible('a', 3)], checkIns: [done], dayPlans: [{ habitId: 'a', date: SUNDAY }] }), today: SUNDAY });
+  assert.deepEqual([row(stuck, 'a').unreachable, row(stuck, 'a').free, row(stuck, 'a').missing], [true, 0, 1]);
+  // 1 van 3 en zaterdag en zondag vrij: 2 keer nodig, 2 dagen: haalbaar
+  const fine = buildWeekPlan({ snapshot: snap({ habits: [flexible('a', 3)], checkIns: [done] }), today: '2026-10-24' });
+  assert.equal(row(fine, 'a').unreachable, false);
+  // 0 van 3 op zondag: 1 dag voor 3 keer
+  assert.equal(row(buildWeekPlan({ snapshot: snap({ habits: [flexible('a', 3)] }), today: SUNDAY }), 'a').unreachable, true);
+  // een maandtaak met de maand nog open na deze week: de rest komt in een latere week
+  assert.equal(row(buildWeekPlan({ snapshot: snap({ habits: [flexible('m', 2, 'month')], checkIns: [{ habitId: 'm', date: '2026-10-19', status: 'done' }] }), today: THURSDAY }), 'm').unreachable, false);
+  // al gehaald
+  assert.equal(row(buildWeekPlan({ snapshot: snap({ habits: [flexible('a', 1)], checkIns: [done] }), today: SUNDAY }), 'a').unreachable, false);
+});
+
+test('dagen die al geweest zijn: gedaan staat er als gedaan, de rest als voorbij, en ze doen niet mee in het voorstel', () => {
+  const rows = buildWeekPlan({
+    snapshot: snap({
+      habits: [flexible('a', 3)],
+      checkIns: [{ habitId: 'a', date: '2026-10-13', status: 'done' }, { habitId: 'a', date: '2026-10-14', status: 'skipped' }],
+      dayPlans: [{ habitId: 'a', date: '2026-10-12' }],
+    }),
+    today: THURSDAY,
+  });
+  const a = row(rows, 'a');
+  assert.equal(states(a).startsWith('12:past 13:done 14:past 15:free'), true, states(a));
+  assert.deepEqual([a.planned, a.free, a.missing], [0, 4, 2], 'een geplande dag in het verleden telt niet meer als gepland');
+  assert.equal(suggestPlan(rows).every((p) => p.date >= THURSDAY), true, 'het voorstel kiest nooit een dag die voorbij is');
+  const monday = buildWeekPlan({ snapshot: snap({ habits: [flexible('a')] }), today: '2026-10-12' });
+  assert.equal(states(row(monday, 'a')).startsWith('12:free'), true, 'op maandag is er niets voorbij');
+});
+
 test('setPlanSkip: zet de markering op de maandag van deze week en haalt hem weer weg; de rest van de taak blijft ongemoeid', async () => {
   const { repo } = testRepo();
   const habit = await repo.saveHabit(flexible(undefined, 2, 'month', { id: undefined }));
   const done = await setPlanSkip(repo, { habitId: habit.id, skipped: true }, '2026-10-17'); // zaterdag
-  assert.equal(done.noPlanWeek, '2026-10-12');
+  assert.deepEqual(done.noPlanWeeks, ['2026-10-12']);
   assert.deepEqual([done.name, done.schedules], [habit.name, habit.schedules]);
-  assert.equal((await repo.getHabit(habit.id)).noPlanWeek, '2026-10-12');
+  assert.deepEqual((await repo.getHabit(habit.id)).noPlanWeeks, ['2026-10-12']);
   const back = await setPlanSkip(repo, { habitId: habit.id, skipped: false }, '2026-10-17');
-  assert.equal('noPlanWeek' in back, false);
+  assert.equal('noPlanWeeks' in back, false);
   assert.equal(await setPlanSkip(repo, { habitId: 'bestaat-niet', skipped: true }, '2026-10-17'), null);
   // de markering komt ook door een export en import heen en een ongeldige waarde wordt geweigerd
-  assert.deepEqual(validateHabit({ ...habit, noPlanWeek: '2026-10-12' }), []);
+  assert.deepEqual(validateHabit({ ...habit, noPlanWeeks: ['2026-10-12'] }), []);
   assert.deepEqual(validateHabit({ ...habit, noPlanWeek: 'volgende week' }), [{ field: 'noPlanWeek', code: 'invalid' }]);
+  assert.deepEqual(validateHabit({ ...habit, noPlanWeek: '2026-10-12' }), [], 'het oudere veld blijft geldig');
+});
+
+test('setPlanSkip: de keuze voor de volgende week overschrijft die van de lopende week niet (en andersom)', async () => {
+  const { repo } = testRepo();
+  const habit = await repo.saveHabit(flexible(undefined, 2, 'week', { id: undefined }));
+  const SUNDAY = '2026-10-25';
+  const MONDAY = '2026-10-26';
+  await setPlanSkip(repo, { habitId: habit.id, skipped: true }, planningStart({ today: SUNDAY, date: SUNDAY }));
+  await setPlanSkip(repo, { habitId: habit.id, skipped: true }, planningStart({ today: SUNDAY, date: MONDAY }));
+  const saved = await repo.getHabit(habit.id);
+  assert.deepEqual(saved.noPlanWeeks, ['2026-10-19', '2026-10-26']);
+  const skippedOn = (date) => row(buildWeekPlan({ snapshot: snap({ habits: [saved] }), today: SUNDAY, date }), habit.id).skipped;
+  assert.deepEqual([skippedOn(SUNDAY), skippedOn(MONDAY)], [true, true], 'terug naar 25 oktober: de keuze staat er nog');
+  await setPlanSkip(repo, { habitId: habit.id, skipped: false }, MONDAY);
+  const back = await repo.getHabit(habit.id);
+  assert.deepEqual(back.noPlanWeeks, ['2026-10-19'], 'alleen de volgende week is teruggezet');
+  assert.deepEqual(validateHabit(back), []);
+  await setPlanSkip(repo, { habitId: habit.id, skipped: false }, SUNDAY);
+  assert.equal('noPlanWeeks' in (await repo.getHabit(habit.id)), false, 'niets meer over: het veld verdwijnt');
+});
+
+test('setPlanSkip ruimt oude weken op en neemt het oudere veld noPlanWeek over', async () => {
+  const { repo } = testRepo();
+  const habit = await repo.saveHabit(flexible(undefined, 2, 'week', { id: undefined, noPlanWeek: '2026-10-19' }));
+  await setPlanSkip(repo, { habitId: habit.id, skipped: true }, '2026-10-26');
+  const saved = await repo.getHabit(habit.id);
+  assert.deepEqual([saved.noPlanWeeks, 'noPlanWeek' in saved], [['2026-10-19', '2026-10-26'], false], 'de oude keuze blijft voor de lopende week');
+  await setPlanSkip(repo, { habitId: habit.id, skipped: true }, '2026-11-09');
+  assert.deepEqual((await repo.getHabit(habit.id)).noPlanWeeks, ['2026-11-09'], 'de weken van 19 en 26 oktober zijn voorbij en worden opgeruimd');
+  assert.deepEqual(validateHabit({ ...saved, noPlanWeeks: ['morgen'] }), [{ field: 'noPlanWeeks', code: 'invalid' }]);
 });
 
 test('de markering blijft staan als je de habit bewerkt (applyHabitForm)', async () => {
@@ -169,18 +276,20 @@ test('een taak die morgen start staat in Plan je week, maar alleen te plannen va
   const nieuw = row(rows, 'nieuw');
   assert.ok(nieuw, 'er is een rij');
   assert.equal(nieuw.startsOn, '2026-10-16');
-  assert.equal(states(nieuw).startsWith('15:blocked 16:free 17:free 18:free'), true, states(nieuw));
+  assert.equal(states(nieuw).startsWith('12:past 13:past 14:past 15:blocked 16:free 17:free 18:free'), true, states(nieuw));
   assert.deepEqual([nieuw.unit.count, nieuw.unit.target, nieuw.missing, nieuw.free], [0, 2, 2, 3], 'de week telt vanaf de start: vrijdag, zaterdag en zondag');
   assert.deepEqual(suggestPlan(rows).map((p) => p.date).sort(), ['2026-10-16', '2026-10-18'], 'het voorstel begint niet voor de start');
 });
 
-test('een taak die pas in de volgende week begint: de eenheid is die week, en de dagen ervoor zijn niet beschikbaar', () => {
-  const rows = buildWeekPlan({ snapshot: snap({ habits: [flexible('maandag', 2, 'week', { startDate: '2026-10-19' })] }), today: THURSDAY });
+test('een taak die pas in de volgende week begint: niet in het blad van deze week, wel in dat van die week (met de dagen ervoor niet beschikbaar)', () => {
+  const habits = [flexible('maandag', 2, 'week', { startDate: '2026-10-19' })];
+  assert.equal(buildWeekPlan({ snapshot: snap({ habits }), today: THURSDAY }).length, 0, 'donderdag 15: het blad van deze week');
+  const rows = buildWeekPlan({ snapshot: snap({ habits }), today: THURSDAY, date: '2026-10-19' });
   const maandag = row(rows, 'maandag');
   assert.equal(maandag.unit.start, '2026-10-19');
-  assert.equal(states(maandag).startsWith('15:blocked 16:blocked 17:blocked 18:blocked 19:free 20:free'), true, states(maandag));
-  assert.equal(maandag.free, 4, 'maandag t/m donderdag liggen binnen het venster en in die week');
-  assert.deepEqual(suggestPlan(rows).every((p) => p.date >= '2026-10-19'), true);
+  assert.equal(states(maandag), '19:free 20:free 21:free 22:free 23:blocked 24:blocked 25:blocked', 'verder dan acht dagen vooruit kan nog niet gepland worden');
+  assert.equal(maandag.free, 4, 'maandag t/m donderdag liggen binnen het venster');
+  assert.deepEqual(suggestPlan(rows).every((p) => p.date >= '2026-10-19' && p.date <= '2026-10-22'), true);
 });
 
 test('een taak die te ver weg start, of nooit meer loopt, krijgt geen rij', () => {
@@ -219,9 +328,9 @@ test('2× per maand, nog 13 dagen over: één dag plannen is genoeg voor de heri
   // een taak die op maandag 19 oktober begint (13 dagen over in oktober), gepland op zondag 18 oktober
   const habits = [flexible('wc', 2, 'month', { startDate: '2026-10-19' })];
   const SUNDAY = '2026-10-18';
-  const none = buildWeekPlan({ snapshot: snap({ habits }), today: SUNDAY });
+  const none = buildWeekPlan({ snapshot: snap({ habits }), today: SUNDAY, date: '2026-10-19' }); // het blad van de week waarin de taak start
   assert.deepEqual([row(none, 'wc').missing, row(none, 'wc').urgent], [1, false], 'één inplannen, en een taak die net begint dreigt niet te falen');
-  const one = buildWeekPlan({ snapshot: snap({ habits, dayPlans: [{ habitId: 'wc', date: '2026-10-19' }] }), today: SUNDAY });
+  const one = buildWeekPlan({ snapshot: snap({ habits, dayPlans: [{ habitId: 'wc', date: '2026-10-19' }] }), today: SUNDAY, date: '2026-10-19' });
   assert.equal(row(one, 'wc').missing, 0, 'één dag is genoeg');
   assert.equal(one.filter((r) => r.missing > 0 && r.free > 0).length, 0, 'dus geen "Nog n taken om in te plannen"');
 });

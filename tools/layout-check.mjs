@@ -913,12 +913,12 @@ async function main() {
   // Plan je week: een blad met per flexibele taak dagen om aan te tikken, en "Verdeel voor mij"
   await ev(`document.querySelector('#planWeek').click()`);
   await sleep(700);
-  const planner = await ev(`(() => { const d = document.querySelector('dialog.dialog--planner[open]'); return { open: !!d, rows: d?.querySelectorAll('.planner__row').length ?? 0, days: d?.querySelectorAll('.planner__day').length ?? 0,
+  const planner = await ev(`(() => { const d = document.querySelector('dialog.dialog--planner[open]'); return { open: !!d, rows: d?.querySelectorAll('.planner__row').length ?? 0, days: d?.querySelectorAll('.planner__day').length ?? 0, past: d?.querySelectorAll('.planner__day[data-past="true"]:disabled').length ?? 0,
     overflow: d ? d.scrollWidth - d.clientWidth : 1, height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight, actions: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].map((b) => b.textContent) }; })()`);
-  check('Plan je week: een blad met een rij per flexibele taak (acht dagen elk), de knoppen "Verdeel voor mij" en "Klaar", en niet hoger dan het scherm',
-    planner.open && planner.rows >= 8 && planner.days === planner.rows * 8 && planner.overflow <= 0 && planner.height <= planner.vh && planner.actions.includes('Verdeel voor mij') && planner.actions.includes('Klaar'), JSON.stringify(planner));
+  check('Plan je week: een blad met een rij per flexibele taak (zeven dagen, de week van maandag t/m zondag; wat al geweest is grijs en niet aan te tikken), de knoppen "Verdeel voor mij" en "Klaar", en niet hoger dan het scherm',
+    planner.open && planner.rows >= 8 && planner.days === planner.rows * 7 && planner.overflow <= 0 && planner.height <= planner.vh && planner.actions.includes('Verdeel voor mij') && planner.actions.includes('Klaar'), JSON.stringify(planner));
   // wat nog ingepland moet worden is in het blad gemarkeerd: precies de rijen die nog "inplannen" willen (de taken van "Nog n taken om in te plannen")
-  const marks = await ev(`(() => { const rows = [...document.querySelectorAll('dialog.dialog--planner .planner__row')]; const needing = rows.filter((r) => /inplannen/.test(r.querySelector('.planner__summary')?.textContent ?? '') && !r.querySelector('.planner__skip[aria-pressed="true"]')); const marked = rows.filter((r) => r.dataset.needs === 'true'); return { rows: rows.length, needing: needing.length, marked: marked.length, same: needing.every((r) => r.dataset.needs === 'true') && marked.every((r) => needing.includes(r)) }; })()`);
+  const marks = await ev(`(() => { const rows = [...document.querySelectorAll('dialog.dialog--planner .planner__row')]; const needing = rows.filter((r) => /inplannen/.test(r.querySelector('.planner__summary')?.textContent ?? '') && !r.querySelector('.planner__skip[aria-pressed="true"]')); const marked = rows.filter((r) => r.dataset.needs === 'true'); return { rows: rows.length, needing: needing.length, marked: marked.length, odd: rows.filter((r) => (needing.includes(r)) !== (r.dataset.needs === 'true')).map((r) => (r.querySelector('.planner__name')?.textContent + ': ' + r.querySelector('.planner__summary')?.textContent)), same: needing.every((r) => r.dataset.needs === 'true') && marked.every((r) => needing.includes(r)) }; })()`);
   check('Plan je week: de taken die nog ingepland moeten worden zijn gemarkeerd (en alleen die)', marks.rows > 0 && marks.same, JSON.stringify(marks));
   // "Niet in deze week": de taak telt niet meer mee voor "Nog n taken om in te plannen" en krijgt geen voorstel; terugdraaien kan
   const needCount = () => ev(`Number(/Nog ([0-9]+)/.exec(document.querySelector('.habits .plan-prompt__text strong')?.textContent ?? '')?.[1] ?? 0)`);
@@ -975,10 +975,16 @@ async function main() {
     notifyChanged(); return habit.id; })()`);
   await nav('habits');
   await sleep(500);
-  await ev(`document.querySelector('#planWeek').click()`);
+  // Plan je week toont één week: staat morgen in een andere week (het is zondag), dan hoort de taak bij het blad van die week
+  const sundayToday = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); const { weekday } = await import('/src/domain/dates.js'); return weekday(state.today) === 6; })()`);
+  if (sundayToday) await ev(`(async () => { const { state } = await import('/src/ui/state.js'); const { addDays } = await import('/src/domain/dates.js'); (await import('/src/ui/components/week-planner.js')).openWeekPlanner({ date: addDays(state.today, 1) }); })()`);
+  else await ev(`document.querySelector('#planWeek').click()`);
   await sleep(700);
-  const startRow = await ev(`(() => { const row = [...document.querySelectorAll('dialog.dialog--planner .planner__row')].find((r) => r.textContent.includes('Start morgen')); const days = [...(row?.querySelectorAll('.planner__day') ?? [])]; return { exists: !!row, disabled: days.slice(0, 3).map((d) => d.disabled), summary: row?.querySelector('.planner__summary')?.textContent ?? null }; })()`);
-  check('Plan je week: een taak die morgen start staat er ook in, met "start morgen"; vandaag is niet te plannen, vanaf morgen wel', startRow.exists && JSON.stringify(startRow.disabled) === '[true,false,false]' && /start morgen/.test(startRow.summary ?? ''), JSON.stringify(startRow));
+  const startRow = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); const { addDays } = await import('/src/domain/dates.js'); const tomorrow = addDays(state.today, 1);
+    const row = [...document.querySelectorAll('dialog.dialog--planner .planner__row')].find((r) => r.textContent.includes('Start morgen'));
+    const days = [...(row?.querySelectorAll('.planner__day') ?? [])].map((d) => ({ date: d.dataset.focusKey.split(':').pop(), disabled: d.disabled }));
+    return { exists: !!row, count: days.length, before: days.filter((d) => d.date < tomorrow).every((d) => d.disabled), fromStart: days.filter((d) => d.date >= tomorrow).some((d) => !d.disabled), summary: row?.querySelector('.planner__summary')?.textContent ?? null }; })()`);
+  check('Plan je week: een taak die morgen start staat er ook in, met "start morgen"; de dagen ervoor zijn niet te plannen, vanaf morgen wel', startRow.exists && startRow.count === 7 && startRow.before && startRow.fromStart && (sundayToday || /start morgen/.test(startRow.summary ?? '')), JSON.stringify(startRow));
   await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
   await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); await state.repo.deleteHabit(${JSON.stringify(startId)}); notifyChanged(); })()`);
   await sleep(300);

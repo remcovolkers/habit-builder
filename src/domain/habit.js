@@ -25,7 +25,7 @@ export const validParts = (parts, min = 1) => Array.isArray(parts) && parts.leng
 
 /**
  * Geeft [{ field, code, detail? }]; leeg = geldig.
- * habit: { name, icon, color, daypart, startDate, status, cue?, why?, minimalVersion?, graduationDays?, noPlanWeek?, trials?, schedules }
+ * habit: { name, icon, color, daypart, startDate, status, cue?, why?, minimalVersion?, graduationDays?, noPlanWeeks?, noPlanWeek? (ouder), trials?, schedules }
  */
 export function validateHabit(habit) {
   const errors = [];
@@ -42,8 +42,9 @@ export function validateHabit(habit) {
   if (!isValidDate(habit.startDate)) add('startDate', 'invalid');
   if (habit.endDate != null && !isValidDate(habit.endDate)) add('endDate', 'invalid');
 
-  // "Niet in deze week" bij Plan je week: de maandag van de week waarvoor de taak niet ingepland hoeft te worden
+  // "Niet in deze week" bij Plan je week: de maandagen van de weken waarvoor de taak niet ingepland hoeft te worden (`noPlanWeek`: het oudere veld, één maandag)
   if (habit.noPlanWeek != null && !isValidDate(habit.noPlanWeek)) add('noPlanWeek', 'invalid');
+  if (habit.noPlanWeeks != null && !(Array.isArray(habit.noPlanWeeks) && habit.noPlanWeeks.length <= 8 && habit.noPlanWeeks.every(isValidDate))) add('noPlanWeeks', 'invalid');
 
   // proeven "zonder app" (domain/trial.js)
   for (const error of validateTrials(habit.trials)) add(error.field, error.code);

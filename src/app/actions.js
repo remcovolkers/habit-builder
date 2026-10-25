@@ -1,6 +1,7 @@
 // Handelingen van de gebruiker: domeinregels toepassen en daarna opslaan via de repository.
 // Elke handeling die je ongedaan wilt kunnen maken geeft { undo } terug.
 import { addDays, diffDays, isValidDate, startOfMonth, startOfWeek } from '../domain/dates.js';
+import { withPlanSkip } from '../domain/planning.js';
 import { inAppointmentWindow } from '../domain/appointments.js';
 import { monthReviewState, weekReviewState } from '../domain/reviews.js';
 import { DEFAULT_GRADUATION_DAYS, PLAN_AHEAD_DAYS } from '../domain/constants.js';
@@ -340,14 +341,13 @@ export async function completeMonthTask(repo, { monthStart }, today) {
 
 /**
  * "Niet in deze week" bij Plan je week: de herinnering "Nog n taken om in te plannen" en "Verdeel voor mij" slaan deze taak over, voor de
- * kalenderweek waarin `today` valt. Bijvoorbeeld voor een taak die je later in de maand wilt doen. De afspraak zelf blijft zoals hij was.
- * `skipped: false` zet het weer terug.
+ * kalenderweek waarin `today` valt (bij een dag in de volgende week: de maandag van die week, zie planningStart). De keuzes voor andere weken blijven
+ * staan. Bijvoorbeeld voor een taak die je later in de maand wilt doen. De afspraak zelf blijft zoals hij was. `skipped: false` zet het weer terug.
  */
 export async function setPlanSkip(repo, { habitId, skipped }, today) {
   const habit = await repo.getHabit(habitId);
   if (!habit) return null;
-  const { noPlanWeek, ...rest } = habit;
-  return repo.saveHabit(skipped ? { ...rest, noPlanWeek: startOfWeek(today) } : rest);
+  return repo.saveHabit(withPlanSkip(habit, startOfWeek(today), skipped));
 }
 
 // --- pauzeren, archiveren -----------------------------------------------------------------------

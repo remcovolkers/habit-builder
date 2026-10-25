@@ -133,6 +133,17 @@
   opacity: 0.4;
 }
 
+/* een dag die al geweest is: grijs en stil, met een vinkje als de taak die dag is gedaan */
+.planner__day[data-past='true'] {
+  background: transparent;
+  color: var(--color-text-muted);
+  opacity: 0.55;
+}
+
+.planner__day[data-past='true'][data-state='done'] {
+  opacity: 0.8;
+}
+
 /* een dag in de volgende week of maand: hij telt voor de volgende periode */
 .planner__day[data-next-period='true'] {
   border-style: dashed;
