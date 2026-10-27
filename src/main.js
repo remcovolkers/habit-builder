@@ -18,9 +18,12 @@ import { friendsInviteView } from './ui/views/friends-invite.js';
 import { loginView } from './ui/views/login.js';
 import { account, initAccount, onAccountChanged } from './ui/account.js';
 import { initReminders } from './ui/reminders.js';
+import { initAppUpdate } from './ui/app-update.js';
+import { initNativeLogin } from './ui/native-login.js';
 import { initSocial, onSocialChanged, social, socialApp } from './ui/social-app.js';
 import { setDev } from './ui/dev.js';
 import { startPwa } from './pwa.js';
+import { startNative } from './native.js';
 import { mountUpdateBanner } from './ui/components/update-banner.js';
 import { celebrateAchievements } from './ui/components/achievement.js';
 import { checkAchievements } from './app/achievement-runner.js';
@@ -187,12 +190,15 @@ onAccountChanged(() => {
 // Account: alleen actief als er een sessie is (of we terugkomen van Google); een mislukte start blokkeert de app nooit.
 initAccount().catch((error) => console.warn('account starten mislukt', error));
 initReminders();
+initAppUpdate();
+initNativeLogin();
 initSocial();
 initAdmin();
 markFirstRun(); // sinds wanneer je de app gebruikt: de rustige uitnodiging voor feedback komt pas na een week
 
 // PWA: service worker (offline + updates). Mislukt dit, dan werkt de app gewoon online verder.
 mountUpdateBanner();
+startNative();
 startPwa().catch((error) => console.warn('PWA starten mislukt', error));
 
 // Introductie (docs/ONBOARDING.md O3a): bij het starten op Vandaag, zolang er geen habits zijn en ze nog niet gezien is. Wie al habits heeft

@@ -7,6 +7,11 @@
 html {
   -webkit-text-size-adjust: 100%;
   background: var(--color-bg-3);
+  /* de bosgradient van de achtergrond; ook de strook onder de statusbalk in de Android-app gebruikt hem (hieronder) */
+  --page-backdrop:
+    radial-gradient(120% 90% at 50% 40%, transparent 60%, rgb(0 0 0 / 0.55) 100%),
+    radial-gradient(120% 70% at 50% 0%, var(--color-accent-10), transparent 60%),
+    radial-gradient(140% 100% at 50% 20%, var(--color-bg-1) 0%, var(--color-bg-2) 45%, var(--color-bg-3) 100%);
   /* geen "trek om te verversen" en geen rubberband: de app ververst zichzelf (sync), en een per ongeluk herladen gaf rare tussenstanden */
   overscroll-behavior-y: none;
   /* vangnet: de pagina scrolt nooit zijwaarts. De echte oorzaken (te brede inhoud bij grote tekst) zijn opgelost, zie de 200%-controle. */
@@ -48,10 +53,7 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(120% 90% at 50% 40%, transparent 60%, rgb(0 0 0 / 0.55) 100%),
-    radial-gradient(120% 70% at 50% 0%, var(--color-accent-10), transparent 60%),
-    radial-gradient(140% 100% at 50% 20%, var(--color-bg-1) 0%, var(--color-bg-2) 45%, var(--color-bg-3) 100%);
+  background: var(--page-backdrop);
 }
 
 h1, h2, h3, p, ul, ol, dl, dd, figure {
@@ -124,6 +126,25 @@ textarea {
 
 @keyframes mote {
   50% { transform: translateY(-14px); opacity: 0.32; }
+}
+
+/* In de Android-app tekent de pagina onder de statusbalk (viewport-fit=cover). src/native.js zet de klasse.
+   De padding geeft de pagina bovenaan de ruimte die de statusbalk inneemt; de vaste strook houdt hem leeg als je omlaag scrolt, zodat de
+   inhoud niet onder de statusbalk door schuift. De strook heeft dezelfde achtergrond als de pagina (vast aan het scherm, dus zonder naad). */
+.is-native .app {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.is-native::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  z-index: 40; /* boven de inhoud en de vaste knoppen; een blad (dialog) ligt in de top layer en dekt hem af */
+  pointer-events: none;
+  background: var(--color-bg-3);
+  background-image: var(--page-backdrop);
+  background-attachment: fixed;
 }
 
 /* app-schil */

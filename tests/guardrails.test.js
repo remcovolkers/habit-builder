@@ -1,6 +1,7 @@
 // Bewaakt de afspraken uit PLAN.md die niet in de gewone logica terugkomen.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -52,10 +53,34 @@ test('R3: de service-role key staat nergens in de repo', () => {
     .flatMap((d) => {
       try { return walk(join(ROOT, d)); } catch { return []; }
     })
-    .filter((f) => !f.endsWith('guardrails.test.js'));
+    .filter((f) => !f.endsWith('guardrails.test.js'))
+    // supabase/.temp en .branches zijn tijdelijke mappen van de Supabase CLI (ze bevatten bij het lokaal draaien de sleutels van de lokale stack) en staan in .gitignore
+    .filter((f) => !/supabase[\\/]\.(temp|branches)[\\/]/.test(f));
   // De Edge Function leest de sleutel uit de omgeving van de server; alleen de NAAM van die variabele mag in de repo staan.
   const offenders = files.filter((f) => /service_role|sb_secret_/i.test(readFileSync(f, 'utf8').replaceAll('SUPABASE_SERVICE_ROLE_KEY', '')));
   assert.deepEqual(offenders.map((f) => relative(ROOT, f)), []);
+});
+
+/** De bestanden die git bijhoudt (en dus in de repo komen), zonder wat .gitignore uitsluit. */
+const trackedFiles = () => execFileSync('git', ['ls-files', '-z'], { cwd: ROOT, encoding: 'utf8' }).split('\0').filter(Boolean);
+
+test('R3: geen privésleutel (Firebase-service-account of andere PEM) in een bestand dat git bijhoudt', () => {
+  // een echte sleutel heeft na de kop een lange base64-reeks (in JSON met \n-tekens ertussen); een vermelding van de tekst in code of documentatie niet
+  const key = /BEGIN (?:RSA |EC )?PRIVATE KEY-----(?:\\n|\s)*[A-Za-z0-9+/]{40,}/;
+  const offenders = trackedFiles().filter((f) => {
+    try {
+      return key.test(readFileSync(join(ROOT, f), 'utf8'));
+    } catch {
+      return false; // een binair bestand of een verwijderd bestand
+    }
+  });
+  assert.deepEqual(offenders, []);
+});
+
+test('R3: de lokale geheimen van de Edge Function (supabase/functions/.env) staan in .gitignore', () => {
+  const result = spawnSync('git', ['check-ignore', '--quiet', 'supabase/functions/.env'], { cwd: ROOT });
+  assert.equal(result.status, 0, 'supabase/functions/.env wordt door git genegeerd');
+  assert.ok(!trackedFiles().some((f) => /(^|\/)\.env(\.|$)/.test(f)), 'geen .env-bestand in git');
 });
 
 test('R3: de naam van de service-sleutel komt alleen voor in de Edge Function, haar tests en de documentatie — nooit in de app', () => {

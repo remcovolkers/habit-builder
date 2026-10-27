@@ -1,6 +1,7 @@
 // Inloggen via Supabase Auth (Google of e-mailcode). De SDK (vendor/supabase-js.min.mjs, 217 kB) wordt pas geladen
 // als hij nodig is: er is al een sessie, we komen terug van Google, of de gebruiker gaat inloggen.
 import { config } from '../config.js';
+import { isNativeApp, nativePlugin } from '../native.js';
 
 /** De sleutel waaronder de SDK de sessie in localStorage bewaart: sb-<projectref>-auth-token. */
 export function sessionStorageKey(supabaseUrl) {
@@ -79,11 +80,58 @@ export async function currentUser() {
   return user;
 }
 
+/**
+ * Waar Google (via Supabase) de gebruiker naartoe stuurt na het inloggen in de Android-app: een eigen adres dat Android aan de app koppelt
+ * (intent-filter in AndroidManifest.xml). Dit adres moet ook bij Supabase staan onder Authentication → URL Configuration → Redirect URLs.
+ */
+export const NATIVE_REDIRECT = 'habitbuilder://auth';
+
+/**
+ * Wat staat er in het adres waarmee Android de app opent? { code } na een geslaagde inlog, { error } als Google of Supabase een fout meldt
+ * (bijvoorbeeld "access_denied" als je annuleert), of null als het geen inlogadres is. De gegevens kunnen in de query of in het #-deel staan.
+ */
+export function parseNativeAuthUrl(url) {
+  let parsed;
+  try {
+    parsed = new URL(String(url));
+  } catch {
+    return null;
+  }
+  if (`${parsed.protocol}//${parsed.host}` !== NATIVE_REDIRECT) return null;
+  const params = new URLSearchParams(parsed.hash.replace(/^#/, ''));
+  for (const [key, value] of parsed.searchParams) if (!params.has(key)) params.set(key, value);
+  const code = params.get('code');
+  if (code) return { code };
+  return { error: params.get('error_description') || params.get('error') || 'onbekend' };
+}
+
+async function signInWithGoogleInApp() {
+  const browser = nativePlugin('Browser');
+  if (!browser) throw new Error('de browser-plugin van de app ontbreekt');
+  const client = await getClient();
+  // Google weigert inloggen in een ingebedde webweergave (disallowed_useragent): daarom een Chrome Custom Tab, en een eigen adres om terug te keren
+  const { data, error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: NATIVE_REDIRECT, skipBrowserRedirect: true } });
+  if (error) throw error;
+  await browser.open({ url: data.url });
+}
+
 export async function signInWithGoogle() {
+  if (isNativeApp()) return signInWithGoogleInApp();
   const client = await getClient();
   const redirectTo = `${location.origin}${location.pathname}`;
   const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
   if (error) throw error;
+}
+
+/**
+ * De app is geopend met het adres waarmee Google terugkeert: de code inwisselen voor een sessie. De PKCE-verifier die daarbij hoort staat in de
+ * localStorage van deze webweergave (de SDK bewaarde hem bij het starten van de inlog). Geeft de gebruiker, of gooit de fout.
+ */
+export async function completeNativeLogin(code) {
+  const client = await getClient();
+  const { data, error } = await client.auth.exchangeCodeForSession(code);
+  if (error) throw error;
+  return data.user;
 }
 
 export async function sendEmailCode(email) {

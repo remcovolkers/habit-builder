@@ -6,6 +6,7 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { config } from '../src/config.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const BROWSER = [
@@ -271,6 +272,59 @@ async function main() {
       }
     }
   }
+
+  // terug: de pagina staat weer op de plek waar je was (een nieuwe pagina begint nog steeds bovenaan); ook bij een lange pagina die pas na het tekenen vol raakt
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await nav('achievements'); // eerst een andere pagina: dezelfde adres opnieuw openen wist de geschiedenis-ingang zonder dat de router loopt
+  await nav('habits');
+  await sleep(500);
+  const backScroll = await ev(`(async () => {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const room = document.documentElement.scrollHeight - innerHeight;
+    const target = Math.min(300, Math.floor(room / 2));
+    window.scrollTo(0, target);
+    await wait(200);
+    const before = Math.round(window.scrollY);
+    location.hash = '#/achievements'; // een nieuwe navigatie
+    await wait(700);
+    const onNew = Math.round(window.scrollY);
+    history.back();
+    await wait(900);
+    const afterBack = Math.round(window.scrollY);
+    history.forward();
+    await wait(700);
+    const afterForward = Math.round(window.scrollY);
+    return { room, before, onNew, afterBack, afterForward, hash: location.hash };
+  })()`);
+  check('terug: de pagina staat weer op de plek waar je was, een nieuwe pagina begint bovenaan',
+    backScroll.room > 100 && backScroll.before > 50 && backScroll.onNew === 0 && Math.abs(backScroll.afterBack - backScroll.before) <= 2 && backScroll.afterForward === 0, JSON.stringify(backScroll));
+
+  // Android-app: de pagina begint onder de statusbalk en een vaste strook houdt hem leeg als je omlaag scrolt (de inhoud schuift er niet onderdoor)
+  await send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 48, bottom: 0, left: 0, right: 0 } });
+  await ev(`document.documentElement.classList.add('is-native')`);
+  await nav('achievements');
+  await nav('habits');
+  await sleep(500);
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`); // een viering van de testgegevens ligt anders over de pagina
+  await sleep(200);
+  const nativeTop = await ev(`(async () => {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const strip = getComputedStyle(document.documentElement, '::before');
+    const atTop = Math.round(document.querySelector('.app').getBoundingClientRect().top + parseFloat(getComputedStyle(document.querySelector('.app')).paddingTop));
+    window.scrollTo(0, 400);
+    await wait(300);
+    return { padding: getComputedStyle(document.querySelector('.app')).paddingTop, atTop, position: strip.position, height: strip.height, top: strip.top, attachment: strip.backgroundAttachment, image: strip.backgroundImage.startsWith('radial-gradient'), scrolled: Math.round(window.scrollY) };
+  })()`);
+  if (process.env.HB_SHOT) { // ter controle met het oog: HB_SHOT=<map> schrijft een schermafbeelding van de gescrolde pagina
+    const shot = await send('Page.captureScreenshot', { format: 'png' });
+    (await import('node:fs')).writeFileSync(join(process.env.HB_SHOT, 'statusbalk-gescrold.png'), Buffer.from(shot.result.data, 'base64'));
+  }
+  check('Android-app: ruimte onder de statusbalk, en een vaste strook met de achtergrond van de pagina blijft er ook na scrollen',
+    nativeTop.padding === '48px' && nativeTop.position === 'fixed' && nativeTop.height === '48px' && nativeTop.top === '0px' && nativeTop.attachment.startsWith('fixed') && nativeTop.image && nativeTop.scrolled > 100, JSON.stringify(nativeTop));
+  await ev(`document.documentElement.classList.remove('is-native')`);
+  await send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, bottom: 0, left: 0, right: 0 } });
+  const plainTop = await ev(`getComputedStyle(document.documentElement, '::before').content`);
+  check('in de gewone browser doet de strook niets (geen is-native: geen ::before)', plainTop === 'none' || plainTop === 'normal', plainTop);
 
   // toetsenbord: op het einde van de pagina blijft de knop bereikbaar
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
@@ -757,7 +811,7 @@ async function main() {
   await sleep(400);
   const fbClosed = await ev(`({ open: !!document.querySelector('dialog[open]'), hash: location.hash, focus: document.activeElement?.id ?? '' })`);
   check('feedback vanuit Instellingen: een blad met vier soorten (zonder mailvinkje zonder account) en de context die meegaat, de pagina blijft Instellingen, en het past op het scherm',
-    fbSheet.open && fbSheet.kinds === 4 && fbSheet.hash === '#/settings' && !fbSheet.contact && fbSheet.context.includes('#/settings') && fbSheet.context.includes('1.2') && fbSheet.height <= fbSheet.vh && fbSheet.overflow <= 0, JSON.stringify(fbSheet));
+    fbSheet.open && fbSheet.kinds === 4 && fbSheet.hash === '#/settings' && !fbSheet.contact && fbSheet.context.includes('#/settings') && fbSheet.context.includes(`(${config.appVersion})`) && fbSheet.height <= fbSheet.vh && fbSheet.overflow <= 0, JSON.stringify(fbSheet));
   check('feedback: leeg versturen geeft twee meldingen en laat het blad open; zonder verbinding komt er een melding, het blad blijft open en je tekst blijft staan; annuleren geeft de focus terug',
     fbEmpty.open && fbEmpty.errors.length === 2 && fbOffline.open && fbOffline.text === 'Een donker thema graag' && fbOffline.errors.length === 1 && /probeer het zo opnieuw/.test(fbOffline.errors[0])
       && !fbClosed.open && fbClosed.hash === '#/settings' && fbClosed.focus === 'feedbackOpen', JSON.stringify({ fbEmpty, fbOffline, fbClosed }));
