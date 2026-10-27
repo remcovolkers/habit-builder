@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- #090c0c is de achtergrond van het donkere thema en de theme_color uit manifest.webmanifest -->
+    <color name="splash_background">#090c0c</color>
+    <color name="system_bar">#090c0c</color>
+</resources>

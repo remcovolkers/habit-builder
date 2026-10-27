@@ -1,0 +1,160 @@
+name: Android-app
+
+# De Android-schil (Capacitor) om de PWA, zie docs/ANDROID-APP.md.
+#   • feature/android-app en handmatig: een debug-APK als artifact (7 dagen), om op een telefoon te proberen. Staan de secrets er al,
+#     dan wordt ook een met de echte sleutel getekende APK gebouwd en gecontroleerd, zodat een fout in de sleutel vóór de release blijkt.
+#   • main: een getekende APK in een GitHub Release (v<appVersion>); bestaat die release al, dan gebeurt er niets.
+# Bewust los van "Test & deploy": een mislukte Android-build houdt de uitrol van de PWA nooit tegen.
+# Secrets (zie docs/ANDROID-SETUP.md): ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD.
+
+on:
+  push:
+    branches: [main, 'feature/android-app']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false # een release die al bezig is, maken we niet halverwege af
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # alleen nodig voor het maken van de release op main
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+
+      - name: Versie bepalen
+        id: version
+        run: |
+          raw=$(node -e "import('./src/config.js').then((m) => console.log(m.config.appVersion))")
+          # 1.3 wordt 1.3.0: Android en de update-controle in de app vergelijken drie getallen
+          case "$raw" in
+            *.*.*) version="$raw" ;;
+            *.*) version="$raw.0" ;;
+            *) echo "::error::onverwachte appVersion '$raw' in src/config.js"; exit 1 ;;
+          esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "appVersion $raw, Android-versie $version"
+
+      - name: Bestaat de release al?
+        id: existing
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if gh release view "v${{ steps.version.outputs.version }}" > /dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::release v${{ steps.version.outputs.version }} bestaat al: geen nieuwe APK (verhoog appVersion in src/config.js voor een nieuwe release)"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Zijn de sleutel-secrets ingesteld?
+        id: key
+        if: steps.existing.outputs.found != 'true'
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          missing=""
+          for name in KEYSTORE PASSWORD ALIAS KEY_PASSWORD; do
+            [ -z "${!name}" ] && missing="$missing $name"
+          done
+          if [ -z "$missing" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          elif [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            echo "::error::GitHub-secrets ontbreken:$missing (zie docs/ANDROID-SETUP.md); op main is een getekende APK verplicht"
+            exit 1
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::geen sleutel-secrets ($missing ): alleen een debug-APK"
+          fi
+
+      - uses: actions/setup-java@v4
+        if: steps.existing.outputs.found != 'true'
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.existing.outputs.found != 'true'
+
+      - name: Debug-APK bouwen
+        if: github.ref != 'refs/heads/main'
+        working-directory: android
+        env:
+          HB_VERSION_CODE: ${{ github.run_number }}
+          HB_VERSION_NAME: ${{ steps.version.outputs.version }}-debug
+          # optioneel: de debug-app laadt dit adres in plaats van de live site (bijv. http://192.168.1.20:5173), zie docs/ANDROID-SETUP.md
+          CAP_SERVER_URL: ${{ vars.ANDROID_DEV_SERVER_URL }}
+        run: |
+          (cd .. && npx cap sync android)
+          chmod +x ./gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Debug-APK bewaren
+        if: github.ref != 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: habit-builder-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Release-APK bouwen en tekenen
+        if: steps.existing.outputs.found != 'true' && steps.key.outputs.present == 'true'
+        working-directory: android
+        env:
+          HB_VERSION_CODE: ${{ github.run_number }}
+          HB_VERSION_NAME: ${{ steps.version.outputs.version }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/release.keystore"
+          (cd .. && npx cap sync android) # zonder CAP_SERVER_URL: een release laadt altijd de live site
+          chmod +x ./gradlew
+          ./gradlew --no-daemon assembleRelease
+          rm -f "$RUNNER_TEMP/release.keystore"
+
+      - name: Handtekening controleren
+        if: steps.existing.outputs.found != 'true' && steps.key.outputs.present == 'true'
+        run: |
+          apk=android/app/build/outputs/apk/release/app-release.apk
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$apksigner" verify --print-certs "$apk"
+          cp "$apk" habit-builder.apk
+
+      - name: Getekende proef-APK bewaren
+        if: github.ref != 'refs/heads/main' && steps.key.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: habit-builder-release-proef
+          path: habit-builder.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Release maken
+        if: github.ref == 'refs/heads/main' && steps.existing.outputs.found != 'true'
+        run: |
+          cat > release-notes.md <<'EOF'
+          Android-app van Habit Builder. De app toont de live site, dus de webkant werkt zichzelf bij; een nieuwe APK komt er bij native wijzigingen.
+
+          **Installeren:** download `habit-builder.apk` op je telefoon en open hem. Android vraagt eenmalig om "installeren uit onbekende bronnen" toe te staan voor je browser. Een nieuwe versie installeer je gewoon over de oude heen; de app meldt zelf wanneer er een klaarstaat.
+          EOF
+          gh release create "v${{ steps.version.outputs.version }}" habit-builder.apk \
+            --target "$GITHUB_SHA" \
+            --title "Habit Builder ${{ steps.version.outputs.version }}" \
+            --notes-file release-notes.md

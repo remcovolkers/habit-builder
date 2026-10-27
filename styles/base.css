@@ -126,6 +126,11 @@ textarea {
   50% { transform: translateY(-14px); opacity: 0.32; }
 }
 
+/* In de Android-app tekent de pagina onder de statusbalk (viewport-fit=cover): daar ruimte voor maken. src/native.js zet de klasse. */
+.is-native .app {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
 /* app-schil */
 .app {
   position: relative;
