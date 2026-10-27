@@ -77,7 +77,9 @@ t('zonder account versturen werkt en blijft anoniem: geen gebruiker en geen adre
 t('ingelogd zonder vinkje is ook anoniem; met het vinkje komt het adres van het account erbij (van de server, niet van de telefoon)', async () => {
   await send(USER, 'problem', 'Het scherm hapert', { contact: false });
   await send(USER, 'question', 'Hoe werkt dit?', { contact: true });
-  const [anonymous, contact] = await all();
+  const rows = await all(); // op tekst zoeken, niet op volgorde: gelijke tijdstippen worden op een willekeurig id gesorteerd
+  const anonymous = rows.find((row) => row.body === 'Het scherm hapert');
+  const contact = rows.find((row) => row.body === 'Hoe werkt dit?');
   assert.deepEqual([anonymous.user_id, anonymous.contact_email], [null, null]);
   assert.deepEqual([contact.user_id, contact.contact_email], [USER, 'anna@x.nl']);
 });
@@ -100,7 +102,10 @@ t('ongeldige soort of tekst wordt geweigerd: leeg, alleen spaties, te lang, onbe
 t('pagina en versie worden ingekort in plaats van geweigerd, en een lege waarde wordt null', async () => {
   await send(null, 'idea', 'tekst', { route: 'r'.repeat(300), version: 'v'.repeat(80) });
   await send(null, 'idea', 'tekst 2', { route: '  ', version: '' });
-  const [long, empty] = await all();
+  // op tekst zoeken, niet op volgorde: twee rijen kunnen hetzelfde tijdstip krijgen, en dan beslist het willekeurige id
+  const rows = await all();
+  const long = rows.find((row) => row.body === 'tekst');
+  const empty = rows.find((row) => row.body === 'tekst 2');
   assert.deepEqual([long.route.length, long.app_version.length], [100, 20]);
   assert.deepEqual([empty.route, empty.app_version], [null, null]);
 });
