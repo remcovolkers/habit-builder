@@ -203,8 +203,15 @@ function registerForPush(plugin) {
     const handles = [];
     const finish = (settle, value) => {
       clearTimeout(timer);
-      for (const handle of handles) handle.then((listener) => listener.remove()).catch(() => {});
-      settle(value);
+      settle(value); // eerst afronden: opruimen mag nooit voorkomen dat de belofte wordt vervuld
+      // Wat addListener teruggeeft verschilt: een Promise met een handle, of (via Capacitor.Plugins in de app) iets anders. Niets daarvan mag hier een fout geven.
+      for (const handle of handles) {
+        try {
+          Promise.resolve(handle).then((listener) => listener?.remove?.()).catch(() => {});
+        } catch {
+          /* er is geen luisteraar om op te ruimen */
+        }
+      }
     };
     const timer = setTimeout(() => finish(reject, new Error(`token: geen FCM-token ontvangen na ${Math.round(appTimeouts.token / 1000)} s`)), appTimeouts.token);
     handles.push(plugin.addListener('registration', ({ value }) => finish(resolve, value)));

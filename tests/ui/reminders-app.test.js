@@ -23,7 +23,7 @@ const { account } = await import('../../src/ui/account.js');
 const { state } = await import('../../src/ui/state.js');
 
 /** De push-plugin zoals Capacitor hem aanbiedt, met wat we ermee kunnen laten gebeuren. */
-function fakePlugin({ permission = 'granted', token = 'tok-1', registerFails = false, channelHangs = false, tokenNeverComes = false, registrationError = null } = {}) {
+function fakePlugin({ permission = 'granted', token = 'tok-1', registerFails = false, channelHangs = false, tokenNeverComes = false, registrationError = null, plainListeners = false } = {}) {
   const calls = [];
   const listeners = new Map();
   const plugin = {
@@ -40,10 +40,11 @@ function fakePlugin({ permission = 'granted', token = 'tok-1', registerFails = f
       else if (!tokenNeverComes) setTimeout(() => plugin.emit('registration', { value: plugin.token }), 0);
     },
     unregister: async () => { calls.push('unregister'); },
-    addListener: async (name, fn) => {
+    addListener: (name, fn) => {
       if (!listeners.has(name)) listeners.set(name, new Set());
       listeners.get(name).add(fn);
-      return { remove: async () => listeners.get(name).delete(fn) };
+      // plainListeners: zoals Capacitor.Plugins in de app het kan doen: geen Promise met een handle, maar alleen een id
+      return plainListeners ? 'callback-id-7' : Promise.resolve({ remove: async () => listeners.get(name).delete(fn) });
     },
     emit: (name, payload) => { for (const fn of [...(listeners.get(name) ?? [])]) fn(payload); },
     listenerCount: (name) => listeners.get(name)?.size ?? 0,
@@ -144,6 +145,26 @@ test('aanzetten meldt elke stap, zodat te zien is waar het vastloopt', async () 
   const steps = [];
   await reminders.enableReminder('08:00', { onStep: (text) => steps.push(text) });
   assert.deepEqual(steps.map((text) => text.slice(0, 6)), ['Stap 1', 'Stap 2', 'Stap 3', 'Stap 4']);
+});
+
+test('addListener geeft geen Promise terug (alleen een callback-id): het token komt toch aan en aanzetten lukt', async () => {
+  withPlugin({ plainListeners: true });
+  const result = await reminders.enableReminder('08:00');
+  assert.deepEqual(result, { ok: true });
+  assert.equal(store.get('hb-fcm-token'), 'tok-1');
+  assert.equal(writes().length, 1);
+});
+
+test('addListener geeft undefined of een kapot object terug: ook dan geen vastlopen', async () => {
+  withPlugin();
+  for (const odd of [undefined, null, 42, {}, { then: 'geen functie' }]) {
+    const original = plugin.addListener;
+    plugin.addListener = (name, fn) => { original(name, fn); return odd; };
+    store.clear();
+    const result = await reminders.enableReminder('08:00');
+    assert.equal(result.ok, true, String(odd));
+    plugin.addListener = original;
+  }
 });
 
 test('een kanaal dat nooit antwoordt laat de knop niet eeuwig grijs: na de limiet een fout met de naam van de stap', async () => {
