@@ -272,6 +272,32 @@ async function main() {
     }
   }
 
+  // terug: de pagina staat weer op de plek waar je was (een nieuwe pagina begint nog steeds bovenaan); ook bij een lange pagina die pas na het tekenen vol raakt
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await nav('achievements'); // eerst een andere pagina: dezelfde adres opnieuw openen wist de geschiedenis-ingang zonder dat de router loopt
+  await nav('habits');
+  await sleep(500);
+  const backScroll = await ev(`(async () => {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const room = document.documentElement.scrollHeight - innerHeight;
+    const target = Math.min(300, Math.floor(room / 2));
+    window.scrollTo(0, target);
+    await wait(200);
+    const before = Math.round(window.scrollY);
+    location.hash = '#/achievements'; // een nieuwe navigatie
+    await wait(700);
+    const onNew = Math.round(window.scrollY);
+    history.back();
+    await wait(900);
+    const afterBack = Math.round(window.scrollY);
+    history.forward();
+    await wait(700);
+    const afterForward = Math.round(window.scrollY);
+    return { room, before, onNew, afterBack, afterForward, hash: location.hash };
+  })()`);
+  check('terug: de pagina staat weer op de plek waar je was, een nieuwe pagina begint bovenaan',
+    backScroll.room > 100 && backScroll.before > 50 && backScroll.onNew === 0 && Math.abs(backScroll.afterBack - backScroll.before) <= 2 && backScroll.afterForward === 0, JSON.stringify(backScroll));
+
   // toetsenbord: op het einde van de pagina blijft de knop bereikbaar
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await nav('today');

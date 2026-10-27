@@ -204,6 +204,12 @@ Volgorde, elk met een duidelijke ja/nee. Pas als 1 tot en met 3 werken, bouwen w
 
 Een spike levert dus: een werkende debug-APK op jouw telefoon die een testmelding ontvangt, plus de antwoorden op deze zes.
 
+**Eerste uitkomsten** (proef-APK van 4.1, 27 oktober 2026, op een echte telefoon):
+
+- De app laadt de live site; icoon en splash kloppen; inloggen met de e-mailcode werkt.
+- De inhoud begon onder de statusbalk. Dat was te verwachten: de APK laadt de live site, en de ruimte onder de statusbalk (`.is-native` in `styles/base.css`) staat pas op Pages na de release. Te controleren met een debug-app tegen de dev-server (stap 4 in [ANDROID-SETUP.md](ANDROID-SETUP.md)). Blijft het mis, dan lossen we het native op.
+- "Terug" werkte, maar zette de pagina bovenaan. Dat is geen Android-probleem: de router tekent elke pagina opnieuw en begon altijd bovenaan, ook in de browser. Opgelost voor alle gebruikers met een scrollgeheugen per geschiedenis-ingang (`src/ui/scroll-memory.js`, `src/router.js`), met een controle in een echte browser in `tools/layout-check.mjs`.
+
 ---
 
 ## 9. Widget (daarna, apart)
