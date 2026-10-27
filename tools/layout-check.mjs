@@ -6,6 +6,7 @@ import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { config } from '../src/config.js';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const BROWSER = [
@@ -810,7 +811,7 @@ async function main() {
   await sleep(400);
   const fbClosed = await ev(`({ open: !!document.querySelector('dialog[open]'), hash: location.hash, focus: document.activeElement?.id ?? '' })`);
   check('feedback vanuit Instellingen: een blad met vier soorten (zonder mailvinkje zonder account) en de context die meegaat, de pagina blijft Instellingen, en het past op het scherm',
-    fbSheet.open && fbSheet.kinds === 4 && fbSheet.hash === '#/settings' && !fbSheet.contact && fbSheet.context.includes('#/settings') && fbSheet.context.includes('1.2') && fbSheet.height <= fbSheet.vh && fbSheet.overflow <= 0, JSON.stringify(fbSheet));
+    fbSheet.open && fbSheet.kinds === 4 && fbSheet.hash === '#/settings' && !fbSheet.contact && fbSheet.context.includes('#/settings') && fbSheet.context.includes(`(${config.appVersion})`) && fbSheet.height <= fbSheet.vh && fbSheet.overflow <= 0, JSON.stringify(fbSheet));
   check('feedback: leeg versturen geeft twee meldingen en laat het blad open; zonder verbinding komt er een melding, het blad blijft open en je tekst blijft staan; annuleren geeft de focus terug',
     fbEmpty.open && fbEmpty.errors.length === 2 && fbOffline.open && fbOffline.text === 'Een donker thema graag' && fbOffline.errors.length === 1 && /probeer het zo opnieuw/.test(fbOffline.errors[0])
       && !fbClosed.open && fbClosed.hash === '#/settings' && fbClosed.focus === 'feedbackOpen', JSON.stringify({ fbEmpty, fbOffline, fbClosed }));
