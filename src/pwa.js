@@ -2,9 +2,13 @@
 //
 // Updates: de nieuwe worker installeert op de achtergrond en wacht. Pas als de gebruiker op "Vernieuwen" tikt,
 // activeren we hem en laden we de pagina opnieuw. Zo verdwijnt er nooit iets wat je net aan het invullen bent.
+import { isNativeApp } from './native.js';
+
 const listeners = new Set();
 
-const standalone = () => globalThis.matchMedia?.('(display-mode: standalone)').matches === true || globalThis.navigator?.standalone === true;
+// In de Android-app (Capacitor) geldt de app als geïnstalleerd: de webweergave heeft geen display-mode standalone, maar de installatie-uitleg
+// (onboarding, Instellingen) hoort daar niet te verschijnen. Zie docs/MELDINGEN-EN-OPSCHONEN.md §1.
+const standalone = () => isNativeApp() || globalThis.matchMedia?.('(display-mode: standalone)').matches === true || globalThis.navigator?.standalone === true;
 const iosBrowser = () => /iphone|ipad|ipod/i.test(globalThis.navigator?.userAgent ?? '') && !standalone();
 
 export const pwa = {

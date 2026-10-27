@@ -410,6 +410,13 @@ export const nl = {
     },
   },
 
+  timezone: {
+    title: 'Andere tijdzone?',
+    text: (device, saved) => `Je telefoon staat nu op ${device}, de app op ${saved}. Je meldingen en het begin van je dag gaan op de tijdzone van de app.`,
+    accept: (device) => `Overnemen: ${device}`,
+    keep: 'Zo laten',
+  },
+
   settings: {
     dev: {
       version: (version, environment = 'production') =>
@@ -444,6 +451,10 @@ export const nl = {
       current: 'Huidig thema',
     },
     timezone: 'Tijdzone',
+    timezoneIs: (label) => `Tijdzone: ${label}`,
+    timezoneFromDevice: 'Staat automatisch op de tijdzone van je telefoon.',
+    timezoneChange: 'Wijzigen',
+    dayTitle: 'Jouw dag',
     dayStart: 'Een nieuwe dag begint om',
     dayStartHint: 'Alles wat je vóór dit uur doet, telt nog mee voor de vorige dag.',
     dayStartOption: (hour) => `${String(hour).padStart(2, '0')}:00${hour === 0 ? ' (middernacht)' : ''}`,
@@ -889,6 +900,8 @@ export const nl = {
   backup: {
     title: 'Gegevens',
     hint: 'Je gegevens staan op dit apparaat. Maak regelmatig een back-up; met dat bestand kun je alles terugzetten.',
+    hintSynced: 'Je gegevens staan veilig in je account. Een back-up is een extra kopie op dit apparaat, voor het geval dat.',
+    summary: 'Back-up maken of terugzetten',
     export: 'Back-up downloaden',
     import: 'Back-up terugzetten',
     exported: 'Back-up gedownload',
@@ -899,7 +912,7 @@ export const nl = {
     done: 'Back-up teruggezet',
     warnings: (n) => `${n} onderdelen in het bestand zijn overgeslagen omdat ze niet klopten.`,
     errors: {
-      invalid_json: 'Dit bestand is geen geldig JSON-bestand.',
+      invalid_json: 'Dit bestand is geen geldig back-upbestand.',
       wrong_app: 'Dit is geen Habit Builder-back-up.',
       wrong_version: 'Deze back-up komt uit een andere versie van de app.',
       invalid_data: 'De gegevens in dit bestand kloppen niet, er is niets veranderd.',
@@ -922,10 +935,11 @@ export const nl = {
   reminder: {
     title: 'Ochtendherinnering',
     hint: 'Elke ochtend een melding met wat er die dag op je lijst staat. Je stelt dit per apparaat in.',
-    privacy: 'De melding komt van onze server. Die kent je voornaam, je tijdstip en tijdzone, en per dag hoeveel gewoontes er gepland staan. De namen van je gewoontes blijven bij jou.',
+    privacy: 'De namen van je gewoontes blijven op je telefoon; de melding zegt alleen hoeveel er op je lijst staan. Meer in de privacyverklaring onderaan Instellingen.',
     // alleen in de Android-app: de melding loopt via Google (Firebase Cloud Messaging), en Chrome-meldingen op dit toestel zouden dubbel komen
-    privacyApp: 'De melding komt van onze server en gaat via Google (Firebase Cloud Messaging) naar je telefoon. De server kent je voornaam, je tijdstip en tijdzone, en per dag hoeveel gewoontes er gepland staan. De namen van je gewoontes blijven bij jou.',
-    appNote: 'Heb je de herinnering ook in Chrome aan staan? Zet hem daar uit, anders krijg je elke ochtend twee meldingen.',
+    privacyApp: 'De namen van je gewoontes blijven op je telefoon; de melding zegt alleen hoeveel er op je lijst staan. Meer in de privacyverklaring onderaan Instellingen.',
+    // alleen in de app, en alleen als er ook een herinnering in een browser op dit account staat
+    appNote: 'Je hebt de herinnering ook in een browser aan staan. Staat die in Chrome op deze telefoon, zet hem daar uit: anders krijg je elke ochtend twee meldingen.',
     channelName: 'Ochtendherinnering',
     channelDescription: 'Elke ochtend wat er die dag op je lijst staat.',
     time: 'Tijdstip',

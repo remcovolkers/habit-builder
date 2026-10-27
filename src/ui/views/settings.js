@@ -20,6 +20,7 @@ import { createTapCounter, isDev, onDevChanged, setDev } from '../dev.js';
 import { openFeedbackSheet } from '../components/feedback-sheet.js';
 import { icon } from '../svg.js';
 import { isNativeApp } from '../../native.js';
+import { timezoneLabel } from '../../app/timezone.js';
 import { checkAppUpdate, pretendAppUpdate } from '../app-update.js';
 
 function timeZones() {
@@ -27,7 +28,7 @@ function timeZones() {
   return zones.includes(state.settings.timezone) ? zones : [state.settings.timezone, ...zones];
 }
 
-/** Back-up maken en terugzetten: je vangnet, want alles staat alleen op dit apparaat. */
+/** Back-up maken en terugzetten: je vangnet. Ingeklapt, want de meeste mensen hebben dit zelden nodig. */
 function backupSection() {
   const b = nl.backup;
   const message = h('p', { class: 'field__hint', role: 'status', 'aria-live': 'polite' });
@@ -68,14 +69,20 @@ function backupSection() {
   }
 
   const fileInput = h('input', { id: 'importFile', class: 'visually-hidden', type: 'file', accept: 'application/json,.json', onchange: chosen, tabindex: -1 });
+  // met een account staat alles ook op de server; zonder alleen op dit apparaat
+  const hintText = () => (account.status === 'signed-in' ? b.hintSynced : b.hint);
+  const hint = h('p', { class: 'section__hint', id: 'backupHint' }, hintText());
+  const stop = onAccountChanged(() => (hint.isConnected ? (hint.textContent = hintText()) : stop()));
   return h('section', { class: 'section' },
     h('h2', { class: 'section__title' }, b.title),
-    h('p', { class: 'section__hint' }, b.hint),
-    h('div', { class: 'stack' },
-      h('button', { type: 'button', id: 'exportBackup', class: 'button button--secondary button--block', onclick: download }, b.export),
-      h('button', { type: 'button', id: 'importBackup', class: 'button button--secondary button--block', onclick: () => fileInput.click() }, b.import),
-      fileInput,
-      message));
+    hint,
+    h('details', { class: 'fold', id: 'backupDetails' },
+      h('summary', null, b.summary),
+      h('div', { class: 'stack' },
+        h('button', { type: 'button', id: 'exportBackup', class: 'button button--secondary button--block', onclick: download }, b.export),
+        h('button', { type: 'button', id: 'importBackup', class: 'button button--secondary button--block', onclick: () => fileInput.click() }, b.import),
+        fileInput,
+        message)));
 }
 
 /** Kies het thema: twee kaarten met kleurstalen. De keuze geldt direct en synchroniseert mee naar andere apparaten. */
@@ -214,6 +221,7 @@ export function settingsView() {
     for (const el of Object.values(errorEls)) el.hidden = true;
     try {
       await saveSettings({ timezone: tz.value, dayStartHour: Number(hour.value) });
+      tzLine.textContent = nl.settings.timezoneIs(timezoneLabel(state.settings.timezone));
       showToast({ message: nl.app.saved });
     } catch (error) {
       if (!(error instanceof ValidationError)) throw error;
@@ -225,6 +233,12 @@ export function settingsView() {
     }
   }
 
+  // de tijdzone volgt het toestel; de lange lijst is er alleen voor wie hem echt wil wijzigen
+  const tzLine = h('p', { id: 'timezoneLine', class: 'field__label' }, nl.settings.timezoneIs(timezoneLabel(settings.timezone)));
+  const tzField = h('div', { class: 'field', id: 'timezoneField', hidden: true },
+    h('label', { class: 'field__label', for: 'timezone' }, nl.settings.timezone), tz, errorEls.timezone);
+  const tzChange = h('button', { type: 'button', id: 'timezoneChange', class: 'button button--ghost button--small', onclick: () => { tzField.hidden = false; tzChange.hidden = true; tz.focus(); } }, nl.settings.timezoneChange);
+
   return h('div', null,
     h('h1', { class: 'page-title' }, nl.settings.title),
     h('div', { class: 'settings__columns' },
@@ -235,8 +249,12 @@ export function settingsView() {
       themeSection()),
      h('div', { class: 'settings__col' },
     h('form', { class: 'form', novalidate: true, onsubmit: submit },
+      h('h2', { class: 'section__title' }, nl.settings.dayTitle),
       h('div', { class: 'field' },
-        h('label', { class: 'field__label', for: 'timezone' }, nl.settings.timezone), tz, errorEls.timezone),
+        tzLine,
+        h('p', { class: 'field__hint' }, nl.settings.timezoneFromDevice),
+        tzChange,
+        tzField),
       h('div', { class: 'field' },
         h('label', { class: 'field__label', for: 'dayStartHour' }, nl.settings.dayStart), hour,
         h('p', { id: 'hint-day', class: 'field__hint' }, nl.settings.dayStartHint), errorEls.dayStartHour),
