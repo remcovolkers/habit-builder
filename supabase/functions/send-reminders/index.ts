@@ -1,6 +1,6 @@
 // @ts-nocheck
 // (gewone JavaScript zonder typeannotaties: Supabase hoeft hem niet te typechecken)
-// Edge Function `send-reminders`: stuurt de ochtendherinnering als Web Push.
+// Edge Function `send-reminders`: stuurt de ochtendherinnering als Web Push (browser) of als FCM-melding (Android-app).
 //
 // Twee manieren om hem aan te roepen:
 //   • cron   – pg_cron roept hem elke 5 minuten aan met de header `x-cron-secret`; hij stuurt aan elk apparaat
@@ -13,6 +13,7 @@
 //
 // Geheimen (Edge Functions → Secrets), nooit in de repo:
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT (mailto:…), CRON_SECRET
+//   FCM_SERVICE_ACCOUNT (de JSON van het Firebase-service-account), alleen nodig zodra er een app-toestel is aangemeld
 // SUPABASE_URL en SUPABASE_SERVICE_ROLE_KEY zet Supabase zelf in de omgeving van de functie.
 
 // ============================================================================================
@@ -135,6 +136,89 @@ export async function sendPush({ subscription, message, vapid, fetchImpl = fetch
 }
 
 // ============================================================================================
+// FCM (de Android-app): HTTP v1, met een service-account van het Firebase-project
+// ============================================================================================
+const FCM_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+const GOOGLE_TOKEN_URI = 'https://oauth2.googleapis.com/token';
+/** Het meldingskanaal waar de app mee is gemaakt (src/ui/reminders.js); zonder bestaand kanaal valt Android terug op een stil standaardkanaal. */
+export const FCM_CHANNEL_ID = 'morning-reminder';
+
+/** Het service-account uit het secret FCM_SERVICE_ACCOUNT (de JSON van Firebase), of null als dat ontbreekt of kapot is. */
+export function parseServiceAccount(text) {
+  let account;
+  try {
+    account = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (![account?.project_id, account?.client_email, account?.private_key].every((value) => typeof value === 'string' && value !== '')) return null;
+  return { projectId: account.project_id, clientEmail: account.client_email, privateKey: account.private_key };
+}
+
+// PEM → bytes (PKCS#8). Gewone base64 gaat ook door b64uDecode: dat zet alleen - en _ om en vult het aan met =.
+const pemToDer = (pem) => b64uDecode(String(pem).replace(/-----[A-Z ]+-----/g, '').replace(/\s+/g, ''));
+
+// Een toegangstoken van Google is een uur geldig; per service-account één bewaren zolang deze functie-instantie leeft.
+const accessTokens = new Map();
+
+/** Een OAuth-toegangstoken voor FCM: een JWT (RS256) met de privésleutel van het service-account, ingewisseld bij Google. */
+export async function fcmAccessToken({ account, fetchImpl = fetch, now = Date.now(), force = false }) {
+  const cached = accessTokens.get(account.clientEmail);
+  if (!force && cached && cached.expiresAt - 60_000 > now) return cached.token;
+
+  const key = await crypto.subtle.importKey('pkcs8', pemToDer(account.privateKey), { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+  const issued = Math.floor(now / 1000);
+  const header = b64uEncode(encoder.encode(JSON.stringify({ alg: 'RS256', typ: 'JWT' })));
+  const claims = b64uEncode(encoder.encode(JSON.stringify({ iss: account.clientEmail, scope: FCM_SCOPE, aud: GOOGLE_TOKEN_URI, iat: issued, exp: issued + 3600 })));
+  const signature = new Uint8Array(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, encoder.encode(`${header}.${claims}`)));
+  const response = await fetchImpl(GOOGLE_TOKEN_URI, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${header}.${claims}.${b64uEncode(signature)}` }),
+  });
+  if (!response.ok) throw new Error(`Google gaf geen toegangstoken (${response.status})`);
+  const { access_token: token, expires_in: expiresIn } = await response.json();
+  if (typeof token !== 'string') throw new Error('Google gaf geen toegangstoken');
+  accessTokens.set(account.clientEmail, { token, expiresAt: now + (Number(expiresIn) || 3600) * 1000 });
+  return token;
+}
+
+/**
+ * Eén melding naar een app-toestel (een rij met fcm_token). Geeft { status, ok, gone } zoals sendPush: gone = het token bestaat niet meer
+ * (de app is verwijderd of opnieuw geïnstalleerd) en de rij kan weg.
+ * Een notificatiebericht (geen data-bericht): Android toont het zelf, ook als de app dicht is, zonder dat er eigen code hoeft te draaien.
+ */
+export async function sendFcm({ device, message, account, fetchImpl = fetch, now = Date.now() }) {
+  const post = (accessToken) => fetchImpl(`https://fcm.googleapis.com/v1/projects/${encodeURIComponent(account.projectId)}/messages:send`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: {
+        token: device.fcm_token,
+        notification: { title: message.title, body: message.body },
+        // alle waarden in `data` zijn tekst; de app opent daarmee de goede pagina en kan de verzendtijd tonen
+        data: { url: String(message.url ?? ''), sent: String(message.sent ?? '') },
+        android: {
+          priority: 'HIGH', // een melding op een vast tijdstip: bij normale prioriteit mag Android hem in de slaapstand uitstellen
+          ttl: '43200s', // 12 uur, zoals bij Web Push: 's avonds is een ochtendmelding niet meer nuttig
+          collapse_key: 'morning-reminder', // een nieuwe melding vervangt een nog niet afgeleverde
+          notification: { channel_id: FCM_CHANNEL_ID, tag: 'morning-reminder' },
+        },
+      },
+    }),
+  });
+
+  let response = await post(await fcmAccessToken({ account, fetchImpl, now }));
+  if (response.status === 401) response = await post(await fcmAccessToken({ account, fetchImpl, now, force: true })); // het bewaarde token is verlopen of ingetrokken
+  if (response.ok) return { status: response.status, ok: true, gone: false };
+
+  const error = (await response.json().catch(() => null))?.error ?? {};
+  const code = (error.details ?? []).map((detail) => detail?.errorCode).find(Boolean);
+  const invalidToken = response.status === 400 && /registration token/i.test(String(error.message ?? ''));
+  return { status: response.status, ok: false, gone: response.status === 404 || code === 'UNREGISTERED' || invalidToken };
+}
+
+// ============================================================================================
 // Wanneer en wat: puur, dus testbaar
 // ============================================================================================
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -215,7 +299,7 @@ function createDb({ url, key, fetchImpl }) {
     if (!response.ok) throw new Error(`database ${response.status}: ${(await response.text()).slice(0, 200)}`);
     return response.status === 204 ? null : response.json();
   };
-  const columns = 'id,user_id,endpoint,p256dh,auth,remind_time,timezone,summary,last_notified_date';
+  const columns = 'id,user_id,platform,endpoint,p256dh,auth,fcm_token,remind_time,timezone,summary,last_notified_date';
   return {
     all: () => call(`push_subscriptions?select=${columns}&limit=1000`),
     forUser: (userId) => call(`push_subscriptions?select=${columns}&user_id=eq.${encodeURIComponent(userId)}`),
@@ -260,7 +344,7 @@ async function userFromToken({ url, key, token, fetchImpl }) {
 }
 
 /** Stuurt naar de gegeven abonnementen en ruimt verlopen op. `claim`: alleen versturen als "vandaag" nog vrij is (cron). */
-async function deliver({ subscriptions, db, vapid, fetchImpl, now, claim, forceText }) {
+async function deliver({ subscriptions, db, vapid, fcmAccount = null, fetchImpl, now, claim, forceText }) {
   // decisions: per apparaat wat er gebeurde en waarom. Staat in het antwoord (zie net._http_response) zodat je kunt zien waarom er geen melding kwam.
   const result = { sent: 0, skipped: 0, removed: 0, failed: 0, decisions: [] };
   const decide = (subscription, outcome) => result.decisions.push({ id: shortId(subscription.id), outcome });
@@ -286,7 +370,19 @@ async function deliver({ subscriptions, db, vapid, fetchImpl, now, claim, forceT
     }
     try {
       // `sent`: wanneer de server hem verstuurde. De app onthoudt wanneer hij aankwam, zodat je kunt zien of een melding vertraging had.
-      const outcome = await sendPush({ subscription, message: { ...message, sent: now.getTime() }, vapid, fetchImpl, now: now.getTime() });
+      const payload = { ...message, sent: now.getTime() };
+      let outcome;
+      if (subscription.fcm_token) { // een app-toestel
+        if (!fcmAccount) { // het secret ontbreekt: dit toestel slaan we over, de webabonnementen gaan gewoon door
+          result.failed++;
+          decide(subscription, 'fcm_niet_ingesteld');
+          if (claim) await db.release(subscription.id, subscription.last_notified_date ?? null);
+          continue;
+        }
+        outcome = await sendFcm({ device: subscription, message: payload, account: fcmAccount, fetchImpl, now: now.getTime() });
+      } else {
+        outcome = await sendPush({ subscription, message: payload, vapid, fetchImpl, now: now.getTime() });
+      }
       if (outcome.ok) {
         result.sent++;
         decide(subscription, 'verstuurd');
@@ -322,6 +418,7 @@ export function inspect(subscription, now) {
   const entry = local ? subscription.summary?.days?.[local.date] : undefined;
   return {
     id: shortId(subscription.id),
+    platform: subscription.platform ?? 'web',
     remind_time: subscription.remind_time,
     timezone: subscription.timezone,
     local_time: local ? `${String(Math.floor(local.minutes / 60)).padStart(2, '0')}:${String(local.minutes % 60).padStart(2, '0')}` : null,
@@ -352,6 +449,8 @@ export async function handleRequest(request, { env, fetchImpl = fetch, now = new
   const key = env('SUPABASE_SERVICE_ROLE_KEY');
   const vapid = { subject: env('VAPID_SUBJECT'), publicKey: env('VAPID_PUBLIC_KEY'), privateKey: env('VAPID_PRIVATE_KEY') };
   const db = createDb({ url, key, fetchImpl });
+  // Het service-account is alleen nodig voor app-toestellen. Ontbreekt of is het kapot, dan blijft Web Push werken en meldt `deliver` per app-toestel "fcm_niet_ingesteld".
+  const fcmAccount = env('FCM_SERVICE_ACCOUNT') ? parseServiceAccount(env('FCM_SERVICE_ACCOUNT')) : null;
 
   // wie belt er?
   const cronHeader = request.headers.get('x-cron-secret');
@@ -359,7 +458,7 @@ export async function handleRequest(request, { env, fetchImpl = fetch, now = new
     if (!safeEqual(cronHeader, env('CRON_SECRET'))) return json(401, { error: 'geen toegang' });
     const all = await db.all();
     const due = all.filter((subscription) => isDue(subscription, now));
-    const outcome = await deliver({ subscriptions: due, db, vapid, fetchImpl, now, claim: true });
+    const outcome = await deliver({ subscriptions: due, db, vapid, fcmAccount, fetchImpl, now, claim: true });
     const body = { mode: 'cron', at: now.toISOString(), checked: all.length, due: due.length, ...outcome, inspect: all.map((subscription) => inspect(subscription, now)) };
     if (due.length > 0) console.log('cron', JSON.stringify({ due: due.length, sent: outcome.sent, skipped: outcome.skipped, removed: outcome.removed, failed: outcome.failed, decisions: outcome.decisions }));
     return json(200, body);
@@ -378,7 +477,9 @@ export async function handleRequest(request, { env, fetchImpl = fetch, now = new
   if (body?.test !== true) return json(400, { error: 'onbekende aanvraag' });
 
   let subscriptions = await db.forUser(userId);
+  // één toestel: een browser wijst zichzelf aan met zijn webadres, een app-toestel met zijn FCM-token
   if (typeof body.endpoint === 'string') subscriptions = subscriptions.filter((subscription) => subscription.endpoint === body.endpoint);
+  else if (typeof body.token === 'string') subscriptions = subscriptions.filter((subscription) => subscription.fcm_token === body.token);
   if (subscriptions.length === 0) return json(404, { error: 'geen apparaat gevonden' });
   // Met een vertraging kun je de app sluiten en het scherm vergrendelen voordat de melding komt: zo test je of hij ook aankomt als het toestel niet actief is.
   const delay = Math.min(MAX_TEST_DELAY_SECONDS, Math.max(0, Math.floor(Number(body.delaySeconds) || 0)));
@@ -392,7 +493,7 @@ export async function handleRequest(request, { env, fetchImpl = fetch, now = new
     });
     const results = { sent: 0, skipped: 0, removed: 0, failed: 0 };
     for (const subscription of subscriptions) {
-      const one = await deliver({ subscriptions: [subscription], db, vapid, fetchImpl, now: at, claim: false, forceText: test(subscription) });
+      const one = await deliver({ subscriptions: [subscription], db, vapid, fcmAccount, fetchImpl, now: at, claim: false, forceText: test(subscription) });
       for (const field of Object.keys(results)) results[field] += one[field];
     }
     return results;

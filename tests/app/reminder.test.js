@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildReminderSummary, validateReminderTime, REMINDER_DAYS, DEFAULT_REMINDER_TIME } from '../../src/app/reminder.js';
+import { buildReminderSummary, notificationHash, validateReminderTime, REMINDER_DAYS, DEFAULT_REMINDER_TIME } from '../../src/app/reminder.js';
 import { validHabit, TODAY } from './helpers.js';
 
 const daily = { type: 'weekdays', weekdays: [0, 1, 2, 3, 4, 5, 6] };
@@ -167,4 +167,16 @@ test('samenvatting: een taak die al op een andere dag is ingepland telt niet mee
   const planned = buildReminderSummary({ snapshot: snapshot({ habits: [flex('A'), flex('B')], dayPlans: [{ habitId: 'B', date: '2026-10-17' }] }), today: TODAY, settings });
   assert.equal(open.days[TODAY][1], 2);
   assert.equal(planned.days[TODAY][1], 1, 'B staat al op zaterdag');
+});
+
+test('notificationHash: een tik op een melding gaat naar een route binnen de app, nooit naar een andere site', () => {
+  const base = 'https://remcovolkers.github.io/habit-builder/';
+  assert.equal(notificationHash('./#/today', base), '#/today');
+  assert.equal(notificationHash('./#/stats?review=week&date=2026-10-16', base), '#/stats?review=week&date=2026-10-16');
+  assert.equal(notificationHash('./', base), '#/today', 'geen route: Vandaag');
+  assert.equal(notificationHash('https://remcovolkers.github.io/habit-builder/#/habits', base), '#/habits');
+  for (const bad of ['https://kwaad.example/#/today', '//kwaad.example/#/today', 'javascript:alert(1)', '', null, undefined, 42]) {
+    assert.equal(notificationHash(bad, base), null, String(bad));
+  }
+  assert.equal(notificationHash('./#/today', 'geen url'), null);
 });

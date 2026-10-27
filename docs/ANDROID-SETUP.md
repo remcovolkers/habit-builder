@@ -68,6 +68,66 @@ De variabele geldt **alleen** voor de debug-app. De getekende release laadt alti
 
 ---
 
-## Later: Firebase (komt bij onderdeel 4.2)
+## Stap 5 – Firebase (voor de meldingen)
 
-Voor de meldingen heb ik straks van je nodig: een Firebase-project (gratis) met een Android-app erin met pakketnaam `io.github.remcovolkers.habitbuilder`, het bestand `google-services.json`, en een service-account-sleutel als Supabase-secret `FCM_SERVICE_ACCOUNT`. De stappen schrijf ik erbij als we daar zijn.
+Firebase is het kanaal waarlangs Google de melding naar je telefoon brengt. Een klein project met alleen Cloud Messaging is gratis en vraagt geen creditcard (controleer dat even op de prijspagina van Firebase; ik heb die niet opgehaald).
+
+1. Ga naar <https://console.firebase.google.com> en log in met je Google-account → **Project toevoegen**. Naam bijvoorbeeld `habit-builder`. Zet **Google Analytics uit** (niet nodig) → **Project maken**.
+2. Op de startpagina van het project: klik op het **Android-icoon** ("Een app toevoegen").
+   - **Android-pakketnaam:** `io.github.remcovolkers.habitbuilder` (precies zo).
+   - Bijnaam: `Habit Builder`. Het SHA-1-veld mag leeg.
+   - **App registreren** → **`google-services.json` downloaden**. De volgende schermen (SDK toevoegen, enzovoort) kun je overslaan: **Volgende → Volgende → Doorgaan naar de console**.
+3. Zet `google-services.json` in de repository op **`android/app/google-services.json`**. Dit bestand is geen geheim (het bevat het projectnummer en een beperkte API-sleutel), dus het mag in git. Ik commit het voor je als je het daar neerzet.
+4. Haal de **service-account-sleutel** op: tandwiel linksboven → **Projectinstellingen → tabblad Service accounts → Nieuwe privésleutel genereren**. Er downloadt een `.json`.
+   - Dit bestand **is wél een geheim**: nooit in de repo, nooit in een chat. Bewaar het in je wachtwoordmanager of in `~/habit-builder-keys`.
+5. Controleer onder **Projectinstellingen → tabblad Cloud Messaging** dat **"Firebase Cloud Messaging API (V1)"** op *Ingeschakeld* staat. (Bij een nieuw project is dat zo; de oude "Legacy"-API hoort uit te staan en is niet nodig.)
+
+## Stap 6 – De server (migratie, functie en secret)
+
+Het hulpscript `tools/fcm-secret.mjs` maakt van de Firebase-JSON de waarde die Supabase nodig heeft (één regel, met de regeleinden in de sleutel intact).
+
+### Eerst lokaal proberen (aanbevolen, raakt productie niet)
+
+De debug-app met `ANDROID_DEV_SERVER_URL` (stap 4) praat met je lokale testdatabase. Daar komen de migraties vanzelf (ook `0009_native_push.sql`), maar de functie `send-reminders` draait er niet. Zo start je hem:
+
+1. `npm run db:start` (Docker Desktop moet draaien).
+2. Maak het bestand `supabase/functions/.env` (staat al in `.gitignore`) met deze inhoud. De VAPID-regels zijn lokaal niet echt nodig, maar de functie eist dat ze bestaan:
+   ```
+   VAPID_PUBLIC_KEY=lokaal
+   VAPID_PRIVATE_KEY=lokaal
+   VAPID_SUBJECT=mailto:test@example.com
+   CRON_SECRET=lokaal
+   ```
+3. Voeg de sleutel toe (pas het pad aan):
+   ```
+   node tools/fcm-secret.mjs C:/pad/naar/je-sleutel.json --env >> supabase/functions/.env
+   ```
+4. Start de functie en laat dit venster open staan:
+   ```
+   npx supabase@2.121.0 functions serve send-reminders --env-file supabase/functions/.env --no-verify-jwt
+   ```
+
+### Productie (pas bij de release, zie WERKWIJZE.md)
+
+De wijzigingen breiden alleen uit en kunnen dus vóór de release op productie, maar doe ze in deze volgorde:
+
+1. Supabase → **SQL Editor → New query** → plak de inhoud van `supabase/migrations/0009_native_push.sql` → **Run**. Opnieuw uitvoeren kan geen kwaad.
+2. Supabase → **Edge Functions → send-reminders** → vervang de code door de inhoud van `supabase/functions/send-reminders/index.ts` → **Deploy**.
+3. Supabase → **Edge Functions → Secrets** → nieuw secret `FCM_SERVICE_ACCOUNT`. De waarde krijg je op je klembord met:
+   ```
+   node tools/fcm-secret.mjs C:/pad/naar/je-sleutel.json | clip
+   ```
+   Plak (Ctrl+V) in het waardeveld en bewaar. De bestaande VAPID-secrets blijven zoals ze zijn.
+
+## Stap 7 – De melding op je telefoon proberen
+
+1. Zet `google-services.json` neer (stap 5) en laat mij het committen en pushen. De workflow bouwt dan een debug-APK **mét** Firebase. (Zonder dat bestand waarschuwt de workflow en kan de app de herinnering niet aanzetten.)
+2. Installeer de nieuwe `habit-builder-debug` (over de vorige heen).
+3. Log in met een lokaal testaccount (zie [DEV-OMGEVING.md](DEV-OMGEVING.md): `npm run dev:seed` en `npm run dev:code`).
+4. **Instellingen → Ochtendherinnering → Herinnering aanzetten.** Android vraagt om toestemming voor meldingen: **Toestaan**.
+5. Zet de **ontwikkelaarsopties** aan (tik zeven keer op het versienummer onderaan Instellingen). Er verschijnen testknoppen.
+   - **Stuur een testmelding:** moet binnen een paar seconden binnenkomen.
+   - **Testmelding over 15 seconden:** druk daarna op de aan/uit-knop en sluit de app (veeg hem weg). Dit is de echte proef: komt hij ook aan als de app dicht is en het scherm vergrendeld?
+6. Tik op de melding. De app opent op Vandaag.
+
+Meld wat je ziet, vooral: komt de melding aan met de app dicht? Is het icoontje in de statusbalk een witte ring met vinkje (en geen vierkantje)? Gaat een tik naar de goede pagina?

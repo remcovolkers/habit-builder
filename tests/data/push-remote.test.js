@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { deleteSubscription, saveSubscription, sendTestReminder, updateSubscription } from '../../src/data/push-remote.js';
+import { deleteAppDevice, deleteSubscription, saveAppDevice, saveSubscription, sendTestReminder, updateSubscription } from '../../src/data/push-remote.js';
 
 /** Een nagebootste Supabase-client die onthoudt wat ermee gedaan is. */
 function fakeClient({ error = null, invoke } = {}) {
@@ -82,4 +82,40 @@ test('saveSubscription: last_notified_date gaat alleen mee als het tijdstip is i
   const skipToday = fakeClient();
   await saveSubscription({ client: skipToday, userId: 'u1', subscription, remindTime: '08:00', timezone: 'UTC', summary: {}, lastNotifiedDate: '2026-10-15' });
   assert.equal(skipToday.calls[0].row.last_notified_date, '2026-10-15');
+});
+
+test('saveAppDevice: upsert op (user, fcm_token) met platform android, zonder webadres of sleutels', async () => {
+  const client = fakeClient();
+  await saveAppDevice({ client, userId: 'u1', token: 'tok-1', remindTime: '07:30', timezone: 'Europe/Amsterdam', summary: { name: 'R', days: {} } });
+  assert.deepEqual(client.calls[0], {
+    name: 'push_subscriptions', op: 'upsert',
+    row: { user_id: 'u1', platform: 'android', fcm_token: 'tok-1', remind_time: '07:30', timezone: 'Europe/Amsterdam', summary: { name: 'R', days: {} } },
+    options: { onConflict: 'user_id,fcm_token' },
+  });
+});
+
+test('saveAppDevice: last_notified_date alleen meesturen als het is meegegeven (zoals bij een webabonnement), en een leeg token of databasefout is een fout', async () => {
+  const plain = fakeClient();
+  await saveAppDevice({ client: plain, userId: 'u1', token: 't', remindTime: '08:00', timezone: 'UTC', summary: {} });
+  assert.ok(!('last_notified_date' in plain.calls[0].row));
+  const rearmed = fakeClient();
+  await saveAppDevice({ client: rearmed, userId: 'u1', token: 't', remindTime: '08:00', timezone: 'UTC', summary: {}, lastNotifiedDate: null });
+  assert.equal(rearmed.calls[0].row.last_notified_date, null);
+  await assert.rejects(saveAppDevice({ client: fakeClient(), userId: 'u1', token: '', remindTime: '08:00', timezone: 'UTC', summary: {} }), /FCM-token/);
+  await assert.rejects(saveAppDevice({ client: fakeClient({ error: { message: 'kapot' } }), userId: 'u1', token: 't', remindTime: '08:00', timezone: 'UTC', summary: {} }), /kapot/);
+});
+
+test('deleteAppDevice: verwijdert op fcm_token', async () => {
+  const client = fakeClient();
+  await deleteAppDevice({ client, token: 'tok-1' });
+  assert.deepEqual(client.calls[0], { name: 'push_subscriptions', op: 'delete', column: 'fcm_token', value: 'tok-1' });
+  await assert.rejects(deleteAppDevice({ client: fakeClient({ error: { message: 'nee' } }), token: 'x' }), /nee/);
+});
+
+test('sendTestReminder voor de app: wijst het toestel aan met { token }, ook met vertraging', async () => {
+  const client = fakeClient();
+  assert.deepEqual(await sendTestReminder({ client, token: 'tok-1' }), { ok: true });
+  assert.deepEqual(client.calls[0].options.body, { test: true, token: 'tok-1' });
+  await sendTestReminder({ client, token: 'tok-1', delaySeconds: 15 });
+  assert.deepEqual(client.calls[1].options.body, { test: true, token: 'tok-1', delaySeconds: 15 });
 });

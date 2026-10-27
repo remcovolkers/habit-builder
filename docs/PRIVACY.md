@@ -1,6 +1,6 @@
 # Privacyverklaring Habit Builder
 
-Laatst bijgewerkt: oktober 2026, bij versie 1.1 (vrienden en ranglijst toegevoegd)
+Laatst bijgewerkt: oktober 2026, bij de Android-app (meldingen via Google)
 
 Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen bedrijf). Hij is verantwoordelijk voor de gegevens die je in de app invult. Contact: **remco.volkers1@gmail.com**.
 
@@ -22,7 +22,7 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 - je **e-mailadres** (bij inloggen met Google ook de naam en profielfoto-URL die Google meestuurt; de app gebruikt die niet);
 - een **kopie van de gegevens hierboven** op de server, gekoppeld aan jouw account en alleen voor jou leesbaar, met als enige uitzondering wat je zelf deelt met vrienden (zie hieronder, en alleen als je meedoet);
 - technische gegevens die nodig zijn om in te loggen (een sessiesleutel in je browser);
-- **alleen als je de ochtendherinnering aanzet**, per apparaat: het adres waar je browser meldingen naartoe laat sturen (met de sleutels om die versleuteld te sturen), het tijdstip dat je koos, je tijdzone, je voornaam, en per dag van de komende week vijf getallen: hoeveel gewoontes er gepland staan, hoeveel taken er in je stapel liggen, hoeveel taken om aandacht vragen en of je week- en maandreview nog openstaan. **De namen van je gewoontes horen daar niet bij.**
+- **alleen als je de ochtendherinnering aanzet**, per apparaat: in de browser het adres waar je browser meldingen naartoe laat sturen (met de sleutels om die versleuteld te sturen), in de Android-app het meldingstoken dat Google (Firebase Cloud Messaging) aan jouw telefoon en deze app geeft, het tijdstip dat je koos, je tijdzone, je voornaam, en per dag van de komende week vijf getallen: hoeveel gewoontes er gepland staan, hoeveel taken er in je stapel liggen, hoeveel taken om aandacht vragen en of je week- en maandreview nog openstaan. **De namen van je gewoontes horen daar niet bij.**
 
 **Alleen als je meedoet met vrienden en de ranglijst** (je zet dat zelf aan, en kunt het weer uitzetten):
 - je **gebruikersnaam** (3 tot 20 tekens, door jou gekozen) en je **weergavenaam**, dezelfde naam als in Instellingen en op Vandaag. Iedereen die je gebruikersnaam precies kent, kan je vinden en je een verzoek sturen. Er is geen lijst van gebruikers en er kan niet gezocht worden op een deel van een naam of op e-mailadres;
@@ -60,6 +60,7 @@ Alleen met de diensten die de app laten draaien (verwerkers):
 | **Iemand met jouw uitnodigingslink** (ook zonder account) | ziet je weergavenaam en niets anders, zolang de link geldt |
 | **Je vrienden** (andere gebruikers van de app, alleen als je meedoet en zij door jou of door een uitnodigingslink als vriend zijn bevestigd) | zien je weergavenaam, gebruikersnaam en de samenvatting hierboven. Zij kunnen je niet vinden zonder je exacte gebruikersnaam of een link die jij deelde |
 | **De meldingsdienst van je browser** (bij Chrome en Android: Google, bij Edge: Microsoft, bij Firefox: Mozilla) | het afleveren van de ochtendmelding, alleen als je die aanzet. De inhoud is versleuteld; de dienst ziet dat er een melding voor jouw apparaat is, niet wat erin staat |
+| **Google (Firebase Cloud Messaging)**, alleen in de Android-app | het afleveren van de ochtendmelding op je telefoon, alleen als je die aanzet. Anders dan bij een browser is dit bericht niet versleuteld voor Google: Google ziet de tekst van de melding (je voornaam en hoeveel gewoontes er vandaag op je lijst staan), niet de namen van je gewoontes |
 
 Verder niemand, tenzij een wet dat afdwingt.
 

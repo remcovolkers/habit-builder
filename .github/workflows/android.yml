@@ -81,6 +81,19 @@ jobs:
             echo "::notice::geen sleutel-secrets ($missing ): alleen een debug-APK"
           fi
 
+      - name: Is het Firebase-bestand aanwezig?
+        if: steps.existing.outputs.found != 'true'
+        run: |
+          # Zonder google-services.json bouwt de app wel, maar "Herinnering aanzetten" werkt dan niet (geen Firebase). Zie docs/ANDROID-SETUP.md.
+          if [ -f android/app/google-services.json ]; then
+            echo "google-services.json aanwezig"
+          elif [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            echo "::error::android/app/google-services.json ontbreekt: een release zonder Firebase kan geen meldingen sturen (docs/ANDROID-SETUP.md, stap 5)"
+            exit 1
+          else
+            echo "::warning::android/app/google-services.json ontbreekt: deze build kan de herinnering niet aanzetten (docs/ANDROID-SETUP.md, stap 5)"
+          fi
+
       - uses: actions/setup-java@v4
         if: steps.existing.outputs.found != 'true'
         with:

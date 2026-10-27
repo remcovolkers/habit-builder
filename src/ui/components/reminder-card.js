@@ -7,11 +7,12 @@ import { timePicker } from './time-picker.js';
 import { pwa } from '../../pwa.js';
 import { isDev, onDevChanged } from '../dev.js';
 import { isAndroid } from '../../app/reminder.js';
+import { isNativeApp } from '../../native.js';
 import { nl } from '../../content/nl.js';
 
 /**
- * "Ochtendherinnering" voor Instellingen. Verborgen zolang de server niet is ingericht (geen VAPID-sleutel in de config);
- * daarna per toestand: uitgelegd waarom het niet kan, of aan/uit met tijdstip en een testknop.
+ * "Ochtendherinnering" voor Instellingen. Verborgen zolang de server niet is ingericht (geen VAPID-sleutel in de config; in de Android-app
+ * is die niet nodig); daarna per toestand: uitgelegd waarom het niet kan, of aan/uit met tijdstip en een testknop.
  */
 export function reminderCard() {
   const r = nl.reminder;
@@ -41,9 +42,13 @@ export function reminderCard() {
   const pushLog = h('p', { id: 'pushLog', class: 'field__hint' });
   const lateNote = h('p', { id: 'batteryLate', class: 'field__error', hidden: true });
   const onAndroid = isAndroid(globalThis.navigator?.userAgent);
+  const inApp = isNativeApp(); // de Android-app: meldingen via Google in plaats van via Chrome
+
+  /** Alleen in de app: wie de herinnering ook in Chrome aan heeft staan, krijgt twee meldingen. */
+  const appNote = () => (inApp ? h('p', { class: 'field__hint', id: 'appNote' }, r.appNote) : null);
 
   /** De stappen om de batterij-instelling te openen; voor de app die je nu gebruikt, en bij een geïnstalleerde app ook voor Chrome. */
-  const batterySteps = () => nl.reminder.battery.steps(pwa.installed ? 'Habit Builder' : 'Chrome', pwa.installed);
+  const batterySteps = () => nl.reminder.battery.steps(inApp || pwa.installed ? 'Habit Builder' : 'Chrome', pwa.installed && !inApp);
   const batteryList = () => h('ol', { class: 'battery-steps' }, ...batterySteps().map((step) => h('li', null, step)));
 
   const BATTERY_TIP_KEY = 'hb-battery-tip-seen';
@@ -75,6 +80,10 @@ export function reminderCard() {
   /** Wanneer kwam de laatste melding aan, en hoeveel later dan verstuurd? */
   async function showPushLog() {
     lateNote.hidden = true;
+    if (inApp) { // de service worker die dit bijhoudt ontvangt de meldingen van de app niet: Android toont ze zelf
+      pushLog.hidden = true;
+      return;
+    }
     const log = await readPushLog();
     const clock = (ms) => new Date(ms).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     if (!log) {
@@ -139,7 +148,7 @@ export function reminderCard() {
 
     const heading = [h('h2', { class: 'section__title' }, r.title), h('p', { class: 'section__hint' }, r.hint)];
     if (status === 'unsupported' || status === 'signed-out' || status === 'denied') {
-      const key = status === 'signed-out' ? 'signedOut' : status;
+      const key = status === 'signed-out' ? 'signedOut' : status === 'denied' && inApp ? 'deniedApp' : status;
       fill(root, ...heading, h('p', { class: 'field__hint', id: 'reminderUnavailable' }, r.unavailable[key]));
       return;
     }
@@ -162,6 +171,7 @@ export function reminderCard() {
       }));
       fill(root, ...heading,
         h('p', { class: 'field__hint', id: 'reminderStatus' }, r.status(reminders.time)),
+        appNote(),
         timeField(input),
         h('div', { class: 'stack' },
           h('button', {
@@ -195,12 +205,13 @@ export function reminderCard() {
                 showBatteryTip();
               }
               else if (result.reason === 'invalid' || result.reason === 'before_day_start') say(timeError(result.reason), true);
-              else say(r.errors[result.reason] ?? r.errors.failed, true);
+              else say(r.errors[result.reason === 'denied' && inApp ? 'deniedApp' : result.reason] ?? r.errors.failed, true);
             });
           },
         }, r.enable),
         message),
-      h('p', { class: 'field__hint' }, r.privacy));
+      appNote(),
+      h('p', { class: 'field__hint' }, inApp ? r.privacyApp : r.privacy));
   }
 
   const stop = onRemindersChanged(() => (root.isConnected ? render() : stop()));

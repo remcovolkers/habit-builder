@@ -24,6 +24,12 @@
 
         </activity>
 
+        <!-- Meldingen via Firebase Cloud Messaging (zie docs/ANDROID-APP.md §4.2). Het kanaal wordt door de app gemaakt (src/ui/reminders.js) en is
+             hetzelfde als FCM_CHANNEL_ID in de Edge Function; dit is het vangnet als een bericht zonder kanaal aankomt. -->
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_habit" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/notification_accent" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="morning-reminder" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -38,4 +44,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+: meldingen vragen een toestemming tijdens het gebruik (de push-plugin vraagt erom bij "Herinnering aanzetten") -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
