@@ -3,6 +3,6 @@
     <!-- #090c0c is de achtergrond van het donkere thema en de theme_color uit manifest.webmanifest -->
     <color name="splash_background">#090c0c</color>
     <color name="system_bar">#090c0c</color>
-    <!-- het accent van het standaardthema (--color-accent in styles/themes/v0lky1.css): de kleur van het meldingsicoon -->
+    <!-- het accent van het standaardthema (color-accent in styles/themes/v0lky1.css): de kleur van het meldingsicoon -->
     <color name="notification_accent">#29ffb9</color>
 </resources>
