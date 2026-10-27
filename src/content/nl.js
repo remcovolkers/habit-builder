@@ -419,6 +419,14 @@ export const nl = {
       off: 'Ontwikkelaarsopties staan uit',
       title: 'Ontwikkelaar',
       turnOff: 'Ontwikkelaarsopties uitzetten',
+      appUpdateCheck: 'Controleer op een nieuwe app-versie',
+      appUpdatePretend: 'Toon de updatebalk (proef)',
+      appUpdateResult: {
+        available: (version, current) => `Versie ${version} staat klaar (jij hebt ${current}).`,
+        current: (current, latest) => `Je hebt de nieuwste versie (${current}); nieuwste release: ${latest ?? 'geen'}.`,
+        skipped: (reason) => `Niet gecontroleerd: ${reason}.`,
+        failed: (reason) => `Controleren mislukt: ${reason}.`,
+      },
       usage: (users, activeToday) => `Gebruikers buiten jou: ${users} · vandaag actief: ${activeToday}`,
     },
     title: 'Instellingen',
@@ -898,6 +906,9 @@ export const nl = {
   },
 
   pwa: {
+    // een nieuwe APK van de Android-app (de webkant werkt zichzelf bij)
+    appUpdateAvailable: (version) => `Nieuwe versie (${version}) staat klaar. Downloaden?`,
+    appUpdateDownload: 'Downloaden',
     updateAvailable: 'Er is een nieuwe versie van de app.',
     update: 'Vernieuwen',
     later: 'Later',
