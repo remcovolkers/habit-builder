@@ -11,11 +11,23 @@
     android:paddingEnd="8dp"
     android:paddingBottom="6dp">
 
-    <ImageView
-        android:id="@+id/item_check"
+    <FrameLayout
         android:layout_width="26dp"
-        android:layout_height="26dp"
-        android:contentDescription="@null" />
+        android:layout_height="26dp">
+
+        <ImageView
+            android:id="@+id/item_circle"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:id="@+id/item_tick"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:contentDescription="@null"
+            android:src="@drawable/widget_tick" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/item_title"
@@ -25,6 +37,13 @@
         android:layout_weight="1"
         android:ellipsize="end"
         android:maxLines="2"
-        android:textColor="@color/widget_text"
         android:textSize="15sp" />
+
+    <ImageView
+        android:id="@+id/item_pending"
+        android:layout_width="13dp"
+        android:layout_height="13dp"
+        android:layout_marginStart="8dp"
+        android:contentDescription="@string/widget_unsynced"
+        android:src="@drawable/widget_sync" />
 </LinearLayout>

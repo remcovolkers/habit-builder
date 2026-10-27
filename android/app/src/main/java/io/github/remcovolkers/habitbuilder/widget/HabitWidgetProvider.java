@@ -8,14 +8,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.view.View;
 import android.widget.RemoteViews;
 import io.github.remcovolkers.habitbuilder.MainActivity;
 import io.github.remcovolkers.habitbuilder.R;
 import org.json.JSONObject;
 
 /**
- * De widget voor het startscherm: de lijst van vandaag, scrollbaar, met vinkjes en bij tellers een min en een plus.
+ * De widget voor het startscherm: de lijst van vandaag per dagdeel, scrollbaar, met vinkjes en bij tellers een min en een plus.
  * De rijen komen uit HabitWidgetService; een tik op een rij komt hier binnen als broadcast (ACTION_TAP).
+ * Rechtsboven staat de voortgang ("2/5") en, zolang er iets nog niet gesynct is, een icoon; een tik daarop opent de app.
  * Zie docs/ANDROID-WIDGET.md.
  */
 public class HabitWidgetProvider extends AppWidgetProvider {
@@ -44,7 +46,7 @@ public class HabitWidgetProvider extends AppWidgetProvider {
         super.onReceive(context, intent);
     }
 
-    /** Tekent alle widgets van dit type opnieuw: de kop en de lijst. */
+    /** Tekent alle widgets van dit type opnieuw: de randen en de lijst. */
     static void refreshAll(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         int[] ids = manager.getAppWidgetIds(new ComponentName(context, HabitWidgetProvider.class));
@@ -58,25 +60,32 @@ public class HabitWidgetProvider extends AppWidgetProvider {
     private static RemoteViews buildViews(Context context, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_habits);
         JSONObject snapshot = WidgetStore.snapshot(context);
+        WidgetColors colors = new WidgetColors(context, snapshot);
         boolean fresh = WidgetStore.isFresh(snapshot);
         JSONObject labels = snapshot == null ? null : snapshot.optJSONObject("labels");
+        int total = fresh ? snapshot.optInt("total", 0) : 0;
 
-        String header = context.getString(R.string.app_name);
-        String empty = context.getString(R.string.widget_open_app);
-        if (snapshot != null && labels != null) {
-            if (!fresh) {
-                empty = labels.optString("stale", empty);
-            } else {
-                int total = snapshot.optInt("total", 0);
-                header = labels.optString("title", header);
-                if (total > 0) {
-                    header = header + " · " + snapshot.optInt("done", 0) + " " + labels.optString("of", "/") + " " + total;
-                }
-                empty = labels.optString("empty", empty);
-            }
+        // de achtergrond in de kleur van het thema (een witte afgeronde vorm, ingekleurd)
+        views.setInt(R.id.widget_bg, "setColorFilter", colors.background);
+
+        // rechtsboven: de voortgang, en een icoon zolang er iets niet gesynct is (in de widget aangetikt maar nog niet verwerkt, of nog niet naar de server)
+        views.setViewVisibility(R.id.widget_progress, total > 0 ? View.VISIBLE : View.GONE);
+        if (total > 0) {
+            views.setTextViewText(R.id.widget_progress, snapshot.optInt("done", 0) + "/" + total);
+            views.setTextColor(R.id.widget_progress, colors.muted);
         }
-        views.setTextViewText(R.id.widget_header, header);
+        views.setViewVisibility(R.id.widget_sync, WidgetStore.isUnsynced(context, snapshot) ? View.VISIBLE : View.GONE);
+        views.setInt(R.id.widget_sync, "setColorFilter", colors.muted);
+
+        // wat er staat als er geen rijen zijn
+        String empty = context.getString(R.string.widget_open_app);
+        if (labels != null) {
+            if (!fresh) empty = labels.optString("stale", empty);
+            else if (total == 0) empty = labels.optString("empty", empty);
+            else empty = labels.optString("allDone", empty);
+        }
         views.setTextViewText(R.id.widget_empty, empty);
+        views.setTextColor(R.id.widget_empty, colors.muted);
 
         // de lijst: de rijen komen uit HabitWidgetService
         Intent service = new Intent(context, HabitWidgetService.class);
@@ -91,11 +100,11 @@ public class HabitWidgetProvider extends AppWidgetProvider {
         int mutable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0;
         views.setPendingIntentTemplate(R.id.widget_list, PendingIntent.getBroadcast(context, 0, tap, PendingIntent.FLAG_UPDATE_CURRENT | mutable));
 
-        // de kop en de lege toestand openen de app
+        // de voortgang rechtsboven en de lege toestand openen de app
         Intent open = new Intent(context, MainActivity.class);
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent openApp = PendingIntent.getActivity(context, 1, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        views.setOnClickPendingIntent(R.id.widget_header, openApp);
+        views.setOnClickPendingIntent(R.id.widget_cluster, openApp);
         views.setOnClickPendingIntent(R.id.widget_empty, openApp);
         return views;
     }

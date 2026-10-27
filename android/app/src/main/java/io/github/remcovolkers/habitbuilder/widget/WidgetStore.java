@@ -53,6 +53,16 @@ final class WidgetStore {
         }
     }
 
+    /**
+     * Is er iets dat nog niet gesynct is? Dat is wat in de widget is aangetikt en de app nog niet heeft verwerkt (de wachtrij), of wat de app zelf
+     * nog niet bij de server heeft gebracht (het aantal in de momentopname).
+     */
+    static boolean isUnsynced(Context context, JSONObject snapshot) {
+        synchronized (LOCK) {
+            return readQueue(context).length() > 0 || (snapshot != null && snapshot.optInt("unsynced", 0) > 0);
+        }
+    }
+
     /** Is de lijst van vandaag nog van vandaag? Daarna toont de widget een verzoek om de app te openen. */
     static boolean isFresh(JSONObject snapshot) {
         return snapshot != null && snapshot.optLong("expiresAt", 0L) > System.currentTimeMillis();
@@ -166,6 +176,7 @@ final class WidgetStore {
         if (!snapshot.optString("date").equals(action.optString("date"))) return;
         JSONObject item = findItem(snapshot, action.optString("key"));
         if (item == null) return;
+        item.put("pending", true); // aangetikt in de widget en nog niet door de app verwerkt: de rij toont een icoontje en een dagdeel blijft staan
         if (action.has("delta")) {
             int value = Math.max(0, Math.min(COUNTER_MAX, item.optInt("value", 0) + action.optInt("delta", 0)));
             item.put("value", value);

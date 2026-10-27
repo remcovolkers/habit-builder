@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  appointmentKey, applyWidgetActions, buildWidgetSnapshot, counterKey, endOfToday, habitKey, parseWidgetKey,
+  appointmentKey, applyWidgetActions, buildWidgetSnapshot, colorToHex, counterKey, endOfToday, habitKey, normalizeColors, parseWidgetKey,
 } from '../../src/app/widget.js';
 import { TODAY, testRepo, validHabit } from './helpers.js';
 
@@ -48,9 +48,27 @@ test('momentopname: rijen per dagdeel in de volgorde van de app, met de teksten 
   ]);
   assert.equal(find(snapshot, appointmentKey(afspraak.id)).kind, 'appointment');
   assert.deepEqual([snapshot.done, snapshot.total], [0, 3]);
-  assert.equal(snapshot.labels.title, 'Vandaag');
+  assert.equal(snapshot.labels.allDone, 'Alles gedaan voor vandaag');
+  assert.equal(snapshot.unsynced, 0);
+  assert.deepEqual(snapshot.colors, {});
   assert.ok(snapshot.expiresAt > NOW.getTime());
   JSON.stringify(snapshot); // moet als tekst naar Android kunnen
+});
+
+test('kleuren: hex met of zonder doorzichtigheid, en alleen bekende namen met een geldige waarde', () => {
+  assert.equal(colorToHex(41, 255, 185), '#29ffb9');
+  assert.equal(colorToHex(255, 255, 255, 20), '#14ffffff', 'doorzichtig: eerst de doorzichtigheid, zoals Android het leest');
+  assert.equal(colorToHex(300, -5, 0.4), '#ff0000', 'waarden buiten 0-255 worden begrensd');
+  assert.deepEqual(normalizeColors({ accent: '#29ffb9', text: '#aae4e9f2', muted: 'rood', onAccent: '#fff', onbekend: '#000000', background: 42 }), { accent: '#29ffb9', text: '#aae4e9f2' });
+  assert.deepEqual(normalizeColors(undefined), {});
+});
+
+test('momentopname: kleuren van het thema en het aantal niet-gesyncte wijzigingen gaan mee', async () => {
+  const { repo } = await setup();
+  const snapshot = buildWidgetSnapshot({ snapshot: await repo.snapshot(), today: TODAY, settings, now: NOW, colors: { accent: '#29ffb9', kapot: 'x' }, unsynced: 3.9 });
+  assert.deepEqual(snapshot.colors, { accent: '#29ffb9' });
+  assert.equal(snapshot.unsynced, 3);
+  assert.equal(buildWidgetSnapshot({ snapshot: await repo.snapshot(), today: TODAY, settings, now: NOW, unsynced: -2 }).unsynced, 0);
 });
 
 test('momentopname: een teller toont waarde en doel, en een dagdeel heeft een eigen sleutel', async () => {

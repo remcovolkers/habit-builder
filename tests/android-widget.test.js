@@ -88,14 +88,23 @@ test('widget: elke klasse heeft het goede pakket en de bestandsnaam van zijn kla
   }
 });
 
-test('widget: de sleutels en velden die de Java-kant en de app delen komen in beide voor', () => {
-  const store = read(join(JAVA, 'widget/WidgetStore.java'));
-  const appSide = read(join(ROOT, 'src/app/widget.js'));
-  for (const field of ['key', 'date', 'done', 'delta', 'value', 'target', 'expiresAt', 'items', 'group', 'title', 'kind', 'labels']) {
-    assert.ok(store.includes(`"${field}"`) || read(join(JAVA, 'widget/HabitWidgetService.java')).includes(`"${field}"`) || read(join(JAVA, 'widget/HabitWidgetProvider.java')).includes(`"${field}"`), `Java kent "${field}" niet`);
+test('widget: de velden die de Java-kant en de app delen komen in beide voor', () => {
+  const java = widgetJava.map(read).join('\n');
+  const appSide = read(join(ROOT, 'src/app/widget.js')) + read(join(ROOT, 'src/ui/widget.js'));
+  // pending: alleen Java schrijft dit (een rij die in de widget is aangetikt en de app nog niet verwerkte); de app krijgt het nooit te zien
+  for (const field of ['key', 'date', 'done', 'delta', 'value', 'target', 'expiresAt', 'items', 'group', 'title', 'kind', 'labels', 'unsynced', 'colors', 'total']) {
+    assert.ok(java.includes(`"${field}"`), `Java kent "${field}" niet`);
     assert.ok(appSide.includes(field), `de app kent "${field}" niet`);
   }
   for (const kind of ['counter', 'appointment']) {
-    assert.ok(store.includes(`"${kind}"`) && appSide.includes(`'${kind}'`), `soort ${kind}`);
+    assert.ok(java.includes(`"${kind}"`) && appSide.includes(`'${kind}'`), `soort ${kind}`);
+  }
+  for (const color of ['background', 'text', 'muted', 'accent', 'onAccent', 'hairline']) {
+    assert.ok(java.includes(`"${color}"`), `Java kent de kleur "${color}" niet`);
+    assert.ok(appSide.includes(color), `de app kent de kleur "${color}" niet`);
+  }
+  for (const label of ['empty', 'allDone', 'stale']) {
+    assert.ok(java.includes(`"${label}"`), `Java kent de tekst "${label}" niet`);
+    assert.ok(read(join(ROOT, 'src/content/nl.js')).includes(`${label}:`), `nl.js kent "${label}" niet`);
   }
 });

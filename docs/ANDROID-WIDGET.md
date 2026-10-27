@@ -4,7 +4,12 @@ Status: **in aanbouw** op `feature/android-widget`. Opzet, keuzes en afspraken t
 
 ## Wat het doet
 
-Een widget voor het startscherm met de lijst van vandaag. Je scrolt erdoorheen, vinkt af, en bij een teller-habit tik je op − en +. Tik je op de kop, dan opent de app.
+Een widget voor het startscherm met de lijst van vandaag. Je scrolt erdoorheen, vinkt af, en bij een teller-habit tik je op − en +. Rechtsboven staat de voortgang ("2/5"); een tik daarop opent de app.
+
+- **Geen kop "Vandaag":** de bovenste regel is het eerste dagdeel (bijvoorbeeld "Ochtend"). Een dagdeel waarvan alles gedaan is, verdwijnt uit de lijst. Zijn alle dagdelen gedaan, dan staat er "Alles gedaan voor vandaag".
+- **Wat je net hebt aangetikt blijft staan:** een dagdeel verdwijnt niet op het moment dat je het laatste vinkje zet, maar pas als de app het heeft verwerkt. Zo zie je het vinkje en kun je het terugdraaien.
+- **Niet gesynct:** een rij die je in de widget hebt aangetikt en die de app nog niet heeft verwerkt, krijgt een klein icoon (twee pijlen in een cirkel). Hetzelfde icoon staat rechtsboven zolang er in de widget iets wacht, of als de app zelf nog wijzigingen heeft die niet bij de server zijn (met een account).
+- **Stijl van je thema:** de widget gebruikt de kleuren van het thema dat je in de app hebt gekozen (achtergrond, tekst, gedempte tekst, accent). De app leest ze uit de actieve themakleuren en geeft ze mee; verandert je thema, dan volgt de widget binnen een paar seconden.
 
 Besluiten van Remco: de dagdelen staan als scheidingsstreepjes met een naam in de lijst; teller-habits werken (− en +); een vinkje uit de widget bereikt de server en je andere toestellen pas als de app opent.
 
@@ -30,8 +35,9 @@ Waarom niet rechtstreeks naar Supabase schrijven: een check-in is meer dan één
 `snapshot` (JSON-tekst):
 
 ```json
-{ "date": "2026-10-28", "expiresAt": 1761700000000, "done": 2, "total": 5,
-  "labels": { "title": "Vandaag", "of": "van", "empty": "Niets gepland voor vandaag", "stale": "Open de app voor de lijst van vandaag" },
+{ "date": "2026-10-28", "expiresAt": 1761700000000, "done": 2, "total": 5, "unsynced": 0,
+  "colors": { "background": "#18181a", "text": "#e4e9f2", "muted": "#8d919a", "accent": "#29ffb9", "onAccent": "#06140f", "hairline": "#24ffffff" },
+  "labels": { "empty": "Niets gepland voor vandaag", "allDone": "Alles gedaan voor vandaag", "stale": "Open de app voor de lijst van vandaag" },
   "items": [
     { "key": "h|<habitId>|",         "kind": "habit",       "group": "Ochtend", "title": "Water drinken", "done": false },
     { "key": "h|<habitId>|evening",  "kind": "habit",       "group": "Avond",   "title": "Tandenpoetsen", "done": true  },
@@ -40,6 +46,8 @@ Waarom niet rechtstreeks naar Supabase schrijven: een check-in is meer dan één
 ```
 
 `queue` (JSON-lijst): `{ "key": "h|…|", "date": "2026-10-28", "done": true }` of `{ "key": "c|…", "date": "…", "delta": 1 }`.
+
+Alleen de Java-kant zet bij een rij `"pending": true` (aangetikt in de widget, nog niet verwerkt); een verse momentopname van de app heeft dat niet. Wordt er een nieuwe momentopname geschreven terwijl er nog iets in de wachtrij staat, dan legt de Java-kant die acties er opnieuw overheen, zodat een vinkje niet terugspringt.
 
 Wat er niet in zit: wat is overgeslagen of opgegeven ("ga ik niet doen") telt niet meer mee, net als in de teller op Vandaag.
 
@@ -55,7 +63,6 @@ Wat er niet in zit: wat is overgeslagen of opgegeven ("ga ik niet doen") telt ni
 
 ## Later, bewust nu niet
 
-- De kleuren van je gekozen thema (nu een vaste donkere stijl).
 - Een afspraak toevoegen vanuit de widget.
 - Een eigen kleine variant van een rij (alleen de tellers, of een ring met "3 van 5").
 - De widget laten verversen op het moment dat een dag begint (nu door de verversing van Android elk half uur en door de app).

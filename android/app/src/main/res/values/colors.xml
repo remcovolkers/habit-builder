@@ -7,9 +7,10 @@
     <color name="notification_accent">#29ffb9</color>
 
     <!-- de widget voor het startscherm (docs/ANDROID-WIDGET.md): een vaste donkere stijl, in dezelfde tinten als het standaardthema -->
-    <color name="widget_background">#f2101515</color>
+    <color name="widget_background">#101515</color>
     <color name="widget_text">#f1f5f4</color>
     <color name="widget_muted">#9aa7a4</color>
     <color name="widget_accent">#29ffb9</color>
+    <color name="widget_on_accent">#06140f</color>
     <color name="widget_hairline">#33ffffff</color>
 </resources>

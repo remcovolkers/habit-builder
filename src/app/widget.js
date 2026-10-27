@@ -49,13 +49,35 @@ export function endOfToday({ now, timeZone, dayStartHour }) {
   return Math.floor(high / MINUTE) * MINUTE;
 }
 
+// --- kleuren van het thema ----------------------------------------------------------------------------------------------------------------
+
+/** De kleuren die de widget van het thema overneemt; de Java-kant heeft voor elke naam een standaardwaarde als er iets ontbreekt. */
+export const WIDGET_COLOR_NAMES = Object.freeze(['background', 'text', 'muted', 'accent', 'onAccent', 'hairline']);
+
+/** Rode, groene en blauwe waarde (0-255) en doorzichtigheid (0-255) als "#rrggbb", of "#aarrggbb" als de kleur doorzichtig is (zo leest Android het). */
+export function colorToHex(r, g, b, a = 255) {
+  const hex = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  return a >= 255 ? `#${hex(r)}${hex(g)}${hex(b)}` : `#${hex(a)}${hex(r)}${hex(g)}${hex(b)}`;
+}
+
+/** Houdt alleen bekende kleurnamen met een geldige waarde over: de Java-kant parseert dit en mag nooit op rommel vastlopen. */
+export function normalizeColors(colors) {
+  const out = {};
+  for (const name of WIDGET_COLOR_NAMES) {
+    const value = colors?.[name];
+    if (typeof value === 'string' && /^#([0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) out[name] = value;
+  }
+  return out;
+}
+
 // --- de momentopname ----------------------------------------------------------------------------------------------------------------------
 
 /**
  * De lijst van vandaag voor de widget (JSON-vriendelijk). `group` is de naam van het dagdeel; opeenvolgende rijen met dezelfde naam horen bij één streepje.
  * Wat is overgeslagen of opgegeven telt niet meer mee, net als in de teller op Vandaag.
+ * `colors`: de kleuren van het gekozen thema (zie WIDGET_COLOR_NAMES). `unsynced`: hoeveel wijzigingen de app nog niet bij de server heeft gebracht.
  */
-export function buildWidgetSnapshot({ snapshot, today, settings, now = new Date() }) {
+export function buildWidgetSnapshot({ snapshot, today, settings, now = new Date(), colors = {}, unsynced = 0 }) {
   const view = buildDayView({ snapshot, date: today, today });
   const items = [];
   for (const group of view.groups) {
@@ -80,6 +102,8 @@ export function buildWidgetSnapshot({ snapshot, today, settings, now = new Date(
     expiresAt: endOfToday({ now, timeZone: settings.timezone, dayStartHour: settings.dayStartHour }),
     done: view.progress.done,
     total: view.progress.total,
+    unsynced: Math.max(0, Math.floor(Number(unsynced) || 0)),
+    colors: normalizeColors(colors),
     labels: { ...nl.widget },
     items,
   };
