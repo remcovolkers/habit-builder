@@ -41,6 +41,12 @@ export const nl = {
     dayOfMonth: (day) => `Dag ${day} van de maand`,
   },
   dayparts: { morning: 'Ochtend', afternoon: 'Middag', evening: 'Avond', anytime: 'Overdag' },
+  // de widget voor het startscherm (Android); de Java-kant leest deze teksten uit de momentopname, zie docs/ANDROID-WIDGET.md
+  widget: {
+    empty: 'Niets gepland voor vandaag',
+    allDone: 'Alles gedaan voor vandaag',
+    stale: 'Open de app voor de lijst van vandaag',
+  },
   colors: ['Munt', 'Turquoise', 'Hemelsblauw', 'Limoen', 'Amber', 'Koraal', 'Roze', 'Zand'],
   greeting: { morning: 'Goedemorgen', afternoon: 'Goedemiddag', evening: 'Goedenavond' },
 
