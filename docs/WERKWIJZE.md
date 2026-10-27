@@ -27,13 +27,7 @@ Een **release** is een pull request van `develop` naar `main`:
 
 1. Alle tests groen (`npm test`) en de app zelf doorlopen op je telefoon (zie "Proberen" hieronder).
 2. Pull request `develop` → `main`, mergen. De uitrol start vanzelf.
-3. Een tag op de merge, zodat je later kunt terugvinden wat er in welke versie zat:
-   ```
-   git switch main && git pull
-   git tag -a v1.1 -m "korte omschrijving"
-   git push origin v1.1
-   ```
-4. Verhoog `appVersion` in `src/config.js` (staat onderaan Instellingen) in de release-PR.
+3. De tag en de Android-app: verhoog `appVersion` in `src/config.js` (staat onderaan Instellingen) **in de release-PR**. De workflow "Android-app" bouwt na de merge op `main` een getekende APK en maakt zelf de GitHub Release en de tag `v<appVersion>` (zie [ANDROID-APP.md](ANDROID-APP.md)). Bestaat die release al, dan gebeurt er niets; vergeet je de versie te verhogen, dan komt er dus geen nieuwe APK. Tag dus **niet** meer met de hand; een tag van vóór de Android-app (`v1.1`, `v1.2`) blijft zoals hij is.
 
 Een **spoedfix** op productie: `git switch -c hotfix/<naam> main`, fixen, pull request naar `main`, daarna `main` terug mergen in `develop` zodat de fix niet verloren gaat.
 

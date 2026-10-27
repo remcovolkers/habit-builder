@@ -67,6 +67,21 @@ export function rearmDate({ time, now, timeZone }) {
 /** Draait dit op Android? Alleen daar helpt de uitleg over batterij-instellingen. */
 export const isAndroid = (userAgent) => /android/i.test(String(userAgent ?? ''));
 
+/**
+ * De route (#/…) waar een tik op een melding naartoe gaat. `url` komt van de server (relatief, zoals './#/today'); alleen adressen binnen de app tellen,
+ * een bericht mag nooit naar een andere site sturen. Geeft null als er niets bruikbaars staat.
+ */
+export function notificationHash(url, base) {
+  if (typeof url !== 'string' || url === '') return null;
+  try {
+    const target = new URL(url, base);
+    if (target.origin !== new URL(base).origin) return null;
+    return target.hash.startsWith('#/') ? target.hash : '#/today';
+  } catch {
+    return null;
+  }
+}
+
 /** De publieke VAPID-sleutel (base64url) als bytes, zoals pushManager.subscribe die wil. */
 export function base64UrlToBytes(text) {
   const base64 = String(text).replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(String(text).length / 4) * 4, '=');

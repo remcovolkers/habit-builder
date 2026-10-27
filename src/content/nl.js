@@ -419,6 +419,15 @@ export const nl = {
       off: 'Ontwikkelaarsopties staan uit',
       title: 'Ontwikkelaar',
       turnOff: 'Ontwikkelaarsopties uitzetten',
+      appUpdateCheck: 'Controleer op een nieuwe app-versie',
+      appUpdatePretend: 'Toon de updatebalk (proef)',
+      googleReturnTest: 'Proef: terugkeer van Google (annuleren)', // opent habitbuilder://auth?error=… zoals Google doet; Android moet de app openen en de melding tonen
+      appUpdateResult: {
+        available: (version, current) => `Versie ${version} staat klaar (jij hebt ${current}).`,
+        current: (current, latest) => `Je hebt de nieuwste versie (${current}); nieuwste release: ${latest ?? 'geen'}.`,
+        skipped: (reason) => `Niet gecontroleerd: ${reason}.`,
+        failed: (reason) => `Controleren mislukt: ${reason}.`,
+      },
       usage: (users, activeToday) => `Gebruikers buiten jou: ${users} · vandaag actief: ${activeToday}`,
     },
     title: 'Instellingen',
@@ -898,6 +907,9 @@ export const nl = {
   },
 
   pwa: {
+    // een nieuwe APK van de Android-app (de webkant werkt zichzelf bij)
+    appUpdateAvailable: (version) => `Nieuwe versie (${version}) staat klaar. Downloaden?`,
+    appUpdateDownload: 'Downloaden',
     updateAvailable: 'Er is een nieuwe versie van de app.',
     update: 'Vernieuwen',
     later: 'Later',
@@ -911,6 +923,11 @@ export const nl = {
     title: 'Ochtendherinnering',
     hint: 'Elke ochtend een melding met wat er die dag op je lijst staat. Je stelt dit per apparaat in.',
     privacy: 'De melding komt van onze server. Die kent je voornaam, je tijdstip en tijdzone, en per dag hoeveel gewoontes er gepland staan. De namen van je gewoontes blijven bij jou.',
+    // alleen in de Android-app: de melding loopt via Google (Firebase Cloud Messaging), en Chrome-meldingen op dit toestel zouden dubbel komen
+    privacyApp: 'De melding komt van onze server en gaat via Google (Firebase Cloud Messaging) naar je telefoon. De server kent je voornaam, je tijdstip en tijdzone, en per dag hoeveel gewoontes er gepland staan. De namen van je gewoontes blijven bij jou.',
+    appNote: 'Heb je de herinnering ook in Chrome aan staan? Zet hem daar uit, anders krijg je elke ochtend twee meldingen.',
+    channelName: 'Ochtendherinnering',
+    channelDescription: 'Elke ochtend wat er die dag op je lijst staat.',
     time: 'Tijdstip',
     hour: 'uur',
     minute: 'minuten',
@@ -920,6 +937,16 @@ export const nl = {
     },
     timeSaved: 'Tijdstip opgeslagen.',
     enable: 'Herinnering aanzetten',
+    enabling: 'Bezig met aanzetten…',
+    foregroundOpen: 'Openen', // een melding die binnenkomt terwijl de app open staat: Android toont die niet zelf, de app laat hem als balk zien
+    // de stappen van het aanzetten in de app; met ontwikkelaarsopties aan staat de huidige stap onder de knop
+    steps: {
+      permission: 'Stap 1 van 4: toestemming voor meldingen…',
+      channel: 'Stap 2 van 4: meldingskanaal maken…',
+      token: 'Stap 3 van 4: Google om een token vragen…',
+      upload: 'Stap 4 van 4: dit toestel bij de server aanmelden…',
+    },
+    failedDetail: (detail) => `Aanzetten is niet gelukt (${detail}).`,
     disable: 'Herinnering uitzetten',
     status: (time) => `Aan: elke dag rond ${time}.`,
     test: 'Stuur een testmelding',
@@ -959,6 +986,7 @@ export const nl = {
     disabled: 'Herinnering staat uit.',
     errors: {
       denied: 'Meldingen zijn geblokkeerd voor deze app. Zet ze aan in de instellingen van je browser of telefoon en probeer het opnieuw.',
+      deniedApp: 'Meldingen zijn uitgezet voor Habit Builder. Zet ze aan via Instellingen → Apps → Habit Builder → Meldingen en probeer het opnieuw.',
       failed: 'Aanzetten is niet gelukt. Probeer het later nog eens.',
       offline: 'Je bent offline. Probeer het opnieuw zodra je internet hebt.',
     },
@@ -966,6 +994,7 @@ export const nl = {
       unsupported: 'Deze browser kan geen meldingen sturen. Op Android werkt het in Chrome.',
       signedOut: 'Log in om de ochtendherinnering te gebruiken; de melding wordt vanaf de server verstuurd.',
       denied: 'Meldingen zijn geblokkeerd voor deze app. Zet ze aan in de instellingen van je browser of telefoon.',
+      deniedApp: 'Meldingen zijn uitgezet voor Habit Builder. Zet ze aan via Instellingen → Apps → Habit Builder → Meldingen.',
     },
   },
 
@@ -997,6 +1026,7 @@ export const nl = {
       code_format: 'Vul de code uit de e-mail in (alleen cijfers).',
       rate_limit: 'Even geduld: er zijn te veel pogingen. Probeer het over een paar minuten opnieuw.',
       offline: 'Je bent offline. Inloggen kan pas met internet.',
+      google_failed: 'Inloggen met Google is niet gelukt of geannuleerd. Probeer het opnieuw.',
       unknown: 'Dat lukte niet. Probeer het opnieuw.',
     },
   },

@@ -54,6 +54,8 @@ Sleutel: `(user_id, collection, id)`. **RLS**: een gebruiker leest en schrijft a
 
 Eén rij per apparaat dat de herinnering aanheeft (`supabase/migrations/0002_push.sql`): `endpoint`, `p256dh`, `auth` (de sleutels om versleuteld te kunnen sturen), `remind_time` (`HH:MM`), `timezone`, `summary`, `last_notified_date`. Hoogstens 10 per gebruiker; RLS: alleen eigen apparaten.
 
+Sinds `0009_native_push.sql` is een rij óf een webabonnement (`platform = 'web'`: `endpoint` en sleutels) óf een toestel met de Android-app (`platform = 'android'`: `fcm_token`, de rest leeg); een check-constraint dwingt dat af. De logica voor "aan de beurt", "vandaag al gemeld" en de samenvatting is voor beide gelijk. Een webrij wordt gevonden op `(user_id, endpoint)`, een app-rij op `(user_id, fcm_token)`.
+
 `summary` is `{ "name": "Remco", "days": { "2026-10-16": [3, 2], … } }`: je voornaam en per dag van de komende week `[gepland, in de stapel]`. **De namen van habits staan er niet in.** De Edge Function `send-reminders` leest deze tabel (met de service-sleutel, buiten RLS om) en maakt er de tekst van de melding van.
 
 ### Sociaal: vrienden en ranglijst (`supabase/migrations/0003_social.sql`, uitnodigingen uitgebreid in `0005_invites.sql`)

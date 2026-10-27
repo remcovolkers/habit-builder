@@ -19,6 +19,8 @@ import { config } from '../../config.js';
 import { createTapCounter, isDev, onDevChanged, setDev } from '../dev.js';
 import { openFeedbackSheet } from '../components/feedback-sheet.js';
 import { icon } from '../svg.js';
+import { isNativeApp } from '../../native.js';
+import { checkAppUpdate, pretendAppUpdate } from '../app-update.js';
 
 function timeZones() {
   const zones = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : [];
@@ -140,6 +142,27 @@ function devUsageLine() {
   return line;
 }
 
+/** Alleen in de app, met ontwikkelaarsopties: de updatecontrole nu uitvoeren (en zien wat eruit komt), of de balk laten zien. */
+function appUpdateTools() {
+  const t = nl.settings.dev;
+  const result = h('p', { class: 'field__hint', id: 'appUpdateResult', role: 'status', 'aria-live': 'polite' });
+  return h('div', { class: 'stack' },
+    h('button', {
+      type: 'button', id: 'appUpdateCheck', class: 'button button--secondary button--block',
+      onclick: async () => {
+        result.textContent = '…';
+        const outcome = await checkAppUpdate({ force: true });
+        const say = t.appUpdateResult;
+        result.textContent = outcome.status === 'available' ? say.available(outcome.version, outcome.current)
+          : outcome.status === 'current' ? say.current(outcome.current, outcome.latest)
+            : outcome.status === 'skipped' ? say.skipped(outcome.reason) : say.failed(outcome.reason);
+      },
+    }, t.appUpdateCheck),
+    h('button', { type: 'button', id: 'appUpdatePretend', class: 'button button--ghost button--block', onclick: pretendAppUpdate }, t.appUpdatePretend),
+    h('button', { type: 'button', id: 'googleReturnTest', class: 'button button--ghost button--block', onclick: () => location.assign(`${auth.NATIVE_REDIRECT}?error=access_denied`) }, t.googleReturnTest),
+    result);
+}
+
 /**
  * De versieregel onderaan. Zeven keer tikken zet de ontwikkelaarsopties aan of uit (zoals op Android); anderen zien alleen een versienummer.
  */
@@ -152,6 +175,7 @@ function versionLine() {
       ? h('div', { class: 'stack' },
         h('p', { class: 'field__hint', id: 'devOn' }, nl.settings.dev.on),
         devUsageLine(),
+        isNativeApp() ? appUpdateTools() : null,
         h('button', { type: 'button', id: 'devOff', class: 'button button--ghost button--block', onclick: () => { setDev(false); showToast({ message: nl.settings.dev.off }); } }, nl.settings.dev.turnOff))
       : null);
   };

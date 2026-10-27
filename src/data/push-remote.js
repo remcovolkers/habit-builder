@@ -21,6 +21,20 @@ export async function saveSubscription({ client, userId, subscription, remindTim
   if (error) throw fail(error, 'Opslaan mislukt');
 }
 
+/** Registreert de Android-app op dit toestel (of werkt hem bij). `token` is het FCM-token; de server stuurt er via Firebase naartoe. */
+export async function saveAppDevice({ client, userId, token, remindTime, timezone, summary, lastNotifiedDate }) {
+  if (!token || typeof token !== 'string') throw new Error('geen FCM-token');
+  const row = { user_id: userId, platform: 'android', fcm_token: token, remind_time: remindTime, timezone, summary };
+  if (lastNotifiedDate !== undefined) row.last_notified_date = lastNotifiedDate; // zie saveSubscription
+  const { error } = await client.from(TABLE).upsert(row, { onConflict: 'user_id,fcm_token' });
+  if (error) throw fail(error, 'Opslaan mislukt');
+}
+
+export async function deleteAppDevice({ client, token }) {
+  const { error } = await client.from(TABLE).delete().eq('fcm_token', token);
+  if (error) throw fail(error, 'Verwijderen mislukt');
+}
+
 /** Wijzigt tijdstip, tijdzone en/of samenvatting van dit apparaat. */
 export async function updateSubscription({ client, endpoint, patch }) {
   const columns = {};
@@ -40,9 +54,11 @@ export async function deleteSubscription({ client, endpoint }) {
  * Laat de server nu een testmelding naar dit apparaat sturen.
  * Geeft { ok: true } of { ok: false, reason }: 'not_deployed' (functie bestaat niet), 'not_configured' (geheimen ontbreken),
  * 'no_device' (geen abonnement gevonden), 'push_failed' (de push-dienst weigerde het) of 'unknown'.
+ * Een browser wijst zichzelf aan met zijn `endpoint`, de Android-app met zijn FCM-`token`.
  */
-export async function sendTestReminder({ client, endpoint, delaySeconds = 0 }) {
-  const { data, error } = await client.functions.invoke('send-reminders', { body: delaySeconds > 0 ? { test: true, endpoint, delaySeconds } : { test: true, endpoint } });
+export async function sendTestReminder({ client, endpoint, token, delaySeconds = 0 }) {
+  const device = endpoint === undefined ? { token } : { endpoint };
+  const { data, error } = await client.functions.invoke('send-reminders', { body: delaySeconds > 0 ? { test: true, ...device, delaySeconds } : { test: true, ...device } });
   if (error) {
     const status = Number(error.context?.status ?? 0);
     if (status === 404) {
