@@ -113,7 +113,13 @@ jobs:
         run: |
           (cd .. && npx cap sync android)
           chmod +x ./gradlew
-          ./gradlew --no-daemon assembleDebug
+          # Bij een fout: de kern uit het Gradle-logboek als annotatie bij de run, zodat je de oorzaak ziet zonder het hele logboek te openen
+          if ! ./gradlew --no-daemon --console=plain assembleDebug > "$RUNNER_TEMP/gradle.log" 2>&1; then
+            tail -80 "$RUNNER_TEMP/gradle.log"
+            echo "::error title=Gradle mislukte::$(grep -E 'error:|What went wrong|Execution failed|Caused by|Could not|AAPT|Manifest merger|\.xml:' -A2 "$RUNNER_TEMP/gradle.log" | head -40 | tr '\n' '|' | sed 's/%/%25/g')"
+            exit 1
+          fi
+          tail -5 "$RUNNER_TEMP/gradle.log"
 
       - name: Debug-APK bewaren
         if: github.ref != 'refs/heads/main'
@@ -139,7 +145,13 @@ jobs:
           export ANDROID_KEYSTORE_FILE="$RUNNER_TEMP/release.keystore"
           (cd .. && npx cap sync android) # zonder CAP_SERVER_URL: een release laadt altijd de live site
           chmod +x ./gradlew
-          ./gradlew --no-daemon assembleRelease
+          if ! ./gradlew --no-daemon --console=plain assembleRelease > "$RUNNER_TEMP/gradle.log" 2>&1; then
+            rm -f "$RUNNER_TEMP/release.keystore"
+            tail -80 "$RUNNER_TEMP/gradle.log"
+            echo "::error title=Gradle mislukte::$(grep -E 'error:|What went wrong|Execution failed|Caused by|Could not|AAPT|Manifest merger|\.xml:' -A2 "$RUNNER_TEMP/gradle.log" | head -40 | tr '\n' '|' | sed 's/%/%25/g')"
+            exit 1
+          fi
+          tail -5 "$RUNNER_TEMP/gradle.log"
           rm -f "$RUNNER_TEMP/release.keystore"
 
       - name: Handtekening controleren
