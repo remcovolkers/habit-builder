@@ -11,6 +11,7 @@ import * as auth from '../data/auth.js';
 import { deleteAppDevice, deleteSubscription, saveAppDevice, saveSubscription, sendTestReminder } from '../data/push-remote.js';
 import { base64UrlToBytes, buildReminderSummary, DEFAULT_REMINDER_TIME, notificationHash, rearmDate, validateReminderTime } from '../app/reminder.js';
 import { nl } from '../content/nl.js';
+import { showToast } from './components/toast.js';
 import { isNativeApp, nativePlugin } from '../native.js';
 import { account, onAccountChanged, onBeforeLeave } from './account.js';
 import { onChanged, state } from './state.js';
@@ -334,13 +335,28 @@ export async function testReminder({ delaySeconds = 0 } = {}) {
 }
 
 /**
- * De Android-app luistert naar twee dingen: een tik op een melding (ook als de app daardoor start) opent de bijbehorende pagina, en een nieuw
- * FCM-token (Firebase vernieuwt het soms) wordt aan de server doorgegeven, waarna de rij met het oude token verdwijnt.
+ * Een melding die binnenkomt terwijl de app open staat. Android toont die dan niet in het meldingenpaneel (Capacitor geeft hem alleen aan de app),
+ * dus de app laat hem zelf zien: als balk, met "Openen" naar de bijbehorende pagina. Geeft de argumenten voor showToast, of null als er niets te tonen valt.
+ */
+export function foregroundToast(notification, setHash) {
+  const text = [notification?.title, notification?.body].filter((part) => typeof part === 'string' && part !== '').join(': ');
+  if (!text) return null;
+  const hash = notificationHash(notification?.data?.url, location.href);
+  return { message: text, actionLabel: hash ? nl.reminder.foregroundOpen : null, onAction: hash ? () => setHash(hash) : null, ms: 10000 };
+}
+
+/**
+ * De Android-app luistert naar drie dingen: een tik op een melding (ook als de app daardoor start) opent de bijbehorende pagina, en een nieuw
+ * FCM-token (Firebase vernieuwt het soms) wordt aan de server doorgegeven, waarna de rij met het oude token verdwijnt, en een melding terwijl de app open staat (zie foregroundToast).
  */
 function watchApp(plugin) {
   plugin.addListener('pushNotificationActionPerformed', ({ notification }) => {
     const hash = notificationHash(notification?.data?.url, location.href);
     if (hash) location.hash = hash;
+  });
+  plugin.addListener('pushNotificationReceived', (notification) => {
+    const toast = foregroundToast(notification, (hash) => { location.hash = hash; });
+    if (toast) showToast(toast);
   });
   plugin.addListener('registration', async ({ value }) => {
     const old = readStoredToken();

@@ -926,6 +926,7 @@ export const nl = {
     timeSaved: 'Tijdstip opgeslagen.',
     enable: 'Herinnering aanzetten',
     enabling: 'Bezig met aanzetten…',
+    foregroundOpen: 'Openen', // een melding die binnenkomt terwijl de app open staat: Android toont die niet zelf, de app laat hem als balk zien
     // de stappen van het aanzetten in de app; met ontwikkelaarsopties aan staat de huidige stap onder de knop
     steps: {
       permission: 'Stap 1 van 4: toestemming voor meldingen…',

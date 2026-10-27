@@ -275,12 +275,29 @@ test('testmelding zonder aangemeld toestel: "no_device"', async () => {
   assert.deepEqual(await reminders.testReminder(), { ok: false, reason: 'no_device' });
 });
 
+test('een melding terwijl de app open staat wordt als balk getoond, met "Openen" alleen naar een pagina binnen de app', () => {
+  const opened = [];
+  const toast = reminders.foregroundToast({ title: 'Testmelding', body: 'Het werkt.', data: { url: './#/today' } }, (hash) => opened.push(hash));
+  assert.equal(toast.message, 'Testmelding: Het werkt.');
+  assert.equal(toast.actionLabel, 'Openen');
+  toast.onAction();
+  assert.deepEqual(opened, ['#/today']);
+
+  const foreign = reminders.foregroundToast({ title: 'Hoi', data: { url: 'https://kwaad.example/#/today' } }, () => assert.fail('nooit naar een andere site'));
+  assert.equal(foreign.message, 'Hoi');
+  assert.equal(foreign.actionLabel, null);
+
+  assert.equal(reminders.foregroundToast({}, () => {}), null);
+  assert.equal(reminders.foregroundToast(undefined, () => {}), null);
+});
+
 // initReminders loopt maar één keer per proces en hangt zijn luisteraars aan de plugin van dat moment: daarom één test voor alles wat daarbij hoort.
 test('initReminders in de app: een tik op een melding opent de pagina (nooit een andere site) en een vernieuwd FCM-token vervangt het oude', async () => {
   store.set('hb-fcm-token', 'tok-1');
   reminders.initReminders();
   await new Promise((resolve) => setTimeout(resolve, 50)); // refreshReminders en de luisteraars
   assert.ok(plugin.listenerCount('pushNotificationActionPerformed') >= 1);
+  assert.ok(plugin.listenerCount('pushNotificationReceived') >= 1, 'ook een melding bij een open app wordt opgevangen');
   plugin.emit('pushNotificationActionPerformed', { actionId: 'tap', notification: { data: { url: './#/stats?review=week&date=2026-10-16' } } });
   assert.equal(location.hash, '#/stats?review=week&date=2026-10-16');
   plugin.emit('pushNotificationActionPerformed', { actionId: 'tap', notification: { data: { url: 'https://kwaad.example/#/today' } } });
