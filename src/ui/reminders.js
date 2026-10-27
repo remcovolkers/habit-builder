@@ -8,7 +8,7 @@
 // Status voor de UI: 'unconfigured' (web: nog geen VAPID-sleutel in config), 'unsupported', 'signed-out', 'denied', 'off', 'on'.
 import { config } from '../config.js';
 import * as auth from '../data/auth.js';
-import { deleteAppDevice, deleteSubscription, saveAppDevice, saveSubscription, sendTestReminder } from '../data/push-remote.js';
+import { deleteAppDevice, deleteSubscription, hasBrowserReminder, saveAppDevice, saveSubscription, sendTestReminder } from '../data/push-remote.js';
 import { base64UrlToBytes, buildReminderSummary, DEFAULT_REMINDER_TIME, notificationHash, rearmDate, validateReminderTime } from '../app/reminder.js';
 import { nl } from '../content/nl.js';
 import { showToast } from './components/toast.js';
@@ -22,7 +22,8 @@ const TOKEN_KEY = 'hb-fcm-token'; // het FCM-token van dit toestel, zolang de he
 const CHANNEL_ID = 'morning-reminder';
 
 // tot de eerste controle verborgen: anders flitst de kaart even op voor wie hem niet kan gebruiken
-export const reminders = { status: 'unconfigured', time: DEFAULT_REMINDER_TIME };
+// alsoInBrowser: alleen in de app, of er voor dit account ook een herinnering in een browser staat (dan komen er twee meldingen)
+export const reminders = { status: 'unconfigured', time: DEFAULT_REMINDER_TIME, alsoInBrowser: false };
 
 const events = new EventTarget();
 export function onRemindersChanged(listener) {
@@ -92,6 +93,19 @@ async function currentDevice() {
   return subscription ? { kind: 'web', id: subscription.endpoint, subscription } : null;
 }
 
+/** Alleen in de app: staat er voor dit account ook een herinnering in een browser? Werkt `reminders.alsoInBrowser` bij en laat de kaart tekenen als dat verandert. */
+function checkBrowserReminder() {
+  if (!navigator.onLine) return;
+  auth.getClient()
+    .then((client) => hasBrowserReminder({ client }))
+    .then((found) => {
+      if (found === reminders.alsoInBrowser) return;
+      reminders.alsoInBrowser = found;
+      emit();
+    })
+    .catch(() => {});
+}
+
 /** Bepaalt de status opnieuw en laat de UI tekenen. */
 export async function refreshReminders() {
   reminders.time = readStoredTime();
@@ -103,6 +117,7 @@ export async function refreshReminders() {
   else if (plugin) {
     const permission = (await plugin.checkPermissions().catch(() => null))?.receive; // Android 13+: de gebruiker kan meldingen in de instellingen blokkeren
     reminders.status = permission === 'denied' ? 'denied' : readStoredToken() ? 'on' : 'off';
+    checkBrowserReminder(); // op de achtergrond: de kaart hoeft hier niet op te wachten
   } else if (Notification.permission === 'denied') reminders.status = 'denied';
   else reminders.status = (await currentSubscription().catch(() => null)) ? 'on' : 'off';
   emit();

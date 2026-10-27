@@ -30,6 +30,12 @@ export async function saveAppDevice({ client, userId, token, remindTime, timezon
   if (error) throw fail(error, 'Opslaan mislukt');
 }
 
+/** Staat er voor dit account ook een herinnering in een browser (Web Push)? Voor de app: dan krijg je mogelijk twee meldingen. Bij een fout: nee. */
+export async function hasBrowserReminder({ client }) {
+  const { data, error } = await client.from(TABLE).select('id').eq('platform', 'web').limit(1);
+  return !error && Array.isArray(data) && data.length > 0;
+}
+
 export async function deleteAppDevice({ client, token }) {
   const { error } = await client.from(TABLE).delete().eq('fcm_token', token);
   if (error) throw fail(error, 'Verwijderen mislukt');
