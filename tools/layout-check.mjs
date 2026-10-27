@@ -298,6 +298,33 @@ async function main() {
   check('terug: de pagina staat weer op de plek waar je was, een nieuwe pagina begint bovenaan',
     backScroll.room > 100 && backScroll.before > 50 && backScroll.onNew === 0 && Math.abs(backScroll.afterBack - backScroll.before) <= 2 && backScroll.afterForward === 0, JSON.stringify(backScroll));
 
+  // Android-app: de pagina begint onder de statusbalk en een vaste strook houdt hem leeg als je omlaag scrolt (de inhoud schuift er niet onderdoor)
+  await send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 48, bottom: 0, left: 0, right: 0 } });
+  await ev(`document.documentElement.classList.add('is-native')`);
+  await nav('achievements');
+  await nav('habits');
+  await sleep(500);
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`); // een viering van de testgegevens ligt anders over de pagina
+  await sleep(200);
+  const nativeTop = await ev(`(async () => {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const strip = getComputedStyle(document.documentElement, '::before');
+    const atTop = Math.round(document.querySelector('.app').getBoundingClientRect().top + parseFloat(getComputedStyle(document.querySelector('.app')).paddingTop));
+    window.scrollTo(0, 400);
+    await wait(300);
+    return { padding: getComputedStyle(document.querySelector('.app')).paddingTop, atTop, position: strip.position, height: strip.height, top: strip.top, attachment: strip.backgroundAttachment, image: strip.backgroundImage.startsWith('radial-gradient'), scrolled: Math.round(window.scrollY) };
+  })()`);
+  if (process.env.HB_SHOT) { // ter controle met het oog: HB_SHOT=<map> schrijft een schermafbeelding van de gescrolde pagina
+    const shot = await send('Page.captureScreenshot', { format: 'png' });
+    (await import('node:fs')).writeFileSync(join(process.env.HB_SHOT, 'statusbalk-gescrold.png'), Buffer.from(shot.result.data, 'base64'));
+  }
+  check('Android-app: ruimte onder de statusbalk, en een vaste strook met de achtergrond van de pagina blijft er ook na scrollen',
+    nativeTop.padding === '48px' && nativeTop.position === 'fixed' && nativeTop.height === '48px' && nativeTop.top === '0px' && nativeTop.attachment.startsWith('fixed') && nativeTop.image && nativeTop.scrolled > 100, JSON.stringify(nativeTop));
+  await ev(`document.documentElement.classList.remove('is-native')`);
+  await send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 0, bottom: 0, left: 0, right: 0 } });
+  const plainTop = await ev(`getComputedStyle(document.documentElement, '::before').content`);
+  check('in de gewone browser doet de strook niets (geen is-native: geen ::before)', plainTop === 'none' || plainTop === 'normal', plainTop);
+
   // toetsenbord: op het einde van de pagina blijft de knop bereikbaar
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await nav('today');
