@@ -1,6 +1,6 @@
 # Habit Builder – Plan & Requirements
 
-Status: **versie 1.3** (de Android-app, [RELEASE-v1.3.md](RELEASE-v1.3.md); daarvoor `v1.2`: uitnodigen, prestaties, onboarding en meerdere dagdelen; daarvoor `v1.1`: vrienden en ranglijst, en `v1.0`) · Werkwijze: [WERKWIJZE.md](WERKWIJZE.md). Vrienden en ranglijst: [SOCIAAL.md](SOCIAAL.md) (heft D5 en "sociale functies buiten scope" op voor dat onderdeel)
+Status: **versie 1.4** (de widget voor Vandaag, [RELEASE-v1.4.md](RELEASE-v1.4.md); daarvoor 1.3: de Android-app, [RELEASE-v1.3.md](RELEASE-v1.3.md); daarvoor `v1.2`: uitnodigen, prestaties, onboarding en meerdere dagdelen; daarvoor `v1.1`: vrienden en ranglijst, en `v1.0`) · Werkwijze: [WERKWIJZE.md](WERKWIJZE.md). Vrienden en ranglijst: [SOCIAAL.md](SOCIAAL.md) (heft D5 en "sociale functies buiten scope" op voor dat onderdeel)
 
 ## 1. Doel en scope
 

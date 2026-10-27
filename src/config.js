@@ -39,6 +39,6 @@ export function pickEnvironment(hostname, envs = environments) {
 }
 
 export const config = Object.freeze({
-  appVersion: '1.3',
+  appVersion: '1.4',
   ...pickEnvironment(globalThis.location?.hostname),
 });
