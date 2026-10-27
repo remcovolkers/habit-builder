@@ -4,11 +4,14 @@ import android.os.Bundle;
 import android.view.View;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
+import io.github.remcovolkers.habitbuilder.widget.HabitWidgetPlugin;
 
 public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // de brug naar de widget voor het startscherm (docs/ANDROID-WIDGET.md); plugins moeten vóór super.onCreate worden aangemeld
+        registerPlugin(HabitWidgetPlugin.class);
         super.onCreate(savedInstanceState);
         // Zonder bridge (geen WebView op dit toestel) valt er niets in te stellen.
         if (getBridge() == null) return;

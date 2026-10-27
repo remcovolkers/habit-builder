@@ -1,7 +1,7 @@
 name: Android-app
 
 # De Android-schil (Capacitor) om de PWA, zie docs/ANDROID-APP.md.
-#   • feature/android-app en handmatig: een debug-APK als artifact (7 dagen), om op een telefoon te proberen. Staan de secrets er al,
+#   • feature/android-app, feature/android-widget en handmatig: een debug-APK als artifact (7 dagen), om op een telefoon te proberen. Staan de secrets er al,
 #     dan wordt ook een met de echte sleutel getekende APK gebouwd en gecontroleerd, zodat een fout in de sleutel vóór de release blijkt.
 #   • main: een getekende APK in een GitHub Release (v<appVersion>); bestaat die release al, dan gebeurt er niets.
 # Bewust los van "Test & deploy": een mislukte Android-build houdt de uitrol van de PWA nooit tegen.
@@ -9,7 +9,7 @@ name: Android-app
 
 on:
   push:
-    branches: [main, 'feature/android-app']
+    branches: [main, 'feature/android-app', 'feature/android-widget']
   workflow_dispatch:
 
 permissions:
