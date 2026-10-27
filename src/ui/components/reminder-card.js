@@ -55,9 +55,12 @@ export function reminderCard() {
   const batteryTipSeen = () => { try { return localStorage.getItem(BATTERY_TIP_KEY) === '1'; } catch { return false; } };
   const markBatteryTipSeen = () => { try { localStorage.setItem(BATTERY_TIP_KEY, '1'); } catch { /* opslag geblokkeerd: dan krijg je hem vaker te zien */ } };
 
-  /** Direct na het aanzetten, één keer: zonder dit wordt een melding op Android vaak pas bezorgd als je de app opent. */
+  /**
+   * Direct na het aanzetten, één keer: zonder dit wordt een melding via Chrome op Android vaak pas bezorgd als je de app opent.
+   * In de app niet: een FCM-melding met hoge prioriteit wordt ook in de slaapstand bezorgd; de uitleg blijft beschikbaar onder de kaart.
+   */
   function showBatteryTip() {
-    if (!onAndroid || batteryTipSeen()) return;
+    if (!onAndroid || inApp || batteryTipSeen()) return;
     markBatteryTipSeen();
     openDialog({
       title: nl.reminder.battery.title,
