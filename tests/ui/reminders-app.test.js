@@ -72,7 +72,8 @@ beforeEach(() => {
   location.hash = '';
 });
 
-const writes = () => requests.filter((request) => request.path === '/rest/v1/push_subscriptions');
+// alleen schrijfacties: de kaart vraagt op de achtergrond ook (met een GET) of er een herinnering in een browser staat
+const writes = () => requests.filter((request) => request.path === '/rest/v1/push_subscriptions' && request.method !== 'GET');
 
 test('in de app is de herinnering beschikbaar zonder VAPID-sleutel, en staat hij uit tot je hem aanzet', async () => {
   assert.equal(await reminders.refreshReminders(), 'off');
@@ -289,6 +290,31 @@ test('een melding terwijl de app open staat wordt als balk getoond, met "Openen"
 
   assert.equal(reminders.foregroundToast({}, () => {}), null);
   assert.equal(reminders.foregroundToast(undefined, () => {}), null);
+});
+
+test('de kaart weet of er voor dit account ook een herinnering in een browser staat (dan komen er twee meldingen), en meldt het zonder te blokkeren', async () => {
+  const answer = (rows) => async (input, init = {}) => {
+    const url = new URL(typeof input === 'string' ? input : input.url);
+    requests.push({ method: init.method ?? 'GET', path: url.pathname, search: url.search, body: null });
+    return new Response(JSON.stringify(rows), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 40));
+
+  handler = answer([{ id: 'web-1' }]);
+  await reminders.refreshReminders();
+  await settle();
+  assert.equal(reminders.reminders.alsoInBrowser, true);
+  assert.ok(requests.some((request) => request.method === 'GET' && request.search.includes('platform=eq.web')), 'alleen de webrijen worden gevraagd');
+
+  handler = answer([]);
+  await reminders.refreshReminders();
+  await settle();
+  assert.equal(reminders.reminders.alsoInBrowser, false);
+
+  handler = async () => { throw new TypeError('Failed to fetch'); }; // een fout telt als "nee": nooit een verkeerde waarschuwing
+  await reminders.refreshReminders();
+  await settle();
+  assert.equal(reminders.reminders.alsoInBrowser, false);
 });
 
 // initReminders loopt maar één keer per proces en hangt zijn luisteraars aan de plugin van dat moment: daarom één test voor alles wat daarbij hoort.

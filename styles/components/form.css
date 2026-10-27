@@ -532,6 +532,27 @@ select.input {
   font-size: var(--font-size-lg);
 }
 
+/* een uitklapper in een kaart: een regel die opent (bijvoorbeeld de back-up in Instellingen) */
+.fold {
+  margin-top: var(--space-3);
+  padding: var(--space-1) var(--space-4) var(--space-3);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
+}
+
+.fold > summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--size-tap);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+}
+
+.fold[open] > summary {
+  margin-bottom: var(--space-2);
+}
+
 /* uitleg over batterij-instellingen in de herinneringskaart */
 .reminder-card__battery {
   margin-top: var(--space-4);

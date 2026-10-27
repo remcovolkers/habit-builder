@@ -44,8 +44,8 @@ export function reminderCard() {
   const onAndroid = isAndroid(globalThis.navigator?.userAgent);
   const inApp = isNativeApp(); // de Android-app: meldingen via Google in plaats van via Chrome
 
-  /** Alleen in de app: wie de herinnering ook in Chrome aan heeft staan, krijgt twee meldingen. */
-  const appNote = () => (inApp ? h('p', { class: 'field__hint', id: 'appNote' }, r.appNote) : null);
+  /** Alleen in de app, en alleen als er voor dit account ook een herinnering in een browser staat: dan krijg je twee meldingen. */
+  const appNote = () => (inApp && reminders.alsoInBrowser ? h('p', { class: 'field__hint', id: 'appNote' }, r.appNote) : null);
 
   /** De stappen om de batterij-instelling te openen; voor de app die je nu gebruikt, en bij een geïnstalleerde app ook voor Chrome. */
   const batterySteps = () => nl.reminder.battery.steps(inApp || pwa.installed ? 'Habit Builder' : 'Chrome', pwa.installed && !inApp);
@@ -72,7 +72,7 @@ export function reminderCard() {
   }
 
   function batteryDetails(open) {
-    if (!onAndroid) return null;
+    if (!onAndroid || inApp) return null; // een melding via Google heeft deze instelling niet nodig
     return h('details', { class: 'reminder-card__battery', id: 'batteryTips', open },
       h('summary', null, nl.reminder.battery.summary),
       h('p', { class: 'field__hint' }, nl.reminder.battery.intro),
