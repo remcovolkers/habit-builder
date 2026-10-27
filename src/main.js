@@ -19,6 +19,7 @@ import { loginView } from './ui/views/login.js';
 import { account, initAccount, onAccountChanged } from './ui/account.js';
 import { initReminders } from './ui/reminders.js';
 import { initAppUpdate } from './ui/app-update.js';
+import { initNativeLogin } from './ui/native-login.js';
 import { initSocial, onSocialChanged, social, socialApp } from './ui/social-app.js';
 import { setDev } from './ui/dev.js';
 import { startPwa } from './pwa.js';
@@ -190,6 +191,7 @@ onAccountChanged(() => {
 initAccount().catch((error) => console.warn('account starten mislukt', error));
 initReminders();
 initAppUpdate();
+initNativeLogin();
 initSocial();
 initAdmin();
 markFirstRun(); // sinds wanneer je de app gebruikt: de rustige uitnodiging voor feedback komt pas na een week

@@ -134,6 +134,7 @@ Google weigert OAuth in een ingebedde WebView (`disallowed_useragent`, ✓ beken
 - In de app: `signInWithOAuth({ provider: 'google', options: { redirectTo: 'habitbuilder://auth', skipBrowserRedirect: true } })` geeft een URL terug; die openen met de Browser-plugin.
 - Android stuurt `habitbuilder://auth?code=…` terug naar de app (intent-filter); `App.addListener('appUrlOpen')` roept `exchangeCodeForSession(code)` aan en sluit de browser. De PKCE-verifier staat in de `localStorage` van dezelfde WebView.
 - `signInWithGoogle` in `src/data/auth.js` krijgt deze tak; de webtak blijft ongemoeid. Inloggen met de e-mailcode werkt zonder wijziging.
+- **Gebouwd:** `@capacitor/browser` (Custom Tab), het intent-filter `habitbuilder://auth` in `AndroidManifest.xml`, `auth.signInWithGoogle` (app-tak), `auth.parseNativeAuthUrl` en `auth.completeNativeLogin`, en `src/ui/native-login.js` (luistert naar `appUrlOpen` en het startadres, wisselt elke code één keer in, verlaat daarna het inlogscherm). Een ontwikkelaarsknop "Proef: terugkeer van Google" bewijst het intent-filter zonder echte Google-inlog. De volledige route is pas echt te proeven na de release, omdat de debug-app het lokale Supabase gebruikt en de release-app de live site met de nieuwe code (zie ANDROID-SETUP.md, stap 8).
 
 ---
 

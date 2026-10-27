@@ -159,6 +159,7 @@ function appUpdateTools() {
       },
     }, t.appUpdateCheck),
     h('button', { type: 'button', id: 'appUpdatePretend', class: 'button button--ghost button--block', onclick: pretendAppUpdate }, t.appUpdatePretend),
+    h('button', { type: 'button', id: 'googleReturnTest', class: 'button button--ghost button--block', onclick: () => location.assign(`${auth.NATIVE_REDIRECT}?error=access_denied`) }, t.googleReturnTest),
     result);
 }
 

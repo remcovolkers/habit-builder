@@ -421,6 +421,7 @@ export const nl = {
       turnOff: 'Ontwikkelaarsopties uitzetten',
       appUpdateCheck: 'Controleer op een nieuwe app-versie',
       appUpdatePretend: 'Toon de updatebalk (proef)',
+      googleReturnTest: 'Proef: terugkeer van Google (annuleren)', // opent habitbuilder://auth?error=… zoals Google doet; Android moet de app openen en de melding tonen
       appUpdateResult: {
         available: (version, current) => `Versie ${version} staat klaar (jij hebt ${current}).`,
         current: (current, latest) => `Je hebt de nieuwste versie (${current}); nieuwste release: ${latest ?? 'geen'}.`,
@@ -1025,6 +1026,7 @@ export const nl = {
       code_format: 'Vul de code uit de e-mail in (alleen cijfers).',
       rate_limit: 'Even geduld: er zijn te veel pogingen. Probeer het over een paar minuten opnieuw.',
       offline: 'Je bent offline. Inloggen kan pas met internet.',
+      google_failed: 'Inloggen met Google is niet gelukt of geannuleerd. Probeer het opnieuw.',
       unknown: 'Dat lukte niet. Probeer het opnieuw.',
     },
   },

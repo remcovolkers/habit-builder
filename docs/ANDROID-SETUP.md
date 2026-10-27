@@ -131,3 +131,17 @@ De wijzigingen breiden alleen uit en kunnen dus vóór de release op productie, 
 6. Tik op de melding. De app opent op Vandaag.
 
 Meld wat je ziet, vooral: komt de melding aan met de app dicht? Is het icoontje in de statusbalk een witte ring met vinkje (en geen vierkantje)? Gaat een tik naar de goede pagina?
+
+## Stap 8 – Inloggen met Google in de app
+
+Google weigert inloggen in een ingebedde webweergave, dus de app opent de systeembrowser (een Chrome Custom Tab). Na het inloggen stuurt Supabase naar `habitbuilder://auth?code=…`; Android opent daarop de app (intent-filter in `AndroidManifest.xml`), en de app wisselt de code in voor een sessie.
+
+**Eenmalig, vóór de release:** Supabase (productie) → **Authentication → URL Configuration → Redirect URLs → Add URL** → `habitbuilder://auth` → bewaar. Zonder dit adres weigert Supabase de terugkeer en blijft de gebruiker in de browser hangen. (Het lokale Supabase heeft dit adres al via `supabase/config.toml`.)
+
+**Op je telefoon proberen, voor zover dat zonder echte Google-inlog kan** (de debug-app met je computer als server praat met het lokale Supabase, en dat heeft geen Google ingesteld):
+
+1. Installeer de nieuwe `habit-builder-debug` (er is een plugin en een intent-filter bijgekomen, dus dit is weer een nieuwe APK).
+2. Ontwikkelaarsopties aan → Instellingen → **Proef: terugkeer van Google (annuleren)**. De app navigeert naar `habitbuilder://auth?error=access_denied`, zoals Google dat bij annuleren doet. Android moet de app daarmee openen (niet een ander scherm, geen foutmelding van Android) en er komt een melding "Inloggen met Google is niet gelukt of geannuleerd". Daarmee is het intent-filter bewezen.
+3. Op het inlogscherm **Doorgaan met Google** geeft hier een foutmelding (Google staat lokaal niet aan). Dat is verwacht.
+
+**De echte proef** (Chrome Custom Tab, Google, terug naar de app) kan pas met de productie-Supabase en de nieuwe webcode, dus na de release: installeer de release-APK (v1.3.0) op je telefoon, ga naar Instellingen → Inloggen → Google. Verwacht: Chrome opent met het Google-inlogscherm, na kiezen van je account sta je weer in de app en ben je ingelogd. Lukt het niet, dan is dit een kleine hotfix-release.

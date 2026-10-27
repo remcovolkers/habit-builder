@@ -22,6 +22,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Inloggen met Google (zie docs/ANDROID-APP.md §4.4): na de inlog in de systeembrowser opent Android de app met habitbuilder://auth?code=… -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="habitbuilder" android:host="auth" />
+            </intent-filter>
+
         </activity>
 
         <!-- Meldingen via Firebase Cloud Messaging (zie docs/ANDROID-APP.md §4.2). Het kanaal wordt door de app gemaakt (src/ui/reminders.js) en is
