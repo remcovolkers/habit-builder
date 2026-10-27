@@ -18,11 +18,12 @@ globalThis.document = { hidden: false, addEventListener() {} };
 globalThis.location = { hostname: 'remcovolkers.github.io', href: 'https://remcovolkers.github.io/habit-builder/', hash: '' };
 
 const reminders = await import('../../src/ui/reminders.js');
+Object.assign(reminders.appTimeouts, { channel: 60, token: 60, upload: 60 }); // de echte limieten zijn seconden; de tests willen niet zo lang wachten
 const { account } = await import('../../src/ui/account.js');
 const { state } = await import('../../src/ui/state.js');
 
 /** De push-plugin zoals Capacitor hem aanbiedt, met wat we ermee kunnen laten gebeuren. */
-function fakePlugin({ permission = 'granted', token = 'tok-1', registerFails = false } = {}) {
+function fakePlugin({ permission = 'granted', token = 'tok-1', registerFails = false, channelHangs = false, tokenNeverComes = false, registrationError = null } = {}) {
   const calls = [];
   const listeners = new Map();
   const plugin = {
@@ -31,11 +32,12 @@ function fakePlugin({ permission = 'granted', token = 'tok-1', registerFails = f
     token,
     checkPermissions: async () => ({ receive: plugin.permission }),
     requestPermissions: async () => { calls.push('requestPermissions'); return { receive: plugin.permission }; },
-    createChannel: async (channel) => { calls.push(['createChannel', channel]); },
+    createChannel: (channel) => { calls.push(['createChannel', channel]); return channelHangs ? new Promise(() => {}) : Promise.resolve(); },
     register: async () => {
       calls.push('register');
       if (registerFails) throw new Error('Default FirebaseApp is not initialized');
-      setTimeout(() => plugin.emit('registration', { value: plugin.token }), 0);
+      if (registrationError) setTimeout(() => plugin.emit('registrationError', { error: registrationError }), 0);
+      else if (!tokenNeverComes) setTimeout(() => plugin.emit('registration', { value: plugin.token }), 0);
     },
     unregister: async () => { calls.push('unregister'); },
     addListener: async (name, fn) => {
@@ -116,7 +118,9 @@ test('aanzetten zonder toestemming: geen token, niets bij de server, status "den
 
 test('aanzetten als de server weigert: het toestel meldt zich weer af, er blijft geen half token achter', async () => {
   handler = async () => new Response(JSON.stringify({ message: 'kapot', code: '23514' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
-  assert.deepEqual(await reminders.enableReminder('08:00'), { ok: false, reason: 'failed' });
+  const result = await reminders.enableReminder('08:00');
+  assert.deepEqual({ ok: result.ok, reason: result.reason }, { ok: false, reason: 'failed' });
+  assert.equal(result.detail, 'kapot', 'de reden van de server komt mee');
   assert.equal(store.has('hb-fcm-token'), false);
   assert.ok(plugin.calls.includes('unregister'));
   assert.equal(reminders.reminders.status, 'off');
@@ -125,9 +129,62 @@ test('aanzetten als de server weigert: het toestel meldt zich weer af, er blijft
 test('aanzetten als Firebase niet is ingericht (register mislukt): nette fout, geen crash, niets opgeslagen', async () => {
   plugin = fakePlugin({ registerFails: true });
   globalThis.Capacitor = { isNativePlatform: () => true, Plugins: { PushNotifications: plugin } };
-  assert.deepEqual(await reminders.enableReminder('08:00'), { ok: false, reason: 'failed' });
+  const result = await reminders.enableReminder('08:00');
+  assert.deepEqual({ ok: result.ok, reason: result.reason }, { ok: false, reason: 'failed' });
   assert.equal(writes().length, 0);
   assert.equal(store.has('hb-fcm-token'), false);
+});
+
+const withPlugin = (options) => {
+  plugin = fakePlugin(options);
+  globalThis.Capacitor = { isNativePlatform: () => true, Plugins: { PushNotifications: plugin } };
+};
+
+test('aanzetten meldt elke stap, zodat te zien is waar het vastloopt', async () => {
+  const steps = [];
+  await reminders.enableReminder('08:00', { onStep: (text) => steps.push(text) });
+  assert.deepEqual(steps.map((text) => text.slice(0, 6)), ['Stap 1', 'Stap 2', 'Stap 3', 'Stap 4']);
+});
+
+test('een kanaal dat nooit antwoordt laat de knop niet eeuwig grijs: na de limiet een fout met de naam van de stap', async () => {
+  withPlugin({ channelHangs: true });
+  const result = await reminders.enableReminder('08:00');
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'failed');
+  assert.match(result.detail, /^kanaal: geen antwoord/);
+  assert.equal(writes().length, 0);
+  assert.equal(store.has('hb-fcm-token'), false);
+});
+
+test('een token dat nooit aankomt: na de limiet "token: …", niets opgeslagen en de status blijft uit', async () => {
+  withPlugin({ tokenNeverComes: true });
+  const result = await reminders.enableReminder('08:00');
+  assert.equal(result.ok, false);
+  assert.match(result.detail, /^token: geen FCM-token ontvangen/);
+  assert.equal(writes().length, 0);
+  assert.equal(reminders.reminders.status, 'off');
+  assert.equal(plugin.listenerCount('registration'), 0, 'ook na een time-out zijn de tijdelijke luisteraars opgeruimd');
+});
+
+test('Google geeft een fout bij het token (bijvoorbeeld een beperkte API-sleutel): de reden komt in het resultaat', async () => {
+  withPlugin({ registrationError: 'FIS_AUTH_ERROR' });
+  const result = await reminders.enableReminder('08:00');
+  assert.equal(result.reason, 'failed');
+  assert.equal(result.detail, 'token: FIS_AUTH_ERROR');
+});
+
+test('register() zelf mislukt (Firebase niet ingericht): "token: …" met de melding van Android', async () => {
+  withPlugin({ registerFails: true });
+  const result = await reminders.enableReminder('08:00');
+  assert.match(result.detail, /^token: .*FirebaseApp is not initialized/);
+});
+
+test('opslaan bij de server blijft hangen: na de limiet "opslaan: …", en het token wordt weer ingetrokken', async () => {
+  handler = () => new Promise(() => {});
+  const result = await reminders.enableReminder('08:00');
+  assert.match(result.detail, /^opslaan: geen antwoord/);
+  assert.equal(store.has('hb-fcm-token'), false);
+  assert.ok(plugin.calls.includes('unregister'));
 });
 
 test('een ongeldig tijdstip wordt geweigerd zonder de plugin aan te roepen', async () => {

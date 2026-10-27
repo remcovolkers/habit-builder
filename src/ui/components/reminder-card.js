@@ -199,16 +199,18 @@ export function reminderCard() {
             // de browser vraagt om toestemming en wil daarvoor een directe tik: deze aanroep gebeurt dus zonder omwegen
             guarded(async () => {
               say('');
-              const result = await enableReminder(time);
+              // met ontwikkelaarsopties aan: elke stap zichtbaar, zodat te zien is waar het vastloopt
+              const result = await enableReminder(time, { onStep: (text) => { if (isDev()) say(text); } });
               if (result.ok) {
                 showToast({ message: r.enabled });
                 showBatteryTip();
               }
               else if (result.reason === 'invalid' || result.reason === 'before_day_start') say(timeError(result.reason), true);
+              else if (result.detail && isDev()) say(r.failedDetail(result.detail), true);
               else say(r.errors[result.reason === 'denied' && inApp ? 'deniedApp' : result.reason] ?? r.errors.failed, true);
             });
           },
-        }, r.enable),
+        }, busy ? r.enabling : r.enable),
         message),
       appNote(),
       h('p', { class: 'field__hint' }, inApp ? r.privacyApp : r.privacy));

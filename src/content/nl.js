@@ -925,6 +925,15 @@ export const nl = {
     },
     timeSaved: 'Tijdstip opgeslagen.',
     enable: 'Herinnering aanzetten',
+    enabling: 'Bezig met aanzetten…',
+    // de stappen van het aanzetten in de app; met ontwikkelaarsopties aan staat de huidige stap onder de knop
+    steps: {
+      permission: 'Stap 1 van 4: toestemming voor meldingen…',
+      channel: 'Stap 2 van 4: meldingskanaal maken…',
+      token: 'Stap 3 van 4: Google om een token vragen…',
+      upload: 'Stap 4 van 4: dit toestel bij de server aanmelden…',
+    },
+    failedDetail: (detail) => `Aanzetten is niet gelukt (${detail}).`,
     disable: 'Herinnering uitzetten',
     status: (time) => `Aan: elke dag rond ${time}.`,
     test: 'Stuur een testmelding',

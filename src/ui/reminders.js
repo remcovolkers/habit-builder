@@ -147,13 +147,13 @@ const scheduleUpload = () => {
 };
 
 /** Aanzetten. Aanroepen direct vanuit een tik van de gebruiker: de browser vraagt dan om toestemming. */
-export async function enableReminder(time) {
+export async function enableReminder(time, { onStep } = {}) {
   const problem = validateReminderTime(time, state.settings.dayStartHour);
   if (problem) return { ok: false, reason: problem };
   if (!navigator.onLine) return { ok: false, reason: 'offline' };
 
   const plugin = appPush();
-  if (plugin) return enableInApp(plugin, time);
+  if (plugin) return enableInApp(plugin, time, onStep);
 
   const permission = await Notification.requestPermission(); // eerste await: de tik telt dan nog als gebaar
   if (permission !== 'granted') {
@@ -185,6 +185,18 @@ export async function enableReminder(time) {
   return { ok: true };
 }
 
+/**
+ * Hoe lang elke stap van het aanzetten in de app hoogstens duurt (ms). Een native aanroep die nooit antwoordt, mag de knop niet eeuwig
+ * grijs laten: na de limiet volgt een fout met de naam van de stap. Een object zodat de tests het kunnen verkorten.
+ */
+export const appTimeouts = { channel: 8000, token: 15000, upload: 20000 };
+
+function withTimeout(promise, ms, step) {
+  let timer;
+  const limit = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`${step}: geen antwoord na ${Math.round(ms / 1000)} s`)), ms); });
+  return Promise.race([promise, limit]).finally(() => clearTimeout(timer));
+}
+
 /** Het FCM-token van dit toestel: de plugin meldt het in het event 'registration'. */
 function registerForPush(plugin) {
   return new Promise((resolve, reject) => {
@@ -194,15 +206,20 @@ function registerForPush(plugin) {
       for (const handle of handles) handle.then((listener) => listener.remove()).catch(() => {});
       settle(value);
     };
-    const timer = setTimeout(() => finish(reject, new Error('geen FCM-token ontvangen')), 15000);
+    const timer = setTimeout(() => finish(reject, new Error(`token: geen FCM-token ontvangen na ${Math.round(appTimeouts.token / 1000)} s`)), appTimeouts.token);
     handles.push(plugin.addListener('registration', ({ value }) => finish(resolve, value)));
-    handles.push(plugin.addListener('registrationError', (error) => finish(reject, new Error(error?.error ?? 'registreren mislukt'))));
-    plugin.register().catch((error) => finish(reject, error));
+    handles.push(plugin.addListener('registrationError', (error) => finish(reject, new Error(`token: ${error?.error ?? 'registreren mislukt'}`))));
+    plugin.register().catch((error) => finish(reject, new Error(`token: ${error?.message ?? error}`)));
   });
 }
 
-/** Aanzetten in de Android-app: meldingstoestemming (Android 13+), het kanaal, een FCM-token, en het toestel bij de server aanmelden. */
-async function enableInApp(plugin, time) {
+/**
+ * Aanzetten in de app: meldingstoestemming (Android 13+), het kanaal, een FCM-token, en het toestel bij de server aanmelden.
+ * `onStep(tekst)` meldt de voortgang; bij een fout bevat het resultaat `detail` met de stap en de reden (de kaart toont dat met ontwikkelaarsopties aan).
+ */
+async function enableInApp(plugin, time, onStep) {
+  const step = (text) => onStep?.(text);
+  step(nl.reminder.steps.permission);
   const permission = (await plugin.requestPermissions().catch(() => null))?.receive; // eerste await: de tik telt dan nog als gebaar
   if (permission !== 'granted') {
     await refreshReminders();
@@ -210,13 +227,18 @@ async function enableInApp(plugin, time) {
   }
   let token = null;
   try {
+    step(nl.reminder.steps.channel);
     // zonder bestaand kanaal toont Android de melding in een stil standaardkanaal; de server noemt dit kanaal in elk bericht
-    await plugin.createChannel({ id: CHANNEL_ID, name: nl.reminder.channelName, description: nl.reminder.channelDescription, importance: 4, visibility: 0, vibration: true });
+    await withTimeout(
+      plugin.createChannel({ id: CHANNEL_ID, name: nl.reminder.channelName, description: nl.reminder.channelDescription, importance: 4, visibility: 0, vibration: true }),
+      appTimeouts.channel, 'kanaal');
+    step(nl.reminder.steps.token);
     token = await registerForPush(plugin);
     storeToken(token);
     storeTime(time);
     reminders.time = time;
-    await upload({ kind: 'app', id: token }, time, { rearm: true });
+    step(nl.reminder.steps.upload);
+    await withTimeout(upload({ kind: 'app', id: token }, time, { rearm: true }), appTimeouts.upload, 'opslaan');
   } catch (error) {
     console.warn('herinnering aanzetten mislukt', error);
     if (token) { // geen half aangemeld toestel achterlaten
@@ -224,7 +246,7 @@ async function enableInApp(plugin, time) {
       await plugin.unregister().catch(() => {});
     }
     await refreshReminders();
-    return { ok: false, reason: navigator.onLine ? 'failed' : 'offline' };
+    return { ok: false, reason: navigator.onLine ? 'failed' : 'offline', detail: String(error?.message ?? error) };
   }
   await refreshReminders();
   return { ok: true };
