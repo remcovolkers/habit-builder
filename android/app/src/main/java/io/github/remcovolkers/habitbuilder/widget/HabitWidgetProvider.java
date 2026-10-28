@@ -7,7 +7,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.view.View;
 import android.widget.RemoteViews;
 import io.github.remcovolkers.habitbuilder.MainActivity;
@@ -15,15 +14,11 @@ import io.github.remcovolkers.habitbuilder.R;
 import org.json.JSONObject;
 
 /**
- * De widget voor het startscherm: de lijst van vandaag per dagdeel, scrollbaar, met vinkjes en bij tellers een min en een plus.
- * De rijen komen uit HabitWidgetService; een tik op een rij komt hier binnen als broadcast (ACTION_TAP).
- * Rechtsboven staat de voortgang ("2/5") en, zolang er iets nog niet gesynct is, een icoon; een tik daarop opent de app.
+ * De widget voor het startscherm: de lijst van vandaag per dagdeel, scrollbaar. Alleen weergave: een tik waar dan ook opent de app.
+ * De rijen komen uit HabitWidgetService. Rechtsboven staat de voortgang ("2/5") en, zolang er iets nog niet gesynct is, een icoon.
  * Zie docs/ANDROID-WIDGET.md.
  */
 public class HabitWidgetProvider extends AppWidgetProvider {
-    static final String ACTION_TAP = "io.github.remcovolkers.habitbuilder.widget.TAP";
-    static final String EXTRA_KEY = "key";
-    static final String EXTRA_DELTA = "delta";
 
     @Override
     public void onUpdate(Context context, AppWidgetManager manager, int[] appWidgetIds) {
@@ -31,19 +26,6 @@ public class HabitWidgetProvider extends AppWidgetProvider {
             manager.updateAppWidget(id, buildViews(context, id));
         }
         manager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.widget_list);
-    }
-
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        if (ACTION_TAP.equals(intent.getAction())) {
-            String key = intent.getStringExtra(EXTRA_KEY);
-            if (key != null) {
-                WidgetStore.tap(context, key, intent.getIntExtra(EXTRA_DELTA, 0));
-                refreshAll(context);
-            }
-            return;
-        }
-        super.onReceive(context, intent);
     }
 
     /** Tekent alle widgets van dit type opnieuw: de randen en de lijst. */
@@ -94,16 +76,11 @@ public class HabitWidgetProvider extends AppWidgetProvider {
         views.setRemoteAdapter(R.id.widget_list, service);
         views.setEmptyView(R.id.widget_list, R.id.widget_empty);
 
-        // een tik op een rij: de rij zet zijn sleutel in de intent (HabitWidgetService), de ontvanger hierboven verwerkt hem
-        Intent tap = new Intent(context, HabitWidgetProvider.class);
-        tap.setAction(ACTION_TAP);
-        int mutable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? PendingIntent.FLAG_MUTABLE : 0;
-        views.setPendingIntentTemplate(R.id.widget_list, PendingIntent.getBroadcast(context, 0, tap, PendingIntent.FLAG_UPDATE_CURRENT | mutable));
-
-        // de voortgang rechtsboven en de lege toestand openen de app
+        // een tik op een rij, de voortgang rechtsboven of de lege toestand opent de app; scrollen laat de rest van de lijst zien
         Intent open = new Intent(context, MainActivity.class);
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent openApp = PendingIntent.getActivity(context, 1, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        views.setPendingIntentTemplate(R.id.widget_list, openApp);
         views.setOnClickPendingIntent(R.id.widget_cluster, openApp);
         views.setOnClickPendingIntent(R.id.widget_empty, openApp);
         return views;

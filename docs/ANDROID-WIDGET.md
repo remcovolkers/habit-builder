@@ -4,14 +4,16 @@ Status: **in aanbouw** op `feature/android-widget`. Opzet, keuzes en afspraken t
 
 ## Wat het doet
 
-Een widget voor het startscherm met de lijst van vandaag. Je scrolt erdoorheen, vinkt af, en bij een teller-habit tik je op − en +. Rechtsboven staat de voortgang ("2/5"); een tik daarop opent de app.
+Een widget voor het startscherm met de lijst van vandaag. **Alleen weergave:** je scrolt erdoorheen om de rest te zien, en een tik waar dan ook (een rij, een dagdeel, de voortgang rechtsboven) opent de app. Afvinken en tellen doe je in de app. Rechtsboven staat de voortgang ("2/5").
 
 - **Geen kop "Vandaag":** de bovenste regel is het eerste dagdeel (bijvoorbeeld "Ochtend"). Een dagdeel waarvan alles gedaan is, verdwijnt uit de lijst. Zijn alle dagdelen gedaan, dan staat er "Alles gedaan voor vandaag".
-- **Wat je net hebt aangetikt blijft staan:** een dagdeel verdwijnt niet op het moment dat je het laatste vinkje zet, maar pas als de app het heeft verwerkt. Zo zie je het vinkje en kun je het terugdraaien.
-- **Niet gesynct:** een rij die je in de widget hebt aangetikt en die de app nog niet heeft verwerkt, krijgt een klein icoon (twee pijlen in een cirkel). Hetzelfde icoon staat rechtsboven zolang er in de widget iets wacht, of als de app zelf nog wijzigingen heeft die niet bij de server zijn (met een account).
+- **Volgorde:** Ochtend, Middag, Overdag, Avond. "Overdag" (geen vast moment) staat dus vóór de avond, anders dan op Vandaag in de app.
+- **Niet gesynct:** het icoon (twee pijlen in een cirkel) staat rechtsboven zolang de app wijzigingen heeft die niet bij de server zijn (met een account).
 - **Stijl van je thema:** de widget gebruikt de kleuren van het thema dat je in de app hebt gekozen (achtergrond, tekst, gedempte tekst, accent). De app leest ze uit de actieve themakleuren en geeft ze mee; verandert je thema, dan volgt de widget binnen een paar seconden.
 
-Besluiten van Remco: de dagdelen staan als scheidingsstreepjes met een naam in de lijst; teller-habits werken (− en +); een vinkje uit de widget bereikt de server en je andere toestellen pas als de app opent.
+Besluiten van Remco: de dagdelen staan als scheidingsstreepjes met een naam in de lijst. Na een proefperiode (oktober 2026) is de widget alleen weergave geworden (eerst kon je afvinken en met − en + tellen), met "Overdag" vóór de avond.
+
+**Wachtrij uit de tijd dat de widget nog kon afvinken:** de widget schrijft er zelf niets meer in. De app verwerkt de wachtrij nog bij het openen (eventuele tikken van vóór de update gaan zo niet verloren). Het veld `pending` in de momentopname en de wachtrij hieronder zijn dus overblijfsels; ze kunnen later weg als dat rustiger is.
 
 ## Hoe het werkt
 
