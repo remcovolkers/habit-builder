@@ -1,4 +1,5 @@
 // Het model voor de habit-detailpagina en het Voortgang-overzicht. Puur: data in, getoonde cijfers uit.
+import { isOwnPause } from '../domain/skipdays.js';
 import { DEFAULT_GRADUATION_DAYS, PHASE_STARTING_UNTIL_DAY } from '../domain/constants.js';
 import { startOfWeek } from '../domain/dates.js';
 import { buildHeatmap } from '../domain/heatmap.js';
@@ -24,7 +25,8 @@ export function streakSpan(habit, units, today) {
 /** Hoe vaak is er gedaan (of de minimale versie) tussen twee dagen, grenzen meegerekend? */
 export const doneBetween = (checkIns, from, to) => checkIns.filter((c) => (c.status === 'done' || c.status === 'minimal') && c.date >= from && c.date <= to).length;
 
-const isPausedOn = (pauses, today) => pauses.some((p) => today >= p.from && (p.to == null || today <= p.to));
+// alleen een pauze die de gebruiker zelf zette: een overgeslagen dag (domain/skipdays.js) maakt van de habit geen "gepauzeerde" habit met een knop "Hervat"
+const isPausedOn = (pauses, today) => pauses.filter(isOwnPause).some((p) => today >= p.from && (p.to == null || today <= p.to));
 
 /**
  * Stats voor één habit, inclusief het optionele automatisme-criterium: dat telt mee voor "ingeburgerd"

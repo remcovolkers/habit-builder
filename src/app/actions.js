@@ -1,6 +1,7 @@
 // Handelingen van de gebruiker: domeinregels toepassen en daarna opslaan via de repository.
 // Elke handeling die je ongedaan wilt kunnen maken geeft { undo } terug.
-import { addDays, diffDays, isValidDate, startOfMonth, startOfWeek } from '../domain/dates.js';
+import { addDays, diffDays, eachDay, isValidDate, startOfMonth, startOfWeek } from '../domain/dates.js';
+import { SKIP_MAX_DAYS, inSkipWindow, validateSkipDay } from '../domain/skipdays.js';
 import { withPlanSkip } from '../domain/planning.js';
 import { inAppointmentWindow } from '../domain/appointments.js';
 import { monthReviewState, weekReviewState } from '../domain/reviews.js';
@@ -348,6 +349,39 @@ export async function setPlanSkip(repo, { habitId, skipped }, today) {
   const habit = await repo.getHabit(habitId);
   if (!habit) return null;
   return repo.saveHabit(withPlanSkip(habit, startOfWeek(today), skipped));
+}
+
+// --- een dag overslaan -------------------------------------------------------------------------
+// Voor al je habits tegelijk, met een verplichte reden (docs/DAG-OVERSLAAN.md). Anders dan pauzeren is het voor losse dagen, ook terug in de tijd.
+
+const skipDayOf = async (repo, date) => (await repo.listSkipDays()).find((d) => d.date === date) ?? null;
+
+async function restoreSkipDay(repo, date, previous) {
+  if (previous) await repo.setSkipDay({ date, reason: previous.reason, note: previous.note ?? null });
+  else await repo.clearSkipDay(date);
+}
+
+/**
+ * Slaat de dagen `from` t/m `to` over (standaard één dag) met `reason` (verplicht; bij 'other' ook `note`). Een dag die al was overgeslagen krijgt de
+ * nieuwe reden. Wat je op zo'n dag al had afgevinkt blijft gedaan. Geeft { undo, days } terug.
+ */
+export async function skipDays(repo, { from, to = from, reason, note = null }, today) {
+  if (validateSkipDay({ date: from, reason, note }).length > 0 || !isValidDate(to) || to < from) throw new RuleError('skip_invalid');
+  if (diffDays(to, from) + 1 > SKIP_MAX_DAYS) throw new RuleError('skip_range');
+  const dates = eachDay(from, to);
+  if (!dates.every((date) => inSkipWindow(date, today))) throw new RuleError('skip_window');
+  const previous = new Map();
+  for (const date of dates) previous.set(date, await skipDayOf(repo, date));
+  for (const date of dates) await repo.setSkipDay({ date, reason, note });
+  return { days: dates.length, undo: async () => { for (const date of dates) await restoreSkipDay(repo, date, previous.get(date)); } };
+}
+
+/** Een overgeslagen dag weer laten meetellen. */
+export async function unskipDay(repo, { date }) {
+  const previous = await skipDayOf(repo, date);
+  if (!previous) return { undo: async () => {} };
+  await repo.clearSkipDay(date);
+  return { undo: () => restoreSkipDay(repo, date, previous) };
 }
 
 // --- pauzeren, archiveren -----------------------------------------------------------------------

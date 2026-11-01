@@ -8,6 +8,7 @@ import { paceOn } from '../domain/pace.js';
 import { isTight } from '../domain/tight.js';
 import { isOnTrial } from '../domain/trial.js';
 import { canBackfill } from '../domain/rules.js';
+import { inSkipWindow } from '../domain/skipdays.js';
 import { buildToday } from '../domain/today.js';
 
 /** Een kaart die overgeslagen of opgegeven is telt niet mee in "x van y" (en niet in de ring). */
@@ -129,6 +130,9 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
     mode: date < today ? 'past' : date === today ? 'today' : 'future',
     canLog: date <= today && canBackfill(date, today),
     canPlan: date >= today,
+    // een dag overslaan voor alle habits (domain/skipdays.js): `skipDay` is de reden als deze dag is overgeslagen, `canSkip` of dat (nog) mag
+    skipDay: (snapshot.skipDays ?? []).find((d) => d.date === date) ?? null,
+    canSkip: inSkipWindow(date, today),
     groups,
     pool,
     poolSkipped: hidden.length, // hoeveel taken er door "Niet in deze week" uit de stapel zijn gehaald
