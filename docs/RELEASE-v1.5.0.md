@@ -8,8 +8,7 @@ Ontwerp: [AGENDA.md](AGENDA.md) en [DAG-OVERSLAAN.md](DAG-OVERSLAAN.md).
 
 | Onderdeel | Toelichting |
 |---|---|
-| **Agenda op Vandaag** | Afspraken uit je agenda staan op de dag zelf in het dagdeel van hun begintijd, zonder mee te tellen. Twee manieren, los van elkaar: het geheime iCal-adres van Google Agenda (met een account), en de agenda van je telefoon (alleen de Android-app, zonder account) |
-| Afvinken en de naam van de agenda | Een afspraak uit je agenda kun je afvinken (blijft op het toestel, telt nergens mee), en achter het woord Agenda staat de naam van de agenda waar hij uit komt, zodat je in een gedeelde agenda ziet van wie een afspraak is |
+| **Agenda op Vandaag** | Afspraken uit je agenda staan op de dag zelf in het dagdeel van hun begintijd, alleen om te lezen en zonder mee te tellen. Twee manieren, los van elkaar: het geheime iCal-adres van Google Agenda (met een account), en de agenda van je telefoon (alleen de Android-app, zonder account) |
 | **Een dag overslaan** | Alle habits van een dag (of een paar dagen) in één keer overslaan met een reden, zonder dat het als gemist telt |
 | Knoppen breken lange woorden af | Instellingen liep op 320 px met 200% tekst 4 px zijwaarts door "Privacyverklaring" |
 
@@ -32,7 +31,7 @@ De volgorde telt, zie [WERKWIJZE.md](WERKWIJZE.md). Alles breidt alleen uit; oud
 ## 3. Na de release (jij, op je telefoon)
 
 1. **Updatemelding:** open de app met versie 1.4.1. Binnen een dag, of via Instellingen met ontwikkelaarsopties → "Controleer op een nieuwe app-versie", moet "Nieuwe versie (1.5.0) staat klaar" verschijnen. Installeer de APK over de oude heen.
-2. **Agenda van de telefoon:** Instellingen → **Agenda** → **Agenda van deze telefoon gebruiken**. Android vraagt toestemming. Daarna staan de afspraken van vandaag op Vandaag, met de naam van de agenda erachter (ook die van een gedeelde agenda). Vink er een af. Het hele draaiboek staat in HOW-TO-TEST §T (stap 11 tot 14).
+2. **Agenda van de telefoon:** Instellingen → **Agenda** → **Agenda van deze telefoon gebruiken**. Android vraagt toestemming. Daarna staan de afspraken van vandaag op Vandaag. Het hele draaiboek staat in HOW-TO-TEST §T (stap 11 tot 14).
 3. **Google Agenda:** log in, plak het geheime iCal-adres (zie §T stap 2) en controleer dat de afspraken er staan. Staat dezelfde agenda ook op je telefoon, dan komt elke afspraak één keer voor.
 4. **Een dag overslaan:** onder de dagdelen op Vandaag staat de knop; zie DAG-OVERSLAAN.md.
 
