@@ -194,14 +194,15 @@
   overflow-wrap: anywhere;
 }
 
-/* afspraken uit je agenda (docs/AGENDA.md): alleen om te lezen, dus geen vinkje en geen ⋯, en een grijze rand in plaats van de accentrand van een losse afspraak */
+/* afspraken uit je agenda (docs/AGENDA.md): een vinkje maar geen ⋯, en een grijze rand in plaats van de accentrand van een losse afspraak */
 .agenda-card {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   border-left: 4px solid var(--color-hairline-strong);
 }
 
-.agenda-card__title {
-  overflow-wrap: anywhere;
+.agenda-card__title,
+.agenda-card__meta {
+  overflow-wrap: anywhere; /* de naam van een agenda kan een e-mailadres zijn */
 }
 
 /* de ingang onder de dagdelen: een rustige knop, geen kaart */

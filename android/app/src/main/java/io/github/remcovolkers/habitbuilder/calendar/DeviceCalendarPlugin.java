@@ -39,10 +39,11 @@ public class DeviceCalendarPlugin extends Plugin {
         CalendarContract.Calendars.VISIBLE,
         CalendarContract.Events.STATUS,
         CalendarContract.Events.SELF_ATTENDEE_STATUS,
+        CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
     };
 
     /**
-     * De afspraken die tussen `begin` en `end` (milliseconden sinds 1970) vallen, als { events: [{ id, title, begin, end, allDay }] }.
+     * De afspraken die tussen `begin` en `end` (milliseconden sinds 1970) vallen, als { events: [{ id, title, begin, end, allDay, calendar }] }.
      * Wat je zelf hebt afgewezen, wat is geannuleerd en wat in een verborgen agenda staat, komt er niet in.
      * Een hele dag staat in Android als middernacht UTC tot middernacht UTC; de app rekent dat om.
      */
@@ -76,6 +77,7 @@ public class DeviceCalendarPlugin extends Plugin {
                     event.put("begin", cursor.getLong(2));
                     event.put("end", cursor.getLong(3));
                     event.put("allDay", cursor.getInt(4) == 1);
+                    event.put("calendar", cursor.isNull(8) ? "" : cursor.getString(8)); // de naam van de agenda, bijvoorbeeld van een gedeelde agenda
                     events.put(event);
                 }
             }
