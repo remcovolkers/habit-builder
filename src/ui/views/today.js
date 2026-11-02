@@ -266,6 +266,13 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
       : perform(() => addAppointment(repo, values, today), t.toasts.added(values.title))),
     onRemove: (item) => perform(() => removeAppointment(repo, { id: item.id }), t.toasts.removed),
   });
+  // Een afspraak uit je agenda afvinken blijft op dit toestel: geen synchronisatie en geen widget, dus niet via perform (dat meldt een wijziging in je gegevens)
+  const toggleAgenda = (item) => {
+    const done = !item.done;
+    const { undo } = agenda.setDone(item, done);
+    const title = item.title || nl.today.agenda.untitled;
+    showToast({ message: done ? nl.today.agenda.toasts.done(title) : nl.today.agenda.toasts.reopened(title), actionLabel: nl.app.undo, onAction: undo });
+  };
   const toggleAppointment = (item) => perform(
     () => setAppointmentDone(repo, { id: item.id, date, done: !item.done }, today),
     item.done ? t.toasts.reopened(item.title) : t.toasts.done(item.title),
@@ -313,7 +320,7 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
       h('ul', { class: 'card-list' },
         ...group.entries.map((entry) => habitCard(entry, cardOptions)),
         ...group.appointments.map((item) => appointmentCard(item, appointmentOptions)),
-        ...group.agenda.map((item) => agendaCard(item))));
+        ...group.agenda.map((item) => agendaCard(item, { canLog: view.canLog, onToggle: toggleAgenda }))));
   });
   // De ingang staat op elke dag van vandaag af (niet op dagen die voorbij zijn) en niet bij de introductie voor wie nog niets heeft.
   const appointmentAdd = view.canPlan && (view.hasHabits || view.hasAppointments)

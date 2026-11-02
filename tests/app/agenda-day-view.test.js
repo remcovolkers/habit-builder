@@ -44,6 +44,15 @@ test('de agenda telt nergens mee: niet in de teller, het feest of de rest van he
   assert.equal(withAgenda.hasAppointments, plain.hasAppointments, 'een afspraak uit je agenda is geen afspraak van de app: de knop "Afspraak toevoegen" verandert niet');
 });
 
+test('een afgevinkte afspraak uit je agenda verandert niets aan de teller of het feest', async () => {
+  const snapshot = await snapshotWithHabit();
+  const agenda = agendaOn({ items: [item()], date: TODAY }).map((a) => ({ ...a, done: true }));
+  const plain = buildDayView({ snapshot, date: TODAY, today: TODAY });
+  const view = buildDayView({ snapshot, date: TODAY, today: TODAY, agenda });
+  assert.deepEqual(view.progress, plain.progress);
+  assert.equal(view.groups.find((g) => g.daypart === 'afternoon').agenda[0].done, true);
+});
+
 test('de agenda zit niet in je gegevens: niet in de snapshot en niet in de back-up', async () => {
   const snapshot = await snapshotWithHabit();
   assert.equal('agenda' in snapshot, false);

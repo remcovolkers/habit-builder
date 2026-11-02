@@ -50,8 +50,8 @@ test('agenda: elke Capacitor-klasse die de plugin gebruikt bestaat in de bibliot
   assert.deepEqual(missing, []);
 });
 
-test('agenda: de plugin geeft terug wat de app verwacht (id, title, begin, end, allDay in een lijst "events")', () => {
-  for (const field of ['id', 'title', 'begin', 'end', 'allDay']) assert.ok(plugin.includes(`event.put("${field}"`), field);
+test('agenda: de plugin geeft terug wat de app verwacht (id, title, begin, end, allDay, calendar in een lijst "events")', () => {
+  for (const field of ['id', 'title', 'begin', 'end', 'allDay', 'calendar']) assert.ok(plugin.includes(`event.put("${field}"`), field);
   assert.ok(plugin.includes('result.put("events", events)'));
   assert.ok(read(join(ROOT, 'src/data/device-calendar.js')).includes('const { events } = await native.getEvents('));
 });

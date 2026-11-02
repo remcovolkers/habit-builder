@@ -178,7 +178,7 @@ test('ontkoppelen en alles wissen (uitloggen) halen het adres en de afspraken we
 });
 
 const DEVICE_EVENTS = [
-  { id: 7, title: 'Tandarts', begin: Date.UTC(2026, 10, 4, 13, 30), end: Date.UTC(2026, 10, 4, 14, 30), allDay: false },
+  { id: 7, title: 'Tandarts', begin: Date.UTC(2026, 10, 4, 13, 30), end: Date.UTC(2026, 10, 4, 14, 30), allDay: false, calendar: 'Mel' },
   { id: 8, title: 'Verjaardag Anna', begin: Date.UTC(2026, 10, 5), end: Date.UTC(2026, 10, 6), allDay: true },
 ];
 
@@ -244,4 +244,81 @@ test('telefoon uitzetten laat de feed staan, en andersom', async () => {
   assert.ok(agenda.itemsFor('2026-11-04').every((i) => !i.id.startsWith('device|')));
   agenda.disconnectFeed();
   assert.deepEqual(agenda.itemsFor('2026-11-04'), []);
+});
+
+test('afvinken: een afspraak uit je agenda vink je af en weer open, met ongedaan maken, en het blijft op het toestel staan', async () => {
+  const { agenda, store, notified } = setup();
+  await agenda.connectFeed(GOOGLE);
+  const tandarts = () => agenda.itemsFor('2026-11-04').find((i) => i.title === 'Tandarts');
+  assert.equal(tandarts().done, false);
+  const before = notified.length;
+  const { undo } = agenda.setDone(tandarts(), true);
+  assert.equal(tandarts().done, true);
+  assert.equal(agenda.itemsFor('2026-11-04').find((i) => i.title === 'Lunch').done, false, 'alleen deze afspraak');
+  assert.ok(notified.length > before, 'Vandaag tekent opnieuw');
+  assert.deepEqual(Object.values(JSON.parse(store.get('hb-agenda-done'))), ['2026-11-04']);
+  assert.ok(!store.get('hb-agenda-done').toLowerCase().includes('tandarts'), 'de opslag bevat geen naam van een afspraak');
+  undo();
+  assert.equal(tandarts().done, false);
+  assert.equal(store.has('hb-agenda-done'), false);
+  agenda.setDone(tandarts(), true);
+  agenda.setDone(tandarts(), false);
+  assert.equal(tandarts().done, false);
+});
+
+test('afvinken: het blijft staan na een herstart en na een verversing, ook als de afspraak daarna van de andere bron komt', async () => {
+  const first = setup();
+  await first.agenda.connectFeed(GOOGLE);
+  first.agenda.setDone(first.agenda.itemsFor('2026-11-04').find((i) => i.title === 'Tandarts'), true);
+
+  const second = setup({ stored: Object.fromEntries(first.store) });
+  second.agenda.load();
+  assert.equal(second.agenda.itemsFor('2026-11-04').find((i) => i.title === 'Tandarts').done, true);
+
+  // dezelfde afspraak, nu van de telefoon in plaats van uit de feed: nog steeds af
+  const third = setup({ stored: { 'hb-agenda-done': first.store.get('hb-agenda-done') }, device: { access: 'granted', events: DEVICE_EVENTS } });
+  third.agenda.load();
+  await third.agenda.enableDevice();
+  const fromPhone = third.agenda.itemsFor('2026-11-04').find((i) => i.title === 'Tandarts');
+  assert.ok(fromPhone.id.startsWith('device|'));
+  assert.equal(fromPhone.done, true);
+
+  await first.agenda.refresh({ force: true });
+  assert.equal(first.agenda.itemsFor('2026-11-04').find((i) => i.title === 'Tandarts').done, true);
+});
+
+test('afvinken: ontkoppelen laat geen afspraken achter, en alles wissen (uitloggen) ook het afgevinkte niet', async () => {
+  const { agenda, store } = setup();
+  await agenda.connectFeed(GOOGLE);
+  agenda.setDone(agenda.itemsFor('2026-11-04')[0], true);
+  agenda.disconnectFeed();
+  assert.deepEqual(agenda.itemsFor('2026-11-04'), []);
+  assert.ok(store.has('hb-agenda-done'), 'het blijft staan als je later opnieuw koppelt; het zijn alleen onleesbare nummers');
+  agenda.clear();
+  assert.equal(store.size, 0);
+  assert.deepEqual(agenda.model.done, {});
+});
+
+test('afvinken: oude afgevinkte afspraken worden opgeruimd en kapotte opslag geeft niets af', () => {
+  const { agenda } = setup({ stored: { 'hb-agenda-done': JSON.stringify({ oud: '2026-09-01', nieuw: '2026-11-03', raar: 5 }) } });
+  agenda.load();
+  assert.deepEqual(agenda.model.done, { nieuw: '2026-11-03' });
+  const broken = setup({ stored: { 'hb-agenda-done': '[1,2' } });
+  broken.agenda.load();
+  assert.deepEqual(broken.agenda.model.done, {});
+  const list = setup({ stored: { 'hb-agenda-done': '[1,2]' } });
+  list.agenda.load();
+  assert.deepEqual(list.agenda.model.done, {});
+});
+
+test('de naam van de agenda komt mee: uit de feed en van de telefoon (die wint bij dezelfde afspraak)', async () => {
+  const named = ics(TANDARTS, LUNCH).replace('VERSION:2.0', 'VERSION:2.0\r\nX-WR-CALNAME:Remco en Mel');
+  const feedOnly = setup({ texts: [named] });
+  await feedOnly.agenda.connectFeed(GOOGLE);
+  assert.deepEqual(feedOnly.agenda.itemsFor('2026-11-04').map((i) => i.calendar), ['Remco en Mel', 'Remco en Mel']);
+  const both = setup({ texts: [named], device: { access: 'granted', events: DEVICE_EVENTS } });
+  await both.agenda.enableDevice();
+  await both.agenda.connectFeed(GOOGLE);
+  const byTitle = Object.fromEntries(both.agenda.itemsFor('2026-11-04').map((i) => [i.title, i.calendar]));
+  assert.deepEqual(byTitle, { Lunch: 'Remco en Mel', Tandarts: 'Mel' });
 });

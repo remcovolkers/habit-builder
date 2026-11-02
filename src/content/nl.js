@@ -150,11 +150,15 @@ export const nl = {
         reopened: (title) => `Weer open: ${title}`,
       },
     },
-    // afspraken uit je agenda (docs/AGENDA.md): alleen om te lezen, onder de habits van hun dagdeel
+    // afspraken uit je agenda (docs/AGENDA.md): onder de habits van hun dagdeel, af te vinken maar zonder mee te tellen
     agenda: {
       badge: 'Agenda',
       allDay: 'Hele dag',
       untitled: 'Zonder titel',
+      check: (title) => `Afvinken: ${title}`,
+      uncheck: (title) => `Afvinken ongedaan maken: ${title}`,
+      states: { done: 'Gedaan' },
+      toasts: { done: (title) => `Afgevinkt: ${title}`, reopened: (title) => `Weer open: ${title}` },
     },
     // de melding dat een review open staat (week: vrijdag tot maandag 12:00; maand: de 25e tot de 2e om 12:00)
     reviewNote: {
@@ -1068,7 +1072,7 @@ export const nl = {
   // afspraken uit je agenda op Vandaag (docs/AGENDA.md)
   agenda: {
     title: 'Agenda',
-    hint: 'Laat afspraken uit je agenda op Vandaag verschijnen, op de dag zelf. Je ziet ze alleen; ze tellen nergens mee.',
+    hint: 'Laat afspraken uit je agenda op Vandaag verschijnen, op de dag zelf, met de naam van de agenda erbij. Je kunt ze afvinken; ze tellen nergens mee. Wijzigen doe je in je agenda zelf.',
     feed: {
       title: 'Google Agenda',
       label: 'Geheim adres in iCal-indeling',

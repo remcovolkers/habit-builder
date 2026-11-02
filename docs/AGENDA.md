@@ -10,11 +10,11 @@ Wat er vandaag op je lijst staat is meer dan je habits: de tandarts om half drie
 
 | Wel | Niet |
 |---|---|
-| Afspraken uit je agenda, **alleen om te lezen**, op de dag zelf in het dagdeel van hun begintijd (een hele dag bij "Overdag") | Een agenda-app. Je kunt er niets aanmaken, wijzigen of afvinken; dat doe je in je agenda zelf |
+| Afspraken uit je agenda op de dag zelf, in het dagdeel van hun begintijd (een hele dag bij "Overdag"), met de naam van de agenda waar ze uit komen. Je kunt ze **afvinken** (bijvoorbeeld om te onthouden dat je Mel nog moest vragen hoe het ging) | Een agenda-app. Je kunt er niets aanmaken, wijzigen of verwijderen; dat doe je in je agenda zelf |
 | Twee manieren om te koppelen, los van elkaar te gebruiken: het geheime iCal-adres van je Google Agenda, en de agenda van je telefoon (Android-app) | Inloggen met Google om je agenda te lezen (zie A2) |
-| Een kaart in de stijl van de andere, met de tijd vooraan en het woord **Agenda**, zonder vinkje en zonder ⋯ | Iets dat meetelt: niet in de ring, de felicitatie, de punten, de prestaties, de aandacht, de weekstrook, de ranglijst of de ochtendmelding |
+| Een kaart in de stijl van de andere, met de tijd vooraan, het woord **Agenda** en de naam van de agenda ("14:30–15:30 · Agenda · Mel"), met een vinkje maar zonder ⋯ | Iets dat meetelt: niet in de ring, de felicitatie, de punten, de prestaties, de aandacht, de weekstrook, de ranglijst of de ochtendmelding |
 
-**De grens:** een afspraak die je in de app maakt (zie LOSSE-AFSPRAKEN) is van jou en heeft een vinkje. Een afspraak uit je agenda is van je agenda en staat er alleen ter informatie.
+**De grens:** een afspraak die je in de app maakt (zie LOSSE-AFSPRAKEN) is van jou: je kunt hem wijzigen, verwijderen en afvinken, en hij gaat mee in de sync. Een afspraak uit je agenda is van je agenda: je kunt hem alleen afvinken, en dat blijft op dit toestel.
 
 ## Hoe het werkt
 
@@ -31,12 +31,16 @@ telefoon-agenda ──(READ_CALENDAR)──▶ plugin DeviceCalendar (Android) �
 | [calendar-feed/index.ts](../supabase/functions/calendar-feed/index.ts) | Edge Function die het adres bij Google ophaalt (zie "De functie") |
 | [ui/agenda.js](../src/ui/agenda.js) | Koppelen, bewaren op dit toestel, verversen en wissen. Elke bron is los te gebruiken |
 | [agenda-connect.js](../src/ui/components/agenda-connect.js) | De kaart **Agenda** in Instellingen |
-| [agenda-card.js](../src/ui/components/agenda-card.js) | De kaart op Vandaag |
-| [DeviceCalendarPlugin.java](../android/app/src/main/java/io/github/remcovolkers/habitbuilder/calendar/DeviceCalendarPlugin.java) | Leest de agenda van de telefoon (`CalendarContract.Instances`): Android rekent herhalingen zelf uit. Slaat afgewezen, geannuleerde en verborgen afspraken over |
+| [agenda-card.js](../src/ui/components/agenda-card.js) | De kaart op Vandaag, met het vinkje en de naam van de agenda |
+| [DeviceCalendarPlugin.java](../android/app/src/main/java/io/github/remcovolkers/habitbuilder/calendar/DeviceCalendarPlugin.java) | Leest de agenda van de telefoon (`CalendarContract.Instances`): Android rekent herhalingen zelf uit. Geeft per afspraak ook de naam van de agenda mee (`CALENDAR_DISPLAY_NAME`). Slaat afgewezen, geannuleerde en verborgen afspraken over |
 
 **Verversen.** De app haalt de agenda op bij het openen, als je terugkomt in de app en elke vijf minuten zolang hij openstaat, maar alleen als wat hij heeft ouder is dan een half uur. **Nu verversen** in Instellingen haalt hem meteen op. Google ververst zijn eigen feed een paar keer per dag, dus een afspraak die je net maakte kan er een tijd over doen om hier te verschijnen. De agenda van de telefoon is steeds actueel. Zonder internet blijft de laatst opgehaalde agenda staan.
 
 **Twee bronnen.** Staat je Google Agenda ook op je telefoon en koppel je beide, dan telt dezelfde afspraak (dezelfde dag, begintijd en naam) één keer; de versie van de telefoon wint.
+
+**De naam van de agenda.** Van de telefoon is dat de naam die de agenda-app daar toont: een gedeelde agenda die als eigen agenda op je telefoon staat, heeft zijn eigen naam en dus zie je meteen van wie een afspraak is. Uit de feed komt de naam van die ene agenda (`X-WR-CALNAME`, bij een gedeelde agenda de naam die jullie hem gaven); de feed zegt niet wie een afspraak in die agenda maakte. Wil je per persoon onderscheid, zet dan elke persoon in een eigen agenda en gebruik de telefoon.
+
+**Afvinken.** Tik het rondje. Het geldt op de dag zelf en tot 14 dagen terug, zoals bij habits (op een dag in de toekomst staat het uit). Een melding met **Ongedaan maken**. Het telt nergens mee en blijft op dit toestel: het gaat niet mee in de sync, dus op een tweede toestel staat de afspraak weer open. Wat je afvinkt, herkent de app aan de dag, de begintijd en de naam van de afspraak, dus dezelfde afspraak blijft afgevinkt als hij de volgende keer uit de andere bron komt. Verplaats of hernoem je hem in je agenda, dan is het een nieuwe afspraak en staat hij weer open.
 
 ## De functie `calendar-feed`
 
@@ -56,13 +60,13 @@ De lijst met toegestane hosts staat op twee plekken (de functie en [agenda.js](.
 
 ## Gegevens
 
-Alles staat **alleen op dit toestel** (localStorage): `hb-agenda` (het adres en of de agenda van de telefoon aanstaat) en `hb-agenda-cache` (de afspraken van 14 dagen terug tot 14 dagen vooruit, met titel, dag en tijd). Er is geen collectie, geen servermigratie en geen sync. Ze zitten **niet** in de snapshot, de back-up of wat vrienden zien; een test bewaakt dat. Uitloggen en het verwijderen van je account wissen alles; **Ontkoppelen** wist het adres en de afspraken.
+Alles staat **alleen op dit toestel** (localStorage): `hb-agenda` (het adres en of de agenda van de telefoon aanstaat), `hb-agenda-cache` (de afspraken van 14 dagen terug tot 14 dagen vooruit, met titel, dag, tijd en de naam van de agenda) en `hb-agenda-done` (wat je hebt afgevinkt, als onleesbare nummers met de dag erbij, zonder namen; wat ouder is dan 14 dagen wordt opgeruimd). Er is geen collectie, geen servermigratie en geen sync. Ze zitten **niet** in de snapshot, de back-up of wat vrienden zien; een test bewaakt dat. Uitloggen en het verwijderen van je account wissen alles, ook het afgevinkte; **Ontkoppelen** wist het adres en de afspraken (het afgevinkte blijft, want het zijn alleen nummers, en geldt weer als je opnieuw koppelt).
 
 ## Besluiten
 
 | # | Besluit | Reden |
 |---|---|---|
-| A1 | Alleen lezen | Een agenda-app bouwen is een ander product. Wijzigen kan altijd in je agenda zelf |
+| A1 | Niets wijzigen in je agenda; wel afvinken (zie A12) | Een agenda-app bouwen is een ander product. Wijzigen kan altijd in je agenda zelf. Afvinken veranderde je agenda niet en was een wens ("hoe ging die afspraak?") |
 | A2 | Het geheime iCal-adres, geen Google-API met inloggen | De Google Calendar API met `calendar.readonly` is een "gevoelige" scope: Google moet de app goedkeuren (en in testmodus verlopen de tokens na 7 dagen). Dat is veel gedoe voor een persoonlijk project. Het iCal-adres heeft niets nodig, werkt ook voor andere agenda's en laat je je agenda per toestel loskoppelen door het adres opnieuw in te stellen. Nadeel: Google ververst de feed een paar keer per dag |
 | A3 | Het adres en de afspraken blijven op het toestel, geen sync | Het adres is een geheim en de agenda is persoonlijker dan een habit. Wat niet op de server staat, kan er niet lekken. Nadeel: je plakt het adres op elk apparaat apart |
 | A4 | De feed werkt alleen met een account | De functie moet een inlogsessie kunnen controleren, anders is het een open doorgeefluik. De agenda van de telefoon werkt wel zonder account |
@@ -73,9 +77,14 @@ Alles staat **alleen op dit toestel** (localStorage): `hb-agenda` (het adres en 
 | A9 | Een eigen plugin voor de telefoon | Alleen lezen, geen afhankelijkheid van een plugin die Capacitor 8 mogelijk niet bijhoudt, en een plugin die precies het ene doet. Het manifest vraagt alleen `READ_CALENDAR` |
 | A10 | Geen melding en niets in de ochtendherinnering | De melding loopt via Google (FCM) en bevat bewust geen namen (PRIVACY.md). Afspraken horen daar niet in |
 | A11 | Een hele-dag-afspraak over meer dagen staat op elke dag; een afspraak over middernacht heeft de begintijd op de eerste dag | Zo staat hij er elke dag die hij duurt, zonder een eindtijd te raden |
+| A12 | Afvinken blijft op het toestel, onder een onleesbaar nummer, zonder sync | Synchroniseren vraagt een servermigratie en zou namen van afspraken (of hun nummers) op de server zetten, tegen A3 in. Nadeel: een tweede toestel weet het niet. Een nummer in plaats van de naam, zodat de opslag niets verraadt en niet hoeft te verdwijnen bij ontkoppelen |
+| A13 | Een afgevinkte afspraak telt nergens mee, net als een losse afspraak (L3) | "Alles gedaan" blijft over habits gaan |
+| A14 | De naam van de agenda staat achter het woord Agenda, niet ervoor of ernaast | Zo blijft de regel kort en blijft "Agenda" het kenmerk van dit soort kaart. Een lange naam (een e-mailadres) breekt af |
 
 ## Nog open
 
+- **Afvinken op meer toestellen.** Nu per toestel (A12). Synchroniseren kan met een nieuwe collectie en een migratie, als de nummers (geen namen) naar de server mogen.
+- **Wie een afspraak maakte** in een gedeelde agenda. De feed noemt dat niet; de telefoon ook niet, behalve via de naam van de agenda.
 - **Afgewezen afspraken in de feed.** De telefoon slaat ze over; of de iCal-feed van Google ze ook geeft en hoe hij ze markeert, is niet gecontroleerd. In de feed staat het adres van je account in het pad, dus filteren op `ATTENDEE;PARTSTAT=DECLINED` voor dat adres is mogelijk.
 - **Kiezen welke agenda's van de telefoon.** Nu alle zichtbare agenda's (wat je in de agenda-app van de telefoon hebt aangevinkt).
 - **Een stipje op de weekstrook** voor dagen met een afspraak uit je agenda.
@@ -108,6 +117,6 @@ Zonder dat zegt Instellingen "De agenda-koppeling is nog niet klaargezet op de s
 - `tests/domain/ical.test.js`: lezen, tijdzones, herhalingen, uitzonderingen en gewijzigde of geannuleerde keren, en dat een agenda van tien jaar oud snel blijft.
 - `tests/domain/agenda.test.js`: het adres, het dagdeel, samenvoegen, verouderen en de omzetting van de telefoon.
 - `tests/calendar/calendar-feed.test.js`: de functie: wie mag, welke adressen, wat er mis kan gaan bij Google, grootte en tijd, en dat het adres nergens uitlekt.
-- `tests/ui/agenda.test.js`: koppelen, bewaren, verversen, de toestemming van de telefoon en twee bronnen samen.
+- `tests/ui/agenda.test.js`: koppelen, bewaren, verversen, de toestemming van de telefoon, twee bronnen samen, afvinken (ook na een herstart en uit de andere bron) en de naam van de agenda.
 - `tests/app/agenda-day-view.test.js`: de agenda staat in het goede dagdeel en telt nergens mee, en zit niet in de snapshot of de back-up.
-- `tests/android-calendar.test.js`: de plugin is aangemeld, het recht is alleen lezen, en de namen kloppen met wat de app aanroept. **De Java-code zelf wordt pas in CI gecompileerd**; probeer hem daarom op een toestel (HOW-TO-TEST §T).
+- `tests/android-calendar.test.js`: de plugin is aangemeld, het recht is alleen lezen, en de namen en velden (ook de naam van de agenda) kloppen met wat de app aanroept. **De Java-code zelf wordt pas in CI gecompileerd**; probeer hem daarom op een toestel (HOW-TO-TEST §T).

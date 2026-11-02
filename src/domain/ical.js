@@ -4,7 +4,8 @@
 // BYDAY met ordinalen, BYMONTHDAY, BYMONTH, BYSETPOS en WKST), EXDATE, RDATE, RECURRENCE-ID (een los gewijzigde keer) en STATUS:CANCELLED.
 // Er niet in: BYYEARDAY, BYWEEKNO en dergelijke (zo'n regel telt dan alleen de eerste keer), en of je een uitnodiging hebt afgewezen.
 //
-//   item = { id, title, date, start, end, allDay }
+//   item = { id, title, date, start, end, allDay, calendar }
+//   calendar  de naam van de agenda waar het uit komt, of null
 //   date  de dag in de tijdzone van de gebruiker; start en end 'HH:MM' (of null bij een hele dag); een afspraak over meer dagen krijgt een item per dag
 import { addDays, addMonths, dayOfMonth, daysInMonth, diffDays, isValidDate, weekday } from './dates.js';
 
@@ -15,6 +16,8 @@ const UNSUPPORTED_PARTS = ['BYYEARDAY', 'BYWEEKNO', 'BYHOUR', 'BYMINUTE', 'BYSEC
 /** Meer perioden dan dit gaan we niet af voor één afspraak (een dagelijkse afspraak van dertig jaar oud is 11.000 dagen). */
 const MAX_PERIODS = 20_000;
 export const TITLE_MAX = 120;
+/** De naam van een agenda is een label bij een afspraak, geen titel: langer dan dit knippen we af. */
+export const CALENDAR_MAX = 40;
 
 // ============================================================================================
 // Tijdzones: een muurtijd ('2026-11-02' + '14:00:00') in een zone naar een moment, en terug
@@ -161,6 +164,16 @@ function parseRule(value) {
     wkst: WEEKDAYS[parts.WKST] ?? 0,
     unsupported: UNSUPPORTED_PARTS.some((key) => key in parts),
   };
+}
+
+/** De naam van de agenda zelf (X-WR-CALNAME, bijvoorbeeld "Remco en Mel"), of null. Staat bovenaan, vóór de afspraken. */
+export function calendarName(text) {
+  for (const line of unfold(text)) {
+    if (/^BEGIN:VEVENT/i.test(line)) return null;
+    const prop = line === '' ? null : parseLine(line);
+    if (prop?.name === 'X-WR-CALNAME') return unescapeText(prop.value).slice(0, CALENDAR_MAX) || null;
+  }
+  return null;
 }
 
 /** Alle VEVENT's uit de tekst, als { uid, title, start, end, durationMs, rule, exdates, rdates, recurrenceId, cancelled }. Zonder geldige DTSTART valt een afspraak weg. */
@@ -316,7 +329,7 @@ function keyOf(dt, fallback) {
  * Items voor een afspraak die van moment `startMs` tot `endMs` duurt, voor de dagen from..to in de tijdzone van de gebruiker.
  * Eindigt hij precies om middernacht, dan hoort die laatste dag er niet meer bij. Op de eerste dag staat de begintijd; de dagen daarna zijn "hele dag".
  */
-export function timedItems({ id, title, startMs, endMs, from, to, zone }) {
+export function timedItems({ id, title, startMs, endMs, from, to, zone, calendar = null }) {
   const begin = wallOf(startMs, zone);
   const finish = endMs > startMs ? wallOf(endMs, zone) : null;
   const endsAtMidnight = finish !== null && finish.minutes === 0 && finish.seconds === 0;
@@ -333,22 +346,23 @@ export function timedItems({ id, title, startMs, endMs, from, to, zone }) {
       start: first ? clock(begin.minutes) : null,
       end: first && finish && !endsAtMidnight && date === lastDate ? clock(finish.minutes) : null, // tot middernacht: alleen de begintijd
       allDay: !first,
+      calendar,
     });
   }
   return items;
 }
 
 /** Items voor een hele-dag-afspraak die op `date` begint en `days` dagen duurt. */
-export function wholeDayItems({ id, title, date, days, from, to }) {
+export function wholeDayItems({ id, title, date, days, from, to, calendar = null }) {
   const items = [];
   for (let i = 0; i < days; i++) {
     const day = addDays(date, i);
-    if (day >= from && day <= to) items.push({ id: `${id}|${day}`, title, date: day, start: null, end: null, allDay: true });
+    if (day >= from && day <= to) items.push({ id: `${id}|${day}`, title, date: day, start: null, end: null, allDay: true, calendar });
   }
   return items;
 }
 
-function occurrenceItems(event, { from, to, zone, overridden }) {
+function occurrenceItems(event, { from, to, zone, overridden, calendar }) {
   const { start, rule } = event;
   const eventZone = zoneOf(start, zone);
   const wholeDay = start.time === null;
@@ -372,9 +386,9 @@ function occurrenceItems(event, { from, to, zone, overridden }) {
   const emit = (date, time) => {
     const key = wholeDay ? `d:${date}` : `t:${instantOf(date, time, eventZone)}`;
     if (excluded.has(key) || overridden.has(key)) return [];
-    if (wholeDay) return wholeDayItems({ id: `${id}|${key}`, title: event.title, date, days: spanDays, from, to });
+    if (wholeDay) return wholeDayItems({ id: `${id}|${key}`, title: event.title, date, days: spanDays, from, to, calendar });
     const startMs = instantOf(date, time, eventZone);
-    return timedItems({ id: `${id}|${key}`, title: event.title, startMs, endMs: startMs + durationMs, from, to, zone });
+    return timedItems({ id: `${id}|${key}`, title: event.title, startMs, endMs: startMs + durationMs, from, to, zone, calendar });
   };
 
   const time = start.time ?? '00:00:00';
@@ -404,6 +418,7 @@ function occurrenceItems(event, { from, to, zone, overridden }) {
  */
 export function expandIcal(text, { from, to, zone }) {
   const events = parseEvents(text);
+  const calendar = calendarName(text);
   const overrides = new Map(); // uid → de keren die door een los gewijzigde afspraak zijn vervangen
   for (const event of events) {
     if (!event.recurrenceId || !event.uid) continue;
@@ -418,7 +433,7 @@ export function expandIcal(text, { from, to, zone }) {
     if (!event.rule && event.rdates.length === 0 && (event.start.date > addDays(to, 2) || reach(event) < addDays(from, -2))) continue;
     if (event.rule?.until && event.rule.until.date < addDays(from, -2)) continue;
     const overridden = event.recurrenceId ? new Set() : (overrides.get(event.uid) ?? new Set());
-    items.push(...occurrenceItems(event, { from, to, zone, overridden }));
+    items.push(...occurrenceItems(event, { from, to, zone, overridden, calendar }));
   }
   return items.filter((item) => item.date >= from && item.date <= to).sort(byDayAndTime);
 }

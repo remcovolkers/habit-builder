@@ -6,7 +6,7 @@
 //
 // Alles staat alleen op dit toestel: het adres, de toestemming en de afspraken van de komende en vorige dagen. Niets gaat mee in de synchronisatie, de
 // back-up of naar vrienden. Bij uitloggen of het verwijderen van je account wordt het gewist.
-import { agendaOn, agendaStale, agendaWindow, deviceItems, deviceRange, mergeAgenda, normalizeFeedUrl } from '../domain/agenda.js';
+import { agendaOn, agendaStale, agendaWindow, deviceItems, deviceRange, doneId, mergeAgenda, normalizeFeedUrl, pruneDone } from '../domain/agenda.js';
 import { expandIcal } from '../domain/ical.js';
 import * as auth from '../data/auth.js';
 import { fetchFeedText } from '../data/calendar-remote.js';
@@ -16,6 +16,7 @@ import { notifyViewChanged, state } from './state.js';
 
 const SETTINGS_KEY = 'hb-agenda';
 const CACHE_KEY = 'hb-agenda-cache';
+const DONE_KEY = 'hb-agenda-done'; // wat je hebt afgevinkt, als { nummer: dag } (zie doneId)
 /** Meer dan dit bewaren we niet per bron: een agenda met honderden afspraken per dag is geen agenda meer. */
 const MAX_ITEMS = 1500;
 /** De telefoon lezen kost niets, maar ook niet elke seconde: bij elke terugkeer naar de app is genoeg. */
@@ -34,6 +35,7 @@ export function createAgenda(deps) {
     deviceAccess: 'prompt', // 'granted' | 'denied' | 'prompt' | 'unavailable'
     feed: emptySource(),
     local: emptySource(),
+    done: {}, // afgevinkte afspraken: { [doneId]: de dag van de afspraak }
     loading: false,
     feedError: null, // de reden (zie data/calendar-remote.js) van de laatste mislukte poging, of null
   };
@@ -62,6 +64,12 @@ export function createAgenda(deps) {
     if (model.feedUrl || model.device) write(SETTINGS_KEY, { feedUrl: model.feedUrl, device: model.device });
     else deps.storage.remove(SETTINGS_KEY);
     write(CACHE_KEY, { feed: model.feed, local: model.local });
+    saveDone();
+  };
+  const saveDone = () => {
+    model.done = pruneDone(model.done, deps.today());
+    if (Object.keys(model.done).length > 0) write(DONE_KEY, model.done);
+    else deps.storage.remove(DONE_KEY);
   };
 
   const validSource = (source) => (source && Array.isArray(source.items) && source.span && Number.isFinite(source.fetchedAt)
@@ -76,6 +84,8 @@ export function createAgenda(deps) {
     const cache = read(CACHE_KEY);
     model.feed = model.feedUrl ? validSource(cache?.feed) : emptySource();
     model.local = model.device ? validSource(cache?.local) : emptySource();
+    const done = read(DONE_KEY);
+    model.done = done && typeof done === 'object' && !Array.isArray(done) ? pruneDone(done, deps.today()) : {};
   }
 
   const range = () => agendaWindow(deps.today());
@@ -151,7 +161,24 @@ export function createAgenda(deps) {
     },
 
     /** De afspraken van één dag, met hun dagdeel, uit alle bronnen. */
-    itemsFor: (date) => agendaOn({ items: mergeAgenda(model.local.items, model.feed.items), date }),
+    itemsFor: (date) => agendaOn({ items: mergeAgenda(model.local.items, model.feed.items), date }).map((item) => ({ ...item, done: Object.hasOwn(model.done, doneId(item)) })),
+
+    /**
+     * Vinkt een afspraak af of zet hem weer open. Dat blijft op dit toestel (het gaat niet mee in de synchronisatie) en telt nergens mee.
+     * Geeft { undo }.
+     */
+    setDone(item, done) {
+      const id = doneId(item);
+      const before = Object.hasOwn(model.done, id) ? model.done[id] : null;
+      const apply = (value) => {
+        if (value === null) delete model.done[id];
+        else model.done[id] = value;
+        saveDone();
+        changed();
+      };
+      apply(done ? item.date : null);
+      return { undo: () => apply(before) };
+    },
 
     /**
      * Koppelt een agenda met het adres dat de gebruiker plakte. Het adres wordt pas bewaard als de agenda echt is opgehaald.
@@ -207,9 +234,10 @@ export function createAgenda(deps) {
 
     /** Alles wissen: bij uitloggen en het verwijderen van je account. */
     clear() {
-      Object.assign(model, { feedUrl: null, device: false, feed: emptySource(), local: emptySource(), feedError: null });
+      Object.assign(model, { feedUrl: null, device: false, feed: emptySource(), local: emptySource(), done: {}, feedError: null });
       deps.storage.remove(SETTINGS_KEY);
       deps.storage.remove(CACHE_KEY);
+      deps.storage.remove(DONE_KEY);
       changed();
     },
   };

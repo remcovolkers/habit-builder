@@ -1,7 +1,7 @@
 // iCalendar lezen: een agenda-feed zoals Google die geeft, naar items per dag (docs/AGENDA.md).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { expandIcal, instantOf, parseDateValue, parseEvents, wallOf } from '../../src/domain/ical.js';
+import { calendarName, expandIcal, instantOf, parseDateValue, parseEvents, wallOf } from '../../src/domain/ical.js';
 
 const ZONE = 'Europe/Amsterdam';
 const calendar = (...events) => ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Google Inc//Google Calendar 70.9054//EN', 'X-WR-CALNAME:Remco', ...events.flat(), 'END:VCALENDAR'].join('\r\n');
@@ -29,7 +29,7 @@ test('datumwaarden: hele dag, UTC, tijdzone en zwevend; een onbekende tijdzone t
 
 test('een gewone afspraak met een tijdzone en een eindtijd', () => {
   const text = calendar(event('UID:a1', 'SUMMARY:Tandarts', 'DTSTART;TZID=Europe/Amsterdam:20261104T143000', 'DTEND;TZID=Europe/Amsterdam:20261104T153000'));
-  assert.deepEqual(expand(text), [{ id: 'a1|t:' + instantOf('2026-11-04', '14:30:00', ZONE) + '|2026-11-04', title: 'Tandarts', date: '2026-11-04', start: '14:30', end: '15:30', allDay: false }]);
+  assert.deepEqual(expand(text), [{ id: 'a1|t:' + instantOf('2026-11-04', '14:30:00', ZONE) + '|2026-11-04', title: 'Tandarts', date: '2026-11-04', start: '14:30', end: '15:30', allDay: false, calendar: 'Remco' }]);
 });
 
 test('een afspraak in UTC komt op de lokale tijd, ook als de dag verspringt', () => {
@@ -175,4 +175,23 @@ test('veel afspraken ver buiten het venster kosten niets', () => {
 test('geen agenda of rommel: geen items, geen fout', () => {
   assert.deepEqual(expand(''), []);
   assert.deepEqual(expand('<html>Log in</html>'), []);
+});
+
+test('de naam van de agenda komt bij elke afspraak, ook bij hele dagen en herhalingen', () => {
+  const text = calendar(
+    event('UID:n1', 'SUMMARY:Tandarts', 'DTSTART;TZID=Europe/Amsterdam:20261104T143000', 'DTEND;TZID=Europe/Amsterdam:20261104T153000'),
+    event('UID:n2', 'SUMMARY:Verjaardag', 'DTSTART;VALUE=DATE:20261105', 'DTEND;VALUE=DATE:20261106'),
+    event('UID:n3', 'SUMMARY:Sporten', 'DTSTART;TZID=Europe/Amsterdam:20261102T190000', 'DTEND;TZID=Europe/Amsterdam:20261102T200000', 'RRULE:FREQ=WEEKLY'),
+  );
+  assert.deepEqual([...new Set(expand(text).map((i) => i.calendar))], ['Remco']);
+});
+
+test('de naam van de agenda: uit X-WR-CALNAME, met schrapjes, afgekort, en null als hij ontbreekt of pas na de afspraken komt', () => {
+  const lines = (...parts) => parts.join('\r\n');
+  assert.equal(calendarName(lines('BEGIN:VCALENDAR', 'X-WR-CALNAME:Remco & Mel\, thuis', 'END:VCALENDAR')), 'Remco & Mel, thuis');
+  assert.equal(calendarName(lines('BEGIN:VCALENDAR', `X-WR-CALNAME:${'x'.repeat(100)}`)).length, 40);
+  assert.equal(calendarName(lines('BEGIN:VCALENDAR', 'VERSION:2.0', 'END:VCALENDAR')), null);
+  assert.equal(calendarName(lines('BEGIN:VCALENDAR', 'BEGIN:VEVENT', 'X-WR-CALNAME:Te laat', 'END:VEVENT')), null);
+  const noName = lines('BEGIN:VCALENDAR', ...event('UID:z', 'SUMMARY:Zonder', 'DTSTART;VALUE=DATE:20261104'), 'END:VCALENDAR');
+  assert.equal(expand(noName)[0].calendar, null);
 });

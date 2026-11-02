@@ -1336,10 +1336,10 @@ async function main() {
     const { agenda } = await import('/src/ui/agenda.js');
     const { refreshAccountUI } = await import('/src/ui/account.js');
     const day = state.today;
-    const item = (id, title, start, end, allDay = false) => ({ id, title, date: day, start, end, allDay });
+    const item = (id, title, start, end, allDay = false, calendar = null) => ({ id, title, date: day, start, end, allDay, calendar });
     const seeded = { fetchedAt: Date.now(), span: { from: day, to: day }, items: [
-      item('a', 'Tandarts', '14:30', '15:30'), item('b', 'Stand-up', '09:00', null), item('c', 'Verjaardag Anna', null, null, true),
-      item('d', 'Een heel lange afspraak over Verzekeringsmaatschappijaansprakelijkheidsverzekering bellen', '19:00', '20:00'),
+      item('a', 'Tandarts', '14:30', '15:30', false, 'Mel'), item('b', 'Stand-up', '09:00', null), item('c', 'Verjaardag Anna', null, null, true),
+      item('d', 'Een heel lange afspraak over Verzekeringsmaatschappijaansprakelijkheidsverzekering bellen', '19:00', '20:00', false, 'Een.Heel.Lange.Naam.Van.Een.Agenda@example.com'),
     ] };
     agenda.model.feedUrl = ${JSON.stringify(url)};
     agenda.model.feed = ${JSON.stringify(url !== null)} ? seeded : { items: [], fetchedAt: null, span: null };
@@ -1349,15 +1349,24 @@ async function main() {
   await agendaSeed('https://calendar.google.com/calendar/ical/remco%40example.com/private-0123456789abcdef/basic.ics');
   await sleep(400);
   const agendaToday = await ev(`(() => { const cards = [...document.querySelectorAll('.agenda-card')]; return { titles: cards.map((c) => c.querySelector('.habit-card__name').textContent.slice(0, 12)), groups: cards.map((c) => c.closest('section').querySelector('.section__title').textContent), metas: cards.map((c) => c.querySelector('.habit-card__meta').textContent), buttons: cards.reduce((n, c) => n + c.querySelectorAll('button, input, a').length, 0), ring: document.querySelector('.ring')?.textContent ?? null, counts: [...document.querySelectorAll('.section-head .xs')].map((e) => e.textContent) }; })()`);
-  check('Vandaag: de agenda staat in het dagdeel van de begintijd (Ochtend, Middag, Avond, en een hele dag bij Overdag), met de tijd vooraan en het woord Agenda', JSON.stringify(agendaToday.groups.sort()) === JSON.stringify(['Avond', 'Middag', 'Ochtend', 'Overdag']) && agendaToday.metas.includes('14:30–15:30 · Agenda') && agendaToday.metas.includes('09:00 · Agenda') && agendaToday.metas.includes('Hele dag · Agenda') && agendaToday.metas.includes('19:00–20:00 · Agenda'), JSON.stringify(agendaToday));
-  check('Vandaag: een afspraak uit je agenda heeft geen vinkje en geen ⋯, en de ring en de tellers bij de dagdelen veranderen er niet door', agendaToday.buttons === 0 && agendaToday.ring === ringWithoutAgenda, JSON.stringify({ ...agendaToday, ringWithoutAgenda }));
+  check('Vandaag: de agenda staat in het dagdeel van de begintijd (Ochtend, Middag, Avond, en een hele dag bij Overdag), met de tijd vooraan en het woord Agenda', JSON.stringify(agendaToday.groups.sort()) === JSON.stringify(['Avond', 'Middag', 'Ochtend', 'Overdag']) && agendaToday.metas.includes('14:30–15:30 · Agenda · Mel') && agendaToday.metas.includes('09:00 · Agenda') && agendaToday.metas.includes('Hele dag · Agenda') && agendaToday.metas.includes('19:00–20:00 · Agenda · Een.Heel.Lange.Naam.Van.Een.Agenda@example.com'), JSON.stringify(agendaToday));
+  const agendaButtons = await ev(`(() => { const cards = [...document.querySelectorAll('.agenda-card')]; return { checks: cards.map((c) => c.querySelectorAll('.check').length), more: cards.reduce((n, c) => n + c.querySelectorAll('.habit-card__more').length, 0), tiny: cards.flatMap((c) => [...c.querySelectorAll('.check')]).filter((b) => { const r = b.getBoundingClientRect(); return r.height < 43 || r.width < 43; }).length, ring: document.querySelector('.ring')?.textContent ?? null }; })()`);
+  check('Vandaag: een afspraak uit je agenda heeft een vinkje (minstens 44 px) maar geen ⋯, en de ring en de tellers bij de dagdelen veranderen er niet door', agendaButtons.checks.length === 4 && agendaButtons.checks.every((n) => n === 1) && agendaButtons.more === 0 && agendaButtons.tiny === 0 && agendaButtons.ring === ringWithoutAgenda, JSON.stringify({ agendaButtons, ringWithoutAgenda }));
+  await ev(`document.querySelector('.agenda-card .check').click()`);
+  await sleep(400);
+  const agendaTicked = await ev(`(() => { const card = [...document.querySelectorAll('.agenda-card')].find((c) => c.dataset.state === 'done'); return { found: !!card, pressed: card?.querySelector('.check')?.getAttribute('aria-pressed'), label: card?.querySelector('.habit-card__state')?.textContent ?? null, toast: document.querySelector('.toast')?.textContent ?? '', ring: document.querySelector('.ring')?.textContent ?? null, counts: [...document.querySelectorAll('.section-head .xs')].map((e) => e.textContent), stored: localStorage.getItem('hb-agenda-done') }; })()`);
+  check('een afspraak uit je agenda afvinken: de kaart staat op Gedaan met een melding "Ongedaan maken", de ring en de tellers veranderen niet, en de opslag bevat geen naam', agendaTicked.found && agendaTicked.pressed === 'true' && agendaTicked.label === 'Gedaan' && /Ongedaan maken/.test(agendaTicked.toast) && agendaTicked.ring === ringWithoutAgenda && agendaTicked.stored !== null && !/tandarts|stand-up|verjaardag/i.test(agendaTicked.stored), JSON.stringify(agendaTicked));
+  await ev(`[...document.querySelectorAll('.agenda-card')].find((c) => c.dataset.state === 'done').querySelector('.check').click()`);
+  await sleep(400);
+  const agendaReopened = await ev(`({ done: document.querySelectorAll('.agenda-card[data-state="done"]').length, stored: localStorage.getItem('hb-agenda-done') })`);
+  check('nog een keer tikken zet hem weer open en haalt hem uit de opslag', agendaReopened.done === 0 && agendaReopened.stored === null, JSON.stringify(agendaReopened));
   for (const [size, w, h2, zoom] of sizes) {
     await send('Emulation.setDeviceMetricsOverride', { width: w, height: h2, deviceScaleFactor: 2, mobile: true });
     await nav('today');
     await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
     await sleep(400);
-    const fit = await ev(`(() => ({ overflow: document.documentElement.scrollWidth - innerWidth, wide: [...document.querySelectorAll('.agenda-card *')].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, cards: document.querySelectorAll('.agenda-card').length }))()`);
-    check(`Vandaag, agenda · ${size}: past zonder zijwaarts scrollen, ook met een lange titel`, fit.cards === 4 && fit.overflow <= 0 && fit.wide === 0, JSON.stringify(fit));
+    const fit = await ev(`(() => ({ overflow: document.documentElement.scrollWidth - innerWidth, wide: [...document.querySelectorAll('.agenda-card *')].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, tiny: [...document.querySelectorAll('.agenda-card .check')].filter((b) => { const r = b.getBoundingClientRect(); return r.height < 43 || r.width < 43; }).length, cards: document.querySelectorAll('.agenda-card').length }))()`);
+    check(`Vandaag, agenda · ${size}: past zonder zijwaarts scrollen, ook met een lange titel en een lange naam van de agenda, en het vinkje is minstens 44 px`, fit.cards === 4 && fit.overflow <= 0 && fit.wide === 0 && fit.tiny === 0, JSON.stringify(fit));
   }
   // Instellingen: zonder account, met een account maar zonder agenda (het invoerveld met een lang geplakt adres), en gekoppeld
   const agendaCardFit = (label, size) => ev(`(() => { const card = document.querySelector('#agendaConnect'); const tiny = [...(card?.querySelectorAll('button, input, summary') ?? [])].filter((b) => { const r = b.getBoundingClientRect(); return r.height > 0 && r.height < 43; }).length; return { found: !!card, overflow: document.documentElement.scrollWidth - innerWidth, wide: [...(card?.querySelectorAll('*') ?? [])].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, tiny }; })()`).then((fit) => check(`Instellingen, agenda (${label}) · ${size}: past zonder zijwaarts scrollen en de knoppen en het veld zijn minstens 44 px`, fit.found && fit.overflow <= 0 && fit.wide === 0 && fit.tiny === 0, JSON.stringify(fit)));
