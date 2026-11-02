@@ -1,6 +1,6 @@
 // Een scherm dat zichzelf opnieuw tekent als de data verandert.
 import { fill, h } from './dom.js';
-import { onChanged } from './state.js';
+import { onViewChanged } from './state.js';
 import { nl } from '../content/nl.js';
 
 /**
@@ -41,7 +41,7 @@ export function liveView({ load, render, className = '' }) {
     target?.focus({ preventScroll: true });
   }
 
-  const stop = onChanged(() => (root.isConnected ? refresh() : stop()));
+  const stop = onViewChanged(() => (root.isConnected ? refresh() : stop()));
   refresh();
   return root;
 }

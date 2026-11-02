@@ -20,6 +20,8 @@ import { clearFirstTip, firstTipPending } from '../intro.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView, isSetAside } from '../../app/day-view.js';
 import { addAppointment, adjustCounter, clearCheckIn, completeMonthTask, declineHabit, editAppointment, logCheckIn, planHabit, rateAutomaticity, rateCues, recordReason, removeAppointment, RuleError, setAppointmentDone, skipDays, togglePart, unplanHabit, unskipDay } from '../../app/actions.js';
+import { agenda } from '../agenda.js';
+import { agendaCard } from '../components/agenda-card.js';
 import { appointmentCard } from '../components/appointment-card.js';
 import { openAppointmentSheet } from '../components/appointment-sheet.js';
 import { openSkipDaySheet } from '../components/skip-day-sheet.js';
@@ -83,7 +85,7 @@ export function todayView({ query }) {
     load: async () => {
       const snapshot = await state.repo.snapshot();
       return {
-        view: buildDayView({ snapshot, date, today: state.today }),
+        view: buildDayView({ snapshot, date, today: state.today, agenda: agenda.itemsFor(date) }),
         week: buildWeekStrip({ snapshot, date, today: state.today }),
         attention: date === state.today ? forToday(buildAttention({ snapshot, today: state.today })) : [],
         toPlan: countToPlan(snapshot, state.today, date), // hoeveel flexibele taken nog dagen nodig hebben (op de knop Plan je week)
@@ -310,7 +312,8 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
         total > 0 ? h('span', { class: 'xs muted' }, nl.today.sectionCount(done, total)) : null),
       h('ul', { class: 'card-list' },
         ...group.entries.map((entry) => habitCard(entry, cardOptions)),
-        ...group.appointments.map((item) => appointmentCard(item, appointmentOptions))));
+        ...group.appointments.map((item) => appointmentCard(item, appointmentOptions)),
+        ...group.agenda.map((item) => agendaCard(item))));
   });
   // De ingang staat op elke dag van vandaag af (niet op dagen die voorbij zijn) en niet bij de introductie voor wie nog niets heeft.
   const appointmentAdd = view.canPlan && (view.hasHabits || view.hasAppointments)

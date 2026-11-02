@@ -50,12 +50,13 @@ export function prepareSnapshot(snapshot, from = null) {
 /**
  * snapshot: { habits, checkIns, pauses, dayPlans, appointments? }
  * date: de dag die getoond wordt; today: de echte "vandaag" (met dagwissel).
+ * agenda (optioneel): de afspraken uit je agenda voor deze dag, met een dagdeel (domain/agenda.js). Alleen om te lezen; ze tellen nergens mee.
  *
  * mode: 'past' | 'today' | 'future'
  * canLog:  afvinken mag (vandaag en tot 14 dagen terug)
  * canPlan: stapel-items mogen aan deze dag worden toegevoegd (vandaag en later)
  */
-export function buildDayView({ snapshot, date, today, prepared = null }) {
+export function buildDayView({ snapshot, date, today, prepared = null, agenda = [] }) {
   const { habits, dayPlans } = snapshot;
   const { habitById, bundles } = prepared ?? prepareSnapshot(snapshot);
 
@@ -98,7 +99,8 @@ export function buildDayView({ snapshot, date, today, prepared = null }) {
     daypart,
     entries: entries.filter((e) => habitDayparts(e.habit).includes(daypart)).map((e) => forPart(e, daypart)),
     appointments: appointments.filter((a) => a.daypart === daypart),
-  })).filter((g) => g.entries.length > 0 || g.appointments.length > 0);
+    agenda: agenda.filter((a) => a.daypart === daypart),
+  })).filter((g) => g.entries.length > 0 || g.appointments.length > 0 || g.agenda.length > 0);
 
   // een taak in de stapel dreigt te falen als het echt niet meer kan (atRisk) of al krap wordt (domain/tight.js); die komen bovenaan
   // Een taak waarvan alle keren die nog moeten al een dag hebben (covered) is niet meer te plannen: hij dreigt niet te falen en zakt naar beneden

@@ -11,6 +11,7 @@
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
   white-space: normal; /* een lange knoptekst breekt af in plaats van buiten het scherm te lopen */
+  overflow-wrap: anywhere; /* ook een enkel lang woord ("Privacyverklaring" bij 200% tekst op 320 px) */
   text-decoration: none;
   cursor: pointer;
 }

@@ -1322,6 +1322,87 @@ async function main() {
   check('Vandaag op desktop: de afspraken en "＋ Afspraak" staan in de linkerkolom bij de dag', desktop.inMain && desktop.card, JSON.stringify(desktop));
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
 
+  // Agenda (docs/AGENDA.md): afspraken uit je agenda op Vandaag, alleen om te lezen, in het dagdeel van hun begintijd; en de kaart in Instellingen.
+  // Het ophalen zelf (een account en de Edge Function) is hier niet te doen: we zetten de gekoppelde agenda rechtstreeks neer.
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await ev(`(async () => { const { state } = await import('/src/ui/state.js'); await Promise.all((await state.repo.listAppointments()).map((a) => state.repo.deleteAppointment(a.id))); })()`);
+  await nav('today');
+  await sleep(400);
+  const ringWithoutAgenda = await ev(`document.querySelector('.ring')?.textContent ?? null`);
+  const agendaSeed = (url) => ev(`(async () => {
+    const { state, notifyViewChanged } = await import('/src/ui/state.js');
+    const { agenda } = await import('/src/ui/agenda.js');
+    const { refreshAccountUI } = await import('/src/ui/account.js');
+    const day = state.today;
+    const item = (id, title, start, end, allDay = false) => ({ id, title, date: day, start, end, allDay });
+    const seeded = { fetchedAt: Date.now(), span: { from: day, to: day }, items: [
+      item('a', 'Tandarts', '14:30', '15:30'), item('b', 'Stand-up', '09:00', null), item('c', 'Verjaardag Anna', null, null, true),
+      item('d', 'Een heel lange afspraak over Verzekeringsmaatschappijaansprakelijkheidsverzekering bellen', '19:00', '20:00'),
+    ] };
+    agenda.model.feedUrl = ${JSON.stringify(url)};
+    agenda.model.feed = ${JSON.stringify(url !== null)} ? seeded : { items: [], fetchedAt: null, span: null };
+    notifyViewChanged();
+    refreshAccountUI();
+  })()`);
+  await agendaSeed('https://calendar.google.com/calendar/ical/remco%40example.com/private-0123456789abcdef/basic.ics');
+  await sleep(400);
+  const agendaToday = await ev(`(() => { const cards = [...document.querySelectorAll('.agenda-card')]; return { titles: cards.map((c) => c.querySelector('.habit-card__name').textContent.slice(0, 12)), groups: cards.map((c) => c.closest('section').querySelector('.section__title').textContent), metas: cards.map((c) => c.querySelector('.habit-card__meta').textContent), buttons: cards.reduce((n, c) => n + c.querySelectorAll('button, input, a').length, 0), ring: document.querySelector('.ring')?.textContent ?? null, counts: [...document.querySelectorAll('.section-head .xs')].map((e) => e.textContent) }; })()`);
+  check('Vandaag: de agenda staat in het dagdeel van de begintijd (Ochtend, Middag, Avond, en een hele dag bij Overdag), met de tijd vooraan en het woord Agenda', JSON.stringify(agendaToday.groups.sort()) === JSON.stringify(['Avond', 'Middag', 'Ochtend', 'Overdag']) && agendaToday.metas.includes('14:30–15:30 · Agenda') && agendaToday.metas.includes('09:00 · Agenda') && agendaToday.metas.includes('Hele dag · Agenda') && agendaToday.metas.includes('19:00–20:00 · Agenda'), JSON.stringify(agendaToday));
+  check('Vandaag: een afspraak uit je agenda heeft geen vinkje en geen ⋯, en de ring en de tellers bij de dagdelen veranderen er niet door', agendaToday.buttons === 0 && agendaToday.ring === ringWithoutAgenda, JSON.stringify({ ...agendaToday, ringWithoutAgenda }));
+  for (const [size, w, h2, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h2, deviceScaleFactor: 2, mobile: true });
+    await nav('today');
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(400);
+    const fit = await ev(`(() => ({ overflow: document.documentElement.scrollWidth - innerWidth, wide: [...document.querySelectorAll('.agenda-card *')].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, cards: document.querySelectorAll('.agenda-card').length }))()`);
+    check(`Vandaag, agenda · ${size}: past zonder zijwaarts scrollen, ook met een lange titel`, fit.cards === 4 && fit.overflow <= 0 && fit.wide === 0, JSON.stringify(fit));
+  }
+  // Instellingen: zonder account, met een account maar zonder agenda (het invoerveld met een lang geplakt adres), en gekoppeld
+  const agendaCardFit = (label, size) => ev(`(() => { const card = document.querySelector('#agendaConnect'); const tiny = [...(card?.querySelectorAll('button, input, summary') ?? [])].filter((b) => { const r = b.getBoundingClientRect(); return r.height > 0 && r.height < 43; }).length; return { found: !!card, overflow: document.documentElement.scrollWidth - innerWidth, wide: [...(card?.querySelectorAll('*') ?? [])].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, tiny }; })()`).then((fit) => check(`Instellingen, agenda (${label}) · ${size}: past zonder zijwaarts scrollen en de knoppen en het veld zijn minstens 44 px`, fit.found && fit.overflow <= 0 && fit.wide === 0 && fit.tiny === 0, JSON.stringify(fit)));
+  const setAccount = (status) => ev(`(async () => { const { account, refreshAccountUI } = await import('/src/ui/account.js'); account.status = ${JSON.stringify(status)}; refreshAccountUI(); })()`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await agendaSeed(null);
+  await nav('settings');
+  await sleep(500);
+  const signedOut = await ev(`({ hint: document.querySelector('#agendaSignedOut')?.textContent ?? null, input: !!document.querySelector('#agendaUrl') })`);
+  check('Instellingen, agenda zonder account: een uitleg om in te loggen en geen invoerveld', /Log in/.test(signedOut.hint ?? '') && !signedOut.input, JSON.stringify(signedOut));
+  await setAccount('signed-in');
+  await sleep(300);
+  const withField = await ev(`(() => { const d = document.querySelector('#agendaHow'); return { input: !!document.querySelector('#agendaUrl'), connect: document.querySelector('#agendaConnectButton')?.textContent, steps: d?.querySelectorAll('li').length ?? 0, label: document.querySelector('label[for="agendaUrl"]')?.textContent }; })()`);
+  check('Instellingen, agenda met een account: een veld voor het geheime adres, de knop Koppelen en uitleg in vier stappen', withField.input && withField.connect === 'Koppelen' && withField.steps === 4 && withField.label === 'Geheim adres in iCal-indeling', JSON.stringify(withField));
+  const wrong = await ev(`(async () => { document.querySelector('#agendaUrl').value = 'https://calendar.google.com/calendar/u/0/r'; document.querySelector('#agendaConnectButton').click(); await new Promise((r) => setTimeout(r, 300)); return { error: document.querySelector('#agendaMessage')?.textContent ?? null, cls: document.querySelector('#agendaMessage')?.className }; })()`);
+  check('een gewone link van Google Agenda wordt herkend als niet het geheime adres, zonder iets op te halen', /niet het geheime iCal-adres/.test(wrong.error ?? '') && wrong.cls === 'field__error', JSON.stringify(wrong));
+  for (const [size, w, h2, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h2, deviceScaleFactor: 2, mobile: true });
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    await ev(`(() => { const i = document.querySelector('#agendaUrl'); i.value = 'https://calendar.google.com/calendar/ical/een.heel.lang.adres.van.iemand%40example.com/private-0123456789abcdef0123456789abcdef0123456789abcdef/basic.ics'; document.querySelector('#agendaHow').open = true; })()`);
+    await sleep(400);
+    await agendaCardFit('veld en uitleg', size);
+  }
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await setAccount('anonymous'); // gekoppeld laten we zonder account zien: anders gaat de app echt ophalen
+  await agendaSeed('https://calendar.google.com/calendar/ical/remco%40example.com/private-0123456789abcdef/basic.ics');
+  await sleep(400);
+  const connected = await ev(`({ status: document.querySelector('#agendaFeedStatus')?.textContent ?? null, refresh: document.querySelector('#agendaRefresh')?.textContent, off: document.querySelector('#agendaDisconnect')?.textContent, input: !!document.querySelector('#agendaUrl'), device: !!document.querySelector('#agendaDevice') })`);
+  check('Instellingen, agenda gekoppeld: de stand ("4 afspraken"), Nu verversen en Ontkoppelen, geen invoerveld, en het blok voor de telefoon alleen in de app', /Gekoppeld\. 4 afspraken/.test(connected.status ?? '') && connected.refresh === 'Nu verversen' && connected.off === 'Ontkoppelen' && !connected.input && !connected.device, JSON.stringify(connected));
+  for (const [size, w, h2, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h2, deviceScaleFactor: 2, mobile: true });
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(400);
+    await agendaCardFit('gekoppeld', size);
+  }
+  await ev(`document.querySelector('#agendaDisconnect').click()`);
+  await sleep(400);
+  const gone = await ev(`(async () => { const { agenda } = await import('/src/ui/agenda.js'); return { url: agenda.model.feedUrl, items: agenda.itemsFor((await import('/src/ui/state.js')).state.today).length, stored: localStorage.getItem('hb-agenda') }; })()`);
+  check('Ontkoppelen haalt het adres en de afspraken weg, ook uit de opslag van het toestel', gone.url === null && gone.items === 0 && gone.stored === null, JSON.stringify(gone));
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await nav('today');
+
   // "Ga ik niet doen" (docs/WONT-DO.md): via ⋯ op een kaart, met een verplichte reden en een optioneel plan; de kaart toont reden en plan
   await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
   await ev(`document.documentElement.style.fontSize = '100%'`);

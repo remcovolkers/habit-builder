@@ -7,6 +7,7 @@ import * as auth from '../../data/auth.js';
 import { fetchDevUsage } from '../../data/dev-usage.js';
 import { installCard } from '../components/install-card.js';
 import { reminderCard } from '../components/reminder-card.js';
+import { agendaConnectCard } from '../components/agenda-connect.js';
 import { themeFor } from '../../app/themes.js';
 import { themeOptions } from '../components/theme-picker.js';
 import { downloadBackup } from '../download.js';
@@ -246,6 +247,7 @@ export function settingsView() {
       accountCard(),
       installCard(),
       reminderCard(),
+      agendaConnectCard(),
       themeSection()),
      h('div', { class: 'settings__col' },
     h('form', { class: 'form', novalidate: true, onsubmit: submit },
