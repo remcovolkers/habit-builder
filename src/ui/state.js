@@ -53,8 +53,24 @@ export async function reloadSettings() {
 
 export const notifyChanged = () => events.dispatchEvent(new Event('changed'));
 
+/**
+ * Er is iets veranderd wat alleen het scherm raakt, niet je gegevens (de agenda is ververst). Schermen tekenen opnieuw; er volgt geen synchronisatie
+ * met de server en de widget wordt niet bijgewerkt, want dat is allemaal voor wijzigingen aan je eigen gegevens.
+ */
+export const notifyViewChanged = () => events.dispatchEvent(new Event('view'));
+
 /** Geeft een functie terug om het luisteren te stoppen. */
 export function onChanged(listener) {
   events.addEventListener('changed', listener);
   return () => events.removeEventListener('changed', listener);
+}
+
+/** Zoals onChanged, maar ook voor wijzigingen die alleen het scherm raken (notifyViewChanged). Voor schermen die tekenen. */
+export function onViewChanged(listener) {
+  events.addEventListener('changed', listener);
+  events.addEventListener('view', listener);
+  return () => {
+    events.removeEventListener('changed', listener);
+    events.removeEventListener('view', listener);
+  };
 }

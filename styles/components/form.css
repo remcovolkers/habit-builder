@@ -514,6 +514,56 @@ select.input {
   margin-top: var(--space-4);
 }
 
+/* agenda koppelen in Instellingen (docs/AGENDA.md): een blok per bron, met de uitleg waar je het adres vindt in een uitklapper */
+.agenda-connect__block {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.agenda-connect__title {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+/* het geheime adres is lang en heeft geen spaties: het veld krimpt mee en de uitleg breekt af in plaats van de pagina te verbreden (320 px, 200% tekst) */
+.agenda-connect .input,
+.agenda-connect .field__hint,
+.agenda-connect .field__error {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.agenda-connect .field,
+.agenda-connect .stack {
+  margin-top: 0;
+}
+
+.agenda-connect__how {
+  padding: var(--space-3) var(--space-4);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-card);
+}
+
+.agenda-connect__how summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--size-tap);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+}
+
+.agenda-connect__steps {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 var(--space-3);
+  padding-left: var(--space-5);
+  list-style: decimal;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
 /* tijdkeuze in 24-uursnotatie */
 .timepicker {
   display: flex;
