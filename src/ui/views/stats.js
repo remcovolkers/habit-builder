@@ -11,6 +11,7 @@ import { statsForHabit, streakSpan } from '../../app/habit-detail.js';
 import { buildPeriodOverview, countDone } from '../../app/overview.js';
 import { addDays, isValidDate } from '../../domain/dates.js';
 import { isTracked } from '../../domain/rules.js';
+import { formatDateLong } from '../../app/format.js';
 
 function overviewRow(habit, snapshot, today) {
   const { stats } = statsForHabit({ habit, checkIns: snapshot.checkIns, pauses: snapshot.pauses, ratings: snapshot.ratings, today });
@@ -30,6 +31,21 @@ function overviewRow(habit, snapshot, today) {
         h('span', null, `${nl.stats.strength} ${strength}%`),
         h('span', null, nl.stats.streak(stats.streaks.current, unit)),
         h('span', null, stats.consistency.rate === null ? nl.detail.noData : nl.stats.consistency(Math.round(stats.consistency.rate * 100))))));
+}
+
+/** De dagen die je met een reden hebt overgeslagen (docs/DAG-OVERSLAAN.md), de laatste bovenaan: zo kun je later terugzien waarom. */
+function skipDaysSection(skipDays) {
+  if (skipDays.length === 0) return null;
+  const k = nl.today.skipDay;
+  return h('section', { class: 'section skipdays', 'aria-labelledby': 'skipdays-title' },
+    h('div', { class: 'section-head' },
+      h('h2', { id: 'skipdays-title', class: 'section__title' }, k.list.title),
+      h('span', { class: 'xs muted' }, String(skipDays.length))),
+    h('p', { class: 'section__hint' }, k.list.hint),
+    h('ul', { class: 'card-list' }, ...[...skipDays].reverse().map((day) => h('li', { class: 'card skipdays__item', dataset: { date: day.date } },
+      h('span', { class: 'skipdays__date' }, formatDateLong(day.date)),
+      h('span', { class: 'skipdays__reason' }, k.reasons[day.reason]),
+      day.note ? h('span', { class: 'skipdays__note xs muted' }, day.note) : null))));
 }
 
 // Week of maand en welke: dat bepaalt het overzicht, de tegel en de review samen. Blijft staan als het scherm opnieuw wordt getekend.
@@ -92,7 +108,8 @@ export function statsView({ query = {} } = {}) {
                     h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, tile.label), h('span', { class: 'tile__value' }, String(tile.value))),
                     h('div', { class: 'tile' }, h('span', { class: 'tile__label' }, nl.stats.summary.graduated), h('span', { class: 'tile__value' }, String(graduated)),
                       h('span', { class: 'tile__hint' }, `${active} ${nl.stats.summary.active.toLowerCase()}`))),
-                  h('ul', { class: 'card-list stats__list' }, ...habits.map((habit) => overviewRow(habit, snapshot, today)))))),
+                  h('ul', { class: 'card-list stats__list' }, ...habits.map((habit) => overviewRow(habit, snapshot, today))),
+                  skipDaysSection(snapshot.skipDays ?? [])))),
           h('div', { class: 'stats__side page__pane section' }, periodReview(snapshot, today, picked, choose))));
       if (spotlight) {
         spotlight = false;

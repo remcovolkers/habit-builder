@@ -74,6 +74,47 @@ export const nl = {
       toast: 'Maandtaak afgevinkt',
     },
     // een losse afspraak: een eenmalige herinnering met een dag en een dagdeel, geen habit (docs/LOSSE-AFSPRAKEN.md)
+    // een dag overslaan voor al je taken tegelijk, met een reden (docs/DAG-OVERSLAAN.md)
+    skipDay: {
+      add: 'Dag overslaan',
+      addFor: (dayLabel) => `${dayLabel[0].toUpperCase()}${dayLabel.slice(1)} overslaan`,
+      titleNew: 'Dag overslaan',
+      titleEdit: 'Waarom sla je deze dag over?',
+      intro: 'Voor al je taken tegelijk, bijvoorbeeld als je van huis weg bent of ziek. Zo een dag telt niet als gemist en breekt geen reeks; wat je al hebt afgevinkt blijft staan. Je reden blijft bewaard, zodat je hem later kunt terugzien.',
+      reasonLabel: 'Waarom?',
+      reasons: { away: 'Van huis weg', sick: 'Ziek', event: 'Bijzondere of drukke dag', other: 'Anders' },
+      note: 'Toelichting (optioneel)',
+      noteOther: 'Wat is de reden?',
+      notePlaceholder: 'Bijvoorbeeld: vriendenweekend',
+      from: 'Van',
+      to: 'Tot en met',
+      skip: 'Overslaan',
+      save: 'Opslaan',
+      remove: 'Weer meetellen',
+      banner: (reason) => `Overgeslagen: ${reason}`,
+      bannerText: 'Deze dag telt niet als gemist. Wat je hebt afgevinkt blijft staan.',
+      change: 'Reden aanpassen',
+      errors: {
+        reason: 'Kies een reden.',
+        note: { required: 'Vul de reden in.', too_long: 'Maximaal 200 tekens.', invalid: 'Vul de reden in.' },
+        date: {
+          invalid: 'Kies een dag.',
+          order: 'Het einde ligt voor het begin.',
+          length: (max) => `Je kunt hooguit ${max} dagen tegelijk overslaan.`,
+          window: (back, ahead) => `Kies dagen van ${back} dagen terug tot ${ahead} dagen vooruit.`,
+        },
+      },
+      toasts: {
+        skipped: (days) => (days === 1 ? 'Dag overgeslagen' : `${days} dagen overgeslagen`),
+        saved: 'Reden aangepast',
+        counted: 'Deze dag telt weer mee',
+        window: 'Deze dag ligt te ver weg om over te slaan.',
+      },
+      list: {
+        title: 'Overgeslagen dagen',
+        hint: 'Dagen die je met een reden hebt overgeslagen. Ze tellen niet als gemist.',
+      },
+    },
     appointments: {
       badge: 'Afspraak',
       add: '＋ Afspraak',

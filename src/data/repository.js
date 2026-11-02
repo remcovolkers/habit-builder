@@ -13,10 +13,13 @@
 //   getMonthReview(monthStart) / saveMonthReview({monthStart, adjust}) / setMonthTaskApplied({monthStart, date})
 //   listReasons(habitId?) / setReason({habitId, date, reason, note?, plan?}) / clearReason(habitId, date)   (waarom een taak bleef liggen of werd opgegeven)
 //   listAppointments() / getAppointment(id) / saveAppointment({id?, title, date, daypart?, doneOn?}) / deleteAppointment(id)   (losse afspraken, geen habits)
+//   listSkipDays() / setSkipDay({date, reason, note?}) / clearSkipDay(date)   (overgeslagen dagen, voor alle habits tegelijk, met een reden)
 //   replaceAll(data)  (import: vervangt alles)
-//   snapshot() -> { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments }
+//   snapshot() -> { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments, skipDays }
+//   (`pauses` bevat daarin ook de overgeslagen dagen als afgeleide pauzes per habit, met derived: true; zie domain/skipdays.js)
 import { COUNTER_MAX } from '../domain/counter.js';
 import { validateAppointment } from '../domain/appointments.js';
+import { skipDayPauses, validateSkipDay } from '../domain/skipdays.js';
 import { NOTE_MAX_LENGTH } from '../domain/constants.js';
 import { isValidDate, startOfMonth, startOfWeek } from '../domain/dates.js';
 import { monthReviewId } from '../domain/reviews.js';
@@ -287,6 +290,21 @@ export function createRepository({
       return softDelete('appointments', id);
     },
 
+    // --- overgeslagen dagen ---------------------------------------------------------------------
+    // Eén per dag, voor alle habits tegelijk, met een verplichte reden (zie domain/skipdays.js).
+    async listSkipDays() {
+      return (await liveList('skipDays')).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    },
+    async setSkipDay({ date, reason, note = null }) {
+      const errors = validateSkipDay({ date, reason, note });
+      if (errors.length > 0) throw new ValidationError(errors);
+      const cleanNote = note === null || note.trim() === '' ? null : note.trim();
+      return upsert('skipDays', { id: date, date, reason, note: cleanNote });
+    },
+    async clearSkipDay(date) {
+      return softDelete('skipDays', date);
+    },
+
     // --- import: alles vervangen ----------------------------------------------------------------
     async replaceAll(data) {
       const stamp = now();
@@ -301,6 +319,7 @@ export function createRepository({
         reviews: data.reviews,
         reasons: data.reasons,
         appointments: data.appointments,
+        skipDays: data.skipDays,
       };
       for (const collection of DATA_COLLECTIONS) {
         const incoming = sets[collection] ?? [];
@@ -322,7 +341,7 @@ export function createRepository({
 
     // --- alles voor de schermen -------------------------------------------------------------
     async snapshot() {
-      const [settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments] = await Promise.all([
+      const [settings, habits, checkIns, ownPauses, dayPlans, achievements, ratings, reviews, reasons, appointments, skipDays] = await Promise.all([
         this.getSettings(),
         this.listHabits(),
         this.listCheckIns(),
@@ -333,8 +352,10 @@ export function createRepository({
         this.listReviews(),
         this.listReasons(),
         this.listAppointments(),
+        this.listSkipDays(),
       ]);
-      return { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments };
+      const pauses = [...ownPauses, ...skipDayPauses(habits, skipDays)];
+      return { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments, skipDays };
     },
   };
 }
