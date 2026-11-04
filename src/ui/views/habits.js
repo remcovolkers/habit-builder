@@ -1,3 +1,4 @@
+import { isOwnPause } from '../../domain/skipdays.js';
 import { habitIcon } from '../components/habit-icon.js';
 import { h } from '../dom.js';
 import { liveView } from '../live.js';
@@ -16,7 +17,8 @@ import { scheduleAt } from '../../domain/schedule.js';
 
 export const currentSchedule = (habit, today) => scheduleAt(habit.schedules, today) ?? habit.schedules[0].schedule;
 
-const isPausedOn = (pauses, today) => pauses.some((p) => today >= p.from && (p.to == null || today <= p.to));
+// een overgeslagen dag (domain/skipdays.js) maakt van een habit geen gepauzeerde habit
+const isPausedOn = (pauses, today) => pauses.filter(isOwnPause).some((p) => today >= p.from && (p.to == null || today <= p.to));
 
 function sectionOf(habit, pauses, today) {
   if (habit.status === 'archived') return 'archived';

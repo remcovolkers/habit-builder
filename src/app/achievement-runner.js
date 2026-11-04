@@ -1,5 +1,6 @@
 // Controleert na elke wijziging of er nieuwe prestaties zijn en slaat ze op. Eenmaal ontgrendeld blijft zo.
 import { evaluateAchievements } from '../domain/achievements.js';
+import { isOwnPause } from '../domain/skipdays.js';
 import { statsForHabit } from './habit-detail.js';
 
 /** De invoer van de prestatieregels uit een snapshot; de pagina Prestaties rekent er de voortgang mee uit. */
@@ -11,7 +12,7 @@ export function achievementInput(snapshot, today, { friends = 0 } = {}) {
     stats,
     habits: snapshot.habits,
     checkIns: snapshot.checkIns,
-    pauses: snapshot.pauses,
+    pauses: snapshot.pauses.filter(isOwnPause), // het hervatten van een pauze, niet een overgeslagen dag
     reviews: snapshot.reviews,
     ratings: snapshot.ratings,
     friends,

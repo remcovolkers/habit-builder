@@ -55,6 +55,13 @@ test('momentopname: rijen per dagdeel in de volgorde van de app, met de teksten 
   JSON.stringify(snapshot); // moet als tekst naar Android kunnen
 });
 
+test('momentopname: "Overdag" staat vóór de avond, niet erachter', async () => {
+  const { repo } = await setup();
+  await repo.saveHabit(validHabit({ name: 'Wandelen', daypart: 'anytime', sortOrder: 3 }));
+  const snapshot = await snapshotOf(repo);
+  assert.deepEqual([...new Set(snapshot.items.map((i) => i.group))], ['Ochtend', 'Middag', 'Overdag', 'Avond']);
+});
+
 test('kleuren: hex met of zonder doorzichtigheid, en alleen bekende namen met een geldige waarde', () => {
   assert.equal(colorToHex(41, 255, 185), '#29ffb9');
   assert.equal(colorToHex(255, 255, 255, 20), '#14ffffff', 'doorzichtig: eerst de doorzichtigheid, zoals Android het leest');

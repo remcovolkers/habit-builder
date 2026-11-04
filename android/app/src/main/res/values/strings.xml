@@ -7,9 +7,7 @@
 
     <!-- de widget voor het startscherm -->
     <string name="widget_name">Vandaag</string>
-    <string name="widget_description">Je lijst van vandaag: vink af en tel mee vanaf je startscherm.</string>
+    <string name="widget_description">Je lijst van vandaag op je startscherm. Tik om de app te openen.</string>
     <string name="widget_open_app">Open Habit Builder om de lijst van vandaag te laden</string>
-    <string name="widget_minus">Eén minder</string>
-    <string name="widget_plus">Eén erbij</string>
     <string name="widget_unsynced">Nog niet gesynct</string>
 </resources>

@@ -72,6 +72,9 @@ export function normalizeColors(colors) {
 
 // --- de momentopname ----------------------------------------------------------------------------------------------------------------------
 
+/** "Overdag" (geen vast moment) staat in de widget vóór de avond, niet erachter zoals op Vandaag: in de avond is de dag bijna om. */
+const WIDGET_DAYPART_ORDER = Object.freeze(['morning', 'afternoon', 'anytime', 'evening']);
+
 /**
  * De lijst van vandaag voor de widget (JSON-vriendelijk). `group` is de naam van het dagdeel; opeenvolgende rijen met dezelfde naam horen bij één streepje.
  * Wat is overgeslagen of opgegeven telt niet meer mee, net als in de teller op Vandaag.
@@ -80,7 +83,8 @@ export function normalizeColors(colors) {
 export function buildWidgetSnapshot({ snapshot, today, settings, now = new Date(), colors = {}, unsynced = 0 }) {
   const view = buildDayView({ snapshot, date: today, today });
   const items = [];
-  for (const group of view.groups) {
+  const groups = WIDGET_DAYPART_ORDER.map((daypart) => view.groups.find((g) => g.daypart === daypart)).filter(Boolean);
+  for (const group of groups) {
     const label = nl.dayparts[group.daypart] ?? '';
     for (const entry of group.entries) {
       if (isSetAside(entry)) continue;

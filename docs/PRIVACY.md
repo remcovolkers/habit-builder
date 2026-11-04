@@ -1,6 +1,6 @@
 # Privacyverklaring Habit Builder
 
-Laatst bijgewerkt: oktober 2026, bij de Android-app (meldingen via Google)
+Laatst bijgewerkt: november 2026, bij de agenda-koppeling
 
 Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen bedrijf). Hij is verantwoordelijk voor de gegevens die je in de app invult. Contact: **remco.volkers1@gmail.com**.
 
@@ -36,9 +36,15 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 - **het e-mailadres van je account**, en alleen als je bent ingelogd én "Je mag me hierover mailen" aanvinkt. Dan is het bericht ook aan je account gekoppeld, en verdwijnt het als je je account verwijdert. Zonder het vinkje (of zonder account) is het bericht anoniem: er wordt niets bijgehouden over wie het stuurde, ook niet hoe vaak;
 - het bericht is alleen te lezen door mij als beheerder van de app. Ik gebruik het om de app te verbeteren en, als je het vinkje aanzette, om je te antwoorden. Ik bewaar het tot ik het heb afgehandeld en verwijder het daarna, uiterlijk na een jaar.
 
-**Wat je vrienden niet zien:** je e-mailadres, de namen van je habits, je losse afspraken, je cues, "waarom"-teksten, notities en reviews, wat je op welk tijdstip afvinkt, en je andere gegevens.
+**Alleen als je een agenda koppelt** (in Instellingen, per apparaat; je beslist zelf of je het doet en kunt het weer uitzetten):
+- **Google Agenda via het geheime iCal-adres** (alleen met een account): het **adres** en de **afspraken** van ongeveer een maand (titel, dag, tijd en de naam van de agenda) worden **alleen op je eigen apparaat** bewaard. Ze gaan niet mee in de synchronisatie, de back-up of naar de server. Het adres werkt als een wachtwoord: wie het heeft, kan je hele agenda lezen. Om de agenda op te halen stuurt de app het adres naar een Edge Function van Supabase, die het bij Google ophaalt en de agenda terugstuurt. **Die functie bewaart en logt het adres en de agenda niet.** Daarna staat de agenda alleen nog op je apparaat. Wil je het adres ongeldig maken, kies dan in Google Agenda "Geheim adres opnieuw instellen";
+- **De agenda van je telefoon** (alleen in de Android-app): de app vraagt je om toestemming om de agenda te lezen (alleen lezen, nooit schrijven). De afspraken worden op je telefoon gelezen en alleen op je telefoon bewaard; er gaat **niets** naar de server of naar Google (de agenda van de telefoon kan wel zelf met Google synchroniseren, maar dat doet je telefoon, niet Habit Builder);
+- **Afvinken**: wat je op Vandaag afvinkt blijft op je apparaat, als een onleesbaar nummer met de dag erbij (zonder de titel van de afspraak), en wordt na twee weken opgeruimd. Het gaat niet mee in de synchronisatie;
+- **Ontkoppelen, uitloggen en je account verwijderen** wissen het adres en de afspraken van je apparaat. Uitloggen en je account verwijderen wissen ook wat je afvinkte.
 
-Je habit-namen, de tekst van je losse afspraken, cues, "waarom"-teksten, notities, reviews en de toelichting en het plan bij een reden zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
+**Wat je vrienden niet zien:** je e-mailadres, de namen van je habits, je losse afspraken, je agenda, je cues, "waarom"-teksten, notities en reviews, wat je op welk tijdstip afvinkt, en je andere gegevens.
+
+Je habit-namen, de tekst van je losse afspraken (en de titels uit je agenda, als je die koppelt), cues, "waarom"-teksten, notities, reviews en de toelichting en het plan bij een reden zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
 
 ## Waarvoor
 
@@ -54,8 +60,8 @@ Alleen met de diensten die de app laten draaien (verwerkers):
 
 | Dienst | Waarvoor |
 |---|---|
-| **Supabase** | opslag van je account en gegevens, en het inloggen |
-| **Google** | inloggen met Google, en het versturen van de inlogcode per e-mail (via Gmail) |
+| **Supabase** | opslag van je account en gegevens, en het inloggen. Ook het doorgeven van je agenda als je Google Agenda koppelt: een functie haalt hem bij Google op en stuurt hem naar je apparaat, zonder iets te bewaren |
+| **Google** | inloggen met Google, en het versturen van de inlogcode per e-mail (via Gmail). Ook Google Agenda als je die koppelt: Google krijgt het verzoek om je agenda met jouw geheime adres, vanaf de server van Supabase |
 | **GitHub** | het aanbieden van de app zelf (GitHub Pages); GitHub ziet daarbij je IP-adres zoals bij elke website |
 | **Iemand met jouw uitnodigingslink** (ook zonder account) | ziet je weergavenaam en niets anders, zolang de link geldt |
 | **Je vrienden** (andere gebruikers van de app, alleen als je meedoet en zij door jou of door een uitnodigingslink als vriend zijn bevestigd) | zien je weergavenaam, gebruikersnaam en de samenvatting hierboven. Zij kunnen je niet vinden zonder je exacte gebruikersnaam of een link die jij deelde |

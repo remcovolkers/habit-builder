@@ -721,3 +721,23 @@
     animation: none;
   }
 }
+
+/* de overgeslagen dagen onder de lijst met taken: datum en reden op één regel, de toelichting eronder */
+.skipdays {
+  margin-top: var(--space-5);
+}
+
+.skipdays__item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  align-items: baseline;
+}
+
+.skipdays__reason {
+  font-weight: 600;
+}
+
+.skipdays__note {
+  flex-basis: 100%;
+}

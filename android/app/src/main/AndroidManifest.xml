@@ -72,4 +72,6 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13+: meldingen vragen een toestemming tijdens het gebruik (de push-plugin vraagt erom bij "Herinnering aanzetten") -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- De agenda van de telefoon lezen, alleen als je dat in Instellingen aanzet (docs/AGENDA.md). Alleen lezen: er is geen schrijfrecht nodig. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
 </manifest>

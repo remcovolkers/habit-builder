@@ -234,6 +234,28 @@ Werkt ook zonder account; er is geen servermigratie voor nodig.
 8. **Back-up en sync**: de status en het plan gaan mee in het back-upbestand en in de sync (Studio, tabel `records`: `collection` = `checkIns` met `status` = `wont`, en `reasons` met een `plan`).
 9. **Grote tekst**: de kaart en het blad op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout`).
 
+## T. Agenda (docs/AGENDA.md)
+
+De feed werkt alleen met een account en de functie `calendar-feed`; de agenda van de telefoon alleen in de Android-app. Lokaal start je de functie met `npx supabase@2.121.0 functions serve calendar-feed --no-verify-jwt` en laat je het venster open. Zet in je Google Agenda een paar afspraken: een op vandaag om 14:30, een hele dag, een wekelijkse, en een van drie dagen.
+
+1. **Zonder account**: Instellingen → **Agenda** zegt "Log in om je Google Agenda te koppelen…". Er is geen invoerveld.
+2. **Koppelen**: log in. Open in Google Agenda (op een computer) Instellingen → je agenda → **Agenda integreren** → **Geheim adres in iCal-indeling** en kopieer het. Plak het in Instellingen → Agenda en tik **Koppelen**. Verwacht "Agenda gekoppeld: n afspraken de komende weken" en daaronder "Gekoppeld… Laatst bijgewerkt om hh:mm", met **Nu verversen** en **Ontkoppelen**. Het uitklapblokje "Waar vind ik dat adres?" heeft vier stappen en een waarschuwing dat het adres als een wachtwoord werkt.
+3. **Vandaag**: de afspraak van 14:30 staat onder de habits van **Middag**, met "14:30–15:30 · Agenda · <naam van je agenda>" (of "14:30 · Agenda · …"), een grijze rand, een vinkje en geen ⋯. De hele dag staat bij **Overdag** met "Hele dag · Agenda". De wekelijkse staat op elke juiste dag (blader met de pijl, tot 7 dagen vooruit). De afspraak van drie dagen staat op alle drie, de latere dagen als "Hele dag".
+4. **Afvinken**: tik het rondje van een afspraak: de kaart staat op **Gedaan**, er komt een melding met **Ongedaan maken**, de ring en de tellers bij de dagdelen veranderen niet. Tik nog eens: weer open. Sluit de app en open hem opnieuw: het staat er nog. Op een dag in de toekomst staat het rondje uit. In de browser (Application → Local storage) staat in `hb-agenda-done` alleen nummers, geen titels.
+4b. **Telt niet mee**: de ring, "0 van n" bij de kop van het dagdeel en "Alles gedaan" gaan alleen over habits. Een dagdeel met alleen een afspraak uit je agenda bestaat wel. Punten, prestaties en de ranglijst veranderen niet.
+5. **Foute adressen**: plak een gewone link van Google Agenda (`https://calendar.google.com/calendar/u/0/r`): "Dit is niet het geheime iCal-adres…". Plak een adres van een andere site: "Dit adres is niet van Google Agenda…". Plak je e-mailadres: "Dit is geen adres…". Er wordt in geen van drieën iets opgehaald (netwerktabblad) en er blijft niets bewaard.
+6. **Een adres dat niet meer werkt**: kies in Google Agenda **Geheim adres opnieuw instellen**, en tik in de app **Nu verversen**. De oude afspraken blijven staan en er staat een rode melding "Google kent dit adres niet (meer)…". Plak het nieuwe adres: eerst **Ontkoppelen**, dan opnieuw **Koppelen**.
+7. **Offline**: zet het vliegtuigstand aan en open Vandaag. De laatst opgehaalde afspraken staan er nog. **Koppelen** zegt "Je bent offline…".
+8. **Een wijziging in Google**: verplaats een afspraak. Binnen een paar uur (Google ververst de feed zelf) en na **Nu verversen** staat hij op de nieuwe plek en niet dubbel.
+9. **Wissen**: **Ontkoppelen** haalt de afspraken van Vandaag weg. Koppel opnieuw en log uit: ook dan staat er niets meer. Controle in de browser (Application → Local storage): `hb-agenda` en `hb-agenda-cache` zijn weg.
+10. **Back-up en vrienden**: het back-upbestand (Instellingen → exporteren) bevat geen agenda, en `records` in Studio heeft geen rij met je agenda.
+11. **Telefoon (Android-app)**: onder **Agenda** staat ook **Agenda van deze telefoon**. Tik **Agenda van deze telefoon gebruiken**: Android vraagt toestemming. Weiger: "Habit Builder mag je agenda niet lezen…" en het staat niet aan. Tik opnieuw en sta toe: de afspraken van je telefoon staan op Vandaag, ook zonder account.
+12. **Beide bronnen**: koppel dezelfde Google Agenda ook via het adres. Een afspraak staat maar één keer op Vandaag, en onder de kaart staat een korte opmerking dat dat zo hoort. Vink een afspraak af terwijl alleen het adres is gekoppeld, zet daarna de telefoon ook aan: hij blijft afgevinkt.
+12b. **De naam van de agenda (telefoon)**: een afspraak uit een gedeelde agenda (bijvoorbeeld van Mel) toont de naam die de agenda-app van de telefoon aan die agenda geeft, achter het woord Agenda. Een afspraak uit je eigen agenda toont de naam van je eigen agenda. Met alleen het adres staat de naam van de gedeelde agenda erachter (zoals Google hem toont).
+13. **Toestemming intrekken**: Instellingen → Apps → Habit Builder → Rechten → Agenda → niet toestaan. Open de app: de afspraken van de telefoon zijn weg en de kaart zegt "Habit Builder mag je agenda niet meer lezen…". Zet het weer aan: na terugkeren naar de app staan ze er weer.
+14. **Afgewezen of geannuleerd (telefoon)**: een afspraak die je op je telefoon hebt afgewezen of die geannuleerd is, staat niet op Vandaag. Een agenda die je op de telefoon hebt verborgen ook niet.
+15. **Grote tekst**: de kaart in Instellingen en de afspraken op Vandaag op 320 px met 200% tekst, ook met een lang geplakt adres, zonder zijwaarts scrollen.
+
 ## Automatische controles
 
 ```

@@ -19,9 +19,12 @@ import { feedbackInviteDue, snoozeFeedbackInvite } from '../feedback-state.js';
 import { clearFirstTip, firstTipPending } from '../intro.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView, isSetAside } from '../../app/day-view.js';
-import { addAppointment, adjustCounter, clearCheckIn, completeMonthTask, declineHabit, editAppointment, logCheckIn, planHabit, rateAutomaticity, rateCues, recordReason, removeAppointment, RuleError, setAppointmentDone, togglePart, unplanHabit } from '../../app/actions.js';
+import { addAppointment, adjustCounter, clearCheckIn, completeMonthTask, declineHabit, editAppointment, logCheckIn, planHabit, rateAutomaticity, rateCues, recordReason, removeAppointment, RuleError, setAppointmentDone, skipDays, togglePart, unplanHabit, unskipDay } from '../../app/actions.js';
+import { agenda } from '../agenda.js';
+import { agendaCard } from '../components/agenda-card.js';
 import { appointmentCard } from '../components/appointment-card.js';
 import { openAppointmentSheet } from '../components/appointment-sheet.js';
+import { openSkipDaySheet } from '../components/skip-day-sheet.js';
 import { noteRated } from '../components/automaticity.js';
 import { buildAttention, forToday } from '../../app/attention.js';
 import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
@@ -68,7 +71,7 @@ async function perform(action, message = null) {
     }
   } catch (error) {
     if (!(error instanceof RuleError)) throw error;
-    const known = { plan_window: nl.today.toasts.planWindow, appointment_missing: nl.today.appointments.errors.missing, appointment_window: nl.today.appointments.errors.date.window(APPOINTMENT_AHEAD_DAYS) };
+    const known = { plan_window: nl.today.toasts.planWindow, appointment_missing: nl.today.appointments.errors.missing, appointment_window: nl.today.appointments.errors.date.window(APPOINTMENT_AHEAD_DAYS), skip_window: nl.today.skipDay.toasts.window };
     showToast({ message: known[error.code] ?? nl.today.toasts.backfillWindow });
     if (error.code === 'appointment_missing') notifyChanged(); // op een ander toestel verwijderd: de lijst klopt weer
   }
@@ -82,7 +85,7 @@ export function todayView({ query }) {
     load: async () => {
       const snapshot = await state.repo.snapshot();
       return {
-        view: buildDayView({ snapshot, date, today: state.today }),
+        view: buildDayView({ snapshot, date, today: state.today, agenda: agenda.itemsFor(date) }),
         week: buildWeekStrip({ snapshot, date, today: state.today }),
         attention: date === state.today ? forToday(buildAttention({ snapshot, today: state.today })) : [],
         toPlan: countToPlan(snapshot, state.today, date), // hoeveel flexibele taken nog dagen nodig hebben (op de knop Plan je week)
@@ -263,10 +266,49 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
       : perform(() => addAppointment(repo, values, today), t.toasts.added(values.title))),
     onRemove: (item) => perform(() => removeAppointment(repo, { id: item.id }), t.toasts.removed),
   });
+  // Een afspraak uit je agenda afvinken blijft op dit toestel: geen synchronisatie en geen widget, dus niet via perform (dat meldt een wijziging in je gegevens)
+  const toggleAgenda = (item) => {
+    const done = !item.done;
+    const { undo } = agenda.setDone(item, done);
+    const title = item.title || nl.today.agenda.untitled;
+    showToast({ message: done ? nl.today.agenda.toasts.done(title) : nl.today.agenda.toasts.reopened(title), actionLabel: nl.app.undo, onAction: undo });
+  };
   const toggleAppointment = (item) => perform(
     () => setAppointmentDone(repo, { id: item.id, date, done: !item.done }, today),
     item.done ? t.toasts.reopened(item.title) : t.toasts.done(item.title),
   );
+  // Een dag overslaan (docs/DAG-OVERSLAAN.md): voor al je taken tegelijk, met een verplichte reden. Is de dag al overgeslagen, dan staat de reden in een banner
+  // met de knoppen om die aan te passen of de dag weer mee te laten tellen.
+  const k = nl.today.skipDay;
+  const skipSheet = (existing = null) => openSkipDaySheet({
+    existing,
+    date,
+    today,
+    onSave: ({ from, to, reason, note }) => perform(
+      () => skipDays(repo, { from, to, reason, note }, today),
+      existing ? k.toasts.saved : k.toasts.skipped(diffDays(to, from) + 1),
+    ),
+    onRemove: (item) => perform(() => unskipDay(repo, { date: item.date }), k.toasts.counted),
+  });
+  const skipBanner = view.skipDay
+    ? h('section', { class: 'banner skipday-banner', id: 'skipDayBanner', role: 'status', 'aria-label': k.banner(k.reasons[view.skipDay.reason]) },
+      h('strong', { class: 'skipday-banner__reason' }, k.banner(k.reasons[view.skipDay.reason])),
+      view.skipDay.note ? h('p', { class: 'skipday-banner__text' }, view.skipDay.note) : null,
+      h('p', { class: 'skipday-banner__text xs' }, k.bannerText),
+      view.canSkip
+        ? h('div', { class: 'skipday-banner__actions' },
+          h('button', { type: 'button', class: 'button button--secondary button--small', dataset: { focusKey: 'skipday-change' }, onclick: () => skipSheet(view.skipDay) }, k.change),
+          h('button', { type: 'button', class: 'button button--ghost button--small', dataset: { focusKey: 'skipday-undo' }, onclick: () => perform(() => unskipDay(repo, { date }), k.toasts.counted) }, k.remove))
+        : null)
+    : null;
+  const skipAdd = view.canSkip && view.hasHabits && !view.skipDay
+    ? h('div', { class: 'skipday-add' },
+      h('button', {
+        type: 'button', id: 'skipDayAdd', class: 'button button--ghost skipday-add__button', dataset: { focusKey: 'skipday-add' },
+        'aria-label': k.addFor(relativeDayLabel(date, today).toLowerCase()),
+        onclick: () => skipSheet(),
+      }, k.add))
+    : null;
   const appointmentOptions = { canLog: view.canLog, today, onToggle: toggleAppointment, onEdit: appointmentSheet };
 
   const groupSections = view.groups.map((group) => {
@@ -277,7 +319,8 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
         total > 0 ? h('span', { class: 'xs muted' }, nl.today.sectionCount(done, total)) : null),
       h('ul', { class: 'card-list' },
         ...group.entries.map((entry) => habitCard(entry, cardOptions)),
-        ...group.appointments.map((item) => appointmentCard(item, appointmentOptions))));
+        ...group.appointments.map((item) => appointmentCard(item, appointmentOptions)),
+        ...group.agenda.map((item) => agendaCard(item, { canLog: view.canLog, onToggle: toggleAgenda }))));
   });
   // De ingang staat op elke dag van vandaag af (niet op dagen die voorbij zijn) en niet bij de introductie voor wie nog niets heeft.
   const appointmentAdd = view.canPlan && (view.hasHabits || view.hasAppointments)
@@ -440,11 +483,12 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
   return h('div', { class: 'today__inner page__frame' },
     header(view, week),
     banner(view),
+    skipBanner,
     // de maandtaak en de review-melding staan boven beide kolommen: zo beginnen de dag links en de stapel rechts op dezelfde hoogte
     monthTaskSection || reviewNote ? h('div', { class: 'today__notes' }, monthTaskSection, reviewNote) : null,
-    view.groups.length === 0 && view.pool.length === 0 ? todayEmpty(view) : null,
+    view.groups.length === 0 && view.pool.length === 0 && !view.skipDay ? todayEmpty(view) : null,
     h('div', { class: 'today__columns page__panes' },
-      h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections, appointmentAdd),
+      h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections, appointmentAdd, skipAdd),
       side.length > 0 ? h('div', { class: 'today__side page__pane' }, ...side) : null));
 }
 
