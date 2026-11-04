@@ -4,6 +4,7 @@ import { lastChanceThisWeek, planSkippedIn } from '../domain/planning.js';
 import { DAYPARTS } from '../domain/habit.js';
 import { appointmentsOn } from '../domain/appointments.js';
 import { donePartsOf, habitDayparts, hasMultipleDayparts } from '../domain/dayparts.js';
+import { effectiveDaypart, moveTargets, movesOn } from '../domain/daymoves.js';
 import { paceOn } from '../domain/pace.js';
 import { isTight } from '../domain/tight.js';
 import { isOnTrial } from '../domain/trial.js';
@@ -95,9 +96,18 @@ export function buildDayView({ snapshot, date, today, prepared = null, agenda = 
   // afspraken bestaat wel (docs/LOSSE-AFSPRAKEN.md).
   const allAppointments = snapshot.appointments ?? [];
   const appointments = appointmentsOn({ appointments: allAppointments, date, today });
+  // Een kaart kan voor deze dag in een ander dagdeel staan (domain/daymoves.js): `daypart` is waar hij nu staat, `fromDaypart` zijn eigen dagdeel,
+  // `moveTargets` de dagdelen waar hij heen mag. `part` blijft het eigen dagdeel van een habit met meerdere dagdelen (daar hoort het vinkje bij).
+  const moves = movesOn(snapshot.dayMoves ?? [], date);
+  const cards = entries.flatMap((entry) => habitDayparts(entry.habit).map((part) => ({
+    ...forPart(entry, part),
+    daypart: effectiveDaypart(moves, entry.habitId, part),
+    fromDaypart: part,
+    moveTargets: moveTargets(entry.habit, part, moves),
+  })));
   const groups = DAYPARTS.map((daypart) => ({
     daypart,
-    entries: entries.filter((e) => habitDayparts(e.habit).includes(daypart)).map((e) => forPart(e, daypart)),
+    entries: cards.filter((card) => card.daypart === daypart).map((card) => ({ ...card, moved: card.fromDaypart !== daypart })),
     appointments: appointments.filter((a) => a.daypart === daypart),
     agenda: agenda.filter((a) => a.daypart === daypart),
   })).filter((g) => g.entries.length > 0 || g.appointments.length > 0 || g.agenda.length > 0);
@@ -125,13 +135,19 @@ export function buildDayView({ snapshot, date, today, prepared = null, agenda = 
 
   // wat je hebt overgeslagen of opgegeven ("ga ik niet doen") staat niet meer open: de teller en "alles gedaan" gaan over wat nog kan
   const counted = entries.filter((e) => !isSetAside(e));
+  const canLog = date <= today && canBackfill(date, today);
   return {
     date,
     hasHabits: habits.length > 0,
     hasAppointments: allAppointments.length > 0, // ook als er op deze dag niets staat: dan blijft "Afspraak toevoegen" bereikbaar
     mode: date < today ? 'past' : date === today ? 'today' : 'future',
-    canLog: date <= today && canBackfill(date, today),
+    canLog,
     canPlan: date >= today,
+    // een kaart naar een ander dagdeel zetten kan op elke dag die je kunt invullen of vooruit plannen
+    canMove: canLog || date >= today,
+    // hoe ging deze dag (domain/reflections.js): het cijfer en de notitie, en of je het nog mag invullen
+    reflection: (snapshot.dayReflections ?? []).find((r) => r.date === date) ?? null,
+    canReflect: canLog,
     // een dag overslaan voor alle habits (domain/skipdays.js): `skipDay` is de reden als deze dag is overgeslagen, `canSkip` of dat (nog) mag
     skipDay: (snapshot.skipDays ?? []).find((d) => d.date === date) ?? null,
     canSkip: inSkipWindow(date, today),

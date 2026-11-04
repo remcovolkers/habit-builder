@@ -253,3 +253,58 @@
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   gap: var(--space-3);
 }
+
+/* ---- een taak naar een ander dagdeel slepen: de dagdelen waar hij heen mag ---- */
+.today__main [data-drop-state] {
+  outline: 2px dashed var(--color-accent-50);
+  outline-offset: 6px;
+  border-radius: var(--radius-card);
+}
+
+.today__main [data-drop-state='over'] {
+  outline-style: solid;
+  outline-color: var(--color-accent);
+  background: var(--color-accent-10);
+}
+
+/* een dagdeel waar nog niets staat, zolang je sleept */
+.daypart-drop__hint {
+  margin: 0;
+  padding: var(--space-4);
+  border: 2px dashed var(--color-hairline-strong);
+  border-radius: var(--radius-card);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+/* ---- hoe ging de dag ---- */
+.reflection__card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.reflection__question {
+  margin: 0;
+  font-weight: var(--font-weight-bold);
+}
+
+.reflection__note {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.reflection__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* vijf korte woorden naast elkaar; bij grote tekst of een smal scherm vallen ze vanzelf op een tweede regel */
+.reflection__scale .segmented__face {
+  padding: 0 var(--space-2);
+}

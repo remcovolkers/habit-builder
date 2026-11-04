@@ -3,6 +3,8 @@
 import { addDays, diffDays, eachDay, isValidDate, startOfMonth, startOfWeek } from '../domain/dates.js';
 import { SKIP_MAX_DAYS, inSkipWindow, validateSkipDay } from '../domain/skipdays.js';
 import { withPlanSkip } from '../domain/planning.js';
+import { effectiveDaypart, moveTargets, movesOn } from '../domain/daymoves.js';
+import { validateReflection } from '../domain/reflections.js';
 import { inAppointmentWindow } from '../domain/appointments.js';
 import { monthReviewState, weekReviewState } from '../domain/reviews.js';
 import { DEFAULT_GRADUATION_DAYS, PLAN_AHEAD_DAYS } from '../domain/constants.js';
@@ -135,9 +137,51 @@ export async function planHabit(repo, { habitId, date }, today) {
   return { undo: () => repo.clearDayPlan(habitId, date) };
 }
 
+/** Haalt een taak weer van een dag. Een verplaatsing naar een ander dagdeel van die dag gaat mee weg: bij opnieuw inplannen begint hij weer in zijn eigen dagdeel. */
 export async function unplanHabit(repo, { habitId, date }) {
+  const moves = (await repo.listDayMoves()).filter((move) => move.habitId === habitId && move.date === date);
   await repo.clearDayPlan(habitId, date);
-  return { undo: () => repo.setDayPlan({ habitId, date }) };
+  for (const move of moves) await repo.clearDayMove(habitId, date, move.from);
+  return { undo: async () => { await repo.setDayPlan({ habitId, date }); for (const move of moves) await repo.setDayMove(move); } };
+}
+
+// --- een taak voor één dag in een ander dagdeel -------------------------------------------------
+
+/**
+ * Zet een kaart voor de dag `date` in een ander dagdeel (`part`: het eigen dagdeel van die kaart; `to`: waar hij heen moet). Terug naar het eigen dagdeel
+ * (`to === part`) haalt de verplaatsing weg. Kan op de dag zelf, tot BACKFILL_DAYS terug en op dagen die je vooruit kunt plannen.
+ * Een dagdeel waar al een ander dagdeel van dezelfde habit staat is niet toegestaan (RuleError 'move_blocked').
+ */
+export async function moveToDaypart(repo, { habit, date, part, to }, today) {
+  const ahead = diffDays(date, today);
+  if (ahead > PLAN_AHEAD_DAYS || !(ahead >= 0 || canBackfill(date, today))) throw new RuleError('move_window');
+  const dayMoves = await repo.listDayMoves();
+  const previous = dayMoves.find((move) => move.habitId === habit.id && move.date === date && move.from === part) ?? null;
+  const moves = movesOn(dayMoves, date);
+  if (to !== effectiveDaypart(moves, habit.id, part) && !moveTargets(habit, part, moves).includes(to)) throw new RuleError('move_blocked');
+  if (to === part) await repo.clearDayMove(habit.id, date, part);
+  else await repo.setDayMove({ habitId: habit.id, date, from: part, to });
+  return { undo: () => (previous ? repo.setDayMove(previous) : repo.clearDayMove(habit.id, date, part)) };
+}
+
+// --- hoe ging de dag ----------------------------------------------------------------------------
+
+/** Bewaart het cijfer en de notitie van een dag (de dag zelf of tot BACKFILL_DAYS terug). Geeft { undo } terug. */
+export async function saveDayReflection(repo, { date, score, note = null }, today) {
+  if (!canBackfill(date, today)) throw new RuleError('backfill_window');
+  const errors = validateReflection({ date, score, note });
+  if (errors.length > 0) throw new RuleError('reflection_invalid');
+  const previous = (await repo.listDayReflections()).find((r) => r.date === date) ?? null;
+  await repo.setDayReflection({ date, score, note });
+  return { undo: () => (previous ? repo.setDayReflection({ date, score: previous.score, note: previous.note ?? null }) : repo.clearDayReflection(date)) };
+}
+
+export async function clearDayReflection(repo, { date }, today) {
+  if (!canBackfill(date, today)) throw new RuleError('backfill_window');
+  const previous = (await repo.listDayReflections()).find((r) => r.date === date) ?? null;
+  if (!previous) return { undo: async () => {} };
+  await repo.clearDayReflection(date);
+  return { undo: () => repo.setDayReflection({ date, score: previous.score, note: previous.note ?? null }) };
 }
 
 // --- losse afspraken ----------------------------------------------------------------------------

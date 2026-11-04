@@ -1,5 +1,6 @@
 import { h } from '../dom.js';
 import { icon } from '../svg.js';
+import { tapProps } from '../tap-to-check.js';
 import { nl } from '../../content/nl.js';
 import { relativeDayLabel } from '../../app/format.js';
 
@@ -8,12 +9,12 @@ const t = nl.today.appointments;
 /**
  * Een losse afspraak in het dagdeel op Vandaag: een kaart in de stijl van een habit, maar zonder icoon, sterkte of reeks, en met het woord "Afspraak"
  * erop zodat je het verschil ziet. Een afspraak van een eerdere dag die nog openstaat zegt "Van gisteren", rustig en zonder waarschuwing.
- * Tikken op ⋯ opent het blad om hem te wijzigen of te verwijderen.
+ * Tikken op ⋯ opent het blad om hem te wijzigen of te verwijderen; tikken op de kaart zelf vinkt af.
  */
 export function appointmentCard(item, { canLog, today, onToggle, onEdit }) {
   const state = item.done ? 'done' : 'open';
   const meta = [t.badge, item.carried ? t.from(relativeDayLabel(item.date, today).toLowerCase()) : null].filter(Boolean).join(' · ');
-  return h('li', { class: 'habit-card appointment-card', dataset: { state, kind: 'appointment' } },
+  return h('li', { class: 'habit-card appointment-card', dataset: { state, kind: 'appointment', tap: canLog ? 'true' : null }, ...tapProps(canLog, () => onToggle(item)) },
     h('div', { class: 'habit-card__body' },
       h('div', { class: 'habit-card__name appointment-card__title' }, item.title),
       h('div', { class: 'habit-card__meta' }, meta),

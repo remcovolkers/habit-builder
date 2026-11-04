@@ -2,6 +2,7 @@ import { habitIcon } from './habit-icon.js';
 import { automaticityFeedback, automaticityPicker, guideLink } from './automaticity.js';
 import { h } from '../dom.js';
 import { icon } from '../svg.js';
+import { tapProps } from '../tap-to-check.js';
 import { nl } from '../../content/nl.js';
 
 export function entryState(entry) {
@@ -32,6 +33,7 @@ function metaLine(entry) {
     parts.push(entry.overdue ? nl.today.overdue : nl.today.dueOn(entry.unit.due.slice(8)));
   }
   if (entry.partsTotal > 1) parts.push(nl.today.partsProgress(entry.partsDone, entry.partsTotal));
+  if (entry.moved) parts.push(nl.today.move.movedFrom(nl.dayparts[entry.fromDaypart]));
   if (entry.habit.cue) parts.push(entry.habit.cue);
   return parts.join(' · ');
 }
@@ -67,7 +69,10 @@ function counterControl(entry, { canLog, onAdjust }) {
     }, '+'));
 }
 
-/** Eén habit in de lijst van vandaag: icoon, naam, afvinkknop (of teller) en een menu voor meer acties. */
+/**
+ * Eén habit in de lijst van vandaag: icoon, naam, afvinkknop (of teller) en een menu voor meer acties. Tikken op de kaart zelf vinkt ook af (niet bij een teller:
+ * daar is een tik op de kaart geen duidelijk antwoord, je gebruikt + en −).
+ */
 export function habitCard(entry, { canLog, onToggle, onMore, onAdjust, onRate, onCues = () => {}, onLate }) {
   const { habit } = entry;
   // dezelfde habit staat bij meerdere dagdelen op de pagina: de sleutel voor de focus (live.js) moet per kaart verschillen
@@ -76,9 +81,11 @@ export function habitCard(entry, { canLog, onToggle, onMore, onAdjust, onRate, o
   const state = entryState(entry);
   const meta = metaLine(entry);
   const isCounter = Boolean(habit.counter);
+  const tappable = canLog && !isCounter;
   return h('li', {
     class: 'habit-card',
-    dataset: { state, color: habit.color, overdue: entry.overdue ? 'true' : null, counter: isCounter ? 'true' : null },
+    dataset: { state, color: habit.color, overdue: entry.overdue ? 'true' : null, counter: isCounter ? 'true' : null, tap: tappable ? 'true' : null },
+    ...tapProps(tappable, () => onToggle(entry)),
   },
   h('span', { class: 'habit-card__icon', 'aria-hidden': 'true' }, habitIcon(habit.icon)),
   h('div', { class: 'habit-card__body' },

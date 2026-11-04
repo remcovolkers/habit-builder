@@ -15,7 +15,7 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 ## Welke gegevens
 
 **Zonder account** (alleen op je apparaat, in de opslag van je browser):
-- je habits, check-ins, pauzes, planning, prestaties, automatisme-cijfers, wekelijkse reviews, je losse afspraken (de tekst, de dag en het dagdeel) en de redenen die je geeft als een taak bleef liggen of je hem opgaf (met je eventuele toelichting en je plan);
+- je habits, check-ins, pauzes, planning, prestaties, automatisme-cijfers, wekelijkse reviews, je losse afspraken (de tekst, de dag en het dagdeel), de dagen waarop je een taak in een ander dagdeel zette, je dagreflecties (een cijfer van 1 tot 5 en je korte notitie bij een dag) en de redenen die je geeft als een taak bleef liggen of je hem opgaf (met je eventuele toelichting en je plan);
 - je instellingen (naam voor de begroeting, tijdzone, dagwissel).
 
 **Met een account** komt daar bij:
@@ -42,9 +42,9 @@ Habit Builder is een hobbyproject van **Remco Volkers** (een particulier, geen b
 - **Afvinken**: wat je op Vandaag afvinkt blijft op je apparaat, als een onleesbaar nummer met de dag erbij (zonder de titel van de afspraak), en wordt na twee weken opgeruimd. Het gaat niet mee in de synchronisatie;
 - **Ontkoppelen, uitloggen en je account verwijderen** wissen het adres en de afspraken van je apparaat. Uitloggen en je account verwijderen wissen ook wat je afvinkte.
 
-**Wat je vrienden niet zien:** je e-mailadres, de namen van je habits, je losse afspraken, je agenda, je cues, "waarom"-teksten, notities en reviews, wat je op welk tijdstip afvinkt, en je andere gegevens.
+**Wat je vrienden niet zien:** je e-mailadres, de namen van je habits, je losse afspraken, je dagreflecties, je agenda, je cues, "waarom"-teksten, notities en reviews, wat je op welk tijdstip afvinkt, en je andere gegevens.
 
-Je habit-namen, de tekst van je losse afspraken (en de titels uit je agenda, als je die koppelt), cues, "waarom"-teksten, notities, reviews en de toelichting en het plan bij een reden zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
+Je habit-namen, de tekst van je losse afspraken, de notitie bij een dagreflectie (en de titels uit je agenda, als je die koppelt), cues, "waarom"-teksten, notities, reviews en de toelichting en het plan bij een reden zijn vrije tekst die jij schrijft. Zet er geen gevoelige gegevens in die je niet op een server wilt hebben.
 
 ## Waarvoor
 
