@@ -10,7 +10,7 @@ import { nl } from '../../content/nl.js';
 import { declineHabit, recordReason, RuleError, saveMonthlyReview, saveWeeklyReview } from '../../app/actions.js';
 import { buildWeekReview } from '../../app/attention.js';
 import { buildPeriodOverview } from '../../app/overview.js';
-import { buildMonthReviewCard, buildWeekReviewCard } from '../../app/reviews.js';
+import { buildMonthReviewCard, buildWeekDays, buildWeekReviewCard } from '../../app/reviews.js';
 import { formatDateLong, formatDateShort } from '../../app/format.js';
 import { REVIEW_TEXT_MAX, ValidationError } from '../../data/repository.js';
 import { wontSpan } from '../../domain/attention.js';
@@ -173,6 +173,15 @@ function weekBody({ snapshot, today, card }) {
     if (totals.total > 0) lookback = h('p', { class: 'xs muted' }, w.outcome(totals.done, totals.total));
   }
 
+  // hoe de dagen gingen (de dagreflecties van Vandaag): alleen als je ze hebt ingevuld
+  const { days, average } = buildWeekDays({ snapshot, start: card.start, end: card.end });
+  const daysBlock = days.length === 0 ? null : h('div', { class: 'review__days' },
+    h('p', { class: 'kicker' }, w.daysTitle),
+    h('p', { class: 'xs muted' }, w.daysAverage(average, days.length)),
+    h('ul', { class: 'card-list' }, ...days.map((day) => h('li', { class: 'review-saved__item', dataset: { tone: day.score <= 2 ? 'bad' : null } },
+      h('p', { class: 'review-saved__label' }, `${formatDateShort(day.date)} · ${nl.today.reflection.scale[day.score]}`),
+      day.note ? h('p', { class: 'review-saved__text' }, day.note) : null))));
+
   const items = card.review && [
     card.review.wentWell ? { tone: 'good', label: w.wentWellShort, text: card.review.wentWell } : null,
     card.review.wentBad ? { tone: 'bad', label: w.wentBadShort, text: card.review.wentBad } : null,
@@ -202,7 +211,7 @@ function weekBody({ snapshot, today, card }) {
   }
   // "heb je het gedaan zonder de app?" voor een proef van deze week, en een aanbod voor taken die zover zijn (alleen als de review open staat)
   const trial = trialReviewBlock({ snapshot, today, period: 'week', start: card.start, open: card.state === 'open' });
-  return h('div', { class: 'stack' }, trial, lookback, content);
+  return h('div', { class: 'stack' }, trial, lookback, daysBlock, content);
 }
 
 // --- maand -------------------------------------------------------------------------------------------

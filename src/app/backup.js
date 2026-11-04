@@ -5,6 +5,8 @@ import { NOTE_MAX_LENGTH } from '../domain/constants.js';
 import { SLIP_REASONS } from '../domain/attention.js';
 import { validateAppointment } from '../domain/appointments.js';
 import { isOwnPause, validateSkipDay } from '../domain/skipdays.js';
+import { dayMoveId, validateDayMove } from '../domain/daymoves.js';
+import { validateReflection } from '../domain/reflections.js';
 import { validCues } from '../domain/automaticity.js';
 import { CHECK_IN_STATUSES, validParts, validateHabit } from '../domain/habit.js';
 import { validateSettings } from './settings.js';
@@ -13,7 +15,7 @@ export const BACKUP_APP = 'habit-builder';
 export const BACKUP_VERSION = 1;
 const REVIEW_TEXT_MAX = 1000;
 
-const COLLECTIONS = ['habits', 'checkIns', 'pauses', 'dayPlans', 'achievements', 'ratings', 'reviews', 'reasons', 'appointments', 'skipDays'];
+const COLLECTIONS = ['habits', 'checkIns', 'pauses', 'dayPlans', 'achievements', 'ratings', 'reviews', 'reasons', 'appointments', 'skipDays', 'dayMoves', 'dayReflections'];
 
 /** snapshot: uitvoer van repo.snapshot(); alleen levende records, zonder interne verwijdermarkeringen. */
 export function buildExport(snapshot, now = new Date()) {
@@ -85,12 +87,18 @@ function validateRecords(name, records, habitIds, problems) {
       case 'skipDays':
         if (validateSkipDay(record).length > 0 || record.id !== record.date) return bad('ongeldige overgeslagen dag');
         break;
+      case 'dayMoves':
+        if (validateDayMove(record).length > 0 || record.id !== dayMoveId(record.habitId, record.date, record.from)) return bad('ongeldige verplaatsing');
+        break;
+      case 'dayReflections':
+        if (validateReflection(record).length > 0 || record.id !== record.date) return bad('ongeldige dagreflectie');
+        break;
       default:
         break;
     }
     // records die naar een onbekende habit verwijzen zijn wees: weglaten in plaats van de hele import te weigeren
-    // (een losse afspraak en een overgeslagen dag horen bij geen habit)
-    if (name !== 'habits' && name !== 'reviews' && name !== 'achievements' && name !== 'appointments' && name !== 'skipDays' && !habitIds.has(record.habitId)) {
+    // (een losse afspraak, een overgeslagen dag en een dagreflectie horen bij geen habit)
+    if (name !== 'habits' && name !== 'reviews' && name !== 'achievements' && name !== 'appointments' && name !== 'skipDays' && name !== 'dayReflections' && !habitIds.has(record.habitId)) {
       problems.push(`${where}: verwijst naar een onbekende habit (weggelaten)`);
       return;
     }

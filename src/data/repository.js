@@ -14,12 +14,16 @@
 //   listReasons(habitId?) / setReason({habitId, date, reason, note?, plan?}) / clearReason(habitId, date)   (waarom een taak bleef liggen of werd opgegeven)
 //   listAppointments() / getAppointment(id) / saveAppointment({id?, title, date, daypart?, doneOn?}) / deleteAppointment(id)   (losse afspraken, geen habits)
 //   listSkipDays() / setSkipDay({date, reason, note?}) / clearSkipDay(date)   (overgeslagen dagen, voor alle habits tegelijk, met een reden)
+//   listDayMoves() / setDayMove({habitId, date, from, to}) / clearDayMove(habitId, date, from)   (een taak voor één dag in een ander dagdeel)
+//   listDayReflections() / setDayReflection({date, score, note?}) / clearDayReflection(date)   (hoe ging de dag: cijfer en notitie)
 //   replaceAll(data)  (import: vervangt alles)
-//   snapshot() -> { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments, skipDays }
+//   snapshot() -> { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments, skipDays, dayMoves, dayReflections }
 //   (`pauses` bevat daarin ook de overgeslagen dagen als afgeleide pauzes per habit, met derived: true; zie domain/skipdays.js)
 import { COUNTER_MAX } from '../domain/counter.js';
 import { validateAppointment } from '../domain/appointments.js';
 import { skipDayPauses, validateSkipDay } from '../domain/skipdays.js';
+import { dayMoveId, validateDayMove } from '../domain/daymoves.js';
+import { validateReflection } from '../domain/reflections.js';
 import { NOTE_MAX_LENGTH } from '../domain/constants.js';
 import { isValidDate, startOfMonth, startOfWeek } from '../domain/dates.js';
 import { monthReviewId } from '../domain/reviews.js';
@@ -305,6 +309,35 @@ export function createRepository({
       return softDelete('skipDays', date);
     },
 
+    // --- een taak voor één dag in een ander dagdeel ---------------------------------------------
+    // Eén verplaatsing per dagdeel van een habit per dag (zie domain/daymoves.js).
+    async listDayMoves() {
+      return liveList('dayMoves');
+    },
+    async setDayMove({ habitId, date, from, to }) {
+      const errors = validateDayMove({ habitId, date, from, to });
+      if (errors.length > 0) throw new ValidationError(errors);
+      return upsert('dayMoves', { id: dayMoveId(habitId, date, from), habitId, date, from, to });
+    },
+    async clearDayMove(habitId, date, from) {
+      return softDelete('dayMoves', dayMoveId(habitId, date, from));
+    },
+
+    // --- hoe ging de dag ----------------------------------------------------------------------
+    // Eén per dag: een cijfer van 1 tot 5 en een korte notitie (zie domain/reflections.js).
+    async listDayReflections() {
+      return (await liveList('dayReflections')).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    },
+    async setDayReflection({ date, score, note = null }) {
+      const errors = validateReflection({ date, score, note });
+      if (errors.length > 0) throw new ValidationError(errors);
+      const cleanNote = note === null || note.trim() === '' ? null : note.trim();
+      return upsert('dayReflections', { id: date, date, score, note: cleanNote });
+    },
+    async clearDayReflection(date) {
+      return softDelete('dayReflections', date);
+    },
+
     // --- import: alles vervangen ----------------------------------------------------------------
     async replaceAll(data) {
       const stamp = now();
@@ -320,6 +353,8 @@ export function createRepository({
         reasons: data.reasons,
         appointments: data.appointments,
         skipDays: data.skipDays,
+        dayMoves: data.dayMoves,
+        dayReflections: data.dayReflections,
       };
       for (const collection of DATA_COLLECTIONS) {
         const incoming = sets[collection] ?? [];
@@ -341,7 +376,7 @@ export function createRepository({
 
     // --- alles voor de schermen -------------------------------------------------------------
     async snapshot() {
-      const [settings, habits, checkIns, ownPauses, dayPlans, achievements, ratings, reviews, reasons, appointments, skipDays] = await Promise.all([
+      const [settings, habits, checkIns, ownPauses, dayPlans, achievements, ratings, reviews, reasons, appointments, skipDays, dayMoves, dayReflections] = await Promise.all([
         this.getSettings(),
         this.listHabits(),
         this.listCheckIns(),
@@ -353,9 +388,11 @@ export function createRepository({
         this.listReasons(),
         this.listAppointments(),
         this.listSkipDays(),
+        this.listDayMoves(),
+        this.listDayReflections(),
       ]);
       const pauses = [...ownPauses, ...skipDayPauses(habits, skipDays)];
-      return { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments, skipDays };
+      return { settings, habits, checkIns, pauses, dayPlans, achievements, ratings, reviews, reasons, appointments, skipDays, dayMoves, dayReflections };
     },
   };
 }
