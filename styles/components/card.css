@@ -823,3 +823,44 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
+
+/* ---- tikken op de kaart vinkt af ---- */
+.habit-card[data-tap='true'] {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* even indrukken van de kaart laat zien dat hij reageert, behalve als je op een eigen knop in de kaart drukt */
+.habit-card[data-tap='true']:active:not(:has(button:active, a:active, .habit-card__extra:active)) {
+  background: var(--color-elevated);
+}
+
+/* ---- een kaart naar een ander dagdeel slepen ---- */
+.habit-card[data-draggable='true'] {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.habit-card[data-dragging='true'] {
+  opacity: 0.35;
+}
+
+/* de kopie die de vinger volgt */
+.drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  margin: 0;
+  list-style: none;
+  pointer-events: none;
+  scale: 1.02;
+  box-shadow: var(--shadow-glow);
+}
+
+body.is-dragging {
+  cursor: grabbing;
+  -webkit-user-select: none;
+  user-select: none;
+}

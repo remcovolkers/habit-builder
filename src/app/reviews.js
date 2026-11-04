@@ -3,6 +3,7 @@
 // tot de 2e om 12:00 (maand), zie domain/reviews.js. `today` is de dag van de app (met de dagwissel); die bepaalt welke periode "nu" is.
 // Tussen middernacht en de dagwissel is `today` dus nog gisteren, terwijl `now` al de nieuwe dag is: de review van de vorige week staat dan nog open.
 import { addMonths, endOfMonth, endOfWeek, startOfMonth, startOfWeek } from '../domain/dates.js';
+import { averageScore, reflectionsBetween } from '../domain/reflections.js';
 import {
   monthReviewClosesOn,
   monthReviewFor,
@@ -31,6 +32,12 @@ export function buildWeekReviewCard({ snapshot, now, date, today = now.slice(0, 
     opensOn: weekReviewOpensOn(start),
     closesOn: weekReviewClosesOn(start),
   };
+}
+
+/** Hoe de dagen van de week gingen (de dagreflecties, oudste eerst) en het gemiddelde cijfer; `days` is leeg als er niets is ingevuld. */
+export function buildWeekDays({ snapshot, start, end }) {
+  const days = reflectionsBetween(snapshot.dayReflections ?? [], start, end);
+  return { days, average: averageScore(days) };
 }
 
 /**

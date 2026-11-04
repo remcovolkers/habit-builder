@@ -19,6 +19,8 @@ Eén object store per soort record. Alle records hebben `id`, `createdAt`, `upda
 | `reasons` | `habitId\|datum` | `habitId`, `date` (de dag van de reactie), `reason` (`no_time`/`no_money`/`forgot`/`no_motivation`/`busy_sick`/`wrong_rhythm`/`other`), `note` (optioneel, max. 200 tekens), `plan` (optioneel, max. 200 tekens, alleen bij "ga ik niet doen": wat je doet zodat je het niet nog eens hoeft te falen): waarom een taak bleef liggen of is opgegeven. Een reactie dekt de signalen die op of vóór die dag begonnen (PLAN §4.9) |
 | `appointments` | uuid | Een losse afspraak, geen habit: `title` (1–80 tekens), `date`, `daypart` (`morning`/`afternoon`/`evening`/`anytime`), `doneOn` (de dag waarop hij is afgevinkt, of `null`). Staat op Vandaag in zijn dagdeel; een open afspraak van een eerdere dag schuift stil door naar vandaag. Telt nergens mee (punten, prestaties, aandacht, ranglijst). Zie [LOSSE-AFSPRAKEN.md](LOSSE-AFSPRAKEN.md) |
 | `skipDays` | `datum` | Een overgeslagen dag, voor alle habits tegelijk: `date`, `reason` (`away`/`sick`/`event`/`other`), `note` (max. 200 tekens, verplicht bij `other`). Telt voor elke habit als gepauzeerd, niet als gemist; `repo.snapshot()` geeft ze daarom ook als afgeleide pauzes (`derived: true`, niet opgeslagen). Zie [DAG-OVERSLAAN.md](DAG-OVERSLAAN.md) |
+| `dayMoves` | `habitId\|datum\|van` | Een taak voor één dag in een ander dagdeel: `habitId`, `date`, `from` (het eigen dagdeel van de kaart, bij een habit met meerdere dagdelen dat ene dagdeel), `to`. De habit zelf verandert niet; op een andere dag staat hij weer op zijn eigen moment. Zie [DAGDEEL-EN-DAGREFLECTIE.md](DAGDEEL-EN-DAGREFLECTIE.md) |
+| `dayReflections` | `datum` | Hoe ging de dag: `date`, `score` (1–5), `note` (optioneel, max. 200 tekens). Telt nergens mee; staat terug in de weekreview. Zie [DAGDEEL-EN-DAGREFLECTIE.md](DAGDEEL-EN-DAGREFLECTIE.md) |
 | `outbox` | `collectie\|id` | wat nog naar de server moet (met een `rev` die bij elke wijziging verandert) |
 | `meta` | `sync` | `userId`, `cursor` (laatste `seq` van de server), `lastSyncAt` |
 
@@ -41,7 +43,7 @@ Eén tabel voor alle bovenstaande collecties (zie `supabase/migrations/0001_init
 | Kolom | |
 |---|---|
 | `user_id` | eigenaar (`auth.uid()`), onderdeel van de sleutel |
-| `collection` | een van `settings`, `habits`, `checkIns`, `pauses`, `dayPlans`, `achievements`, `ratings`, `reviews`, `reasons` (sinds `supabase/migrations/0004_reasons.sql`), `appointments` (sinds `supabase/migrations/0008_appointments.sql`), `skipDays` (sinds `supabase/migrations/0010_skipdays.sql`) |
+| `collection` | een van `settings`, `habits`, `checkIns`, `pauses`, `dayPlans`, `achievements`, `ratings`, `reviews`, `reasons` (sinds `supabase/migrations/0004_reasons.sql`), `appointments` (sinds `supabase/migrations/0008_appointments.sql`), `skipDays` (sinds `supabase/migrations/0010_skipdays.sql`), `dayMoves` en `dayReflections` (sinds `supabase/migrations/0011_day_moves_reflections.sql`) |
 | `id` | het `id` van het record (hierboven) |
 | `data` | het record als JSON (maximaal 20 kB, moet een object zijn) |
 | `deleted_at` | zacht verwijderen |

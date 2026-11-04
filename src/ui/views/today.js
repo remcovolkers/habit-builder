@@ -19,12 +19,14 @@ import { feedbackInviteDue, snoozeFeedbackInvite } from '../feedback-state.js';
 import { clearFirstTip, firstTipPending } from '../intro.js';
 import { nl } from '../../content/nl.js';
 import { buildDayView, isSetAside } from '../../app/day-view.js';
-import { addAppointment, adjustCounter, clearCheckIn, completeMonthTask, declineHabit, editAppointment, logCheckIn, planHabit, rateAutomaticity, rateCues, recordReason, removeAppointment, RuleError, setAppointmentDone, skipDays, togglePart, unplanHabit, unskipDay } from '../../app/actions.js';
+import { addAppointment, adjustCounter, clearCheckIn, clearDayReflection, completeMonthTask, declineHabit, editAppointment, logCheckIn, moveToDaypart, planHabit, rateAutomaticity, rateCues, recordReason, removeAppointment, RuleError, saveDayReflection, setAppointmentDone, skipDays, togglePart, unplanHabit, unskipDay } from '../../app/actions.js';
 import { agenda } from '../agenda.js';
 import { agendaCard } from '../components/agenda-card.js';
 import { appointmentCard } from '../components/appointment-card.js';
 import { openAppointmentSheet } from '../components/appointment-sheet.js';
 import { openSkipDaySheet } from '../components/skip-day-sheet.js';
+import { dayReflectionCard } from '../components/day-reflection.js';
+import { makeDraggable } from '../daypart-drag.js';
 import { noteRated } from '../components/automaticity.js';
 import { buildAttention, forToday } from '../../app/attention.js';
 import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
@@ -71,7 +73,7 @@ async function perform(action, message = null) {
     }
   } catch (error) {
     if (!(error instanceof RuleError)) throw error;
-    const known = { plan_window: nl.today.toasts.planWindow, appointment_missing: nl.today.appointments.errors.missing, appointment_window: nl.today.appointments.errors.date.window(APPOINTMENT_AHEAD_DAYS), skip_window: nl.today.skipDay.toasts.window };
+    const known = { plan_window: nl.today.toasts.planWindow, appointment_missing: nl.today.appointments.errors.missing, appointment_window: nl.today.appointments.errors.date.window(APPOINTMENT_AHEAD_DAYS), skip_window: nl.today.skipDay.toasts.window, move_window: nl.today.move.toasts.window, move_blocked: nl.today.move.toasts.blocked };
     showToast({ message: known[error.code] ?? nl.today.toasts.backfillWindow });
     if (error.code === 'appointment_missing') notifyChanged(); // op een ander toestel verwijderd: de lijst klopt weer
   }
@@ -162,6 +164,9 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
       }
       if (logged) actions.push({ label: nl.today.actions.clear, onClick: () => perform(() => clearCheckIn(repo, { habitId: habit.id, date }, today), nl.today.toasts.cleared(habit.name)) });
     }
+    if (view.canMove && entry.moveTargets?.length > 0) {
+      actions.push({ label: nl.today.actions.moveDaypart, onClick: () => moveSheet(entry) });
+    }
     if (view.canPlan && entry.plannedToday && !logged) {
       actions.push({ label: nl.today.actions.unplan, onClick: () => perform(() => unplanHabit(repo, { habitId: habit.id, date }), nl.today.toasts.unplanned(habit.name)) });
     }
@@ -171,6 +176,30 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
       actions,
     });
   }
+
+  // Een kaart voor deze dag in een ander dagdeel zetten: slepen (daypart-drag.js) of via ⋯ → Ander dagdeel. Op een andere dag staat hij weer op zijn eigen moment.
+  const daypartName = (daypart) => nl.dayparts[daypart];
+  function moveCard(entry, to) {
+    const mv = nl.today.move;
+    const back = to === entry.fromDaypart;
+    return perform(
+      () => moveToDaypart(repo, { habit: entry.habit, date, part: entry.fromDaypart, to }, today),
+      back ? mv.toasts.back(entry.habit.name, daypartName(to)) : mv.toasts.moved(entry.habit.name, daypartName(to)),
+    );
+  }
+  function moveSheet(entry) {
+    const mv = nl.today.move;
+    openDialog({
+      title: mv.title(entry.habit.name),
+      description: mv.intro,
+      actions: entry.moveTargets.map((to) => ({ label: to === entry.fromDaypart ? mv.back(daypartName(to)) : mv.to(daypartName(to)), onClick: () => moveCard(entry, to) })),
+      cancelLabel: nl.app.close,
+    });
+  }
+  // een lege plek voor een dagdeel waar nog niets staat, zolang je sleept
+  const dropZone = (daypart) => h('section', { class: 'section daypart-drop', dataset: { dropDaypart: daypart }, 'aria-hidden': 'true' },
+    h('div', { class: 'section-head' }, h('h2', { class: 'section__title' }, daypartName(daypart))),
+    h('p', { class: 'daypart-drop__hint' }, nl.today.move.dropHere));
 
   // het cijfer hoort bij de week van de gekozen dag, ook bij terugwerkend invullen
   async function rate(entry, score) {
@@ -313,15 +342,30 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
 
   const groupSections = view.groups.map((group) => {
     const { done, total } = tally(group.entries);
-    return h('section', { class: 'section', 'aria-labelledby': `dp-${group.daypart}` },
+    return h('section', { class: 'section', 'aria-labelledby': `dp-${group.daypart}`, dataset: { dropDaypart: group.daypart } },
       h('div', { class: 'section-head' },
         h('h2', { id: `dp-${group.daypart}`, class: 'section__title' }, nl.dayparts[group.daypart]),
         total > 0 ? h('span', { class: 'xs muted' }, nl.today.sectionCount(done, total)) : null),
       h('ul', { class: 'card-list' },
-        ...group.entries.map((entry) => habitCard(entry, cardOptions)),
+        ...group.entries.map((entry) => {
+          const card = habitCard(entry, cardOptions);
+          if (view.canMove && entry.moveTargets.length > 0) makeDraggable(card, { targets: entry.moveTargets, createZone: dropZone, onDrop: (to) => moveCard(entry, to) });
+          return card;
+        }),
         ...group.appointments.map((item) => appointmentCard(item, appointmentOptions)),
         ...group.agenda.map((item) => agendaCard(item, { canLog: view.canLog, onToggle: toggleAgenda }))));
   });
+  // Hoe ging de dag: voor de dag zelf en de dagen die je nog mag invullen. Het telt nergens mee.
+  const rf = nl.today.reflection;
+  const reflection = view.canReflect && view.hasHabits
+    ? dayReflectionCard({
+      date,
+      isToday: date === today,
+      reflection: view.reflection,
+      onSave: ({ score, note, noteOnly = false }) => perform(() => saveDayReflection(repo, { date, score, note }, today), noteOnly ? rf.toasts.noteSaved : rf.toasts.saved),
+      onClear: () => perform(() => clearDayReflection(repo, { date }, today), rf.toasts.cleared),
+    })
+    : null;
   // De ingang staat op elke dag van vandaag af (niet op dagen die voorbij zijn) en niet bij de introductie voor wie nog niets heeft.
   const appointmentAdd = view.canPlan && (view.hasHabits || view.hasAppointments)
     ? h('div', { class: 'appointment-add' },
@@ -488,7 +532,7 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
     monthTaskSection || reviewNote ? h('div', { class: 'today__notes' }, monthTaskSection, reviewNote) : null,
     view.groups.length === 0 && view.pool.length === 0 && !view.skipDay ? todayEmpty(view) : null,
     h('div', { class: 'today__columns page__panes' },
-      h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections, appointmentAdd, skipAdd),
+      h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections, appointmentAdd, skipAdd, reflection),
       side.length > 0 ? h('div', { class: 'today__side page__pane' }, ...side) : null));
 }
 

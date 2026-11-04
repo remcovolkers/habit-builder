@@ -256,6 +256,25 @@ De feed werkt alleen met een account en de functie `calendar-feed`; de agenda va
 14. **Afgewezen of geannuleerd (telefoon)**: een afspraak die je op je telefoon hebt afgewezen of die geannuleerd is, staat niet op Vandaag. Een agenda die je op de telefoon hebt verborgen ook niet.
 15. **Grote tekst**: de kaart in Instellingen en de afspraken op Vandaag op 320 px met 200% tekst, ook met een lang geplakt adres, zonder zijwaarts scrollen.
 
+## U. Taken naar een ander dagdeel, tikken op de kaart en hoe ging je dag (docs/DAGDEEL-EN-DAGREFLECTIE.md)
+
+Voor het slepen op een telefoon en de tik op de kaart heb je een echt toestel nodig (of de Android-app); de rest kan in de browser. Heb je een account, voer dan eerst migratie 0011 uit (lokaal doet `npm run db:start` het zelf), anders blijven de verplaatsingen en reflecties alleen op het toestel.
+
+1. **Tikken op de kaart**: tik op de naam of het icoon van een habit: hij staat op **Gedaan**, met een melding en **Ongedaan maken**. Tik nog eens: weer open. Tik op het rondje, op ⋯ en op de tekst onder de kaart (bijvoorbeeld het automatisme-cijfer): dat doet alleen wat die knop doet, er wordt niet dubbel afgevinkt. Een teller (water) reageert niet op een tik op de kaart; + en − werken gewoon. Op een dag die te ver terug ligt of in de toekomst doet de kaart niets.
+2. **Ook afspraken**: een losse afspraak en een afspraak uit je agenda vink je af met een tik op de kaart.
+3. **Slepen met de muis (computer)**: sleep een kaart naar een ander dagdeel. De dagdelen waar hij heen mag krijgen een stippellijn, het dagdeel onder de muis een doorgetrokken lijn en een tint. Loslaten zet hem daar, met de melding "Naar middag" en **Ongedaan maken**. Hij is niet afgevinkt. Onder de naam staat "Verplaatst van ochtend".
+4. **Slepen op de telefoon**: houd een kaart even vast (de telefoon trilt kort), sleep dan. Een snelle veeg blijft gewoon scrollen en verplaatst niets. Sleep je tot aan de onder- of bovenrand, dan scrolt de pagina mee. Laat los buiten een dagdeel: er gebeurt niets.
+5. **Een leeg dagdeel**: staat er niets in de middag, dan verschijnt tijdens het slepen een plek "Zet de taak hier neer". Na het loslaten staat de kaart daar. Een dagdeel dat daardoor leeg is geworden verdwijnt.
+6. **Zonder slepen**: ⋯ → **Ander dagdeel** toont de andere dagdelen als knoppen. Is de kaart verplaatst, dan staat er ook **Terug naar ochtend**.
+7. **Alleen die dag**: blader naar morgen (of gisteren): de habit staat weer in zijn eigen dagdeel.
+8. **Meerdere dagdelen**: maak tandenpoetsen met ochtend en avond. De ochtend kun je naar de middag of overdag, niet naar de avond (daar staat al een kaart van die habit). Vink de ochtendkaart af terwijl hij in de middag staat: de ring en "1 van 2" kloppen.
+9. **Vrij in te plannen taak**: neem een taak uit de stapel mee naar vandaag en zet hem in de avond. Kies **Terug naar de stapel**: hij staat weer in de stapel; neem hem opnieuw mee: hij begint in zijn eigen dagdeel.
+10. **Widget en week**: een verplaatste habit staat in de widget (Android) in het nieuwe dagdeel; de ring en de weekstrook veranderen niet.
+11. **Hoe ging je dag**: onderaan Vandaag staat "Je dag" met vijf woorden. Kies er een: "Bewaard". Er komt een notitieveld; typ iets, tik **Notitie bewaren**. Sluit de app en open hem opnieuw: cijfer en notitie staan er nog. **Wissen** haalt ze weg. Een dag in de toekomst of langer dan 14 dagen terug heeft geen "Je dag". Ring, punten, reeksen en de ranglijst veranderen niet.
+12. **Weekreview**: Voortgang → week → "Hoe je dagen gingen" met het gemiddelde en per dag het woord en de notitie. Zonder ingevulde dagen staat dat blok er niet.
+13. **Back-up en sync**: een back-up (Instellingen → exporteren) bevat `dayMoves` en `dayReflections`; na importeren staan ze er weer. Met een account staan ze in `records` in Studio (collectie `dayMoves` / `dayReflections`) en komen ze op een tweede apparaat binnen. Heb je migratie 0011 nog niet uitgevoerd, dan blijven ze op het toestel.
+14. **Grote tekst**: Vandaag op 320 px met 200% tekst: "Je dag" breekt netjes af (de vijf woorden komen onder elkaar) en er is geen zijwaarts scrollen.
+
 ## Automatische controles
 
 ```
