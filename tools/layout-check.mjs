@@ -1248,10 +1248,10 @@ async function main() {
   await nav(`today?date=${apptDay}`);
   await sleep(400);
   const addButton = await ev(`(() => { const b = document.querySelector('.appointment-add__button'); return { exists: !!b, label: b?.getAttribute('aria-label') ?? null, text: b?.textContent ?? null, height: b ? Math.round(b.getBoundingClientRect().height) : 0, inMain: !!b?.closest('.today__main') }; })()`);
-  check('Vandaag, een dag vooruit: onder de dagdelen staat de knop "＋ Afspraak" (minstens 44 px hoog)', addButton.exists && addButton.text === '＋ Afspraak' && addButton.height >= 44 && addButton.inMain && /^Afspraak toevoegen voor /.test(addButton.label), JSON.stringify(addButton));
+  check('Vandaag, een dag vooruit: onder de dagdelen staat de knop "Iets inplannen" (minstens 44 px hoog)', addButton.exists && addButton.text === 'Iets inplannen' && addButton.height >= 44 && addButton.inMain && /^Iets inplannen voor /.test(addButton.label), JSON.stringify(addButton));
   await click('.appointment-add__button', 500);
   const sheet = await ev(`(() => { const d = document.querySelector('dialog[open]'); const date = d?.querySelector('#appointmentDate'); return { title: d?.querySelector('.dialog__title')?.textContent, radios: d?.querySelectorAll('input[name="appointmentDaypart"]').length, checked: d?.querySelector('input[name="appointmentDaypart"]:checked')?.value, date: date?.value, focused: document.activeElement?.id, actions: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].map((x) => x.textContent) }; })()`);
-  check('"＋ Afspraak" opent een blad met de dag die je bekijkt voorgevuld, vier dagdelen (Overdag gekozen) en meteen de cursor in het tekstveld', sheet.title === 'Nieuwe afspraak' && sheet.radios === 4 && sheet.checked === 'anytime' && sheet.date === apptDay && sheet.focused === 'appointmentTitle' && sheet.actions.join('|') === 'Toevoegen|Annuleren', JSON.stringify({ sheet, apptDay }));
+  check('"Iets inplannen" opent een blad met de dag die je bekijkt voorgevuld, vier dagdelen (Overdag gekozen) en meteen de cursor in het tekstveld', sheet.title === 'Nieuwe afspraak' && sheet.radios === 4 && sheet.checked === 'anytime' && sheet.date === apptDay && sheet.focused === 'appointmentTitle' && sheet.actions.join('|') === 'Toevoegen|Annuleren', JSON.stringify({ sheet, apptDay }));
   await ev(`[...document.querySelectorAll('.dialog__actions .button')].find((x) => x.textContent === 'Toevoegen').click()`);
   await sleep(300);
   const empty = await ev(`({ still: !!document.querySelector('dialog[open]'), error: document.querySelector('#appointmentTitleError')?.hidden === false, text: document.querySelector('#appointmentTitleError')?.textContent, focused: document.activeElement?.id })`);
@@ -1298,7 +1298,7 @@ async function main() {
   await nav(`today?date=${past}`);
   await sleep(400);
   const noAdd = await ev(`!document.querySelector('.appointment-add__button')`);
-  check('op een dag die voorbij is staat geen "＋ Afspraak"', noAdd);
+  check('op een dag die voorbij is staat geen "Iets inplannen"', noAdd);
 
   // past op elk formaat, ook bij 200% tekst: de pagina en het blad scrollen niet zijwaarts en alles is minstens 44 px
   await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); await state.repo.saveAppointment({ title: 'Lange afspraak over Verzekeringsmaatschappijaansprakelijkheidsverzekering bellen', date: state.today, daypart: 'morning' }); notifyChanged(); })()`);
@@ -1307,7 +1307,7 @@ async function main() {
     await nav('today');
     await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
     await sleep(400);
-    const fit = await ev(`(() => { const tiny = [...document.querySelectorAll('.appointment-card .check, .appointment-card .habit-card__more, .appointment-add__button')].filter((b) => { const r = b.getBoundingClientRect(); return r.height < 43 || r.width < 43; }).length; return { overflow: document.documentElement.scrollWidth - innerWidth, wide: [...document.querySelectorAll('.appointment-card *, .appointment-add *')].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, tiny, cards: document.querySelectorAll('.appointment-card').length }; })()`);
+    const fit = await ev(`(() => { const tiny = [...document.querySelectorAll('.appointment-card .check, .appointment-card .habit-card__more, .day-action')].filter((b) => { const r = b.getBoundingClientRect(); return r.height < 43 || r.width < 43; }).length; return { overflow: document.documentElement.scrollWidth - innerWidth, wide: [...document.querySelectorAll('.appointment-card *, .day-actions *')].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, tiny, cards: document.querySelectorAll('.appointment-card').length }; })()`);
     check(`Vandaag, afspraken · ${size}: past zonder zijwaarts scrollen, ook met een lange tekst, en de knoppen zijn minstens 44 px`, fit.cards >= 2 && fit.overflow <= 0 && fit.wide === 0 && fit.tiny === 0, JSON.stringify(fit));
     await click('.appointment-add__button', 500);
     const dialogFit = await ev(`(() => { const d = document.querySelector('dialog[open]'); const box = d?.getBoundingClientRect(); const faces = [...(d?.querySelectorAll('.segmented__face') ?? [])].map((f) => f.getBoundingClientRect()); return { open: !!d, overflow: d ? d.scrollWidth - d.clientWidth : 1, inside: !!box && box.right <= innerWidth + 1 && box.bottom <= innerHeight + 1, minH: Math.min(...faces.map((r) => r.height)), buttons: [...(d?.querySelectorAll('.dialog__actions .button') ?? [])].filter((b) => b.getBoundingClientRect().height < 43).length }; })()`);
@@ -1319,8 +1319,48 @@ async function main() {
   await nav('today');
   await sleep(500);
   const desktop = await ev(`(() => { const b = document.querySelector('.appointment-add__button'); return { inMain: !!b?.closest('.today__main'), card: !!document.querySelector('.today__main .appointment-card') }; })()`);
-  check('Vandaag op desktop: de afspraken en "＋ Afspraak" staan in de linkerkolom bij de dag', desktop.inMain && desktop.card, JSON.stringify(desktop));
+  check('Vandaag op desktop: de afspraken en "Iets inplannen" staan in de linkerkolom bij de dag', desktop.inMain && desktop.card, JSON.stringify(desktop));
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+
+  // De twee ingangen onder de dagdelen: "Iets inplannen" (dagelijks) en "Deze dag niet meetellen" (zeldzaam), elk met een eigen icoon en minstens 44 px, binnen het scherm
+  for (const [size, w, h2, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h2, deviceScaleFactor: 2, mobile: true });
+    await nav('today');
+    await ev(`document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(400);
+    const actions = await ev(`(() => { const bs = [...document.querySelectorAll('.day-actions .day-action')]; return { texts: bs.map((b) => b.textContent.trim()), icons: bs.map((b) => !!b.querySelector('svg use')), tiny: bs.filter((b) => b.getBoundingClientRect().height < 43).length, outside: bs.filter((b) => b.getBoundingClientRect().right > innerWidth + 1 || b.getBoundingClientRect().left < -1).length, overflow: document.documentElement.scrollWidth - innerWidth, label: document.querySelector('#skipDayAdd')?.getAttribute('aria-label') ?? null }; })()`);
+    check(`Vandaag, knoppen onder de dagdelen · ${size}: "Iets inplannen" en "Deze dag niet meetellen" met icoon, minstens 44 px, zonder zijwaarts scrollen`, actions.texts.join('|') === 'Iets inplannen|Deze dag niet meetellen' && actions.icons.every(Boolean) && actions.tiny === 0 && actions.outside === 0 && actions.overflow <= 0 && /^Deze dag niet meetellen: /.test(actions.label), JSON.stringify(actions));
+  }
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await nav('today');
+  await click('#skipDayAdd', 500);
+  const skipSheetTitle = await ev(`document.querySelector('dialog[open] .dialog__title')?.textContent ?? null`);
+  check('"Deze dag niet meetellen" opent het blad met dezelfde titel', skipSheetTitle === 'Deze dag niet meetellen', JSON.stringify(skipSheetTitle));
+  await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+
+  // De notitie bij "Hoe ging je dag?": een bewaarde notitie staat als tekst, het veld opent pas op verzoek
+  await nav('today');
+  await ev(`document.querySelector('input[name="dayScore"][value="4"]').click()`);
+  await sleep(600);
+  const noNote = await ev(`(() => ({ field: !!document.querySelector('#reflectionNote'), text: !!document.querySelector('#reflectionText'), button: document.querySelector('[data-focus-key="reflection-edit"]')?.textContent.trim() ?? null }))()`);
+  check('na je cijfer staat er geen invoerveld, maar de knop "Er iets bij schrijven"', !noNote.field && !noNote.text && noNote.button === 'Er iets bij schrijven', JSON.stringify(noNote));
+  await ev(`document.querySelector('[data-focus-key="reflection-edit"]').click()`);
+  await sleep(200);
+  const noteOpened = await ev(`(() => ({ field: !!document.querySelector('#reflectionNote'), focused: document.activeElement?.id ?? null }))()`);
+  check('"Er iets bij schrijven" opent het veld met de cursor erin', noteOpened.field && noteOpened.focused === 'reflectionNote', JSON.stringify(noteOpened));
+  await ev(`(() => { const n = document.querySelector('#reflectionNote'); n.value = 'Veel gedaan,\\nmaar moe'; n.dispatchEvent(new Event('input')); document.querySelector('[data-focus-key="reflection-save"]').click(); })()`);
+  await sleep(600);
+  const noteShown = await ev(`(() => ({ field: !!document.querySelector('#reflectionNote'), text: document.querySelector('#reflectionText')?.textContent ?? null, button: document.querySelector('[data-focus-key="reflection-edit"]')?.textContent.trim() ?? null }))()`);
+  check('een bewaarde notitie staat als tekst (zonder veld) met "Notitie aanpassen"', !noteShown.field && noteShown.text === 'Veel gedaan,\nmaar moe' && noteShown.button === 'Notitie aanpassen', JSON.stringify(noteShown));
+  await ev(`document.querySelector('[data-focus-key="reflection-edit"]').click()`);
+  await sleep(200);
+  await ev(`(() => { const n = document.querySelector('#reflectionNote'); n.value = 'iets anders'; n.dispatchEvent(new Event('input')); document.querySelector('[data-focus-key="reflection-cancel"]').click(); })()`);
+  await sleep(200);
+  const cancelled = await ev(`(() => ({ field: !!document.querySelector('#reflectionNote'), text: document.querySelector('#reflectionText')?.textContent ?? null }))()`);
+  check('"Annuleren" laat de bewaarde notitie ongemoeid en sluit het veld', !cancelled.field && cancelled.text === 'Veel gedaan,\nmaar moe', JSON.stringify(cancelled));
+  await ev(`document.querySelector('[data-focus-key="reflection-clear"]').click()`);
+  await sleep(500);
 
   // Agenda (docs/AGENDA.md): afspraken uit je agenda op Vandaag, alleen om te lezen, in het dagdeel van hun begintijd; en de kaart in Instellingen.
   // Het ophalen zelf (een account en de Edge Function) is hier niet te doen: we zetten de gekoppelde agenda rechtstreeks neer.

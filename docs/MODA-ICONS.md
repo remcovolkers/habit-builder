@@ -5,6 +5,8 @@ Hoort bij [ITERATIE-1.2.md](ITERATIE-1.2.md) §6. **Eén iconenset voor alle the
 ## Stand: de set is compleet (2026-10-16, aangevuld 2026-10-19)
 **Aanvulling 2026-10-19:** er zijn **73 habit-iconen bijgekomen** (60 → 133; samen met de 50 voor prestaties, tips en tekens, waaronder `ui-all-planned`, is dat 183 in de sprite): voorwerpen voor het huishouden (toilet, koelkast, ...), een groep Persoonlijke verzorging, meer eten en drinken, beweging, werk en geld, en een groep Algemeen. Die zijn **niet door Moda maar met de hand getekend** in dezelfde stijl (bron: `docs/icons/icons-complete.html`, onder de koppen "Aanvulling 2026-10-19"). Wil je er een door Moda laten overdoen, geef dan met de prompt onderaan alleen die sleutel en zet de uitvoer als apart bestand in `docs/icons/`: het laatst gewijzigde bestand wint.
 
+**Aanvulling 2026-11-05:** twee iconen voor de knoppen onder de dagdelen op Vandaag, `ui-plan-add` ("Iets inplannen") en `ui-day-off` ("Deze dag niet meetellen"), met de hand getekend in dezelfde stijl als `ui-all-planned` (bron: `docs/icons/icons-today-actions.html`). Samen met de 50 voor prestaties, tips en tekens zijn dat nu 52 ui-sleutels en 185 in de sprite.
+
 **Doorgestreept (de "anti"-stand):** elk habit-icoon kan met een streep erdoor ("geen alcohol", "ontbijt overslaan"). Dat is geen apart icoon maar een stand: in `habit.icon` staat de emoji met U+20E0 (het verbodsteken) erachter, en de app tekent zelf één diagonale streep in de accentkleur over het icoon. `no-sugar`, `no-smoking` en `screen-off` zijn **altijd doorgestreept**: hun tekening in de set heeft zelf **geen streep meer** (die is op 2026-10-19 uit `docs/icons/icons-complete.html` gehaald), de app tekent hem met dezelfde logica als bij elk ander icoon (`STRUCK_ICON_KEYS` in `src/app/icons.js`). Bestaande habits met zo'n icoon blijven dus ongewijzigd doorgestreept, ook zonder teken in `habit.icon`. Dit vraagt niets aan Moda; teken bij een nieuw icoon nooit zelf een streep.
 
 **109 van 109 iconen zijn gemaakt en staan in de app** (`icons/set.svg`, gebouwd met `npm run icons:build` uit `docs/icons/icons-complete.html`). Ze zijn gemaakt met **één prompt**, de **"Alles in één keer"-prompt** onderaan dit document. Die gaf de goede uitvoer in één keer: **gebruik hem als basis voor elke nieuwe aanvraag** (bijvoorbeeld voor een nieuwe prestatie of een extra habit-icoon), met alleen de nieuwe sleutels in de lijst. De vier batches hieronder zijn de terugvalroute als een set te groot wordt.
@@ -178,7 +180,7 @@ Dat kan ook: één prompt voor alle 97 iconen (zie "Alles in één keer" onderaa
 | `trophy` | beker | 🏆 | a trophy cup | klaar (met de hand getekend) |
 | `home` | thuis | 🏠 | a house | klaar (met de hand getekend) |
 
-## De 50 sleutels (prestaties, tips en tekens)
+## De 52 sleutels (prestaties, tips en tekens)
 Een prestatie `first_checkin` heet in de set `ach-first-checkin`, een tip `never_miss_twice` heet `tip-never-miss-twice`. De prestaties onder "gepland" hebben nog geen regel in de app ([ITERATIE-1.2.md](ITERATIE-1.2.md) §5); hun icoon wordt alvast gemaakt zodat de set in één keer af is.
 
 | Sleutel | Nederlands | Wat tekenen | Stand |
@@ -237,6 +239,8 @@ Een prestatie `first_checkin` heet in de set `ach-first-checkin`, een tip `never
 | `ui-streak` | Reeks (klein, naast tekst) | a flame; used inline next to text at the size of the letters (16px), so it must stay simple | klaar |
 | `ui-celebrate` | Alles gedaan vandaag | a leaf with a few sparkles; shown big (40px) on the 'alles gedaan' card | klaar |
 | `ui-all-planned` | Alles ingepland (Oningepland op Vandaag) | a calendar page with a check in an accent circle; shown at about 40px in the 'alles ingepland' box. Drawn by hand in the set's style, not by Moda; replace it if Moda makes a nicer one | klaar |
+| `ui-plan-add` | Iets inplannen (knop op Vandaag) | a calendar page with a plus in an accent circle; shown at about 20px in the button under the dayparts. Drawn by hand in the set's style, not by Moda | klaar |
+| `ui-day-off` | Deze dag niet meetellen (knop op Vandaag) | the same calendar page, with the day drawn as a dotted accent ring (empty, no judgement); shown at about 20px in the button. Drawn by hand, not by Moda | klaar |
 
 ## Eerste prompt (batch 1)
 Plak alles tussen de streepjes.
