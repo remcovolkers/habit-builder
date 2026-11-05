@@ -49,7 +49,7 @@ De hele kaart is nu de afvinkknop: een groot vlak is makkelijker te raken dan he
 
 ## 3. Hoe ging je dag?
 
-Onder de dagdelen op Vandaag, voor de dag zelf en de dagen die je nog mag invullen (14 terug): vijf woorden om uit te kiezen (**Zwaar, Lastig, Gewoon, Goed, Top**, cijfer 1 tot 5). De vraag gaat over **hoe zwaar het voelde om je taken te doen**: een dag waarop alles is afgevinkt maar die pittig was, is "Zwaar"; wie liever een dag markeert waarop de taken niet lukten, gebruikt dezelfde woorden. Kiezen bewaart meteen. Daarna verschijnt een notitie (optioneel, 200 tekens); die bewaar je met **Notitie bewaren**. **Wissen** haalt de reflectie weg.
+Onder de dagdelen op Vandaag, voor de dag zelf en de dagen die je nog mag invullen (14 terug): vijf woorden om uit te kiezen (**Zwaar, Lastig, Gewoon, Goed, Top**, cijfer 1 tot 5). De vraag gaat over **hoe zwaar het voelde om je taken te doen**: een dag waarop alles is afgevinkt maar die pittig was, is "Zwaar"; wie liever een dag markeert waarop de taken niet lukten, gebruikt dezelfde woorden. Kiezen bewaart meteen. Daarna kun je een notitie toevoegen (optioneel, 200 tekens): **Er iets bij schrijven** opent het veld, **Notitie bewaren** sluit het weer. Een bewaarde notitie staat als **tekst** op de kaart (met een accentstreep), niet als invoerveld; **Notitie aanpassen** opent het veld opnieuw en **Annuleren** laat alles zoals het was. **Wissen** haalt de reflectie weg.
 
 - Het is voor jezelf en **telt nergens mee**: geen punten, geen reeksen, geen aandacht, niet in de ranglijst, en vrienden zien het nooit.
 - Je ziet het terug in de **weekreview** op Voortgang: "Hoe je dagen gingen", het gemiddelde cijfer en per dag het woord en de notitie.

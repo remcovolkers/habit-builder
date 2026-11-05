@@ -20,7 +20,7 @@ Op dinsdag besluit je dat je donderdagmiddag iemand moet bellen. Dat is geen gew
 
 | Onderdeel | Wat |
 |---|---|
-| **Ingang per dag** | Onder de dagdelen op Vandaag staat een rustige knop **＋ Afspraak**, op vandaag en elke dag erna (niet op dagen die voorbij zijn). De dag die je bekijkt is voorgevuld: sta je op donderdag, dan maak je er een voor donderdag. Geen zwevende knop (die staat alleen op Habits) en niets op Habits |
+| **Ingang per dag** | Onder de dagdelen op Vandaag staat een rustig vlak met een stippelrand en een icoon, **Iets inplannen** (naast **Deze dag niet meetellen**, zie [DAG-OVERSLAAN.md](DAG-OVERSLAAN.md)), op vandaag en elke dag erna (niet op dagen die voorbij zijn). De dag die je bekijkt is voorgevuld: sta je op donderdag, dan maak je er een voor donderdag. Geen zwevende knop (die staat alleen op Habits) en niets op Habits |
 | **Het blad** | Eén blad ([appointment-sheet.js](../src/ui/components/appointment-sheet.js)): **wat** (80 tekens, met teller), **moment van de dag** en **op welke dag** (voorgevuld, te wijzigen tot een jaar vooruit). Een nieuwe afspraak zet de cursor meteen in het tekstveld; Enter bewaart. ⋯ op een kaart opent hetzelfde blad om te wijzigen, met **Verwijderen** |
 | **De kaart** | [appointment-card.js](../src/ui/components/appointment-card.js): een kaart in de stijl van een habit, maar zonder icoon, met een accentrand en het woord **Afspraak**. Afvinken zoals bij een habit |
 | **Doorschuiven** | Een open afspraak van een eerdere dag staat op vandaag met "Afspraak · Van gisteren", rustig en zonder waarschuwing |
