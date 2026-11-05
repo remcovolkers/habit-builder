@@ -1352,7 +1352,7 @@ async function main() {
   await ev(`(() => { const n = document.querySelector('#reflectionNote'); n.value = 'Veel gedaan,\\nmaar moe'; n.dispatchEvent(new Event('input')); document.querySelector('[data-focus-key="reflection-save"]').click(); })()`);
   await sleep(600);
   const noteShown = await ev(`(() => ({ field: !!document.querySelector('#reflectionNote'), text: document.querySelector('#reflectionText')?.textContent ?? null, button: document.querySelector('[data-focus-key="reflection-edit"]')?.textContent.trim() ?? null }))()`);
-  check('een bewaarde notitie staat als tekst (zonder veld) met "Notitie aanpassen"', !shown.field && shown.text === 'Veel gedaan,\nmaar moe' && shown.button === 'Notitie aanpassen', JSON.stringify(shown));
+  check('een bewaarde notitie staat als tekst (zonder veld) met "Notitie aanpassen"', !noteShown.field && noteShown.text === 'Veel gedaan,\nmaar moe' && noteShown.button === 'Notitie aanpassen', JSON.stringify(noteShown));
   await ev(`document.querySelector('[data-focus-key="reflection-edit"]').click()`);
   await sleep(200);
   await ev(`(() => { const n = document.querySelector('#reflectionNote'); n.value = 'iets anders'; n.dispatchEvent(new Event('input')); document.querySelector('[data-focus-key="reflection-cancel"]').click(); })()`);
