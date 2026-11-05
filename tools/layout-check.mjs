@@ -1349,7 +1349,7 @@ async function main() {
   await sleep(200);
   const noteOpened = await ev(`(() => ({ field: !!document.querySelector('#reflectionNote'), focused: document.activeElement?.id ?? null }))()`);
   check('"Er iets bij schrijven" opent het veld met de cursor erin', noteOpened.field && noteOpened.focused === 'reflectionNote', JSON.stringify(noteOpened));
-  await ev(`(() => { const n = document.querySelector('#reflectionNote'); n.value = 'Veel gedaan,\nmaar moe'; n.dispatchEvent(new Event('input')); document.querySelector('[data-focus-key="reflection-save"]').click(); })()`);
+  await ev(`(() => { const n = document.querySelector('#reflectionNote'); n.value = 'Veel gedaan,\\nmaar moe'; n.dispatchEvent(new Event('input')); document.querySelector('[data-focus-key="reflection-save"]').click(); })()`);
   await sleep(600);
   const noteShown = await ev(`(() => ({ field: !!document.querySelector('#reflectionNote'), text: document.querySelector('#reflectionText')?.textContent ?? null, button: document.querySelector('[data-focus-key="reflection-edit"]')?.textContent.trim() ?? null }))()`);
   check('een bewaarde notitie staat als tekst (zonder veld) met "Notitie aanpassen"', !shown.field && shown.text === 'Veel gedaan,\nmaar moe' && shown.button === 'Notitie aanpassen', JSON.stringify(shown));
