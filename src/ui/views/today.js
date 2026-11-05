@@ -330,13 +330,13 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
           h('button', { type: 'button', class: 'button button--ghost button--small', dataset: { focusKey: 'skipday-undo' }, onclick: () => perform(() => unskipDay(repo, { date }), k.toasts.counted) }, k.remove))
         : null)
     : null;
+  // De twee ingangen onder de dagdelen staan samen in één rij (zie `dayActions` hieronder): "Iets inplannen" is de dagelijkse, "Deze dag niet meetellen" de zeldzame.
   const skipAdd = view.canSkip && view.hasHabits && !view.skipDay
-    ? h('div', { class: 'skipday-add' },
-      h('button', {
-        type: 'button', id: 'skipDayAdd', class: 'button button--ghost skipday-add__button', dataset: { focusKey: 'skipday-add' },
-        'aria-label': k.addFor(relativeDayLabel(date, today).toLowerCase()),
-        onclick: () => skipSheet(),
-      }, k.add))
+    ? h('button', {
+      type: 'button', id: 'skipDayAdd', class: 'day-action day-action--skip skipday-add__button', dataset: { focusKey: 'skipday-add' },
+      'aria-label': k.addFor(relativeDayLabel(date, today).toLowerCase()),
+      onclick: () => skipSheet(),
+    }, uiIcon('ui-day-off', 'day-action__icon'), h('span', { class: 'day-action__text' }, k.add))
     : null;
   const appointmentOptions = { canLog: view.canLog, today, onToggle: toggleAppointment, onEdit: appointmentSheet };
 
@@ -368,13 +368,13 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
     : null;
   // De ingang staat op elke dag van vandaag af (niet op dagen die voorbij zijn) en niet bij de introductie voor wie nog niets heeft.
   const appointmentAdd = view.canPlan && (view.hasHabits || view.hasAppointments)
-    ? h('div', { class: 'appointment-add' },
-      h('button', {
-        type: 'button', class: 'button button--ghost appointment-add__button', dataset: { focusKey: 'appointment-add' },
-        'aria-label': t.addFor(relativeDayLabel(date, today).toLowerCase()),
-        onclick: () => appointmentSheet(),
-      }, t.add))
+    ? h('button', {
+      type: 'button', class: 'day-action day-action--plan appointment-add__button', dataset: { focusKey: 'appointment-add' },
+      'aria-label': t.addFor(relativeDayLabel(date, today).toLowerCase()),
+      onclick: () => appointmentSheet(),
+    }, uiIcon('ui-plan-add', 'day-action__icon'), h('span', { class: 'day-action__text' }, t.add))
     : null;
+  const dayActions = appointmentAdd || skipAdd ? h('div', { class: 'day-actions' }, appointmentAdd, skipAdd) : null;
 
   // De stapel: wat dreigt te falen staat bovenaan en altijd in beeld; de rest toont hoogstens POOL_VISIBLE kaarten en de overige zitten ingeklapt.
   // Elke kaart is één regel met één knop; "een andere dag" en "al gedaan" zitten achter ⋯.
@@ -532,7 +532,7 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
     monthTaskSection || reviewNote ? h('div', { class: 'today__notes' }, monthTaskSection, reviewNote) : null,
     view.groups.length === 0 && view.pool.length === 0 && !view.skipDay ? todayEmpty(view) : null,
     h('div', { class: 'today__columns page__panes' },
-      h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections, appointmentAdd, skipAdd, reflection),
+      h('div', { class: 'today__main page__pane' }, firstTip, attentionSection, ...groupSections, dayActions, reflection),
       side.length > 0 ? h('div', { class: 'today__side page__pane' }, ...side) : null));
 }
 

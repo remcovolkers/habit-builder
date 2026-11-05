@@ -21,10 +21,10 @@ Een dag (of een reeks dagen) die je **voor alle taken tegelijk** overslaat, met 
 
 | Plek | Wat |
 |---|---|
-| **Vandaag, onder de dagdelen** | De knop **Dag overslaan** (voor de dag die je bekijkt; ook voor een dag terug in de tijd, of later vandaag voor een dag die je al weet) |
+| **Vandaag, onder de dagdelen** | De knop **Deze dag niet meetellen**, met een eigen icoon, naast **Iets inplannen** (zie [LOSSE-AFSPRAKEN.md](LOSSE-AFSPRAKEN.md)); de eerste is de dagelijkse en heeft de accentrand, deze is de zeldzame en blijft grijs (voor de dag die je bekijkt; ook voor een dag terug in de tijd, of later vandaag voor een dag die je al weet) |
 | **Het blad** | Eerst de reden (verplicht): *Van huis weg*, *Ziek*, *Bijzondere of drukke dag* of *Anders*. Bij *Anders* is de toelichting de reden en dus verplicht; bij de rest is ze optioneel. Daaronder **Van** en **Tot en met**, standaard de dag die je bekijkt: zo sla je een weekend in één keer over |
-| **Een overgeslagen dag** | Bovenaan een banner met de reden en de toelichting, en de knoppen **Reden aanpassen** en **Weer meetellen** (met "Ongedaan maken" in de melding). De taken van die dag staan niet open; wat je die dag al had afgevinkt blijft gedaan |
-| **Voortgang, onderaan** | **Overgeslagen dagen**: alle dagen met hun reden, de laatste bovenaan. Zo kun je ook na meer dan 14 dagen nog terugzien waarom |
+| **Een overgeslagen dag** | Bovenaan een banner (*Telt niet mee: Ziek*) met de reden en de toelichting, en de knoppen **Reden aanpassen** en **Weer meetellen** (met "Ongedaan maken" in de melding). De taken van die dag staan niet open; wat je die dag al had afgevinkt blijft gedaan |
+| **Voortgang, onderaan** | **Dagen die niet meetellen**: alle dagen met hun reden, de laatste bovenaan. Zo kun je ook na meer dan 14 dagen nog terugzien waarom |
 
 ## Wat het verandert in de telling
 
@@ -60,3 +60,4 @@ Die afgeleide pauzes horen er niet in waar het om een **eigen pauze** gaat: de b
 | D2 | Eén record per dag, geen bereik | Eén dag weer laten meetellen of een andere reden geven is dan één handeling; een bereik moet je dan splitsen |
 | D3 | Een vaste lijst redenen, plus *Anders* met een verplichte toelichting | Zo is de lijst later te lezen en te tellen, en blijft *waarom* nooit leeg |
 | D4 | Terug tot 14 dagen (zoals afvinken), vooruit tot 31 dagen | Terugkijken hoort bij hetzelfde venster als corrigeren; een weekend dat je al weet mag je vooraf aangeven. Langer weg: gebruik Pauzeer alles |
+| D5 | De knop heet "Deze dag niet meetellen", niet "Dag overslaan" | Besloten 2026-11-05 (met Remco). Het zegt wat het doet (geen gemiste dag, geen gebroken reeks) en klinkt niet als opgeven. De woorden in het blad, de banner, de meldingen en de lijst volgen; in de code en in de data blijft het `skipDay` en "overgeslagen" |

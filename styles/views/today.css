@@ -205,14 +205,65 @@
   overflow-wrap: anywhere; /* de naam van een agenda kan een e-mailadres zijn */
 }
 
-/* de ingang onder de dagdelen: een rustige knop, geen kaart */
-.appointment-add {
-  display: flex;
+/* de ingangen onder de dagdelen: twee rustige vlakken met een stippelrand ("hier kan iets bij"), geen kaarten. Naast elkaar waar het past, anders onder elkaar */
+.day-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--space-2);
   margin-top: var(--space-4);
 }
 
-.appointment-add__button {
-  max-width: 100%;
+.day-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: var(--size-tap);
+  padding: var(--space-2) var(--space-4);
+  background: transparent;
+  border: 1px dashed var(--color-hairline-strong);
+  border-radius: var(--radius-card);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-snug);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* de dagelijkse ingang heeft de accentrand en de gewone tekstkleur; de zeldzame blijft grijs */
+.day-action--plan {
+  border-color: var(--color-accent-50);
+  color: var(--color-text);
+}
+
+.day-action__icon {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  --icon-accent: var(--color-accent);
+}
+
+.day-action--skip .day-action__icon {
+  color: var(--color-text-muted);
+  --icon-accent: var(--color-text-muted);
+}
+
+.day-action__text {
+  min-width: 0;
+  overflow-wrap: anywhere; /* bij grote tekst breekt het af in plaats van buiten het scherm te lopen */
+}
+
+.day-action:active {
+  background: var(--color-elevated);
+}
+
+@media (hover: hover) {
+  .day-action:hover {
+    background: var(--color-surface);
+  }
 }
 
 /* het blad voor een afspraak: de dagdelen zijn hier de hoofdzaak en krijgen een volwaardig tikvlak (de gedeelde keuze is 2,5 rem) */
@@ -239,12 +290,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-}
-
-/* de ingang onder de dagdelen, naast "Afspraak" */
-.skipday-add {
-  display: flex;
-  margin-top: var(--space-2);
 }
 
 /* het blad: van en tot en met naast elkaar waar het past, onder elkaar bij grote tekst */
@@ -296,6 +341,25 @@
 .reflection__note {
   display: grid;
   gap: var(--space-2);
+}
+
+/* een bewaarde notitie: gewone tekst met een accentstreep, geen veld */
+.reflection__saved {
+  display: grid;
+  gap: var(--space-1);
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--color-accent-50);
+}
+
+.reflection__saved-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.reflection__text {
+  margin: 0;
+  white-space: pre-wrap; /* regeleinden uit de notitie blijven staan */
+  overflow-wrap: anywhere;
 }
 
 .reflection__actions {
