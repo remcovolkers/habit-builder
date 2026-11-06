@@ -311,6 +311,49 @@ test('afvinken: oude afgevinkte afspraken worden opgeruimd en kapotte opslag gee
   assert.deepEqual(list.agenda.model.done, {});
 });
 
+test('niet tonen: de afspraak verdwijnt van Vandaag, met ongedaan maken, en het blijft op het toestel staan', async () => {
+  const { agenda, store, notified } = setup();
+  await agenda.connectFeed(GOOGLE);
+  const names = () => agenda.itemsFor('2026-11-04').map((i) => i.title);
+  assert.ok(names().includes('Tandarts'));
+  const before = notified.length;
+  const { undo } = agenda.hide(agenda.itemsFor('2026-11-04').find((i) => i.title === 'Tandarts'));
+  assert.ok(!names().includes('Tandarts'));
+  assert.ok(names().includes('Lunch'), 'alleen deze afspraak');
+  assert.ok(notified.length > before, 'Vandaag tekent opnieuw');
+  assert.deepEqual(Object.values(JSON.parse(store.get('hb-agenda-hidden'))), ['2026-11-04']);
+  assert.ok(!store.get('hb-agenda-hidden').toLowerCase().includes('tandarts'), 'de opslag bevat geen naam van een afspraak');
+  undo();
+  assert.ok(names().includes('Tandarts'));
+  assert.equal(store.has('hb-agenda-hidden'), false);
+});
+
+test('niet tonen: blijft verborgen na een herstart en een verversing, en alles wissen (uitloggen) wist het ook', async () => {
+  const first = setup();
+  await first.agenda.connectFeed(GOOGLE);
+  first.agenda.hide(first.agenda.itemsFor('2026-11-04').find((i) => i.title === 'Tandarts'));
+
+  const second = setup({ stored: Object.fromEntries(first.store) });
+  second.agenda.load();
+  assert.ok(!second.agenda.itemsFor('2026-11-04').some((i) => i.title === 'Tandarts'));
+
+  await first.agenda.refresh({ force: true });
+  assert.ok(!first.agenda.itemsFor('2026-11-04').some((i) => i.title === 'Tandarts'));
+
+  first.agenda.clear();
+  assert.equal(first.store.size, 0);
+  assert.deepEqual(first.agenda.model.hidden, {});
+});
+
+test('niet tonen: oude nummers worden opgeruimd en kapotte opslag geeft niets af', () => {
+  const { agenda } = setup({ stored: { 'hb-agenda-hidden': JSON.stringify({ oud: '2026-09-01', nieuw: '2026-11-03', raar: 5 }) } });
+  agenda.load();
+  assert.deepEqual(agenda.model.hidden, { nieuw: '2026-11-03' });
+  const broken = setup({ stored: { 'hb-agenda-hidden': '[1,2' } });
+  broken.agenda.load();
+  assert.deepEqual(broken.agenda.model.hidden, {});
+});
+
 test('de naam van de agenda komt mee: uit de feed en van de telefoon (die wint bij dezelfde afspraak)', async () => {
   const named = ics(TANDARTS, LUNCH).replace('VERSION:2.0', 'VERSION:2.0\r\nX-WR-CALNAME:Remco en Mel');
   const feedOnly = setup({ texts: [named] });

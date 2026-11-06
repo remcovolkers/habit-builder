@@ -158,7 +158,10 @@ export const nl = {
       check: (title) => `Afvinken: ${title}`,
       uncheck: (title) => `Afvinken ongedaan maken: ${title}`,
       states: { done: 'Gedaan' },
-      toasts: { done: (title) => `Afgevinkt: ${title}`, reopened: (title) => `Weer open: ${title}` },
+      more: (title) => `Meer opties voor ${title}`,
+      hide: 'Niet tonen',
+      hideText: 'Deze afspraak verdwijnt van Vandaag, alleen op dit toestel. In je agenda blijft hij staan.',
+      toasts: { done: (title) => `Afgevinkt: ${title}`, reopened: (title) => `Weer open: ${title}`, hidden: (title) => `Niet meer getoond: ${title}` },
     },
     // de melding dat een review open staat (week: vrijdag tot maandag 12:00; maand: de 25e tot de 2e om 12:00)
     reviewNote: {
