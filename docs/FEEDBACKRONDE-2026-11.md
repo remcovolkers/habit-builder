@@ -1,6 +1,6 @@
 # Feedbackronde november 2026: uitbouwen, wachten met de review, prestaties per habit
 
-Status: **in analyse** · opgesteld 2026-11-09 · bron: drie ideeën uit de feedbackhub (v1.5.1, zie [FEEDBACK.md](FEEDBACK.md)) · bouwt voort op [PLAN.md](PLAN.md) §4.5 en §4.7, [AUTOMATISME.md](AUTOMATISME.md), [FLEXIBELE-TAKEN.md](FLEXIBELE-TAKEN.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
+Status: **in analyse, ronde 2** (antwoorden Q1–Q16 verwerkt, nieuwe vragen Q17–Q23) · opgesteld 2026-11-09 · bron: drie ideeën uit de feedbackhub (v1.5.1, zie [FEEDBACK.md](FEEDBACK.md)) · bouwt voort op [PLAN.md](PLAN.md) §4.5 en §4.7, [AUTOMATISME.md](AUTOMATISME.md), [FLEXIBELE-TAKEN.md](FLEXIBELE-TAKEN.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
 
 Dit bestand is mijn werklijst voor deze ronde. Ik werk het bij zodra jij antwoordt of ik iets nieuws vind. Alles wat ik niet zelf kan of mag beslissen staat onder **Vragen aan Remco**, met mijn voorstel erbij, zodat "ja" genoeg is.
 
@@ -8,11 +8,11 @@ Dit bestand is mijn werklijst voor deze ronde. Ik werk het bij zodra jij antwoor
 
 | # | Idee (feedbackhub) | Soort | Omvang | Status |
 |---|---|---|---|---|
-| F1 | Een habit kunnen **uitbouwen**: een doel ("4× per week sporten") waar je naartoe groeit, met reflectie en op- of terugschakelen | nieuwe feature | groot | analyse klaar, wacht op antwoorden (Q1–Q8) |
+| F1 | Een habit kunnen **uitbouwen**: een doel ("4× per week sporten") waar je naartoe groeit, met reflectie en op- of terugschakelen | nieuwe feature | groot | ontwerp bijgewerkt; wacht op Q17–Q23 |
 | F2 | Het weekoverzicht pas klaar na minstens 3 dagen gebruik | verbetering | klein | **gebouwd** op deze branch |
-| F3 | Prestaties: 1× per maand of 2× per week moet anders tellen, een mogelijke reset, en prestaties per habit naast het algemene scherm | verbetering + nieuwe weergave | middel–groot | analyse klaar, wacht op antwoorden (Q9–Q14) |
+| F3 | Prestaties: 1× per maand of 2× per week moet anders tellen, een mogelijke reset, en prestaties per habit naast het algemene scherm | verbetering + nieuwe weergave | middel–groot | beslist (Q9–Q14); klaar om te bouwen, reeksen en uitbouw-prestaties wachten op Q22–Q23 |
 
-Voorgestelde volgorde: **F2** (klaar) → **F3a** (de tellingen herstellen, want daar zit een fout in) → **F1** → **F3c** (prestaties per habit, ook voor de uitbouw-habits). Zie Q15.
+Voorgestelde volgorde: **F2** (klaar) → **F3a** (de tellingen herstellen, want daar zit een fout in) → **F1** → **F3c** (prestaties per habit, ook voor de uitbouw-habits). Akkoord (Q15).
 
 ---
 
@@ -57,37 +57,73 @@ Wie een habit wil opbouwen die **ook groter** moet worden (sport, lezen, schrijv
 ### Use cases
 | ID | Wat | Prio |
 |---|---|---|
-| UC1.1 | Bij het maken of bewerken van een habit kun je een **doel** instellen naast het ritme van nu ("Nu 1× per week, doel 4× per week") | M |
-| UC1.2 | Het doel is overal zichtbaar waar de habit staat: de kaart, de habit zelf en Voortgang, met de stap ("stap 2 van 4") en een balk naar het doel | M |
-| UC1.3 | Op een rustig moment (voorstel: in de weekreview) vraagt de app: *hoe ging het op dit niveau?* Je kiest **Opschalen**, **Blijven** of **Terugschakelen**. De app beslist nooit zelf | M |
+| UC1.1 | Bij het maken of bewerken van een habit kun je een **ideale versie** (het doel) instellen naast waar je nu staat: "Nu 1× per week, doel 4×", of "Nu 0,5 liter, doel 2 liter". Ook voor dagelijkse habits (Q1) | M |
+| UC1.2 | Het doel is overal zichtbaar waar de habit staat: de kaart, de habit zelf en Voortgang, met de trede ("trede 2 van 4") en een balk naar het doel (spotlight (b)) | M |
+| UC1.3 | Op een rustig moment (de weekreview, na de nudge-drempel; altijd ook een knop bij de habit) vraagt de app: *hoe ging het op deze trede?* Je kiest **Opschalen**, **Blijven** of **Terugschakelen**. De app beslist nooit zelf | M |
 | UC1.4 | Opschalen of terugschakelen maakt een nieuwe ritmeversie met ingang vandaag (bestaande mechaniek). De vorige stap blijft in de geschiedenis | M |
 | UC1.5 | Een korte notitie bij het besluit ("wat merkte je?"), terug te lezen bij de habit | S |
 | UC1.6 | Een habit **zonder** doel werkt precies zoals nu | M |
-| UC1.7 | Doel bereikt: de habit gaat gewoon het gewone traject in (vast worden op dat niveau, dan ingeburgerd) | M |
+| UC1.7 | Doel bereikt: *Uitgebouwd*; wat daarna gebeurt, hangt af van Q20 (voorstel: het gewone traject in, nu kan hij ingeburgerd worden) | M |
 | UC1.8 | Het doel aanpassen of weghalen kan altijd (een doel van 4 wordt 3) | M |
-| UC1.9 | Een bestaande habit omzetten naar uitbouwen | S |
-| UC1.10 | Prestaties voor uitbouwen: eerste keer opgeschaald, doel bereikt, terugschakelen "mag ook" (zoals "Pauzeren is oké") | C |
+| UC1.9 | Een bestaande habit omzetten naar uitbouwen (Q6: ja) | M |
+| UC1.11 | De app **nudgt** als het op een trede al lang goed gaat, op keren en niet op dagen (Q2) | M |
+| UC1.10 | Prestaties voor uitbouwen met iconen, waaronder *Uitgebouwd* (Q11, Q23) | M |
 
-### Ontwerpvoorstel
+### Wat jouw antwoorden veranderen (ronde 2)
+
+- **Het doel is een "ideale versie", ook bij dagelijkse habits** (Q1). Een uitbouwen-habit werkt toe naar een ideale versie, een gevestigde habit houdt een **minimale versie** als vangnet. Twee richtingen: omhoog naar het ideaal, of vasthouden op niveau met een vangnet naar beneden. Het doel is dus niet alleen "vaker per week": ook "meer per dag" (0,5 liter water → 2 liter) of "langer" (5 → 30 minuten lezen).
+- **Elke trede begint opnieuw** (Q4): de telling van "hoe lang gaat het al goed" start bij elke nieuwe trede op nul. Een uitbouwen-habit wordt niet ingeburgerd zolang hij uitbouwt; hij kan wel **maximaal uitgebouwd** zijn.
+- **De app mag nudgen, op basis van keren, niet van dagen** (Q2). Hoe en wanneer: zie "Wanneer is een nudge verantwoord?" hieronder.
+- **Spotlight = (b)** (Q7): een stap-indicator ("trede 2 van 4") en een balk naar het doel op de kaart en de habit. Geen aparte sectie op Habits.
+
+### Ontwerpvoorstel (bijgewerkt)
+
 | Onderwerp | Voorstel | Reden |
 |---|---|---|
-| Gegevens | Eén nieuw optioneel veld op de habit: `goal: { schedule, setOn }` (alleen `times_per_period`). De stappen zelf staan al in `schedules`; besluiten met notitie in `goal.log: [{ date, choice, from, to, note }]` (kort, hoogstens ± 20) | Geen nieuwe collectie, **geen servermigratie** (zoals bij [WONT-DO.md](WONT-DO.md)); de server bewaakt alleen collectienamen |
-| Terugwaarts | Een oudere app kent `goal` niet en negeert het. **Te controleren**: dat een oude app bij het opslaan het veld niet weggooit (hij spreidt het bestaande record, dus waarschijnlijk niet) | Zie risico R1 |
-| Besluit | Opschalen stelt +1 voor, maar je kiest zelf elk aantal tot het doel; terugschakelen elk lager aantal (minstens 1) | Jij kiest zelf, zoals je aangaf |
-| Moment | Een kaart in de weekreview ("Je doet X nu 2× per week, doel 4×. Hoe ging het?") **na minstens 2 volle weken** op een stap; daarnaast altijd een knop "Stap aanpassen" bij de habit. Voor een maandhabit: in de maandreview | Reflectie hoort bij de bestaande reviews; wachten voorkomt een besluit na één week |
-| Vandaag | De habit blijft op Vandaag staan tot het doel is gehaald, ook als de gewone regels hem "ingeburgerd" noemen | Anders verdwijnt hij net als hij moet groeien |
-| Fase | Zolang het doel niet is gehaald: fase **Uitbouwen** met "stap 2 van 4" in plaats van de gewone voortgang; ingeburgerd telt pas op doelniveau | Anders wordt een habit "ingeburgerd" op 1× per week |
-| Spotlight | Zie Q7 | |
+| Soorten doel | **Frequentie** (4× per week; type `times_per_period`), **hoeveelheid** (teller: 0,5 → 2 liter) en **tekst** (ideale versie in woorden: "30 minuten lezen", met een huidige trede als tekst). Zie Q17 | Je voorbeeld (water) is een hoeveelheid; sporten is frequentie; veel habits zijn geen van beide |
+| Gegevens | Eén nieuw optioneel veld op de habit: `goal: { kind, ideal, setOn, log }`. `ideal` is een ritme (frequentie), een tellerdoel (hoeveelheid) of een tekst. De stappen van ritme en tellerdoel staan al in de ritmeversies en het tellerdoel (zie Q18 voor de teller); het `log` bewaart elk besluit `{ date, choice, from, to, note }` (hoogstens ± 30) | Geen nieuwe collectie, **geen servermigratie** (zoals [WONT-DO.md](WONT-DO.md)) |
+| Trede | De trede is de periode sinds de laatste verandering van ritme, tellerdoel of tekst. De telling voor de nudge (**keren op deze trede**) begint daar bij nul (Q4) | Je wens: het opbouwen reset zich bij elke trede |
+| Besluit | Jij kiest elke trede zelf: **Opschalen** (voorstel +1 stap, maar jij kiest het getal, hoogstens tot het ideaal), **Blijven** of **Terugschakelen** (elke lagere trede, niet onder het minimum). De app beslist nooit | B1 |
+| Nudge | Alleen op basis van keren op deze trede en hoe goed het ging. Zie hieronder | Q2 |
+| Momenten | Een kaart in de weekreview (maandreview bij maandhabits) na de nudge-drempel; daarnaast altijd "Trede aanpassen" bij de habit | Q3: ja |
+| Vandaag | Een uitbouwen-habit blijft op Vandaag staan tot hij uitgebouwd is | Een ingeburgerde habit verdwijnt anders van Vandaag |
+| Fase | Fase **Uitbouwen** met "trede 2 van 4" in plaats van de gewone voortgang; geen "ingeburgerd" zolang hij uitbouwt (Q4) | Je antwoord op Q4 |
+| Spotlight | Stap-indicator en balk naar het doel op de kaart en de habit ((b), Q7) | Q7 |
+| Minimale versie | Blijft los bestaan als vangnet op slechte dagen (Q19) | Twee verschillende dingen: ideaal omhoog, minimaal omlaag |
+
+### Wanneer is een nudge verantwoord? (onderzoek en voorstel)
+
+Wat ik vond, met de kanttekening dat ik alleen **samenvattingen** kon raadplegen en niet de oorspronkelijke artikelen (te controleren voordat we iets in de app beweren):
+
+| Bron | Wat het zegt | Wat ik ermee doe |
+|---|---|---|
+| Lally e.a. (2010), via [BPS Research Digest](https://bps.org.uk/research-digest/how-form-habit) en [uitleg van de resultaten](https://www.thebehavioralscientist.com/articles/how-long-to-form-a-habit) | Automatisme groeit langs een kromme die **eerst snel stijgt en dan afvlakt** (een asymptoot). De 66 dagen is de mediaan tot 95% van het eigen plafond (spreiding 18 tot 254 dagen) en gold voor een eenvoudige dagelijkse handeling | De meeste winst zit in de **eerste herhalingen**. Wachten tot het afgevlakt is (de volle 66 dagen) is bij een trede niet nodig |
+| Gardner e.a. (2019), via [Frontiers in Psychology](https://www.frontiersin.org/articles/10.3389/fpsyg.2019.01556/pdf) | Automatisme hangt samen met **frequentie, stabiele context en beloning** | Tellen in keren klopt met de gedachte; "waarom" en cue blijven belangrijk bij een nieuwe trede |
+| Geleide beheersing en zelfeffectiviteit, via [een overzicht](https://www.canaryhealth.com/?p=4322) en [Behavioural momentum](https://learnnovators.com/?p=23281) | Begin met iets wat lukt, bouw **geleidelijk** op, **grote sprongen breken de vaart**, en een trede moet uitdagend maar haalbaar zijn | Opschalen in kleine stappen; terugschakelen is een legitieme keuze |
+| Gezocht en niet gevonden | Een **vaste drempel** ("na N keer opschalen") met onderzoek erachter. De bronnen zeggen alleen: opschalen als het **betrouwbaar lukt en comfortabel voelt**, terug als het wankel wordt | De drempel hieronder is mijn eigen afleiding en moet als **vuistregel** gepresenteerd worden, niet als bewezen feit |
+
+**Mijn voorstel voor de nudge** (Q21), per trede:
+
+1. **Aantal keren**: minstens de helft van wat "ingeburgerd" bij dat ritme vraagt (`requiredRepetitions` in [pace.js](../src/domain/pace.js)), met een ondergrens van 6 keer. Dagelijks: 27 keer. 2× per week: 6 keer. 1× per week of per maand: 6 keer. De helft komt uit de vorm van de kromme: bij 66 dagen voor 95% is na de helft van de tijd ongeveer driekwart van het plafond bereikt. Dat is een afleiding, geen meting.
+2. **Hoe goed het ging**: minstens 80% van de eenheden op deze trede gehaald (de bestaande `CONSISTENCY_THRESHOLD`), en de laatste twee eenheden niet gemist.
+3. **Optioneel**: als je het automatisme-cijfer hebt ingevuld en dat is 2 of lager, wachten (het kost nog moeite).
+4. **De nudge zelf**: één rustige zin in de weekreview of op de habit ("Je hebt dit 8 keer gedaan op deze trede. Zin om een trede hoger te gaan, of blijf je hier?"). Met **Niet nu** komt hij pas na de helft van de drempel aan extra keren terug, nooit vaker dan eens per twee weken.
+5. **De andere kant op**: gaat het op een trede onder de 50% over de laatste vier eenheden, dan mag de app zachtjes zeggen dat **terugschakelen mag**. Nooit als verwijt.
 
 ### Risico's
+
 | # | Risico | Maatregel |
 |---|---|---|
 | R1 | Oudere appversie slaat een habit op en verliest `goal` | Test met het opslaan van een record met onbekende velden; zo nodig het veld laten passeren in de repository |
-| R2 | Sync met twee toestellen: op twee plekken tegelijk opschalen | Laatste wijziging wint, zoals bij andere habitvelden; stappen blijven in `schedules` |
-| R3 | Het "ingeburgerd"-criterium en de uitbouw-fase botsen in stats ([stats.js](../src/domain/stats.js)) | Eén duidelijke regel (zie Q4) en tests per fase |
+| R2 | Sync met twee toestellen: op twee plekken tegelijk opschalen | Laatste wijziging wint, zoals bij andere habitvelden; stappen blijven in de ritmeversies en het `log` |
+| R3 | Het "ingeburgerd"-criterium en de uitbouw-fase botsen in [stats.js](../src/domain/stats.js) | Eén duidelijke regel (Q4, Q20) en tests per fase |
 | R4 | Overbelasting van de weekreview | De kaart komt alleen voor habits met een doel en alleen als er een besluit aan toe is |
+| R5 | De teller kent alleen gehele getallen tot 999 ([counter.js](../src/domain/counter.js)): 2 liter in ml (2000) past niet | Zie Q18 |
+| R6 | Een "tekst"-doel kan de app niet narekenen: de nudge kan alleen op keren en slagingspercentage | Zie Q17 |
+| R7 | De nudge-drempel is een vuistregel zonder bewijs in het onderzoek | Als vuistregel formuleren, instelbaar in [constants.js](../src/domain/constants.js), en later bijstellen op echt gebruik |
 
 ---
+
 
 ## F3: prestaties die kloppen, een herijking en prestaties per habit
 
@@ -129,43 +165,48 @@ Risico R5: een gebruiker die nog op de **oude appversie** zit, ontgrendelt de ve
 |---|---|---|
 | UC3.1 | Op het habit-scherm een blok **Prestaties van deze habit**: behaald (met datum) en de eerstvolgende met voortgang | M |
 | UC3.2 | Het algemene scherm blijft zoals het is, met "behaald bij: …" | M |
-| UC3.3 | Nieuwe prestaties per habit (Q11), bijvoorbeeld keren gedaan bij deze habit | S |
-| UC3.4 | Voor flexibele ritmes een eigen reeks: **weken (of maanden) achter elkaar gehaald**, naast de dagenreeks | S |
-| UC3.5 | Bij een uitbouwen-habit (F1): stap- en doelprestaties zichtbaar op de habit | C |
+| UC3.3 | Nieuwe prestaties per habit (Q11: akkoord): keren gedaan bij deze habit | M |
+| UC3.4 | Reeksen voor elk ritme: dagen, **weken** of **maanden** achter elkaar gehaald; bij week- en maandhabits breekt één gemiste periode de reeks meteen (Q13, Q22) | M |
+| UC3.5 | Bij een uitbouwen-habit (F1): trede- en doelprestaties zichtbaar op de habit (Q11, Q23) | M |
 
 ---
 
 ## Vragen aan Remco
 
-Antwoord gerust kort ("ja", "nee, want …" of een nummer). Mijn voorstel staat vooraan.
+### Beantwoord (2026-11-09)
 
-### F1: uitbouwen
+| # | Vraag | Antwoord | Wat ik ermee doe |
+|---|---|---|---|
+| Q1 | Welke ritmes mogen een doel? | **Ook dagelijkse.** Opbouwen werkt naar een **ideale versie** (2 liter water, nu 0,5); een gevestigde habit werkt "op niveau" met een **minimale versie** | Doel uitgebreid van alleen frequentie naar frequentie, hoeveelheid en tekst (nieuwe vraag Q17, Q18, Q19) |
+| Q2 | Hoe kies je de stappen? | Jij kiest, maar de app mag **nudgen** als het al lang goed gaat, op basis van **aantal keren**, niet dagen. Ik zoek uit wanneer dat verantwoord is | Onderzoek en voorstel staan bij F1; keuze in Q21 |
+| Q3 | Wanneer reflecteren? | Ja (weekreview na de drempel, plus altijd een knop) | Opgenomen |
+| Q4 | Wanneer ingeburgerd? | Een opbouwende habit haalt **geen** ingeburgerd, maar kan wel **maximaal opbouwend** zijn; het opbouwen **reset bij elke trede** | Telling per trede; wat na het maximum gebeurt: Q20 |
+| Q5 | Terugschakelen naar 0? | Akkoord: nee, minimaal 1× | Opgenomen |
+| Q6 | Bestaande habits omzetten? | Ja | Opgenomen |
+| Q7 | Wat is de spotlight? | **(b)**: stap-indicator en balk naar het doel op de kaart | Geen aparte sectie op Habits |
+| Q8 | Naam in de app? | **Uitbouwen** | Opgenomen |
+| Q9 | Minimum aantal keren voor mijlpalen | Akkoord, voor alle prestaties waar het kan | Naar de audit (T3.1, T3.2) |
+| Q10 | Wat doet "reset"? | Akkoord: **herijken**, eenmalig automatisch plus een knop in Instellingen | T3.4 |
+| Q11 | Prestaties per habit | Akkoord, **en "uitgebouwd" erbij**: een paar prestaties rond uitbouwen, met iconen | UC1.10 is nu "moet"; voorstel in Q23 |
+| Q12 | Wat toont het habit-scherm? | Akkoord: behaald plus de eerstvolgende per soort | Opgenomen |
+| Q13 | Reeksen voor flexibele habits | **Ja, alles mag een reeks halen.** Bij week- en maandhabits breekt een gemiste periode de reeks meteen: een reeks moet iets betekenen. Bij dagelijkse habits valt daar nog wat over te zeggen | Reeksen per eenheid; wat voor dagelijkse geldt: Q22 |
+| Q14 | Sociale gevolgen? | Akkoord: privé, buiten de punten | Opgenomen |
+| Q15 | Volgorde en release | Akkoord | Zie de to-do |
+| Q16 | F2: drie kalenderdagen, ook de maandreview | Akkoord | B4 is een besluit |
+
+### Open vragen (nieuw)
+
+Voorstel staat vooraan; "ja" is genoeg.
+
 | # | Vraag | Mijn voorstel | Antwoord |
 |---|---|---|---|
-| Q1 | Welke ritmes mogen een doel hebben? | Alleen "N× per week" en "N× per maand" (aantal opschalen is daar eenduidig). Vaste weekdagen nog niet: daar is "een dag erbij" een andere keuze (welke dag?) | |
-| Q2 | Hoe kies je de stappen? | Geen vaste trap: bij elk besluit kies jij het aantal (voorstel +1, hoogstens tot het doel) | |
-| Q3 | Wanneer vraagt de app om te reflecteren? | Na minstens 2 volle weken op een stap, als kaart in de weekreview; altijd ook een knop "Stap aanpassen" bij de habit | |
-| Q4 | Wanneer is zo'n habit "ingeburgerd"? | Pas op **doelniveau** (met de gewone regels daar). Tot dan blijft hij op Vandaag en toont de fase "Uitbouwen, stap 2 van 4" | |
-| Q5 | Mag je terugschakelen naar 0 (pauzeren)? | Nee, minimaal 1×; voor pauzeren bestaat Pauzeren al | |
-| Q6 | Bestaande habits omzetten? | Ja: "Doel instellen" bij Habit bewerken, voor een habit met N× per week/maand | |
-| Q7 | Wat is de **spotlight** precies? | (a) een eigen sectie bovenaan Habits ("Aan het uitbouwen") en (b) op de kaart een stap-indicator en een balk naar het doel; (c) eigen prestaties volgen via F3c. Past dat, of denk je aan meer? | |
-| Q8 | Hoe noemen we het in de app? | "Uitbouwen" (werkwoord) en "Doel" (de stip). Alternatieven: "Groeigewoonte", "Stip op de horizon" | |
-
-### F3: prestaties
-| # | Vraag | Mijn voorstel | Antwoord |
-|---|---|---|---|
-| Q9 | Het minimum aantal keren voor mijlpalen per habit | `max(3, ⌈N ÷ 7 × per week × 0,8⌉)`, zie F3a. Ook voor alle andere prestaties waar het kan; geen apart minimum voor `done_N` (telt al keren) | |
-| Q10 | Wat doet "reset"? | **Herijken** (wat niet meer klopt weg, de rest behoudt zijn datum), eenmalig automatisch bij de eerste start na de update **én** een knop in Instellingen. Geen volledige wis, tenzij jij dat wilt | |
-| Q11 | Welke prestaties per habit komen erbij? | Keren gedaan per habit (10, 25, 50, 100) en weken op rij voor flexibele ritmes; de huidige drie blijven | |
-| Q12 | Wat toont het habit-scherm? | Alles behaald plus **de eerstvolgende** per soort met voortgang, niet de hele lijst (te druk op een telefoon) | |
-| Q13 | Mogen flexibele habits (2× per week) een reeks halen? | Ja, als aparte reeks in **weken**: `weekstreak_2/4/8`, niet in dagen | |
-| Q14 | Komen er per habit ook sociale gevolgen (de puntentelling met vrienden)? | Nee, achievements blijven privé en buiten de punten (zoals nu) | |
-
-### Planning en afspraken
-| # | Vraag | Mijn voorstel | Antwoord |
-|---|---|---|---|
-| Q15 | Volgorde en release | F2 klaar. Dan F3a + herijking (herstelt een fout) als 1.5.2; daarna F1 met F3c als 1.6. Akkoord? | |
-| Q16 | F2: drie kalenderdagen sinds de eerste vastlegging, ook voor de maandreview | Zo laten | |
+| Q17 | **Welke soorten doel** komen in de eerste versie? Je water-voorbeeld is een *hoeveelheid*, sporten een *frequentie*, "meer lezen" is vaak een *tekst* ("5 minuten" → "30 minuten") die de app niet kan narekenen | Frequentie en hoeveelheid volledig (de app rekent mee en nudgt). Tekst als lichte variant: je typt de trede en het ideaal, de app bewaart het logboek en nudgt op keren en slagingspercentage, maar rekent niets uit | |
+| Q18 | De teller heeft alleen **gehele getallen tot 999**. Jouw voorbeeld, 2 liter, is 2000 ml | De maximumwaarde naar 9999 en gehele getallen houden; de eenheid blijft vrije tekst (ml, dl, glazen, bladzijden). Geen komma's | |
+| Q19 | Mag een uitbouwen-habit **ook een minimale versie** hebben (het vangnet op een slechte dag)? | Ja, los van het ideaal. Het ideaal is waar je naartoe groeit, het minimum is wat je op een slechte dag nog doet. De minimale versie telt zoals nu als gehaald-in-het-klein | |
+| Q20 | Wat gebeurt er **na het hoogste niveau** ("uitgebouwd")? | Zodra je het ideaal hebt gehaald en de nudge-drempel op die laatste trede is bereikt, krijg je de prestatie *Uitgebouwd*. Het doel verdwijnt uit beeld (blijft in het logboek) en de habit volgt daarna het **gewone traject**: nu kan hij ingeburgerd worden. Alternatief: hij blijft voor altijd "uitbouwen" en kan nooit ingeburgerd worden | |
+| Q21 | **De nudge-regel** (zie F1, onderzoek): minstens de helft van de ingeburgerd-keren van dat ritme (ondergrens 6) op deze trede, minstens 80% gehaald, de laatste twee niet gemist; één rustige zin; "Niet nu" houdt hem eens per twee weken tegen; en een zachte "terugschakelen mag" onder de 50% | Zo bouwen, als vuistregel en niet als bewijs gepresenteerd, instelbaar in `constants.js` | |
+| Q22 | **Reeksen**: week- en maandhabits breken streng bij één gemiste periode (zoals je zei). En dagelijkse habits? Het onderzoek van Lally zegt dat één gemiste dag het opbouwen niet merkbaar verstoort | Dagelijks ook **streng laten** voor prestaties (een reeks van 7 dagen is dan 7 dagen), maar bij de getoonde "reeks" op de habit één gemiste dag niet meteen laten afbreken. Drempels: dagen 7/14/30 (zoals nu), **weken 2/4/8/13**, **maanden 3/6/12** | |
+| Q23 | **Prestaties voor uitbouwen**, met iconen (ik teken ze zelf in de set van de app) | *Eerste trede* (je eerste stap omhoog), *Drie treden* (drie keer opgeschaald), *Uitgebouwd* (ideaal gehaald, per habit), *Terug is ook vooruit* (je schakelde terug en pakte het weer op). Eén of twee erbij als je dat wilt | |
 
 ---
 
@@ -173,49 +214,61 @@ Antwoord gerust kort ("ja", "nee, want …" of een nummer). Mijn voorstel staat 
 
 Ik vink af wat klaar is en voeg toe wat ik onderweg vind. Een item met **?** wacht op een antwoord hierboven.
 
-### F2 (klaar, wacht op jouw akkoord)
+### F2 (klaar)
 - [x] Regel `usedLongEnough` en `firstUseDate`, meldingen, push, kaart ("Nog even gebruiken")
 - [x] Tests voor regel, meldingen en push (1174 groen)
 - [x] Testgegevens van de layout-check teruggedateerd
+- [x] Q16 bevestigd
 - [ ] `npm run check:layout` draaien op de branch (heeft Chrome en de lokale database nodig)
-- [ ] Q16 bevestigen
 
-### F3a: tellingen herstellen
-- [ ] T3.1 Audit van alle sleutels in `ACHIEVEMENT_KEYS` tegen de tabel hierboven, met een test per ritme (dagelijks, 2× per week, 1× per maand)
-- [ ] T3.2 Q9: minimum in `constants.js` en in `evaluateAchievements`; ook de voortgang ("2 van 3 keer") in de detailtekst
+### F3a: tellingen herstellen (eerstvolgende stap)
+- [ ] T3.1 Audit van alle sleutels in `ACHIEVEMENT_KEYS` tegen de tabel bij F3a, met een test per ritme (dagelijks, 2× per week, 1× per maand)
+- [ ] T3.2 Minimum aantal keren (Q9) in `constants.js` en in `evaluateAchievements`; de voortgang ("2 van 3 keer") in de detailtekst
 - [ ] T3.3 Teksten in [content/achievements.js](../src/content/achievements.js) aanpassen ("… en minstens X keer gedaan")
-- [ ] T3.4 **?** Q10: herijken (domein + runner), eenmalig bij de start en een knop in Instellingen, met een bevestiging en een toast
-- [ ] T3.5 Versie van de regels in de instellingen (R5), met een test voor "oude app ontgrendelt opnieuw"
+- [ ] T3.4 Herijken (Q10): domein plus runner, eenmalig bij de eerste start na de update, en een knop in Instellingen met bevestiging
+- [ ] T3.5 Versie van de regels in de instellingen (R5 bij F3b), met een test voor "oude app ontgrendelt opnieuw"
 - [ ] T3.6 Back-up: herijken verandert de export niet, controleren
+- [ ] T3.11 Reeksen per eenheid (Q13, Q22): nieuwe sleutels voor weken en maanden op rij, met de strenge regel; de bestaande dagenreeks blijft; een oude habit krijgt ze met terugwerkende kracht door de herijking (met de juiste datum)
 
 ### F1: uitbouwen
-- [ ] T1.1 **?** Q1 Domein: `goal` valideren in [habit.js](../src/domain/habit.js) (alleen `times_per_period`, doel boven het huidige aantal, zelfde periode)
-- [ ] T1.2 Domein: fase "Uitbouwen" in [phases.js](../src/domain/phases.js) en [stats.js](../src/domain/stats.js), en "blijft op Vandaag" bij `graduated` (Q4)
-- [ ] T1.3 Handelingen: opschalen, blijven en terugschakelen in [actions.js](../src/app/actions.js) (hergebruikt de ritmeversie), met een log en ongedaan maken
-- [ ] T1.4 **?** Q3 Weekreview-kaart "Hoe ging het op dit niveau?" met drie keuzes en een notitie
-- [ ] T1.5 Habitformulier: doel instellen (Q6), uitleg in gewone taal
-- [ ] T1.6 **?** Q7 Spotlight op Habits, Vandaag en de habit zelf; layout op 390 px, 320 px en 320 px met 200% tekst
-- [ ] T1.7 Test: opslaan door een oudere appversie verliest `goal` niet (R1)
-- [ ] T1.8 Uitleg in "Zo werkt het" ([guide.js](../src/content/guide.js)) en de Voorwaarden/Privacy ongewijzigd (geen nieuwe soort gegevens naar de server: te bevestigen)
-- [ ] T1.9 Uitlegfilmpje bijwerken? (Alleen als jij dat wilt, zie [explainer-film](../tools/film))
+- [ ] T1.1 Domein: `goal` valideren in [habit.js](../src/domain/habit.js) voor de soorten uit Q17 (frequentie: alleen `times_per_period` boven het huidige aantal; hoeveelheid: boven het huidige tellerdoel)
+- [ ] T1.2 **?** Q18 Tellerbereik omhoog en gehele getallen houden; controleren bij back-up en server (de server bewaakt geen waarden)
+- [ ] T1.3 Domein: de trede (`stepStart`, keren op deze trede) en de nudge-regel (Q21) in een nieuw bestand, zuiver en getest met tabeltests per ritme
+- [ ] T1.4 Domein: fase "Uitbouwen" in [phases.js](../src/domain/phases.js) en [stats.js](../src/domain/stats.js); geen "ingeburgerd" zolang hij uitbouwt, en blijven op Vandaag (Q4)
+- [ ] T1.5 **?** Q20 Wat er na het maximum gebeurt, in de handeling en in stats
+- [ ] T1.6 Handelingen: opschalen, blijven en terugschakelen in [actions.js](../src/app/actions.js) (hergebruikt de ritmeversie en het tellerdoel), met logboek en ongedaan maken
+- [ ] T1.7 Weekreview-kaart "Hoe ging het op deze trede?" met drie keuzes en een notitie; ook bij de habit
+- [ ] T1.8 Habitformulier: doel instellen en bestaande habit omzetten (Q6), uitleg in gewone taal ("Waar wil je uiteindelijk naartoe?")
+- [ ] T1.9 Spotlight (b): stap-indicator en balk naar het doel op de kaart en de habit; layout op 390 px, 320 px en 320 px met 200% tekst
+- [ ] T1.10 Test: opslaan door een oudere appversie verliest `goal` niet (R1)
+- [ ] T1.11 Uitleg in "Zo werkt het" ([guide.js](../src/content/guide.js)); privacy: geen nieuwe soort gegevens naar de server, te bevestigen
+- [ ] T1.12 Prestaties voor uitbouwen met iconen (Q23)
+- [ ] T1.13 Uitlegfilmpje bijwerken, alleen als je dat wilt ([tools/film](../tools/film))
 
 ### F3c: prestaties per habit
-- [ ] T3.7 **?** Q11 Voortgang per habit in het domein (`achievementProgress` met habit)
-- [ ] T3.8 Nieuwe sleutels (keren per habit, weken op rij) en hun teksten en iconen: iconen volgens [MODA-ICONS.md](MODA-ICONS.md); ik teken ze zelf in dezelfde set
-- [ ] T3.9 **?** Q12 Blok "Prestaties van deze habit" in [views/habit-detail.js](../src/ui/views/habit-detail.js)
+- [ ] T3.7 Voortgang per habit in het domein (`achievementProgress` met habit)
+- [ ] T3.8 Nieuwe sleutels (keren per habit: 10, 25, 50, 100) met teksten en iconen volgens [MODA-ICONS.md](MODA-ICONS.md)
+- [ ] T3.9 Blok "Prestaties van deze habit" in [views/habit-detail.js](../src/ui/views/habit-detail.js): behaald plus de eerstvolgende per soort (Q12)
 - [ ] T3.10 Het algemene scherm: "behaald bij: …" blijft, controleren met de nieuwe sleutels
 
 ### Afronden per release
 - [ ] Alle tests groen, `check:layout` en `audit:scroll` op de branch
 - [ ] Release-notities (RELEASE-v1.5.2 en 1.6) en het verhogen van `appVersion` in de release-PR
-- [ ] Geen servermigratie nodig (te bevestigen bij T1.7 en T3.5); zo toch, dan eerst lokaal en achterwaarts compatibel
+- [ ] Geen servermigratie nodig (te bevestigen bij T1.10 en T3.5); zo toch, dan eerst lokaal en achterwaarts compatibel
 
 ## Besluiten (tot nu toe)
 
 | # | Besluit | Reden |
 |---|---|---|
-| B1 | Uitbouwen is een keuze van de gebruiker per stap; de app stelt voor, beslist nooit | Remco, 2026-11-09 |
-| B2 | Uitbouwen-habits krijgen een spotlight, omdat ze zowel moeten inslijten als uitdijen | Remco, 2026-11-09 |
-| B3 | De stappen staan in de bestaande ritmeversies; alleen het doel is nieuw | Geen migratie, geschiedenis klopt vanzelf |
-| B4 | De review wacht drie kalenderdagen, ook de maandreview | Mijn aanname, te bevestigen (Q16) |
+| B1 | Uitbouwen is een keuze van de gebruiker per trede; de app stelt voor en mag nudgen, maar beslist nooit | Remco, 2026-11-09 |
+| B2 | Uitbouwen-habits krijgen een spotlight: een stap-indicator en een balk naar het doel (geen aparte sectie) | Remco, 2026-11-09 (Q7) |
+| B3 | De stappen van het ritme staan in de bestaande ritmeversies; het doel is nieuw | Geen migratie, geschiedenis klopt vanzelf |
+| B4 | De review wacht drie kalenderdagen, ook de maandreview | Remco, 2026-11-09 (Q16) |
 | B5 | Eén bron voor het minimum aantal keren, afgeleid van het tempo van de habit | Zoals `graduationPace`; geen losse getallen per prestatie |
+| B6 | Ook dagelijkse habits mogen uitbouwen; het doel is een **ideale versie** (omhoog), de **minimale versie** blijft het vangnet (omlaag) | Remco, 2026-11-09 (Q1) |
+| B7 | De nudge telt **keren op de huidige trede**, niet dagen sinds de start; elke nieuwe trede begint bij nul | Remco, 2026-11-09 (Q2, Q4) |
+| B8 | Een uitbouwen-habit kan niet ingeburgerd worden zolang hij uitbouwt | Remco, 2026-11-09 (Q4) |
+| B9 | Terugschakelen kan tot minimaal 1×; voor pauzeren bestaat Pauzeren | Remco, 2026-11-09 (Q5) |
+| B10 | Prestaties blijven privé en buiten de punten | Remco, 2026-11-09 (Q14) |
+| B11 | Herijken van prestaties in plaats van alles wissen, eenmalig automatisch plus een knop | Remco, 2026-11-09 (Q10) |
+| B12 | Alle habits mogen een reeks halen; bij week- en maandhabits breekt één gemiste periode de reeks meteen | Remco, 2026-11-09 (Q13) |
