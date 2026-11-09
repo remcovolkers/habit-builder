@@ -825,6 +825,15 @@ export const nl = {
 
   achievements: {
     title: 'Prestaties',
+    recalibrate: {
+      title: 'Prestaties herijken',
+      hint: 'Sommige mijlpalen per habit vragen sinds kort ook een aantal keren gedaan. Herijken haalt weg wat daar niet aan voldoet; de rest blijft staan met zijn datum.',
+      button: 'Herijk mijn prestaties',
+      confirmTitle: 'Prestaties herijken?',
+      confirmText: 'Mijlpalen die niet kloppen met de regels van nu worden ingetrokken. Wat klopt blijft. Intrekken kan niet ongedaan worden gemaakt, maar wat je echt verdient komt vanzelf terug.',
+      confirm: 'Ja, herijk',
+      done: (n) => (n === 0 ? 'Alles klopt, er is niets veranderd.' : n === 1 ? '1 prestatie ingetrokken.' : `${n} prestaties ingetrokken.`),
+    },
     count: (n, total) => `${n} van ${total}`,
     locked: 'Nog niet behaald',
     progress: (value, target) => `${value} van ${target}`,

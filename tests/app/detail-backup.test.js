@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { buildHabitDetail, phaseBar, streakSpan } from '../../src/app/habit-detail.js';
 import { pickTip } from '../../src/app/tips.js';
 import { buildExport, parseImport } from '../../src/app/backup.js';
-import { checkAchievements } from '../../src/app/achievement-runner.js';
+import { checkAchievements, ensureAchievementRules, recalibrateAchievements } from '../../src/app/achievement-runner.js';
 import {
   completeMonthTask, graduateHabit, rateAutomaticity, RuleError, saveMonthlyReview, saveWeeklyReview, setMaintenance,
 } from '../../src/app/actions.js';
@@ -323,6 +323,35 @@ test('een review staat pas klaar na drie dagen gebruik (de eerste dag telt mee)'
   assert.equal(buildWeekReviewCard({ snapshot: fresh, now: '2026-10-19T10:00', date: '2026-10-19' }).tooEarly, false, 'dag 3');
   assert.equal(buildWeekReviewCard({ snapshot: fresh, now: '2026-10-14T10:00', date: '2026-10-14' }).tooEarly, false, 'nog niet open is niet "te vroeg"');
   assert.equal(buildMonthReviewCard({ snapshot: { ...fresh, habits: [habit('2026-10-25T09:00:00.000Z')] }, now: '2026-10-25T10:00', date: '2026-10-25' }).tooEarly, true);
+});
+
+test('herijken: een mijlpaal die met de nieuwe regel niet klopt wordt ingetrokken, de rest houdt zijn datum, en het gebeurt maar één keer', async () => {
+  const { repo } = testRepo();
+  const monthly = { type: 'times_per_period', period: 'month', count: 1 };
+  const slow = await repo.saveHabit(validHabit({ name: 'Tuin', startDate: '2026-08-01', schedules: [{ effectiveFrom: '2026-08-01', schedule: monthly }] }));
+  const solid = await repo.saveHabit(validHabit({ name: 'Water', startDate: '2026-08-01', schedules: [{ effectiveFrom: '2026-08-01', schedule: daily }] }));
+  await repo.setCheckIn({ habitId: slow.id, date: '2026-08-10', status: 'done' }); // één vinkje in twee maanden
+  for (const c of doneRange(solid.id, '2026-08-01', '2026-10-14')) await repo.setCheckIn(c);
+  // zoals het vóór de strengere regel ging: alles ontgrendeld, met een eigen datum
+  await repo.unlockAchievement({ key: 'days_21', habitId: slow.id, date: '2026-09-01' });
+  await repo.unlockAchievement({ key: 'days_21', habitId: solid.id, date: '2026-08-22' });
+  await repo.unlockAchievement({ key: 'first_checkin', date: '2026-08-10' });
+
+  assert.equal((await repo.getSettings()).achievementRules, undefined, 'nog nooit herijkt');
+  const revoked = await ensureAchievementRules(repo, TODAY);
+  assert.deepEqual(revoked.map((a) => `${a.key}@${a.habitId === slow.id ? 'slow' : a.habitId}`), ['days_21@slow']);
+  const left = await repo.listAchievements();
+  assert.deepEqual(left.map((a) => `${a.key}|${a.date}`).sort(), ['days_21|2026-08-22', 'first_checkin|2026-08-10'], 'wat klopt houdt zijn oorspronkelijke datum');
+  assert.equal((await repo.getSettings()).achievementRules, 2);
+
+  assert.deepEqual(await ensureAchievementRules(repo, TODAY), [], 'de tweede keer niets meer');
+  await checkAchievements(repo, TODAY); // en de gewone controle geeft de ingetrokken mijlpaal niet opnieuw
+  assert.equal((await repo.listAchievements()).some((a) => a.key === 'days_21' && a.habitId === slow.id), false);
+
+  // de knop in Instellingen: dezelfde toetsing, zonder de versie
+  await repo.unlockAchievement({ key: 'days_7', habitId: slow.id, date: '2026-09-01' });
+  assert.deepEqual((await recalibrateAchievements(repo, TODAY)).map((a) => a.key), ['days_7']);
+  assert.deepEqual(await recalibrateAchievements(repo, TODAY), [], 'daarna klopt alles');
 });
 
 test('weeksOfMonth: een week hoort bij de maand van zijn donderdag, dus bij precies één maand', () => {

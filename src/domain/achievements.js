@@ -16,14 +16,17 @@ import {
   MILESTONE_DAYS,
   MILESTONE_MIN_CONSISTENCY,
   MINIMAL_ACHIEVEMENT,
+  MONTH_STREAK_MILESTONES,
   PERFECT_WEEK_MIN_UNITS,
   PERFECT_WEEKS_RUN,
   RECOVERIES_ACHIEVEMENT,
   REVIEW_STREAK_WEEKS,
   STREAK_MILESTONES,
   STRONG_RETURN,
+  WEEK_STREAK_MILESTONES,
   WHY_HABITS_ACHIEVEMENT,
 } from './constants.js';
+import { milestoneRepetitions } from './pace.js';
 import { isWeekReview } from './reviews.js';
 import { computeStreaks } from './streaks.js';
 import { habitDayparts } from './dayparts.js';
@@ -36,6 +39,8 @@ import { isClosed, isPositive } from './units.js';
 export const COUNT_ACHIEVEMENTS = Object.freeze([
   ...DONE_MILESTONES.map((n) => ({ key: `done_${n}`, measure: 'totalDone', target: n })),
   ...STREAK_MILESTONES.map((n) => ({ key: `streak_${n}`, measure: 'bestDayStreak', target: n })),
+  ...WEEK_STREAK_MILESTONES.map((n) => ({ key: `weekstreak_${n}`, measure: 'bestWeekStreak', target: n })),
+  ...MONTH_STREAK_MILESTONES.map((n) => ({ key: `monthstreak_${n}`, measure: 'bestMonthStreak', target: n })),
   { key: 'perfect_weeks_4', measure: 'perfectWeekRun', target: PERFECT_WEEKS_RUN },
   { key: 'recover_5', measure: 'recoveries', target: RECOVERIES_ACHIEVEMENT },
   { key: 'minimal_5', measure: 'minimalUsed', target: MINIMAL_ACHIEVEMENT },
@@ -78,6 +83,9 @@ export const ACHIEVEMENT_KEYS = Object.freeze([
   'all_done_10',
   'first_friend',
   'friends_5',
+  // ronde 3: reeksen in weken en maanden
+  ...WEEK_STREAK_MILESTONES.map((n) => `weekstreak_${n}`),
+  ...MONTH_STREAK_MILESTONES.map((n) => `monthstreak_${n}`),
 ]);
 
 /** Heeft de habit een gemiste periode van ≥ 7 dagen gehad waarna hij weer is opgepakt? */
@@ -221,6 +229,8 @@ export function achievementMeasures({ today, stats, habits = [], checkIns = [], 
     friends,
     totalDone: stats.reduce((sum, s) => sum + (s.totalDone ?? 0), 0),
     bestDayStreak: Math.max(0, ...stats.map((s) => computeStreaks((s.units ?? []).filter((u) => u.kind === 'day')).best)),
+    bestWeekStreak: Math.max(0, ...stats.map((s) => computeStreaks((s.units ?? []).filter((u) => u.span === 'week')).best)),
+    bestMonthStreak: Math.max(0, ...stats.map((s) => computeStreaks((s.units ?? []).filter((u) => u.span === 'month')).best)),
     perfectWeekRun: longestWeekRun(perfectWeekStarts(stats.flatMap((s) => s.units ?? []), today)),
     recoveries: stats.reduce((sum, s) => sum + countRecoveries(s.units ?? []), 0),
     minimalUsed: checkIns.filter((c) => c.status === 'minimal' && known.has(c.habitId)).length,
@@ -233,6 +243,20 @@ export function achievementMeasures({ today, stats, habits = [], checkIns = [], 
 export function achievementProgress(input) {
   const measures = achievementMeasures(input);
   return Object.fromEntries(COUNT_ACHIEVEMENTS.map(({ key, measure, target }) => [key, { value: Math.min(measures[measure], target), target }]));
+}
+
+/** De prestaties waarvan de regel strenger is geworden en die daarom herijkt worden (zie staleAchievements). */
+export const RECALIBRATED_KEYS = Object.freeze(MILESTONE_DAYS.map((n) => `days_${n}`));
+
+/**
+ * Herijken: welke ontgrendelingen van RECALIBRATED_KEYS kloppen niet meer met de regels van nu? Alleen voor een habit die er nog is: wat bij een
+ * verwijderde habit hoorde blijft staan, en prestaties die van iets buiten de habit afhangen (vrienden, reviews) blijven buiten schot.
+ * Geeft [{ key, habitId }] uit `unlocked`; wat klopt houdt zijn datum.
+ */
+export function staleAchievements(input) {
+  const valid = new Set(evaluateAchievements({ ...input, unlocked: [] }).map((a) => `${a.key}|${a.habitId ?? ''}`));
+  const present = new Set(input.stats.map((s) => s.habitId));
+  return (input.unlocked ?? []).filter((u) => RECALIBRATED_KEYS.includes(u.key) && present.has(u.habitId) && !valid.has(`${u.key}|${u.habitId ?? ''}`));
 }
 
 /**
@@ -259,7 +283,7 @@ export function evaluateAchievements({ today, stats, reviews: allReviews = [], u
 
   for (const s of stats) {
     for (const n of MILESTONE_DAYS) {
-      if (s.activeDays >= n && (s.consistency.rate ?? 0) >= MILESTONE_MIN_CONSISTENCY) grant(`days_${n}`, s.habitId);
+      if (s.activeDays >= n && (s.consistency.rate ?? 0) >= MILESTONE_MIN_CONSISTENCY && (s.totalDone ?? 0) >= milestoneRepetitions(n, s.pace?.timesPerWeek)) grant(`days_${n}`, s.habitId);
     }
   }
 
