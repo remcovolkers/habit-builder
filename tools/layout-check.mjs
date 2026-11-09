@@ -17,6 +17,7 @@ const BROWSER = [
   '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/microsoft-edge',
 ].find((p) => p && existsSync(p));
 if (!BROWSER) throw new Error('Geen Edge of Chrome gevonden (zet BROWSER op het pad van de browser)');
+const startedAt = Date.now();
 const PORT = 5175;
 const DEBUG = 9338;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -30,14 +31,25 @@ let browserExit = null;
 edge.on('exit', (code, signal) => { browserExit = `${code ?? signal}`; });
 const cleanup = () => {
   server.kill();
-  if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' }); // wachten, anders houdt de browser het profiel nog vast
+  if (process.platform === 'win32') {
+    spawnSync('taskkill', ['/PID', String(edge.pid), '/T', '/F'], { stdio: 'ignore' }); // wachten, anders houdt de browser het profiel nog vast
+    // een launcher die al is gestopt laat zijn kindprocessen achter: die zoeken we op het tijdelijke profiel
+    spawnSync('powershell', ['-NoProfile', '-Command', `Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*${profile}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }`], { stdio: 'ignore' });
+  }
   else edge.kill('SIGKILL');
   // het tijdelijke browserprofiel (honderden MB) weghalen: zonder dit loopt de schijf na een paar runs vol
   try { rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 }); } catch { /* blijft liggen; het besturingssysteem ruimt tijdelijke bestanden later op */ }
 };
 
 const failures = [];
+// Tijdmeting: hoeveel tijd zit er tussen twee controles (het onderdeel dat net klaar is, of dat nog wacht)? Aan het eind staan de traagste onderdelen.
+const segments = [];
+const navTimeouts = []; // routes waar nav() de limiet haalde zonder dat het scherm er stond (die kosten vier seconden)
+let lastCheckAt = Date.now();
 const check = (name, ok, detail = '') => {
+  const now = Date.now();
+  segments.push({ name, ms: now - lastCheckAt });
+  lastCheckAt = now;
   console.log(`${ok ? 'OK  ' : 'FAIL'} ${name}${ok ? '' : `  -> ${detail}`}`);
   if (!ok) {
     failures.push(name);
@@ -85,10 +97,55 @@ const MEASURE = (offset) => `(() => {
   }, 400));
 })()`;
 
+/**
+ * Uitbouwen (docs/FEEDBACKRONDE-2026-11.md). Staat los van de rest: het zaait zijn eigen habit. Met LAYOUT_ONLY=growth draait alleen dit onderdeel
+ * (een minuut in plaats van een paar minuten), handig tijdens het bouwen; de volledige run in CI draait altijd alles.
+ */
+async function growthChecks({ ev, nav, send, sleep }) {
+  const sizes = [['390x844', 390, 844, 100], ['320x568', 320, 568, 100], ['320x568, tekst 200%', 320, 568, 200]];
+  // de kaart op de habit, de strook op Vandaag en de bladen passen op elk formaat, met knoppen van minstens 44 px
+  const growId = await ev(`(async () => {
+    const { state, notifyChanged } = await import('/src/ui/state.js');
+    const { setGoal } = await import('/src/app/growth.js');
+    const { addDays, startOfWeek } = await import('/src/domain/dates.js');
+    const start = addDays(startOfWeek(state.today), -35);
+    const habit = await state.repo.saveHabit({ name: 'Sporten, een heel lange naam om te zien of de kaart past', icon: '💧', color: 'c3', daypart: 'anytime', status: 'active', startDate: start, endDate: null, graduationDays: 66,
+      maintenance: false, sortOrder: 500, counter: null, createdAt: start + 'T08:00:00.000Z', schedules: [{ effectiveFrom: start, schedule: { type: 'times_per_period', period: 'week', count: 2 } }] });
+    for (let w = 0; w < 5; w++) for (const d of [0, 2]) await state.repo.setCheckIn({ habitId: habit.id, date: addDays(start, w * 7 + d), status: 'done' });
+    await setGoal(state.repo, { habit, kind: 'frequency', ideal: { schedule: { type: 'times_per_period', period: 'week', count: 4 } } }, start);
+    notifyChanged();
+    return habit.id;
+  })()`);
+  for (const [size, w, h2, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h2, deviceScaleFactor: 2, mobile: true });
+    await nav(`habits/${growId}`);
+    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close()); document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(400);
+    const card = await ev(`(() => { const c = document.querySelector('.growth-card'); return { found: !!c, overflow: document.documentElement.scrollWidth - innerWidth, wide: [...(c?.querySelectorAll('*') ?? [])].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, tiny: [...(c?.querySelectorAll('.button') ?? [])].filter((b) => b.getBoundingClientRect().height < 43).length, buttons: c?.querySelectorAll('.button').length ?? 0 }; })()`);
+    check(`Uitbouwen, kaart op de habit · ${size}: past zonder zijwaarts scrollen en alle knoppen zijn minstens 44 px`, card.found && card.overflow <= 0 && card.wide === 0 && card.tiny === 0 && card.buttons >= 3, JSON.stringify(card));
+    await ev(`document.querySelector('#growUp').click()`);
+    await sleep(500);
+    const sheet = await ev(`(() => { const d = document.querySelector('dialog[open]'); const box = d?.getBoundingClientRect(); return { open: !!d, overflow: d ? d.scrollWidth - d.clientWidth : 1, fits: !!box && box.bottom <= innerHeight + 1, value: d?.querySelector('#stepValue')?.value ?? null, tiny: [...(d?.querySelectorAll('.button') ?? [])].filter((b) => b.getBoundingClientRect().height < 43).length }; })()`);
+    check(`Uitbouwen, blad "Een trede hoger" · ${size}: past op het scherm, het aantal staat op 3 en de knoppen zijn minstens 44 px`, sheet.open && sheet.overflow <= 0 && sheet.fits && sheet.value === '3' && sheet.tiny === 0, JSON.stringify(sheet));
+    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+    await nav('today');
+    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close()); document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(400);
+    const strip = await ev(`(() => { const s = [...document.querySelectorAll('.habit-card__growth')]; return { found: s.length > 0, overflow: document.documentElement.scrollWidth - innerWidth, wide: s.filter((e) => [...e.querySelectorAll('*')].some((x) => x.getBoundingClientRect().right > innerWidth + 1)).length }; })()`);
+    check(`Uitbouwen, strook op Vandaag · ${size}: de trede en het ideaal staan op de kaart en passen zonder zijwaarts scrollen`, strip.found && strip.overflow <= 0 && strip.wide === 0, JSON.stringify(strip));
+  }
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); await state.repo.deleteHabit(${JSON.stringify(growId)}); notifyChanged(); })()`);
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+}
+
 async function main() {
   // de browser krijgt ruim de tijd om op te starten (een trage CI-machine heeft er soms meer dan 10 seconden voor nodig)
   let page = null;
-  for (let i = 0; i < 160 && !page && browserExit === null; i++) {
+  // Edge kan als launcher starten: die stopt met code 0 terwijl de echte browser doorloopt (dan is dat geen mislukking)
+  for (let i = 0; i < 160 && !page && (browserExit === null || browserExit === '0'); i++) {
     try { page = (await (await fetch(`http://127.0.0.1:${DEBUG}/json/list`)).json()).find((t) => t.type === 'page') ?? null; } catch { /* de browser start nog */ }
     if (!page) await sleep(250);
   }
@@ -104,12 +161,45 @@ async function main() {
     if (r.result.exceptionDetails) throw new Error(String(r.result.exceptionDetails.exception?.description ?? r.result.exceptionDetails.text));
     return r.result.result.value;
   };
-  const nav = async (route) => { await send('Page.navigate', { url: `http://localhost:${PORT}/#/${route}` }); await sleep(1200); };
+  // Navigeren wacht tot het nieuwe scherm er staat (en niet meer "Laden…" zegt) in plaats van een vaste tijd. Zelfde adres: Chrome laadt de pagina opnieuw;
+  // alleen een andere #-route: de router tekent een nieuw scherm. Daarna een korte rust voor wat het scherm nog zelf doet (LAYOUT_SETTLE_MS, standaard 250).
+  const SETTLE_MS = Number(process.env.LAYOUT_SETTLE_MS ?? 250);
+  const nav = async (route) => {
+    const sameAddress = (await ev('location.hash').catch(() => null)) === `#/${route}`;
+    await ev('window.__prevView = document.getElementById("app")?.firstElementChild ?? null; true').catch(() => {});
+    await send('Page.navigate', { url: `http://localhost:${PORT}/#/${route}` });
+    if (sameAddress) {
+      // hetzelfde adres: Chrome doet óf niets (dan blijft het scherm staan) óf laadt de pagina opnieuw (dan is de markering weg en wachten we hieronder)
+      await sleep(200);
+      const reloaded = await ev('window.__prevView === undefined').catch(() => true);
+      if (!reloaded) { await sleep(SETTLE_MS); return; }
+    }
+    const ready = `(async () => {
+      const app = document.getElementById('app');
+      if (!app || document.readyState !== 'complete' || !app.firstElementChild) return false;
+      if (window.__prevView && app.firstElementChild === window.__prevView) return false; // het oude scherm staat er nog
+      const { nl } = await import('/src/content/nl.js');
+      return ![...app.querySelectorAll('p.muted')].some((p) => p.textContent === nl.app.loading);
+    })()`;
+    const until = Date.now() + 4000;
+    let arrived = false;
+    while (Date.now() < until) {
+      if (await ev(ready).catch(() => false)) { arrived = true; break; }
+      await sleep(50);
+    }
+    if (!arrived) navTimeouts.push(route);
+    await sleep(SETTLE_MS);
+  };
 
   await send('Page.enable');
   await send('Emulation.setFocusEmulationEnabled', { enabled: true }); // anders krijgt een headless pagina nooit echte focus
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await nav('today');
+  if (process.env.LAYOUT_ONLY === 'growth') { // alleen het onderdeel Uitbouwen (zie growthChecks)
+    await growthChecks({ ev, nav, send, sleep });
+    ws.close();
+    return;
+  }
 
   // Introductie (docs/ONBOARDING.md): de browser begint met een leeg profiel, dus dit is een nieuwe gebruiker zonder habits
   // de eerste keer laden is koud (veel losse bestanden, een trage CI-machine): wacht tot de app is opgestart in plaats van op een vaste tijd te rekenen
@@ -1391,8 +1481,8 @@ async function main() {
   await sleep(400);
   const agendaToday = await ev(`(() => { const cards = [...document.querySelectorAll('.agenda-card')]; return { titles: cards.map((c) => c.querySelector('.habit-card__name').textContent.slice(0, 12)), groups: cards.map((c) => c.closest('section').querySelector('.section__title').textContent), metas: cards.map((c) => c.querySelector('.habit-card__meta').textContent), buttons: cards.reduce((n, c) => n + c.querySelectorAll('button, input, a').length, 0), ring: document.querySelector('.ring')?.textContent ?? null, counts: [...document.querySelectorAll('.section-head .xs')].map((e) => e.textContent) }; })()`);
   check('Vandaag: de agenda staat in het dagdeel van de begintijd (Ochtend, Middag, Avond, en een hele dag bij Overdag), met de tijd vooraan en het woord Agenda', JSON.stringify(agendaToday.groups.sort()) === JSON.stringify(['Avond', 'Middag', 'Ochtend', 'Overdag']) && agendaToday.metas.includes('14:30–15:30 · Agenda · Mel') && agendaToday.metas.includes('09:00 · Agenda') && agendaToday.metas.includes('Hele dag · Agenda') && agendaToday.metas.includes('19:00–20:00 · Agenda · Een.Heel.Lange.Naam.Van.Een.Agenda@example.com'), JSON.stringify(agendaToday));
-  const agendaButtons = await ev(`(() => { const cards = [...document.querySelectorAll('.agenda-card')]; return { checks: cards.map((c) => c.querySelectorAll('.check').length), more: cards.reduce((n, c) => n + c.querySelectorAll('.habit-card__more').length, 0), tiny: cards.flatMap((c) => [...c.querySelectorAll('.check')]).filter((b) => { const r = b.getBoundingClientRect(); return r.height < 43 || r.width < 43; }).length, ring: document.querySelector('.ring')?.textContent ?? null }; })()`);
-  check('Vandaag: een afspraak uit je agenda heeft een vinkje (minstens 44 px) maar geen ⋯, en de ring en de tellers bij de dagdelen veranderen er niet door', agendaButtons.checks.length === 4 && agendaButtons.checks.every((n) => n === 1) && agendaButtons.more === 0 && agendaButtons.tiny === 0 && agendaButtons.ring === ringWithoutAgenda, JSON.stringify({ agendaButtons, ringWithoutAgenda }));
+  const agendaButtons = await ev(`(() => { const cards = [...document.querySelectorAll('.agenda-card')]; return { checks: cards.map((c) => c.querySelectorAll('.check').length), more: cards.reduce((n, c) => n + c.querySelectorAll('.habit-card__more').length, 0), tiny: cards.flatMap((c) => [...c.querySelectorAll('.check, .habit-card__more')]).filter((b) => { const r = b.getBoundingClientRect(); return r.height < 43 || r.width < 43; }).length, ring: document.querySelector('.ring')?.textContent ?? null }; })()`);
+  check('Vandaag: een afspraak uit je agenda heeft een vinkje en een ⋯ (elk minstens 44 px; het ⋯ biedt "Niet tonen"), en de ring en de tellers bij de dagdelen veranderen er niet door', agendaButtons.checks.length === 4 && agendaButtons.checks.every((n) => n === 1) && agendaButtons.more === agendaButtons.checks.length && agendaButtons.tiny === 0 && agendaButtons.ring === ringWithoutAgenda, JSON.stringify({ agendaButtons, ringWithoutAgenda }));
   await ev(`document.querySelector('.agenda-card .check').click()`);
   await sleep(400);
   const agendaTicked = await ev(`(() => { const card = [...document.querySelectorAll('.agenda-card')].find((c) => c.dataset.state === 'done'); return { found: !!card, pressed: card?.querySelector('.check')?.getAttribute('aria-pressed'), label: card?.querySelector('.habit-card__state')?.textContent ?? null, toast: document.querySelector('.toast')?.textContent ?? '', ring: document.querySelector('.ring')?.textContent ?? null, counts: [...document.querySelectorAll('.section-head .xs')].map((e) => e.textContent), stored: localStorage.getItem('hb-agenda-done') }; })()`);
@@ -1494,40 +1584,7 @@ async function main() {
     check(`Blad "ga ik niet doen" · ${size}: past op het scherm zonder zijwaarts scrollen, met het plan voorgevuld, en alles is minstens 44 px`, dialogFit.open && dialogFit.prefilled && dialogFit.overflow <= 0 && dialogFit.inside && dialogFit.buttons === 0 && dialogFit.choices === 0, JSON.stringify(dialogFit));
     await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
   }
-  // Uitbouwen (docs/FEEDBACKRONDE-2026-11.md): de kaart op de habit, de strook op Vandaag en de bladen passen op elk formaat, met knoppen van minstens 44 px
-  const growId = await ev(`(async () => {
-    const { state, notifyChanged } = await import('/src/ui/state.js');
-    const { setGoal } = await import('/src/app/growth.js');
-    const { addDays, startOfWeek } = await import('/src/domain/dates.js');
-    const start = addDays(startOfWeek(state.today), -35);
-    const habit = await state.repo.saveHabit({ name: 'Sporten, een heel lange naam om te zien of de kaart past', icon: '💧', color: 'c3', daypart: 'anytime', status: 'active', startDate: start, endDate: null, graduationDays: 66,
-      maintenance: false, sortOrder: 500, counter: null, createdAt: start + 'T08:00:00.000Z', schedules: [{ effectiveFrom: start, schedule: { type: 'times_per_period', period: 'week', count: 2 } }] });
-    for (let w = 0; w < 5; w++) for (const d of [0, 2]) await state.repo.setCheckIn({ habitId: habit.id, date: addDays(start, w * 7 + d), status: 'done' });
-    await setGoal(state.repo, { habit, kind: 'frequency', ideal: { schedule: { type: 'times_per_period', period: 'week', count: 4 } } }, start);
-    notifyChanged();
-    return habit.id;
-  })()`);
-  for (const [size, w, h2, zoom] of sizes) {
-    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h2, deviceScaleFactor: 2, mobile: true });
-    await nav(`habits/${growId}`);
-    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close()); document.documentElement.style.fontSize = '${zoom}%'`);
-    await sleep(400);
-    const card = await ev(`(() => { const c = document.querySelector('.growth-card'); return { found: !!c, overflow: document.documentElement.scrollWidth - innerWidth, wide: [...(c?.querySelectorAll('*') ?? [])].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, tiny: [...(c?.querySelectorAll('.button') ?? [])].filter((b) => b.getBoundingClientRect().height < 43).length, buttons: c?.querySelectorAll('.button').length ?? 0 }; })()`);
-    check(`Uitbouwen, kaart op de habit · ${size}: past zonder zijwaarts scrollen en alle knoppen zijn minstens 44 px`, card.found && card.overflow <= 0 && card.wide === 0 && card.tiny === 0 && card.buttons >= 3, JSON.stringify(card));
-    await ev(`document.querySelector('#growUp').click()`);
-    await sleep(500);
-    const sheet = await ev(`(() => { const d = document.querySelector('dialog[open]'); const box = d?.getBoundingClientRect(); return { open: !!d, overflow: d ? d.scrollWidth - d.clientWidth : 1, fits: !!box && box.bottom <= innerHeight + 1, value: d?.querySelector('#stepValue')?.value ?? null, tiny: [...(d?.querySelectorAll('.button') ?? [])].filter((b) => b.getBoundingClientRect().height < 43).length }; })()`);
-    check(`Uitbouwen, blad "Een trede hoger" · ${size}: past op het scherm, het aantal staat op 3 en de knoppen zijn minstens 44 px`, sheet.open && sheet.overflow <= 0 && sheet.fits && sheet.value === '3' && sheet.tiny === 0, JSON.stringify(sheet));
-    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
-    await nav('today');
-    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close()); document.documentElement.style.fontSize = '${zoom}%'`);
-    await sleep(400);
-    const strip = await ev(`(() => { const s = [...document.querySelectorAll('.habit-card__growth')]; return { found: s.length > 0, overflow: document.documentElement.scrollWidth - innerWidth, wide: s.filter((e) => [...e.querySelectorAll('*')].some((x) => x.getBoundingClientRect().right > innerWidth + 1)).length }; })()`);
-    check(`Uitbouwen, strook op Vandaag · ${size}: de trede en het ideaal staan op de kaart en passen zonder zijwaarts scrollen`, strip.found && strip.overflow <= 0 && strip.wide === 0, JSON.stringify(strip));
-  }
-  await ev(`document.documentElement.style.fontSize = '100%'`);
-  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
-  await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); await state.repo.deleteHabit(${JSON.stringify(growId)}); notifyChanged(); })()`);
+  await growthChecks({ ev, nav, send, sleep });
   await ev(`document.documentElement.style.fontSize = '100%'`);
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   ws.close();
@@ -1537,6 +1594,9 @@ main()
   .catch((error) => { console.error(error); failures.push(String(error)); })
   .finally(() => {
     cleanup();
+    const slow = [...segments].sort((a, b) => b.ms - a.ms).slice(0, 10);
+    console.log(`\nTotaal ${Math.round((Date.now() - startedAt) / 1000)} s voor ${segments.length} controles. Traagste onderdelen (tijd sinds de vorige controle):\n${slow.map((x) => `  ${(x.ms / 1000).toFixed(1).padStart(5)} s  ${x.name.slice(0, 110)}`).join('\n')}`);
+    if (navTimeouts.length > 0) console.log(`nav() haalde de wachtlimiet ${navTimeouts.length}× (${[...new Set(navTimeouts)].slice(0, 8).join(', ')})`);
     console.log(failures.length === 0 ? '\nAlle lay-outcontroles slagen.' : `\n${failures.length} mislukt.`);
     process.exitCode = failures.length === 0 ? 0 : 1;
   });
