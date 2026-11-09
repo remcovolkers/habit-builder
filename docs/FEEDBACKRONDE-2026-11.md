@@ -1,6 +1,6 @@
 # Feedbackronde november 2026: uitbouwen, wachten met de review, prestaties per habit
 
-Status: **ronde 3**: F2 en F3a gebouwd, F1 volgt (antwoorden Q1–Q23 verwerkt, nieuwe vragen Q24–Q25) · opgesteld 2026-11-09 · bron: drie ideeën uit de feedbackhub (v1.5.1, zie [FEEDBACK.md](FEEDBACK.md)) · bouwt voort op [PLAN.md](PLAN.md) §4.5 en §4.7, [AUTOMATISME.md](AUTOMATISME.md), [FLEXIBELE-TAKEN.md](FLEXIBELE-TAKEN.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
+Status: **ronde 3**: F2 en F3a gebouwd, F1 volgt (alle vragen Q1–Q25 beantwoord) · opgesteld 2026-11-09 · bron: drie ideeën uit de feedbackhub (v1.5.1, zie [FEEDBACK.md](FEEDBACK.md)) · bouwt voort op [PLAN.md](PLAN.md) §4.5 en §4.7, [AUTOMATISME.md](AUTOMATISME.md), [FLEXIBELE-TAKEN.md](FLEXIBELE-TAKEN.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
 
 Dit bestand is mijn werklijst voor deze ronde. Ik werk het bij zodra jij antwoordt of ik iets nieuws vind. Alles wat ik niet zelf kan of mag beslissen staat onder **Vragen aan Remco**, met mijn voorstel erbij, zodat "ja" genoeg is.
 
@@ -8,7 +8,7 @@ Dit bestand is mijn werklijst voor deze ronde. Ik werk het bij zodra jij antwoor
 
 | # | Idee (feedbackhub) | Soort | Omvang | Status |
 |---|---|---|---|---|
-| F1 | Een habit kunnen **uitbouwen**: een doel ("4× per week sporten") waar je naartoe groeit, met reflectie en op- of terugschakelen | nieuwe feature | groot | ontwerp af, bouwen volgt na F3a; wacht op Q24 (de boost) |
+| F1 | Een habit kunnen **uitbouwen**: een doel ("4× per week sporten") waar je naartoe groeit, met reflectie en op- of terugschakelen | nieuwe feature | groot | ontwerp af, bouwen volgt na F3a; ontwerp af en beslist (ook de boost, Q24); bouwen is de volgende stap |
 | F2 | Het weekoverzicht pas klaar na minstens 3 dagen gebruik | verbetering | klein | **gebouwd** op deze branch |
 | F3 | Prestaties: 1× per maand of 2× per week moet anders tellen, een mogelijke reset, en prestaties per habit naast het algemene scherm | verbetering + nieuwe weergave | middel–groot | **F3a gebouwd** (minimum aantal keren, reeksen in weken en maanden, herijken); F3c en de uitbouw-prestaties volgen met F1 |
 
@@ -202,13 +202,12 @@ Risico R5: een gebruiker die nog op de **oude appversie** zit, ontgrendelt de ve
 | Q21 | De nudge-regel | Akkoord | B14 |
 | Q22 | Reeksen: streng, drempels | Akkoord | B15; gebouwd (T3.11) |
 | Q23 | Prestaties voor uitbouwen, met iconen | Akkoord | T1.12 |
+| Q24 | De boost bij een nieuwe trede | Akkoord: tegoed van de helft van de keren op de vorige trede, hoogstens de helft van de nudge-drempel van de nieuwe trede | B18, T1.14 |
+| Q25 | Pushen en een pull request naar `develop` | Ja | Gedaan |
 
-### Open vragen (nieuw)
+### Open vragen
 
-| # | Vraag | Mijn voorstel | Antwoord |
-|---|---|---|---|
-| Q24 | **De boost bij een nieuwe trede** (je Q20): hoeveel van wat je al gedaan hebt telt mee voor de nudge van de volgende trede? Voor het ingeburgerd worden hoeft er niets te worden uitgevonden: dat telt al **alle keren van de hele habit** en wordt nooit gereset | Bij opschalen of terugschakelen start de nieuwe trede met een **tegoed van de helft van de keren op de vorige trede**, hoogstens de helft van de nudge-drempel van de nieuwe trede. Zo begin je nooit op nul, maar moet je altijd minstens de helft van de drempel op de nieuwe trede zelf doen. Reden: de cue en de plek blijven, alleen de hoeveelheid verandert, en dat is precies wat het onderzoek als drijver van automatisme noemt (zie F1). De helft is een vuistregel, instelbaar | |
-| Q25 | Mag ik de branch pushen en een pull request naar `develop` openen, zodat de tests in CI meelopen? | Ja, na jouw akkoord op F3a | |
+Geen. Q24 (de boost) en Q25 (pushen en een pull request) zijn akkoord; zie B18. Nieuwe vragen komen hier weer te staan zodra het bouwen van F1 ze oplevert.
 
 ---
 
@@ -240,7 +239,7 @@ Ik vink af wat klaar is en voeg toe wat ik onderweg vind. Een item met **?** wac
 - [ ] T1.3 Domein: de trede (`stepStart`, keren op deze trede) en de nudge-regel (Q21) in een nieuw bestand, zuiver en getest met tabeltests per ritme
 - [ ] T1.4 Domein: fase "Uitbouwen" in [phases.js](../src/domain/phases.js) en [stats.js](../src/domain/stats.js); geen "ingeburgerd" zolang hij uitbouwt, en blijven op Vandaag (Q4)
 - [ ] T1.5 Q20 Na het maximum: prestatie *Uitgebouwd*, het doel gaat uit beeld en de habit volgt het gewone traject (ingeburgerd haalbaar; alle keren van de hele habit tellen mee)
-- [ ] T1.14 **?** Q24 De boost: tegoed bij een nieuwe trede in de nudge-regel (T1.3), instelbaar in `constants.js`
+- [ ] T1.14 Q24 De boost: tegoed bij een nieuwe trede in de nudge-regel (T1.3), instelbaar in `constants.js`
 - [ ] T1.15 Tekstdoel (Q17): het formulier vraagt een concrete trede en een concreet ideaal, met een hint dat "meer lezen" geen trede is
 - [ ] T1.6 Handelingen: opschalen, blijven en terugschakelen in [actions.js](../src/app/actions.js) (hergebruikt de ritmeversie en het tellerdoel), met logboek en ongedaan maken
 - [ ] T1.7 Weekreview-kaart "Hoe ging het op deze trede?" met drie keuzes en een notitie; ook bij de habit
@@ -283,3 +282,4 @@ Ik vink af wat klaar is en voeg toe wat ik onderweg vind. Een item met **?** wac
 | B15 | Reeksen: week- en maandhabits streng; dagelijks streng voor prestaties; drempels 7/14/30 dagen, 2/4/8/13 weken, 3/6/12 maanden | Remco, 2026-11-09 (Q22) |
 | B16 | Een tekstdoel is een concrete trede met een concreet ideaal ("een kwartier lezen" → "een uur"), niet een vage wens | Remco, 2026-11-09 (Q17) |
 | B17 | Na "uitgebouwd" volgt het gewone traject en kan de habit ingeburgerd worden | Remco, 2026-11-09 (Q20) |
+| B18 | De boost: een nieuwe trede start met een tegoed van de helft van de keren op de vorige trede, hoogstens de helft van de nudge-drempel van de nieuwe trede; instelbaar in `constants.js` | Remco, 2026-11-09 (Q24) |
