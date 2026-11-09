@@ -67,4 +67,6 @@ Schema-wijzigingen worden **eerst op de lokale testdatabase** geprobeerd en pas 
 
 `npm test` (in CI, bij elke push en pull request) toetst de logica, de data-laag, sync, de service worker, de thema's en de push-functie, plus afspraken als "geen `innerHTML`", "geen service-sleutel in de repo" en "geen `dvh` in hoogtes".
 
+De **lay-outcontrole in een echte browser** (`npm run check:layout`, ± 3,5 minuut) draait in dezelfde workflow **Integratie** (`.github/workflows/integration.yml`) als eigen job `layout`, naast de Supabase-controles in plaats van ervoor. Lokaal start je hem alleen op verzoek van de ontwikkelaar; `LAYOUT_ONLY=growth` draait één onderdeel.
+
 De **sociale functies** hebben ook een aparte workflow, **Integratie** (`.github/workflows/integration.yml`): een lokale Supabase in Docker, de API-controles en een echte browser (123 controles) op elke push naar `develop` en `feature/**` en bij pull requests (± 2 minuten). Die is bewust geen verplichte check; kijk bij een rode run in het logboek en in de schermafbeeldingen (artifact). De overige browsertests (de oudere flows voor habits, Vandaag, thema's en instellingen) staan nog niet in de repository; die in de repo zetten is een logische vervolgstap.

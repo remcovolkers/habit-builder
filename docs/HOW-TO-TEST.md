@@ -275,9 +275,26 @@ Voor het slepen op een telefoon en de tik op de kaart heb je een echt toestel no
 13. **Back-up en sync**: een back-up (Instellingen → exporteren) bevat `dayMoves` en `dayReflections`; na importeren staan ze er weer. Met een account staan ze in `records` in Studio (collectie `dayMoves` / `dayReflections`) en komen ze op een tweede apparaat binnen. Heb je migratie 0011 nog niet uitgevoerd, dan blijven ze op het toestel.
 14. **Grote tekst**: Vandaag op 320 px met 200% tekst: "Je dag" breekt netjes af (de vijf woorden komen onder elkaar) en er is geen zijwaarts scrollen.
 
+## V. Uitbouwen, prestaties per habit en de wachttijd van een review (docs/FEEDBACKRONDE-2026-11.md)
+
+Kan in de browser met een testaccount (`npm run dev:seed`) of anoniem. Geen servermigratie.
+
+1. **Een doel instellen:** open een lopende habit "N× per week" (bijvoorbeeld 2× per week) en tik op **Doel instellen**. Vul bijvoorbeeld 4× in en sla op: er staat een kaart **Uitbouwen** met "2× per week → 4× per week", een balk en "Trede 1". Bij een habit met een teller kun je een hoeveelheid kiezen (bijvoorbeeld 500 → 2000 ml), bij een andere habit een tekst ("een kwartier lezen" → "een uur lezen").
+2. **Op Vandaag:** de kaart (of de stapel) toont "Uitbouwen · 2× per week → 4× per week" met een balk. Een habit zonder doel heeft dat niet.
+3. **Een trede hoger:** vink de habit een aantal keren af (op ritme). Zodra er genoeg keren zijn (de helft van wat ingeburgerd vraagt, minstens 6; bij 2× per week 8) en het goed ging, zegt de kaart dat je een trede hoger kunt. **Een trede hoger** vraagt het nieuwe aantal (voorgesteld +1) en een notitie; na opslaan staat het ritme op het nieuwe aantal, met een **Ongedaan maken**. De teller "keren op deze trede" begint niet op nul: je krijgt de helft van de vorige trede mee (hoogstens de helft van de nieuwe drempel).
+4. **Hier blijven** laat de nudge zwijgen (minstens 14 dagen en nog de helft van de drempel aan keren). **Een trede lager** kan tot 1. Gaat het wankel (onder de helft van de laatste vier weken), dan zegt de kaart dat terugschakelen mag.
+5. **Afronden:** zit je op het ideaal en gaat het goed, dan staat er **Uitbouwen afronden**. Daarna volgt de habit het gewone traject: de kaart zegt "Uitgebouwd op …" en de habit kan ingeburgerd worden. Zolang je uitbouwt ontbreekt de knop *Ingeburgerd*.
+6. **Weekreview:** vanaf vrijdag staat er onder Voortgang (week) een blokje **Uitbouwen: hoe ging het?** voor habits met een nudge, met dezelfde knoppen. Bij een maandhabit staat het in de maandreview.
+7. **Prestaties van deze habit:** op de habit-pagina staat een blok met wat je behaalde en de eerstvolgende per soort ("36 van 42 dagen, en nog 5 keer gedaan"). Op **Prestaties** staat de groep *Uitbouwen* alleen als je een doel hebt (of er al iets uit behaalde): *Eerste trede*, *Drie treden*, *Uitgebouwd*, *Terug is ook vooruit*.
+8. **Minimum aantal keren:** een habit "1× per maand" met één vinkje haalt geen *21 dagen* meer. Er zijn reeksen in weken (2/4/8/13) en maanden (3/6/12); één gemiste week of maand breekt ze. De getoonde reeks op de habit mag bij dagen één gemiste dag hebben ("één gemiste dag mag").
+9. **Herijken:** Instellingen → **Prestaties herijken**. Wat niet meer klopt wordt ingetrokken (met een melding hoeveel), de rest houdt zijn datum. Bij de eerste start na de update gebeurt dit vanzelf, bij een account pas na de eerste sync.
+10. **Review pas na drie dagen:** een nieuwe gebruiker ziet geen melding "je review staat klaar" en op Voortgang "Nog even gebruiken", tot de app drie dagen is gebruikt (de eerste dag telt mee).
+11. **Grote tekst:** de kaart, de bladen en de strook op 320 px met 200% tekst: geen zijwaarts scrollen, knoppen minstens 44 px (`LAYOUT_ONLY=growth node tools/layout-check.mjs` controleert dit in 9 seconden).
+
 ## Automatische controles
 
 ```
 npm test                 # alle tests, inclusief tests/dev-stub.test.js (elke toestand zit in het stub-account)
-npm run check:layout     # lay-out in een echte browser: 390 px, 320 px en tekst op 200%
+npm run check:layout     # lay-out in een echte browser: 390 px, 320 px en tekst op 200% (± 3,5 minuut; aan het eind de traagste onderdelen)
+LAYOUT_ONLY=growth node tools/layout-check.mjs   # alleen het onderdeel Uitbouwen (± 10 seconden)
 ```
