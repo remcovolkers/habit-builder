@@ -496,7 +496,7 @@ export const nl = {
       why: { too_long: 'Maximaal 200 tekens.' },
       minimalVersion: { too_long: 'Maximaal 200 tekens.' },
       counterUnit: { required: 'Vul een eenheid in, bijvoorbeeld "glazen".', too_long: 'Maximaal 20 tekens.' },
-      counterTarget: { invalid: 'Vul een heel getal in van 1 t/m 999, of laat het leeg.' },
+      counterTarget: { invalid: 'Vul een heel getal in van 1 t/m 9999, of laat het leeg.' },
       counter: { needs_weekdays: 'Een teller kan alleen bij "Elke dag" of "Vaste dagen".' },
       schedule: {
         invalid: 'Controleer de herhaling.',

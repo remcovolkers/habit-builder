@@ -3,7 +3,7 @@
 //
 // Met een doel is de dag gedaan bij waarde ≥ doel (daaronder: 'partial'); zonder doel is hij gedaan
 // zodra er iets geteld is. 'partial' telt in het domein niet als gedaan en ook niet als overgeslagen.
-export const COUNTER_MAX = 999;
+export const COUNTER_MAX = 9999; // 2 liter in ml past erin (was 999)
 export const COUNTER_UNIT_MAX = 20;
 
 export const clampCounter = (value) => Math.min(COUNTER_MAX, Math.max(0, value));

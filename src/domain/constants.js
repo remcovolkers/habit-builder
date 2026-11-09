@@ -85,6 +85,19 @@ export const MILESTONE_MIN_REPETITIONS = 3;
 /** Reeksen in weken en maanden: één gemiste periode breekt ze meteen. */
 export const WEEK_STREAK_MILESTONES = [2, 4, 8, 13];
 export const MONTH_STREAK_MILESTONES = [3, 6, 12];
+/**
+ * Uitbouwen (docs/FEEDBACKRONDE-2026-11.md): een vuistregel, geen bewezen drempel. De nudge komt na minstens de helft van de keren die "ingeburgerd" bij het
+ * ritme vraagt (ondergrens NUDGE_MIN_REPETITIONS), bij minstens CONSISTENCY_THRESHOLD gehaald en zonder dat de laatste twee eenheden gemist zijn.
+ * Na "Niet nu" komt hij pas terug na nog de helft van de drempel aan keren én NUDGE_SNOOZE_DAYS dagen. Onder NUDGE_BACK_BELOW over de laatste
+ * NUDGE_BACK_UNITS eenheden zegt de app zachtjes dat terugschakelen mag.
+ */
+export const NUDGE_SHARE = 0.5;
+export const NUDGE_MIN_REPETITIONS = 6;
+export const NUDGE_SNOOZE_DAYS = 14;
+export const NUDGE_BACK_BELOW = 0.5;
+export const NUDGE_BACK_UNITS = 4;
+export const GOAL_LOG_MAX = 30; // zoveel besluiten bewaart een doel
+
 /** Versie van de prestatieregels; bij een nieuwere versie worden de mijlpalen eenmalig herijkt (app/achievement-runner.js). */
 export const ACHIEVEMENT_RULES_VERSION = 2;
 /** "Sterk terug": binnen een venster van 14 dagen onder de 50% gehaald (dip), later weer op 80% of hoger. Minstens 4 eenheden in het venster, anders zegt een percentage niets. */

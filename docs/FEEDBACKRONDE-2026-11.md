@@ -104,7 +104,7 @@ Wat ik vond, met de kanttekening dat ik alleen **samenvattingen** kon raadplegen
 
 **Mijn voorstel voor de nudge** (Q21), per trede:
 
-1. **Aantal keren**: minstens de helft van wat "ingeburgerd" bij dat ritme vraagt (`requiredRepetitions` in [pace.js](../src/domain/pace.js)), met een ondergrens van 6 keer. Dagelijks: 27 keer. 2× per week: 6 keer. 1× per week of per maand: 6 keer. De helft komt uit de vorm van de kromme: bij 66 dagen voor 95% is na de helft van de tijd ongeveer driekwart van het plafond bereikt. Dat is een afleiding, geen meting.
+1. **Aantal keren**: minstens de helft van wat "ingeburgerd" bij dat ritme vraagt (`requiredRepetitions` in [pace.js](../src/domain/pace.js)), met een ondergrens van 6 keer. Dagelijks: 27 keer. 4× per week: 16 keer. 2× per week: 8 keer. 1× per week of per maand: 6 keer. De helft komt uit de vorm van de kromme: bij 66 dagen voor 95% is na de helft van de tijd ongeveer driekwart van het plafond bereikt. Dat is een afleiding, geen meting.
 2. **Hoe goed het ging**: minstens 80% van de eenheden op deze trede gehaald (de bestaande `CONSISTENCY_THRESHOLD`), en de laatste twee eenheden niet gemist.
 3. **Optioneel**: als je het automatisme-cijfer hebt ingevuld en dat is 2 of lager, wachten (het kost nog moeite).
 4. **De nudge zelf**: één rustige zin in de weekreview of op de habit ("Je hebt dit 8 keer gedaan op deze trede. Zin om een trede hoger te gaan, of blijf je hier?"). Met **Niet nu** komt hij pas na de helft van de drempel aan extra keren terug, nooit vaker dan eens per twee weken.
