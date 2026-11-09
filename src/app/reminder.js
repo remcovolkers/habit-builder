@@ -5,7 +5,8 @@
 // Zo staan er geen namen van habits op de server-kant van de herinnering, en blijft de logica van "wat staat er
 // vandaag" op één plek: hier, in de app.
 import { addDays, endOfMonth, startOfMonth, startOfWeek, weekday } from '../domain/dates.js';
-import { monthReviewFor, weekReviewFor, weekReviewHasContent } from '../domain/reviews.js';
+import { monthReviewFor, usedLongEnough, weekReviewFor, weekReviewHasContent } from '../domain/reviews.js';
+import { firstUseDate } from './reviews.js';
 import { DISPLAY_NAME_MAX } from './settings.js';
 import { nudgesOn } from './attention.js';
 import { buildDayView, prepareSnapshot } from './day-view.js';
@@ -35,14 +36,16 @@ export function validateReminderTime(time, dayStartHour) {
 export function buildReminderSummary({ snapshot, today, settings, days = REMINDER_DAYS }) {
   const entries = {};
   const prepared = prepareSnapshot(snapshot);
+  const firstUse = firstUseDate(snapshot);
   for (let i = 0; i < days; i++) {
     const date = addDays(today, i);
     const view = buildDayView({ snapshot, date, today, prepared });
     const planned = view.progress.total;
     const pool = view.pool.filter((entry) => !entry.satisfied && !entry.covered).length;
     const attention = nudgesOn({ snapshot, date, prepared });
-    const review = weekday(date) === 6 && !weekReviewHasContent(weekReviewFor(snapshot.reviews, startOfWeek(date))) ? 1 : 0;
-    const monthReview = date === endOfMonth(date) && !monthReviewFor(snapshot.reviews, startOfMonth(date))?.adjust?.trim() ? 1 : 0;
+    const ready = usedLongEnough(firstUse, date); // een review staat pas klaar na een paar dagen gebruik
+    const review = ready && weekday(date) === 6 && !weekReviewHasContent(weekReviewFor(snapshot.reviews, startOfWeek(date))) ? 1 : 0;
+    const monthReview = ready && date === endOfMonth(date) && !monthReviewFor(snapshot.reviews, startOfMonth(date))?.adjust?.trim() ? 1 : 0;
     entries[date] = [planned, pool, attention, review, monthReview];
   }
   return { name: String(settings.displayName ?? '').trim().slice(0, DISPLAY_NAME_MAX), days: entries };

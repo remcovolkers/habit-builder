@@ -32,6 +32,7 @@ import { buildAttention, forToday } from '../../app/attention.js';
 import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
 import { wontSpan } from '../../domain/attention.js';
 import { monthTasks, REVIEW_CLOSING_TIME, reviewNudges } from '../../domain/reviews.js';
+import { firstUseDate } from '../../app/reviews.js';
 import { dismissReviewNudges, reviewNudgeDismissed } from '../review-nudge-state.js';
 import { counterDoneValue } from '../../domain/counter.js';
 import { habitDayparts, hasMultipleDayparts } from '../../domain/dayparts.js';
@@ -92,7 +93,7 @@ export function todayView({ query }) {
         attention: date === state.today ? forToday(buildAttention({ snapshot, today: state.today })) : [],
         toPlan: countToPlan(snapshot, state.today, date), // hoeveel flexibele taken nog dagen nodig hebben (op de knop Plan je week)
         monthTasks: date === state.today ? monthTasks({ reviews: snapshot.reviews, today: state.today }) : [], // de eenmalige taak uit de maandreview
-        reviewNotes: date === state.today ? reviewNudges({ reviews: snapshot.reviews, now: wallClockNow() }).filter((nudge) => !reviewNudgeDismissed(nudge)) : [], // een review die open staat
+        reviewNotes: date === state.today ? reviewNudges({ reviews: snapshot.reviews, now: wallClockNow(), firstUse: firstUseDate(snapshot) }).filter((nudge) => !reviewNudgeDismissed(nudge)) : [], // een review die open staat
       };
     },
     render: ({ view, week, attention, toPlan, monthTasks: tasks, reviewNotes }) => renderDay(view, week, attention, toPlan, tasks, reviewNotes),

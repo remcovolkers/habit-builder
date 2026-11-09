@@ -12,7 +12,7 @@ import { addDays, eachDay, isoWeek, localNow } from '../../src/domain/dates.js';
 import {
   monthReviewClosesOn, monthReviewOpensOn, monthReviewState, monthTasks, reviewNudges, weekReviewClosesOn, weekReviewOpensOn, weekReviewState, weeksOfMonth,
 } from '../../src/domain/reviews.js';
-import { buildMonthReviewCard, buildWeekReviewCard } from '../../src/app/reviews.js';
+import { buildMonthReviewCard, buildWeekReviewCard, firstUseDate } from '../../src/app/reviews.js';
 import { TIPS } from '../../src/content/tips.js';
 import { ACHIEVEMENT_INFO } from '../../src/content/achievements.js';
 import { ACHIEVEMENT_KEYS } from '../../src/domain/achievements.js';
@@ -297,6 +297,32 @@ test('review-kaarten: de fase en de vensters per periode', () => {
   assert.deepEqual([month('2026-10-10', '2026-10-24T10:00').state, month('2026-10-10', '2026-10-25T10:00').state, month('2026-10-10', '2026-11-02T12:00').state], ['before', 'open', 'closed']);
   assert.equal(month('2026-10-10', '2026-10-25T10:00').weeks.length, 1);
   assert.equal(month('2026-12-10', '2026-10-25T10:00').isFuture, true);
+});
+
+test('een review staat pas klaar na drie dagen gebruik (de eerste dag telt mee)', () => {
+  const SATURDAY = '2026-10-17T10:00';
+  // wie zondag begon, heeft zondag + maandag = 2 dagen: de review van de week ervoor staat maandagochtend nog niet klaar
+  assert.deepEqual(reviewNudges({ reviews: [], now: '2026-10-19T10:00', firstUse: '2026-10-18' }).map((n) => n.kind), []);
+  assert.deepEqual(reviewNudges({ reviews: [], now: '2026-10-19T10:00', firstUse: '2026-10-17' }).map((n) => n.kind), ['week'], 'zaterdag, zondag, maandag = 3 dagen');
+  assert.deepEqual(reviewNudges({ reviews: [], now: SATURDAY, firstUse: '2026-10-15' }).map((n) => n.kind), ['week'], 'donderdag, vrijdag, zaterdag = 3 dagen');
+  assert.deepEqual(reviewNudges({ reviews: [], now: SATURDAY, firstUse: '2026-10-16' }), [], 'vrijdag, zaterdag = 2 dagen');
+  assert.deepEqual(reviewNudges({ reviews: [], now: SATURDAY, firstUse: '2026-10-17' }), [], 'vandaag begonnen');
+  assert.deepEqual(reviewNudges({ reviews: [], now: '2026-10-25T10:00', firstUse: '2026-10-24' }), [], 'twee dagen: ook de maandreview wacht');
+  assert.equal(reviewNudges({ reviews: [], now: SATURDAY, firstUse: null }).length, 1, 'onbekend: niets houdt tegen');
+
+  const habit = (createdAt) => ({ id: 'h', createdAt });
+  assert.equal(firstUseDate({ habits: [], checkIns: [] }), null);
+  assert.equal(firstUseDate({ habits: [{ id: 'x' }], checkIns: [] }), null, 'zonder aanmaakdatum is het onbekend');
+  assert.equal(firstUseDate({ habits: [habit('2026-10-16T08:00:00.000Z')], checkIns: [{ createdAt: '2026-10-14T08:00:00.000Z' }], settings: { timezone: 'Europe/Amsterdam' } }), '2026-10-14', 'de vroegste, ook van een check-in');
+  assert.equal(firstUseDate({ habits: [habit('2026-10-16T23:30:00.000Z')], settings: { timezone: 'Europe/Amsterdam' } }), '2026-10-17', 'in lokale tijd: na middernacht in Nederland is het al de volgende dag');
+
+  // de kaart op Voortgang: open, maar te vroeg
+  const fresh = { reviews: [], habits: [habit('2026-10-17T09:00:00.000Z')], checkIns: [], settings: { timezone: 'Europe/Amsterdam' } };
+  assert.deepEqual([buildWeekReviewCard({ snapshot: fresh, now: '2026-10-17T10:00', date: '2026-10-17' }).state, buildWeekReviewCard({ snapshot: fresh, now: '2026-10-17T10:00', date: '2026-10-17' }).tooEarly], ['open', true]);
+  assert.equal(buildWeekReviewCard({ snapshot: fresh, now: '2026-10-18T10:00', date: '2026-10-18' }).tooEarly, true, 'dag 2');
+  assert.equal(buildWeekReviewCard({ snapshot: fresh, now: '2026-10-19T10:00', date: '2026-10-19' }).tooEarly, false, 'dag 3');
+  assert.equal(buildWeekReviewCard({ snapshot: fresh, now: '2026-10-14T10:00', date: '2026-10-14' }).tooEarly, false, 'nog niet open is niet "te vroeg"');
+  assert.equal(buildMonthReviewCard({ snapshot: { ...fresh, habits: [habit('2026-10-25T09:00:00.000Z')] }, now: '2026-10-25T10:00', date: '2026-10-25' }).tooEarly, true);
 });
 
 test('weeksOfMonth: een week hoort bij de maand van zijn donderdag, dus bij precies één maand', () => {

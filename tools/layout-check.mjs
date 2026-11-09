@@ -55,6 +55,7 @@ const SEED = (from, to) => `(async () => {
     await state.repo.saveHabit({
       name: (flex ? 'Flexibel ' : 'Habit ') + (i + 1), icon: flex ? '🎸' : '💧', color: flex ? 'c3' : 'c2', daypart: flex ? 'anytime' : parts[i], status: 'active',
       startDate: start, endDate: null, graduationDays: 66, maintenance: false, sortOrder: i, counter: null,
+      createdAt: start + 'T08:00:00.000Z', // een review staat pas klaar na drie dagen gebruik (domain/reviews.js): dit is een gebruiker van weken
       schedules: [{ effectiveFrom: start, schedule: flex ? { type: 'times_per_period', period: 'week', count: 2 } : { type: 'weekdays', weekdays: all } }],
     });
   }

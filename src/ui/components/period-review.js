@@ -134,6 +134,7 @@ function weekBody({ snapshot, today, card }) {
   const until = w.openUntil(closingLabel(card.closesOn));
 
   if (card.state === 'before' && !card.isCurrent) return quiet({ title: w.lockedTitle, text: w.locked(formatDateLong(card.opensOn)) });
+  if (card.tooEarly) return quiet({ title: w.earlyTitle, text: w.early }); // net begonnen: er valt nog niets terug te blikken
 
   // de terugblik: voor de huidige week de taken die aandacht vragen (elk met één tik voor de reden), anders de uitkomst van de week
   let lookback = null;
@@ -241,6 +242,7 @@ function monthBody({ snapshot, today, card, onOpenWeek }) {
   const locked = quiet({ title: m.lockedTitle, text: m.locked(formatDateLong(card.opensOn)) });
 
   if (card.isFuture) return locked;
+  if (card.tooEarly) return quiet({ title: m.earlyTitle, text: m.early });
 
   const taskNote = card.taskState === 'done' ? m.taskDone(formatDateLong(card.review?.appliedAt ?? card.taskFrom)) : card.taskState === 'open' ? m.taskOpen : m.taskComing(taskLabel);
   const items = card.review && [{ tone: 'plan', label: m.adjust, text: card.review.adjust }];
