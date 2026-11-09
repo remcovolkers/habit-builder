@@ -2,6 +2,7 @@
 import { COUNTER_MAX, COUNTER_UNIT_MAX } from './counter.js';
 import { isValidDate } from './dates.js';
 import { validateSchedules } from './schedule.js';
+import { validateGoal } from './growth.js';
 import { validateTrials } from './trial.js';
 
 export const DAYPARTS = Object.freeze(['morning', 'afternoon', 'evening', 'anytime']);
@@ -45,6 +46,9 @@ export function validateHabit(habit) {
   // "Niet in deze week" bij Plan je week: de maandagen van de weken waarvoor de taak niet ingepland hoeft te worden (`noPlanWeek`: het oudere veld, één maandag)
   if (habit.noPlanWeek != null && !isValidDate(habit.noPlanWeek)) add('noPlanWeek', 'invalid');
   if (habit.noPlanWeeks != null && !(Array.isArray(habit.noPlanWeeks) && habit.noPlanWeeks.length <= 8 && habit.noPlanWeeks.every(isValidDate))) add('noPlanWeeks', 'invalid');
+
+  // het doel van een habit die uitbouwt (domain/growth.js)
+  for (const error of validateGoal(habit.goal, habit)) errors.push(error);
 
   // proeven "zonder app" (domain/trial.js)
   for (const error of validateTrials(habit.trials)) add(error.field, error.code);

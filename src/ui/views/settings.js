@@ -1,5 +1,5 @@
 import { fill, h } from '../dom.js';
-import { reloadSettings, saveSettings, state } from '../state.js';
+import { notifyChanged, reloadSettings, saveSettings, state } from '../state.js';
 import { openDialog } from '../components/dialog.js';
 import { accountCard } from '../components/account-card.js';
 import { account, onAccountChanged } from '../account.js';
@@ -14,6 +14,7 @@ import { downloadBackup } from '../download.js';
 import { showToast } from '../components/toast.js';
 import { ValidationError } from '../../data/repository.js';
 import { parseImport } from '../../app/backup.js';
+import { recalibrateAchievements } from '../../app/achievement-runner.js';
 import { MAX_DAY_START_HOUR } from '../../domain/constants.js';
 import { nl } from '../../content/nl.js';
 import { config } from '../../config.js';
@@ -84,6 +85,27 @@ function backupSection() {
         h('button', { type: 'button', id: 'importBackup', class: 'button button--secondary button--block', onclick: () => fileInput.click() }, b.import),
         fileInput,
         message)));
+}
+
+/** Prestaties herijken: de mijlpalen per habit toetsen aan de regels van nu. Ingeklapt, want het is zelden nodig. */
+function achievementsSection() {
+  const a = nl.achievements.recalibrate;
+  const run = () => openDialog({
+    title: a.confirmTitle,
+    description: a.confirmText,
+    actions: [{
+      label: a.confirm,
+      onClick: async () => {
+        const revoked = await recalibrateAchievements(state.repo, state.today);
+        notifyChanged();
+        showToast({ message: a.done(revoked.length) });
+      },
+    }],
+  });
+  return h('section', { class: 'section' },
+    h('h2', { class: 'section__title' }, a.title),
+    h('p', { class: 'section__hint' }, a.hint),
+    h('button', { type: 'button', id: 'recalibrateAchievements', class: 'button button--secondary button--block', onclick: run }, a.button));
 }
 
 /** Kies het thema: twee kaarten met kleurstalen. De keuze geldt direct en synchroniseert mee naar andere apparaten. */
@@ -262,6 +284,7 @@ export function settingsView() {
         h('p', { id: 'hint-day', class: 'field__hint' }, nl.settings.dayStartHint), errorEls.dayStartHour),
       h('button', { type: 'submit', class: 'button button--primary button--block' }, nl.settings.save)),
     backupSection(),
+    achievementsSection(),
     guideSection(),
     feedbackSection(),
     legalSection(),

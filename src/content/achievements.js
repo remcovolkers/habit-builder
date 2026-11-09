@@ -1,7 +1,7 @@
 // Namen en omschrijvingen van achievements. De regels staan in domain/achievements.js.
 import {
-  ALL_DONE_DAYS, AUTOMATICITY_WEEKS, DONE_MILESTONES, FIVE_ACTIVE_ACHIEVEMENT, FRIENDS_ACHIEVEMENT, GRADUATED_MILESTONES, MILESTONE_DAYS, STREAK_MILESTONES,
-  WHY_HABITS_ACHIEVEMENT,
+  ALL_DONE_DAYS, AUTOMATICITY_WEEKS, BUILD_STEPS_ACHIEVEMENT, HABIT_DONE_MILESTONES, DONE_MILESTONES, FIVE_ACTIVE_ACHIEVEMENT, FRIENDS_ACHIEVEMENT, GRADUATED_MILESTONES, MILESTONE_DAYS, MILESTONE_MIN_REPETITIONS,
+  MONTH_STREAK_MILESTONES, STREAK_MILESTONES, WEEK_STREAK_MILESTONES, WHY_HABITS_ACHIEVEMENT,
 } from '../domain/constants.js';
 import { achievementIconKey } from './ui-icons.js';
 
@@ -10,7 +10,7 @@ const milestones = Object.fromEntries(
     `days_${n}`,
     {
       title: `${n} dagen`,
-      text: `Je houdt een habit ${n} actieve dagen vol, met minstens de helft gehaald.`,
+      text: `Je houdt een habit ${n} actieve dagen vol, met minstens de helft gehaald. Bij een habit die niet elke dag hoeft, telt ook het aantal keren mee (minstens ${MILESTONE_MIN_REPETITIONS}).`,
       perHabit: true,
     },
   ]),
@@ -22,6 +22,18 @@ const doneMilestones = Object.fromEntries(
 
 const streakMilestones = Object.fromEntries(
   STREAK_MILESTONES.map((n) => [`streak_${n}`, { title: `Reeks van ${n} dagen`, text: `${n} dagen achter elkaar gedaan bij één habit met vaste dagen.`, perHabit: false }]),
+);
+
+const weekStreaks = Object.fromEntries(
+  WEEK_STREAK_MILESTONES.map((n) => [`weekstreak_${n}`, { title: `${n} weken op rij`, text: `${n} weken achter elkaar het aantal keren gehaald dat je had afgesproken, bij één habit. Mis je een week, dan begint de reeks opnieuw.`, perHabit: false }]),
+);
+
+const monthStreaks = Object.fromEntries(
+  MONTH_STREAK_MILESTONES.map((n) => [`monthstreak_${n}`, { title: `${n} maanden op rij`, text: `${n} maanden achter elkaar het aantal keren gehaald dat je had afgesproken, bij één habit. Mis je een maand, dan begint de reeks opnieuw.`, perHabit: false }]),
+);
+
+const habitDoneMilestones = Object.fromEntries(
+  HABIT_DONE_MILESTONES.map((n) => [`habit_done_${n}`, { title: `${n} keer bij één habit`, text: `Je hebt één habit ${n} keer gedaan. Elke habit telt apart.`, perHabit: true }]),
 );
 
 const graduatedMilestones = Object.fromEntries(
@@ -38,6 +50,13 @@ const INFO = {
   review_streak_4: { title: 'Vier weken reflectie', text: 'Vier weken achter elkaar een wekelijkse review.', perHabit: false },
   ...doneMilestones,
   ...streakMilestones,
+  ...weekStreaks,
+  ...monthStreaks,
+  ...habitDoneMilestones,
+  build_first_step: { title: 'Eerste trede', text: 'Je ging bij een habit die je uitbouwt een trede hoger.', perHabit: false },
+  build_steps_3: { title: 'Drie treden', text: `${BUILD_STEPS_ACHIEVEMENT} keer een trede hoger gegaan, bij al je habits samen.`, perHabit: false },
+  built_goal: { title: 'Uitgebouwd', text: 'Je bereikte je ideale versie en rondde het uitbouwen af.', perHabit: true },
+  build_back: { title: 'Terug is ook vooruit', text: 'Je ging een trede lager en pakte het daarna weer op. Bijsturen hoort erbij.', perHabit: false },
   perfect_weeks_4: { title: 'Vier perfecte weken', text: 'Vier weken achter elkaar waarin je alles hebt gedaan.', perHabit: false },
   recover_5: { title: 'Nooit twee keer missen', text: 'Vijf keer meteen teruggekomen na een gemiste dag of week.', perHabit: false },
   strong_return: { title: 'Sterk terug', text: 'Een habit weer op 80% na twee weken waarin het niet lukte.', perHabit: true },
@@ -61,13 +80,15 @@ const INFO = {
  * De volgorde binnen een groep is de volgorde op de pagina.
  */
 export const ACHIEVEMENT_GROUPS = Object.freeze([
-  { id: 'count', label: 'Aantallen', keys: Object.freeze(['first_checkin', ...DONE_MILESTONES.map((n) => `done_${n}`)]) },
-  { id: 'persist', label: 'Volhouden', keys: Object.freeze([...MILESTONE_DAYS.map((n) => `days_${n}`), ...STREAK_MILESTONES.map((n) => `streak_${n}`), 'perfect_week', 'perfect_weeks_4']) },
+  { id: 'count', label: 'Aantallen', keys: Object.freeze(['first_checkin', ...DONE_MILESTONES.map((n) => `done_${n}`), ...HABIT_DONE_MILESTONES.map((n) => `habit_done_${n}`)]) },
+  { id: 'persist', label: 'Volhouden', keys: Object.freeze([...MILESTONE_DAYS.map((n) => `days_${n}`), ...STREAK_MILESTONES.map((n) => `streak_${n}`), ...WEEK_STREAK_MILESTONES.map((n) => `weekstreak_${n}`), ...MONTH_STREAK_MILESTONES.map((n) => `monthstreak_${n}`), 'perfect_week', 'perfect_weeks_4']) },
   { id: 'return', label: 'Terugkomen', keys: Object.freeze(['comeback', 'recover_5', 'strong_return']) },
   { id: 'smart', label: 'Slimmer', keys: Object.freeze(['minimal_first', 'minimal_5', 'counter_week', 'pause_resume']) },
   { id: 'rooted', label: 'Ingeburgerd', keys: Object.freeze(['first_graduated', ...GRADUATED_MILESTONES.map((n) => `graduated_${n}`)]) },
   { id: 'reflect', label: 'Reflectie', keys: Object.freeze(['first_review', 'automaticity_4', 'why_3', 'review_streak_4']) },
   { id: 'breadth', label: 'Verbreding', keys: Object.freeze(['all_dayparts', 'three_active', 'five_active', 'all_done_10']) },
+  // alleen zichtbaar voor wie iets uitbouwt (of er al iets uit behaald heeft), zie views/achievements.js
+  { id: 'build', label: 'Uitbouwen', growth: true, keys: Object.freeze(['build_first_step', 'build_steps_3', 'built_goal', 'build_back']) },
   // alleen zichtbaar voor wie sociaal gebruikt (of er al iets uit behaald heeft), zie views/achievements.js
   { id: 'social', label: 'Samen', social: true, keys: Object.freeze(['first_friend', 'friends_5']) },
 ]);

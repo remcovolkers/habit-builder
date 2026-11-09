@@ -142,6 +142,14 @@ test('samenvatting: aandacht (weekelijks, zonder reactie) en de review op zondag
   assert.equal(legacy.days['2026-10-18'][3], 1);
 });
 
+test('samenvatting: de reviewmelding wacht tot de app drie dagen is gebruikt', () => {
+  const days = (createdAt) => buildReminderSummary({ snapshot: snapshot({ habits: [{ ...habit('A', daily), createdAt }] }), today: TODAY, settings }).days;
+  const sunday = (createdAt) => days(createdAt)['2026-10-18'][3];
+  assert.equal(sunday('2026-10-16T08:00:00.000Z'), 1, 'vrijdag, zaterdag, zondag = 3 dagen');
+  assert.equal(sunday('2026-10-17T08:00:00.000Z'), 0, 'zaterdag en zondag = 2 dagen');
+  assert.equal(sunday('2026-10-18T08:00:00.000Z'), 0, 'zondag begonnen');
+});
+
 test('samenvatting: de maandreview staat klaar op de laatste dag van de maand zolang hij niet is ingevuld', () => {
   const days = (today, reviews) => buildReminderSummary({ snapshot: snapshot({ reviews }), today, settings }).days;
   assert.deepEqual(Object.entries(days('2026-10-28', [])).filter(([, entry]) => entry[4] === 1).map(([date]) => date), ['2026-10-31']);

@@ -29,7 +29,7 @@ import { startPwa } from './pwa.js';
 import { startNative } from './native.js';
 import { mountUpdateBanner } from './ui/components/update-banner.js';
 import { celebrateAchievements } from './ui/components/achievement.js';
-import { checkAchievements } from './app/achievement-runner.js';
+import { checkAchievements, ensureAchievementRules } from './app/achievement-runner.js';
 import { settingsView } from './ui/views/settings.js';
 import { guideView } from './ui/views/guide.js';
 import { welcomeView } from './ui/views/welcome.js';
@@ -154,6 +154,9 @@ function checkForAchievements() {
   achievementQueue = achievementQueue
     .then(async () => {
       checkedFriends = friendCount();
+      // eenmalig herijken na strengere regels, maar pas als de gegevens van het account binnen zijn: anders lijkt een mijlpaal ten onrechte niet meer te kloppen
+      const synced = account.status === 'anonymous' || (account.status === 'signed-in' && account.sync?.lastSyncAt != null);
+      if (synced) await ensureAchievementRules(state.repo, state.today, { friends: checkedFriends });
       const fresh = await checkAchievements(state.repo, state.today, { friends: checkedFriends });
       if (fresh.length > 0) {
         celebrateAchievements(fresh, await state.repo.listHabits());
@@ -163,6 +166,7 @@ function checkForAchievements() {
     .catch((error) => console.error('prestaties controleren mislukt', error));
 }
 onChanged(checkForAchievements);
+onAccountChanged(checkForAchievements); // een eerste sync kan het herijken mogelijk maken
 // een nieuwe vriend kan een prestatie opleveren
 onSocialChanged(() => {
   if (friendCount() !== checkedFriends) checkForAchievements();

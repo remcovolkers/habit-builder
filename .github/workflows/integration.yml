@@ -4,6 +4,8 @@ name: Integratie (lokale Supabase)
 # Draait op develop en feature-branches en bij pull requests, niet op main (daar is `test` de poort naar productie).
 # Bewust een aparte workflow: hij kost enkele minuten (Docker-images downloaden) en is geen verplichte check; kijk bij een rode run
 # in het logboek of de schermafbeeldingen (artifact) wat er misging. Zie docs/DEV-OMGEVING.md.
+# De lay-outcontrole in een echte browser (npm run check:layout) heeft een eigen job: hij heeft geen Supabase nodig en draait zo naast de andere
+# controles in plaats van ervoor, wat de wachttijd per push met ongeveer de duur van die controle verkort.
 
 on:
   push:
@@ -20,6 +22,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Lay-out in een echte browser (ruimte onder de lijst, zwevende knop, alle schermen op drie formaten)
+        run: npm run check:layout
+
   integration:
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -36,8 +52,6 @@ jobs:
         with:
           node-version: 24
       - run: npm ci
-      - name: Lay-out in een echte browser (ruimte onder de lijst, zwevende knop)
-        run: npm run check:layout
       - name: Lokale Supabase starten (migraties worden vanzelf toegepast)
         # Zekerheid bovenop het vrijhouden van de poorten: mislukt de start toch (een Docker-hapering), dan eerst opruimen en één keer opnieuw
         run: |

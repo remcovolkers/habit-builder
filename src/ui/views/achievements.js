@@ -23,7 +23,8 @@ export function achievementsView() {
       const names = new Map(habits.map((habit) => [habit.id, habit.name]));
       const hasKey = (key) => unlocked.some((a) => a.key === key);
       // de groep voor vrienden zie je alleen als je sociaal gebruikt, of er al iets uit hebt behaald; wie sociaal niet gebruikt, ziet geen lijst die hij niet kan halen
-      const hidden = new Set(ACHIEVEMENT_GROUPS.filter((g) => g.social && !usesSocial && !g.keys.some(hasKey)).flatMap((g) => g.keys));
+      const usesGrowth = habits.some((habit) => habit.goal);
+      const hidden = new Set(ACHIEVEMENT_GROUPS.filter((g) => (g.social && !usesSocial && !g.keys.some(hasKey)) || (g.growth && !usesGrowth && !g.keys.some(hasKey))).flatMap((g) => g.keys));
       const keys = ACHIEVEMENT_KEYS.filter((key) => ACHIEVEMENT_INFO[key] && !hidden.has(key));
       const reached = keys.filter(hasKey);
 

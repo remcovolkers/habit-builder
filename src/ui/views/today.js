@@ -32,6 +32,7 @@ import { buildAttention, forToday } from '../../app/attention.js';
 import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
 import { wontSpan } from '../../domain/attention.js';
 import { monthTasks, REVIEW_CLOSING_TIME, reviewNudges } from '../../domain/reviews.js';
+import { firstUseDate } from '../../app/reviews.js';
 import { dismissReviewNudges, reviewNudgeDismissed } from '../review-nudge-state.js';
 import { counterDoneValue } from '../../domain/counter.js';
 import { habitDayparts, hasMultipleDayparts } from '../../domain/dayparts.js';
@@ -92,7 +93,7 @@ export function todayView({ query }) {
         attention: date === state.today ? forToday(buildAttention({ snapshot, today: state.today })) : [],
         toPlan: countToPlan(snapshot, state.today, date), // hoeveel flexibele taken nog dagen nodig hebben (op de knop Plan je week)
         monthTasks: date === state.today ? monthTasks({ reviews: snapshot.reviews, today: state.today }) : [], // de eenmalige taak uit de maandreview
-        reviewNotes: date === state.today ? reviewNudges({ reviews: snapshot.reviews, now: wallClockNow() }).filter((nudge) => !reviewNudgeDismissed(nudge)) : [], // een review die open staat
+        reviewNotes: date === state.today ? reviewNudges({ reviews: snapshot.reviews, now: wallClockNow(), firstUse: firstUseDate(snapshot) }).filter((nudge) => !reviewNudgeDismissed(nudge)) : [], // een review die open staat
       };
     },
     render: ({ view, week, attention, toPlan, monthTasks: tasks, reviewNotes }) => renderDay(view, week, attention, toPlan, tasks, reviewNotes),
@@ -302,6 +303,23 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
     const title = item.title || nl.today.agenda.untitled;
     showToast({ message: done ? nl.today.agenda.toasts.done(title) : nl.today.agenda.toasts.reopened(title), actionLabel: nl.app.undo, onAction: undo });
   };
+  // ⋯ bij een afspraak uit je agenda: alleen "Niet tonen", voor een afspraak waar je niets mee moet. Ook dit blijft op dit toestel, met Ongedaan maken.
+  const agendaMore = (item) => {
+    const a = nl.today.agenda;
+    const title = item.title || a.untitled;
+    openDialog({
+      title,
+      description: a.hideText,
+      actions: [{
+        label: a.hide,
+        onClick: () => {
+          const { undo } = agenda.hide(item);
+          showToast({ message: a.toasts.hidden(title), actionLabel: nl.app.undo, onAction: undo });
+        },
+      }],
+      cancelLabel: nl.app.close,
+    });
+  };
   const toggleAppointment = (item) => perform(
     () => setAppointmentDone(repo, { id: item.id, date, done: !item.done }, today),
     item.done ? t.toasts.reopened(item.title) : t.toasts.done(item.title),
@@ -353,7 +371,7 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
           return card;
         }),
         ...group.appointments.map((item) => appointmentCard(item, appointmentOptions)),
-        ...group.agenda.map((item) => agendaCard(item, { canLog: view.canLog, onToggle: toggleAgenda }))));
+        ...group.agenda.map((item) => agendaCard(item, { canLog: view.canLog, onToggle: toggleAgenda, onMore: agendaMore }))));
   });
   // Hoe ging de dag: voor de dag zelf en de dagen die je nog mag invullen. Het telt nergens mee.
   const rf = nl.today.reflection;

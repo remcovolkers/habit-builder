@@ -4,7 +4,7 @@
 //   week   { id: weekStart, weekStart, wentWell, wentBad }
 //   maand  { id: 'month:YYYY-MM', period: 'month', monthStart, adjust, appliedAt }
 // `appliedAt` (datum of null) is het afvinken van de eenmalige maandtaak die uit `adjust` volgt.
-import { addDays, addMonths, endOfMonth, startOfMonth, startOfWeek } from './dates.js';
+import { addDays, addMonths, diffDays, endOfMonth, startOfMonth, startOfWeek } from './dates.js';
 
 export const isMonthReview = (review) => review?.period === 'month';
 export const isWeekReview = (review) => review != null && !isMonthReview(review) && typeof review.weekStart === 'string';
@@ -35,6 +35,12 @@ export const weekReviewClosesOn = (weekStart) => addDays(weekStart, WEEK_REVIEW_
 /** De dag waarop de maandreview opent (de 25e) en sluit (de 2e van de volgende maand, om 12:00). */
 export const monthReviewOpensOn = (monthStart) => `${startOfMonth(monthStart).slice(0, 8)}${MONTH_REVIEW_OPENS_DAY}`;
 export const monthReviewClosesOn = (monthStart) => `${addMonths(startOfMonth(monthStart), 1).slice(0, 8)}${MONTH_REVIEW_CLOSES_DAY}`;
+
+// Een review staat pas klaar als je de app minstens zo lang gebruikt: een terugblik na een dag of twee zegt nog niets. De eerste dag telt mee.
+export const REVIEW_MIN_USE_DAYS = 3;
+
+/** Heb je de app op `date` lang genoeg gebruikt voor een review? `firstUse` is de eerste dag van gebruik; null (onbekend) houdt niets tegen. */
+export const usedLongEnough = (firstUse, date) => firstUse == null || diffDays(date, firstUse) + 1 >= REVIEW_MIN_USE_DAYS;
 
 /** 'before' (nog niet open) | 'open' | 'closed' (gesloten) voor `now` ('YYYY-MM-DDTHH:MM'). */
 function windowState(opensOn, closesOn, now) {
@@ -75,10 +81,12 @@ export function monthTasks({ reviews, today }) {
  * De meldingen op Vandaag dat een review open staat en nog niet is ingevuld. Dat geldt voor de week van nu (vanaf vrijdag) en voor de week ervoor
  * (tot maandag 12:00), en op dezelfde manier voor de maand van nu (vanaf de 25e) en de maand ervoor (tot de 2e om 12:00).
  * Geeft [{ kind, start, closesOn }]: eerst de weken, dan de maanden, telkens de oudste eerst.
+ * `firstUse` (de eerste dag van gebruik, of null): zolang de app nog geen REVIEW_MIN_USE_DAYS dagen is gebruikt, staat er niets klaar.
  */
-export function reviewNudges({ reviews, now }) {
+export function reviewNudges({ reviews, now, firstUse = null }) {
   const today = now.slice(0, 10);
   const nudges = [];
+  if (!usedLongEnough(firstUse, today)) return nudges;
   for (const start of [addDays(startOfWeek(today), -7), startOfWeek(today)]) {
     if (weekReviewState(start, now) === 'open' && !weekReviewHasContent(weekReviewFor(reviews, start))) nudges.push({ kind: 'week', start, closesOn: weekReviewClosesOn(start) });
   }

@@ -12,9 +12,9 @@ Wat er vandaag op je lijst staat is meer dan je habits: de tandarts om half drie
 |---|---|
 | Afspraken uit je agenda op de dag zelf, in het dagdeel van hun begintijd (een hele dag bij "Overdag"), met de naam van de agenda waar ze uit komen. Je kunt ze **afvinken** (bijvoorbeeld om te onthouden dat je Mel nog moest vragen hoe het ging) | Een agenda-app. Je kunt er niets aanmaken, wijzigen of verwijderen; dat doe je in je agenda zelf |
 | Twee manieren om te koppelen, los van elkaar te gebruiken: het geheime iCal-adres van je Google Agenda, en de agenda van je telefoon (Android-app) | Inloggen met Google om je agenda te lezen (zie A2) |
-| Een kaart in de stijl van de andere, met de tijd vooraan, het woord **Agenda** en de naam van de agenda ("14:30–15:30 · Agenda · Mel"), met een vinkje maar zonder ⋯ | Iets dat meetelt: niet in de ring, de felicitatie, de punten, de prestaties, de aandacht, de weekstrook, de ranglijst of de ochtendmelding |
+| Een kaart in de stijl van de andere, met de tijd vooraan, het woord **Agenda** en de naam van de agenda ("14:30–15:30 · Agenda · Mel"), met een vinkje en een ⋯ met alleen **Niet tonen** (voor een afspraak waar je niets mee moet) | Iets dat meetelt: niet in de ring, de felicitatie, de punten, de prestaties, de aandacht, de weekstrook, de ranglijst of de ochtendmelding |
 
-**De grens:** een afspraak die je in de app maakt (zie LOSSE-AFSPRAKEN) is van jou: je kunt hem wijzigen, verwijderen en afvinken, en hij gaat mee in de sync. Een afspraak uit je agenda is van je agenda: je kunt hem alleen afvinken, en dat blijft op dit toestel.
+**De grens:** een afspraak die je in de app maakt (zie LOSSE-AFSPRAKEN) is van jou: je kunt hem wijzigen, verwijderen en afvinken, en hij gaat mee in de sync. Een afspraak uit je agenda is van je agenda: je kunt hem alleen afvinken of niet meer tonen, en dat blijft op dit toestel.
 
 ## Hoe het werkt
 
@@ -42,6 +42,8 @@ telefoon-agenda ──(READ_CALENDAR)──▶ plugin DeviceCalendar (Android) �
 
 **Afvinken.** Tik het rondje. Het geldt op de dag zelf en tot 14 dagen terug, zoals bij habits (op een dag in de toekomst staat het uit). Een melding met **Ongedaan maken**. Het telt nergens mee en blijft op dit toestel: het gaat niet mee in de sync, dus op een tweede toestel staat de afspraak weer open. Wat je afvinkt, herkent de app aan de dag, de begintijd en de naam van de afspraak, dus dezelfde afspraak blijft afgevinkt als hij de volgende keer uit de andere bron komt. Verplaats of hernoem je hem in je agenda, dan is het een nieuwe afspraak en staat hij weer open.
 
+**Niet tonen.** Tik ⋯ op de kaart en kies **Niet tonen**: de afspraak verdwijnt van Vandaag, met een melding met **Ongedaan maken**. In je agenda verandert niets. Het geldt voor die ene afspraak op die dag (bij een herhalende afspraak dus niet voor de andere keren), op dezelfde manier herkend als bij afvinken, en blijft op dit toestel.
+
 ## De functie `calendar-feed`
 
 De app kan het adres niet zelf ophalen: Google zet geen CORS-header op zijn feed. Daarom haalt een Edge Function hem op. Hij is klein en doet bewust niets met de inhoud (het lezen gebeurt in de app, waar het te testen is).
@@ -60,7 +62,7 @@ De lijst met toegestane hosts staat op twee plekken (de functie en [agenda.js](.
 
 ## Gegevens
 
-Alles staat **alleen op dit toestel** (localStorage): `hb-agenda` (het adres en of de agenda van de telefoon aanstaat), `hb-agenda-cache` (de afspraken van 14 dagen terug tot 14 dagen vooruit, met titel, dag, tijd en de naam van de agenda) en `hb-agenda-done` (wat je hebt afgevinkt, als onleesbare nummers met de dag erbij, zonder namen; wat ouder is dan 14 dagen wordt opgeruimd). Er is geen collectie, geen servermigratie en geen sync. Ze zitten **niet** in de snapshot, de back-up of wat vrienden zien; een test bewaakt dat. Uitloggen en het verwijderen van je account wissen alles, ook het afgevinkte; **Ontkoppelen** wist het adres en de afspraken (het afgevinkte blijft, want het zijn alleen nummers, en geldt weer als je opnieuw koppelt).
+Alles staat **alleen op dit toestel** (localStorage): `hb-agenda` (het adres en of de agenda van de telefoon aanstaat), `hb-agenda-cache` (de afspraken van 14 dagen terug tot 14 dagen vooruit, met titel, dag, tijd en de naam van de agenda) en `hb-agenda-done` (wat je hebt afgevinkt, als onleesbare nummers met de dag erbij, zonder namen; wat ouder is dan 14 dagen wordt opgeruimd) en `hb-agenda-hidden` (wat je niet meer wilt zien, op dezelfde manier). Er is geen collectie, geen servermigratie en geen sync. Ze zitten **niet** in de snapshot, de back-up of wat vrienden zien; een test bewaakt dat. Uitloggen en het verwijderen van je account wissen alles, ook het afgevinkte; **Ontkoppelen** wist het adres en de afspraken (het afgevinkte blijft, want het zijn alleen nummers, en geldt weer als je opnieuw koppelt).
 
 ## Besluiten
 
@@ -80,6 +82,7 @@ Alles staat **alleen op dit toestel** (localStorage): `hb-agenda` (het adres en 
 | A12 | Afvinken blijft op het toestel, onder een onleesbaar nummer, zonder sync | Synchroniseren vraagt een servermigratie en zou namen van afspraken (of hun nummers) op de server zetten, tegen A3 in. Nadeel: een tweede toestel weet het niet. Een nummer in plaats van de naam, zodat de opslag niets verraadt en niet hoeft te verdwijnen bij ontkoppelen |
 | A13 | Een afgevinkte afspraak telt nergens mee, net als een losse afspraak (L3) | "Alles gedaan" blijft over habits gaan |
 | A14 | De naam van de agenda staat achter het woord Agenda, niet ervoor of ernaast | Zo blijft de regel kort en blijft "Agenda" het kenmerk van dit soort kaart. Een lange naam (een e-mailadres) breekt af |
+| A15 | ⋯ op een agenda-kaart met alleen "Niet tonen", bewaard als afvinken (A12) | Dezelfde kaart als de andere ziet er rustiger uit met ⋯ op dezelfde plek, en niet elke afspraak (een verjaardag van een collega) wil je elke keer zien. Wijzigen of verwijderen blijft in je agenda zelf. Een herhalende afspraak verberg je per keer, want de sleutel is dag, tijd en naam |
 
 ## Nog open
 

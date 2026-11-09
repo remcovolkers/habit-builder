@@ -100,3 +100,22 @@ test('gewoontesterkte: herstel na een misser wordt beloond (later gedaan = sterk
   const missLate = computeStrength(seq(...Array(20).fill('done'), 'missed'));
   assert.ok(missEarly > missLate);
 });
+
+// --- de getoonde reeks (computeDisplayStreaks): bij dagen mag één gemiste dag, bij weken en maanden niet ---
+
+import { computeDisplayStreaks } from '../../src/domain/streaks.js';
+const dayU = (status, n) => ({ kind: 'day', span: 'day', status, start: `2026-10-${String(n).padStart(2, '0')}`, end: `2026-10-${String(n).padStart(2, '0')}` });
+const weekU = (status, n) => ({ kind: 'period', span: 'week', status, start: `2026-09-${String(n).padStart(2, '0')}`, end: `2026-09-${String(n + 6).padStart(2, '0')}` });
+
+test('getoonde reeks, dagen: één gemiste dag breekt niet, twee achter elkaar wel; alleen gedane dagen tellen', () => {
+  assert.deepEqual(computeDisplayStreaks([dayU('done', 1), dayU('done', 2), dayU('missed', 3), dayU('done', 4), dayU('done', 5)]), { current: 4, best: 4 });
+  assert.deepEqual(computeDisplayStreaks([dayU('done', 1), dayU('done', 2), dayU('missed', 3), dayU('missed', 4), dayU('done', 5)]), { current: 1, best: 2 });
+  assert.deepEqual(computeDisplayStreaks([dayU('done', 1), dayU('done', 2), dayU('missed', 3)]), { current: 2, best: 2 }, 'een reeks die op één gemiste dag eindigt loopt nog');
+  assert.deepEqual(computeDisplayStreaks([dayU('done', 1), dayU('skipped', 2), dayU('done', 3)]), { current: 2, best: 2 }, 'overgeslagen onderbreekt niets');
+});
+
+test('getoonde reeks, weken: streng, één gemiste week breekt meteen (zoals de prestaties)', () => {
+  const units = [weekU('done', 1), weekU('done', 8), weekU('missed', 15), weekU('done', 22)];
+  assert.deepEqual(computeDisplayStreaks(units), { current: 1, best: 2 });
+  assert.deepEqual(computeDisplayStreaks(units), computeStreaks(units));
+});

@@ -22,6 +22,30 @@ export function computeStreaks(units) {
 }
 
 /**
+ * De reeks zoals hij op de habit wordt getoond: bij dagen mag één gemiste dag de reeks niet breken (twee achter elkaar wel), want één dag mist is
+ * volgens het onderzoek van Lally e.a. niet erg voor het opbouwen. Bij weken en maanden blijft het streng: een gemiste periode breekt meteen.
+ * Alleen gedane eenheden tellen mee voor het getal. De prestaties (domain/achievements.js) gebruiken altijd computeStreaks, dus streng.
+ */
+export function computeDisplayStreaks(units) {
+  if (!units.some((u) => u.kind === 'day')) return computeStreaks(units);
+  let current = 0;
+  let best = 0;
+  let misses = 0;
+  for (const unit of units) {
+    if (isPositive(unit)) {
+      current += 1;
+      misses = 0;
+      if (current > best) best = current;
+    } else if (unit.status === 'missed') {
+      misses += 1;
+      if (misses >= 2) current = 0;
+    }
+  }
+  // een reeks die eindigt met één gemiste dag loopt nog: dat is bedoeld ("één dag mag")
+  return { current, best };
+}
+
+/**
  * Consistentie = gedaan ÷ (gedaan + gemist) over de laatste `windowDays` dagen.
  * Eindigt de laatste afgesloten eenheid op een maand en zijn er dan minder dan `minPeriods`
  * eenheden in het venster, dan worden het de laatste `minPeriods` afgesloten eenheden.
