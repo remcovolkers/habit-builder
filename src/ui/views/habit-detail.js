@@ -17,6 +17,7 @@ import {
 } from '../../app/actions.js';
 import { automaticityChart, automaticityMeter, automaticityPicker, cueLine, guideLink, noteRated } from '../components/automaticity.js';
 import { trialCard } from '../components/trial.js';
+import { growthCard, growthStartCard } from '../components/growth-card.js';
 import { currentSchedule } from './habits.js';
 import { habitDayparts } from '../../domain/dayparts.js';
 
@@ -252,7 +253,8 @@ function renderDetail(detail) {
 
       heatmapCard(detail)),
      h('div', { class: 'detail__secondary page__pane' },
-      graduationCard(detail),
+      detail.growth ? growthCard(detail) : growthStartCard(detail),
+      detail.growth?.growing ? null : graduationCard(detail), // een habit die uitbouwt wordt pas ingeburgerd als het uitbouwen af is
       automaticityCard(detail),
       trialCard(detail),
       notesCard(detail),

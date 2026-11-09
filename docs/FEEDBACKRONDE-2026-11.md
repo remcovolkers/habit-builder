@@ -1,6 +1,6 @@
 # Feedbackronde november 2026: uitbouwen, wachten met de review, prestaties per habit
 
-Status: **ronde 3**: F2 en F3a gebouwd, F1 volgt (alle vragen Q1–Q25 beantwoord) · opgesteld 2026-11-09 · bron: drie ideeën uit de feedbackhub (v1.5.1, zie [FEEDBACK.md](FEEDBACK.md)) · bouwt voort op [PLAN.md](PLAN.md) §4.5 en §4.7, [AUTOMATISME.md](AUTOMATISME.md), [FLEXIBELE-TAKEN.md](FLEXIBELE-TAKEN.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
+Status: **ronde 4**: F2, F3a en F1 (uitbouwen) gebouwd; F3c en de prestaties voor uitbouwen volgen (alle vragen Q1–Q25 beantwoord) · opgesteld 2026-11-09 · bron: drie ideeën uit de feedbackhub (v1.5.1, zie [FEEDBACK.md](FEEDBACK.md)) · bouwt voort op [PLAN.md](PLAN.md) §4.5 en §4.7, [AUTOMATISME.md](AUTOMATISME.md), [FLEXIBELE-TAKEN.md](FLEXIBELE-TAKEN.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
 
 Dit bestand is mijn werklijst voor deze ronde. Ik werk het bij zodra jij antwoordt of ik iets nieuws vind. Alles wat ik niet zelf kan of mag beslissen staat onder **Vragen aan Remco**, met mijn voorstel erbij, zodat "ja" genoeg is.
 
@@ -8,7 +8,7 @@ Dit bestand is mijn werklijst voor deze ronde. Ik werk het bij zodra jij antwoor
 
 | # | Idee (feedbackhub) | Soort | Omvang | Status |
 |---|---|---|---|---|
-| F1 | Een habit kunnen **uitbouwen**: een doel ("4× per week sporten") waar je naartoe groeit, met reflectie en op- of terugschakelen | nieuwe feature | groot | ontwerp af, bouwen volgt na F3a; ontwerp af en beslist (ook de boost, Q24); bouwen is de volgende stap |
+| F1 | Een habit kunnen **uitbouwen**: een doel ("4× per week sporten") waar je naartoe groeit, met reflectie en op- of terugschakelen | nieuwe feature | groot | ontwerp af, bouwen volgt na F3a; **gebouwd**: rekenlaag, handelingen en schermen (kaart op de habit, strook op Vandaag, bladen, weekreview); de uitbouw-prestaties volgen met F3c |
 | F2 | Het weekoverzicht pas klaar na minstens 3 dagen gebruik | verbetering | klein | **gebouwd** op deze branch |
 | F3 | Prestaties: 1× per maand of 2× per week moet anders tellen, een mogelijke reset, en prestaties per habit naast het algemene scherm | verbetering + nieuwe weergave | middel–groot | **F3a gebouwd** (minimum aantal keren, reeksen in weken en maanden, herijken); F3c en de uitbouw-prestaties volgen met F1 |
 
@@ -234,19 +234,19 @@ Ik vink af wat klaar is en voeg toe wat ik onderweg vind. Een item met **?** wac
 - [ ] T3.13 De detailtekst van een mijlpaal toont "2 van 3 keer" voor de habit
 
 ### F1: uitbouwen
-- [ ] T1.1 Domein: `goal` valideren in [habit.js](../src/domain/habit.js) voor de soorten uit Q17 (frequentie: alleen `times_per_period` boven het huidige aantal; hoeveelheid: boven het huidige tellerdoel)
-- [ ] T1.2 Q18 Tellerbereik omhoog (9999) en gehele getallen houden; controleren bij back-up en server (de server bewaakt geen waarden)
-- [ ] T1.3 Domein: de trede (`stepStart`, keren op deze trede) en de nudge-regel (Q21) in een nieuw bestand, zuiver en getest met tabeltests per ritme
-- [ ] T1.4 Domein: fase "Uitbouwen" in [phases.js](../src/domain/phases.js) en [stats.js](../src/domain/stats.js); geen "ingeburgerd" zolang hij uitbouwt, en blijven op Vandaag (Q4)
-- [ ] T1.5 Q20 Na het maximum: prestatie *Uitgebouwd*, het doel gaat uit beeld en de habit volgt het gewone traject (ingeburgerd haalbaar; alle keren van de hele habit tellen mee)
-- [ ] T1.14 Q24 De boost: tegoed bij een nieuwe trede in de nudge-regel (T1.3), instelbaar in `constants.js`
-- [ ] T1.15 Tekstdoel (Q17): het formulier vraagt een concrete trede en een concreet ideaal, met een hint dat "meer lezen" geen trede is
-- [ ] T1.6 Handelingen: opschalen, blijven en terugschakelen in [actions.js](../src/app/actions.js) (hergebruikt de ritmeversie en het tellerdoel), met logboek en ongedaan maken
-- [ ] T1.7 Weekreview-kaart "Hoe ging het op deze trede?" met drie keuzes en een notitie; ook bij de habit
-- [ ] T1.8 Habitformulier: doel instellen en bestaande habit omzetten (Q6), uitleg in gewone taal ("Waar wil je uiteindelijk naartoe?")
-- [ ] T1.9 Spotlight (b): stap-indicator en balk naar het doel op de kaart en de habit; layout op 390 px, 320 px en 320 px met 200% tekst
-- [ ] T1.10 Test: opslaan door een oudere appversie verliest `goal` niet (R1)
-- [ ] T1.11 Uitleg in "Zo werkt het" ([guide.js](../src/content/guide.js)); privacy: geen nieuwe soort gegevens naar de server, te bevestigen
+- [x] T1.1 Domein: `goal` valideren (`validateGoal` in [growth.js](../src/domain/growth.js)) in [habit.js](../src/domain/habit.js) voor de soorten uit Q17 (frequentie: alleen `times_per_period` boven het huidige aantal; hoeveelheid: boven het huidige tellerdoel)
+- [x] T1.2 Q18 Tellerbereik omhoog (9999) en gehele getallen houden; controleren bij back-up en server (de server bewaakt geen waarden)
+- [x] T1.3 Domein: de trede (`growthNudge`, `nudgeThreshold`, `boostCredit`, `stepRepetitions`, getest per ritme) (`stepStart`, keren op deze trede) en de nudge-regel (Q21) in een nieuw bestand, zuiver en getest met tabeltests per ritme
+- [x] T1.4 Geen "ingeburgerd" zolang hij uitbouwt (`graduateHabit` weigert, de knop verdwijnt) en de habit blijft op Vandaag. De fase zelf in `phases.js` is bewust niet veranderd: de kaart "Uitbouwen" met "Trede n" vervangt de voortgang in de weergave (zie B19)
+- [x] T1.5 Q20 Na het maximum (`completeGoal` en `canComplete`): prestatie *Uitgebouwd*, het doel gaat uit beeld en de habit volgt het gewone traject (ingeburgerd haalbaar; alle keren van de hele habit tellen mee)
+- [x] T1.14 Q24 De boost: (`boostCredit`) tegoed bij een nieuwe trede in de nudge-regel (T1.3), instelbaar in `constants.js`
+- [x] T1.15 Tekstdoel (Q17): het blad vraagt een concrete trede en een concreet ideaal, met de hint dat "meer lezen" geen trede is
+- [x] T1.6 Handelingen: ([app/growth.js](../src/app/growth.js): `setGoal`, `removeGoal`, `takeStep`, `completeGoal`) opschalen, blijven en terugschakelen in [actions.js](../src/app/actions.js) (hergebruikt de ritmeversie en het tellerdoel), met logboek en ongedaan maken
+- [x] T1.7 Weekreview-kaart (blokje in de weekreview en de maandreview, `buildGrowthPrompts`) "Hoe ging het op deze trede?" met drie keuzes en een notitie; ook bij de habit
+- [x] T1.8 Doel instellen en een bestaande habit omzetten (Q6): op de habit-pagina, via "Doel instellen" (zie B19)
+- [x] T1.9 Spotlight (b): stap-indicator en balk op de kaart van Vandaag en de stapel en de kaart op de habit; bekeken op 390 px en 320 px met 200% tekst (schermafbeeldingen). De controles in `check:layout` zijn toegevoegd maar **nog niet gedraaid**
+- [x] T1.10 Test: opslaan door een oudere appversie (`tests/app/growth.test.js`) verliest `goal` niet (R1)
+- [ ] T1.11 **?** Uitleg in "Zo werkt het" ([guide.js](../src/content/guide.js)); privacy: geen nieuwe soort gegevens naar de server, te bevestigen
 - [ ] T1.12 Prestaties voor uitbouwen met iconen (Q23)
 - [ ] T1.13 Uitlegfilmpje bijwerken, alleen als je dat wilt ([tools/film](../tools/film))
 
@@ -283,3 +283,5 @@ Ik vink af wat klaar is en voeg toe wat ik onderweg vind. Een item met **?** wac
 | B16 | Een tekstdoel is een concrete trede met een concreet ideaal ("een kwartier lezen" → "een uur"), niet een vage wens | Remco, 2026-11-09 (Q17) |
 | B17 | Na "uitgebouwd" volgt het gewone traject en kan de habit ingeburgerd worden | Remco, 2026-11-09 (Q20) |
 | B18 | De boost: een nieuwe trede start met een tegoed van de helft van de keren op de vorige trede, hoogstens de helft van de nudge-drempel van de nieuwe trede; instelbaar in `constants.js` | Remco, 2026-11-09 (Q24) |
+| B19 | Het doel wordt ingesteld op de **habit-pagina** ("Doel instellen"), niet in het formulier Habit bewerken; de fase van de habit blijft zoals hij was en de kaart "Uitbouwen" (trede, ideaal, balk) komt erbij | Houdt het formulier klein en laat de fasebalk niet liegen; ook voor bestaande habits (Q6). Aan te passen als je het doel al bij het aanmaken wilt kunnen kiezen |
+| B20 | Alleen N× per week/maand krijgt een frequentiedoel, een teller een hoeveelheidsdoel en al het andere een tekstdoel (een concrete trede in woorden) | Q1, Q17: "dagelijks" bouwt via de ideale versie, niet via het aantal dagen |

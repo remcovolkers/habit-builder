@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { completeGoal, removeGoal, setGoal, takeStep } from '../../src/app/growth.js';
+import { buildGrowthPrompts, completeGoal, removeGoal, setGoal, takeStep } from '../../src/app/growth.js';
+import { buildDayView } from '../../src/app/day-view.js';
 import { graduateHabit, RuleError } from '../../src/app/actions.js';
 import { buildHabitDetail } from '../../src/app/habit-detail.js';
 import { ValidationError } from '../../src/data/repository.js';
@@ -115,7 +116,9 @@ test('takeStep bij een tekstdoel: jij typt de volgende trede; "meer lezen" is ge
 test('een habit die uitbouwt wordt niet ingeburgerd, ook niet als alle criteria halen; Uitgebouwd maakt het weer kan', async () => {
   const { repo } = testRepo();
   const habit = await sportHabit(repo, { count: 4, weeks: 5, days: [0, 1, 3, 5] });
-  const { habit: g } = await setGoal(repo, { habit, kind: 'frequency', ideal: { schedule: weekly(4) } }, '2026-09-07');
+  // het ideaal (4×) is al bereikt: een doel kan je niet op de trede van nu instellen, dus zo staat het na een paar treden omhoog
+  const g = await repo.saveHabit({ ...habit, goal: { kind: 'frequency', ideal: { schedule: weekly(4) }, stepStart: '2026-09-07', credit: 0, snoozedAt: null, completedOn: null, log: [] } });
+  await assert.rejects(() => setGoal(repo, { habit, kind: 'frequency', ideal: { schedule: weekly(4) } }, TODAY), (e) => e instanceof RuleError && e.code === 'goal_not_higher', 'een doel op de trede van nu is geen doel');
   const snapshot = await snapshotOf(repo);
   const detail = buildHabitDetail({ habit: g, snapshot, today: TODAY });
   assert.equal(detail.canGraduate, false);
@@ -153,4 +156,31 @@ test('een oudere app slaat een habit op zonder het doel te verliezen: het record
   const fromOldApp = { ...(await repo.getHabit(habit.id)), name: 'Sporten (hernoemd)' }; // wat een app zonder kennis van `goal` doet: het record meegeven met een andere naam
   await repo.saveHabit(fromOldApp);
   assert.deepEqual((await repo.getHabit(habit.id)).goal, g.goal);
+});
+
+test('buildGrowthPrompts: alleen lopende habits met een nudge (ready of shaky), met de eenheden mee voor het afronden', async () => {
+  const { repo } = testRepo();
+  const habit = await sportHabit(repo); // 10 keer in 5 weken: klaar voor een trede hoger
+  await setGoal(repo, { habit, kind: 'frequency', ideal: { schedule: weekly(4) } }, '2026-09-07');
+  const fresh = await repo.saveHabit(validHabit({ name: 'Net begonnen', startDate: '2026-10-10', schedules: [{ effectiveFrom: '2026-10-10', schedule: weekly(2) }] }));
+  await setGoal(repo, { habit: fresh, kind: 'frequency', ideal: { schedule: weekly(4) } }, '2026-10-10');
+  await repo.saveHabit(validHabit({ name: 'Zonder doel' }));
+  const prompts = buildGrowthPrompts({ snapshot: await snapshotOf(repo), today: TODAY });
+  assert.deepEqual(prompts.map((p) => [p.habit.name, p.nudge.state, p.period, p.view.stepNumber]), [['Sporten', 'ready', 'week', 1]]);
+  assert.ok(prompts[0].units.length > 0);
+});
+
+test('Vandaag: een kaart van een habit die uitbouwt krijgt zijn trede en ideaal mee; een gewone kaart niet; na Uitgebouwd ook niet meer', async () => {
+  const { repo } = testRepo();
+  const habit = await repo.saveHabit(validHabit({ name: 'Water', startDate: '2026-09-07', counter: { unit: 'ml', target: 500 }, schedules: [{ effectiveFrom: '2026-09-07', schedule: daily }] }));
+  const plain = await repo.saveHabit(validHabit({ name: 'Wandelen', startDate: '2026-09-07', schedules: [{ effectiveFrom: '2026-09-07', schedule: daily }] }));
+  const { habit: g } = await setGoal(repo, { habit, kind: 'quantity', ideal: { target: 2000 } }, '2026-09-07');
+  const entriesOf = async () => buildDayView({ snapshot: await snapshotOf(repo), date: TODAY, today: TODAY }).groups.flatMap((group) => group.entries);
+  const byName = (entries, name) => entries.find((e) => e.habit.name === name);
+  const entries = await entriesOf();
+  assert.deepEqual([byName(entries, 'Water').growth.current, byName(entries, 'Water').growth.ideal], ['500 ml', '2000 ml']);
+  assert.equal(byName(entries, 'Wandelen').growth, undefined);
+  assert.ok(plain);
+  await repo.saveHabit({ ...g, goal: { ...g.goal, completedOn: TODAY } });
+  assert.equal(byName(await entriesOf(), 'Water').growth, undefined, 'Uitgebouwd: gewoon een habit');
 });

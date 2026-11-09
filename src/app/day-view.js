@@ -6,6 +6,7 @@ import { appointmentsOn } from '../domain/appointments.js';
 import { donePartsOf, habitDayparts, hasMultipleDayparts } from '../domain/dayparts.js';
 import { effectiveDaypart, moveTargets, movesOn } from '../domain/daymoves.js';
 import { paceOn } from '../domain/pace.js';
+import { growthView, isGrowing } from '../domain/growth.js';
 import { isTight } from '../domain/tight.js';
 import { isOnTrial } from '../domain/trial.js';
 import { canBackfill } from '../domain/rules.js';
@@ -83,7 +84,10 @@ export function buildDayView({ snapshot, date, today, prepared = null, agenda = 
     return { ...entry, wontToday: found ? { reason: found.reason, note: found.note ?? null, plan: found.plan ?? null } : null };
   };
 
-  const entries = [...day.scheduled, ...day.planned].map(attach).filter((e) => !isOnTrial(e.habit, date)).map(withAutomaticity).map(withWont).sort(byHabitOrder);
+  // een habit die uitbouwt toont zijn trede en zijn ideaal op de kaart (domain/growth.js)
+  const withGrowth = (entry) => (isGrowing(entry.habit) ? { ...entry, growth: growthView(entry.habit, date) } : entry);
+
+  const entries = [...day.scheduled, ...day.planned].map(attach).filter((e) => !isOnTrial(e.habit, date)).map(withAutomaticity).map(withWont).map(withGrowth).sort(byHabitOrder);
 
   // Een habit met meerdere dagdelen staat in elk dagdeel, met een eigen vinkje: `part` is het dagdeel van deze kaart, `partDone` of dat gedaan is,
   // en `doneToday` volgt dat dagdeel (zodat de teller per dagdeel klopt). `partsDone` en `partsTotal` zijn de stand van de hele dag.
@@ -121,7 +125,7 @@ export function buildDayView({ snapshot, date, today, prepared = null, agenda = 
     return { ...entry, covered, tight, atRisk, urgent: !entry.satisfied && !covered && (atRisk || tight) };
   };
   // "Niet in deze week" (Plan je week): zo'n taak staat die week niet in de stapel. Inplannen kan nog via Plan je week; heeft hij al een dag of is hij gedaan, dan staat hij gewoon bij de dag
-  const inPool = day.pool.map(attach);
+  const inPool = day.pool.map(attach).map(withGrowth);
   const hidden = inPool.filter((entry) => planSkippedIn(entry.habit, weekStart));
   const pool = inPool.filter((entry) => !planSkippedIn(entry.habit, weekStart) && !isOnTrial(entry.habit, date)).map(withUrgency).sort(
     (a, b) =>

@@ -11,6 +11,8 @@ import { declineHabit, recordReason, RuleError, saveMonthlyReview, saveWeeklyRev
 import { buildWeekReview } from '../../app/attention.js';
 import { buildPeriodOverview } from '../../app/overview.js';
 import { buildMonthReviewCard, buildWeekDays, buildWeekReviewCard } from '../../app/reviews.js';
+import { buildGrowthPrompts } from '../../app/growth.js';
+import { growthReviewBlock } from './growth-card.js';
 import { formatDateLong, formatDateShort } from '../../app/format.js';
 import { REVIEW_TEXT_MAX, ValidationError } from '../../data/repository.js';
 import { wontSpan } from '../../domain/attention.js';
@@ -212,7 +214,8 @@ function weekBody({ snapshot, today, card }) {
   }
   // "heb je het gedaan zonder de app?" voor een proef van deze week, en een aanbod voor taken die zover zijn (alleen als de review open staat)
   const trial = trialReviewBlock({ snapshot, today, period: 'week', start: card.start, open: card.state === 'open' });
-  return h('div', { class: 'stack' }, trial, lookback, daysBlock, content);
+  const growth = card.isCurrent && card.state === 'open' ? growthReviewBlock(buildGrowthPrompts({ snapshot, today }).filter((prompt) => prompt.period === 'week')) : null; // uitbouwen: een trede hoger?
+  return h('div', { class: 'stack' }, trial, lookback, growth, daysBlock, content);
 }
 
 // --- maand -------------------------------------------------------------------------------------------
@@ -270,6 +273,7 @@ function monthBody({ snapshot, today, card, onOpenWeek }) {
   return h('div', { class: 'stack' },
     weeksSummary(card, onOpenWeek),
     trial,
+    card.isCurrent && card.state === 'open' ? growthReviewBlock(buildGrowthPrompts({ snapshot, today }).filter((prompt) => prompt.period === 'month')) : null,
     card.state === 'open' ? h('p', { class: 'section__hint' }, m.adjustHint) : null,
     content);
 }

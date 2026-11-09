@@ -1494,6 +1494,40 @@ async function main() {
     check(`Blad "ga ik niet doen" · ${size}: past op het scherm zonder zijwaarts scrollen, met het plan voorgevuld, en alles is minstens 44 px`, dialogFit.open && dialogFit.prefilled && dialogFit.overflow <= 0 && dialogFit.inside && dialogFit.buttons === 0 && dialogFit.choices === 0, JSON.stringify(dialogFit));
     await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
   }
+  // Uitbouwen (docs/FEEDBACKRONDE-2026-11.md): de kaart op de habit, de strook op Vandaag en de bladen passen op elk formaat, met knoppen van minstens 44 px
+  const growId = await ev(`(async () => {
+    const { state, notifyChanged } = await import('/src/ui/state.js');
+    const { setGoal } = await import('/src/app/growth.js');
+    const { addDays, startOfWeek } = await import('/src/domain/dates.js');
+    const start = addDays(startOfWeek(state.today), -35);
+    const habit = await state.repo.saveHabit({ name: 'Sporten, een heel lange naam om te zien of de kaart past', icon: '💧', color: 'c3', daypart: 'anytime', status: 'active', startDate: start, endDate: null, graduationDays: 66,
+      maintenance: false, sortOrder: 500, counter: null, createdAt: start + 'T08:00:00.000Z', schedules: [{ effectiveFrom: start, schedule: { type: 'times_per_period', period: 'week', count: 2 } }] });
+    for (let w = 0; w < 5; w++) for (const d of [0, 2]) await state.repo.setCheckIn({ habitId: habit.id, date: addDays(start, w * 7 + d), status: 'done' });
+    await setGoal(state.repo, { habit, kind: 'frequency', ideal: { schedule: { type: 'times_per_period', period: 'week', count: 4 } } }, start);
+    notifyChanged();
+    return habit.id;
+  })()`);
+  for (const [size, w, h2, zoom] of sizes) {
+    await send('Emulation.setDeviceMetricsOverride', { width: w, height: h2, deviceScaleFactor: 2, mobile: true });
+    await nav(`habits/${growId}`);
+    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close()); document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(400);
+    const card = await ev(`(() => { const c = document.querySelector('.growth-card'); return { found: !!c, overflow: document.documentElement.scrollWidth - innerWidth, wide: [...(c?.querySelectorAll('*') ?? [])].filter((e) => e.getBoundingClientRect().right > innerWidth + 1).length, tiny: [...(c?.querySelectorAll('.button') ?? [])].filter((b) => b.getBoundingClientRect().height < 43).length, buttons: c?.querySelectorAll('.button').length ?? 0 }; })()`);
+    check(`Uitbouwen, kaart op de habit · ${size}: past zonder zijwaarts scrollen en alle knoppen zijn minstens 44 px`, card.found && card.overflow <= 0 && card.wide === 0 && card.tiny === 0 && card.buttons >= 3, JSON.stringify(card));
+    await ev(`document.querySelector('#growUp').click()`);
+    await sleep(500);
+    const sheet = await ev(`(() => { const d = document.querySelector('dialog[open]'); const box = d?.getBoundingClientRect(); return { open: !!d, overflow: d ? d.scrollWidth - d.clientWidth : 1, fits: !!box && box.bottom <= innerHeight + 1, value: d?.querySelector('#stepValue')?.value ?? null, tiny: [...(d?.querySelectorAll('.button') ?? [])].filter((b) => b.getBoundingClientRect().height < 43).length }; })()`);
+    check(`Uitbouwen, blad "Een trede hoger" · ${size}: past op het scherm, het aantal staat op 3 en de knoppen zijn minstens 44 px`, sheet.open && sheet.overflow <= 0 && sheet.fits && sheet.value === '3' && sheet.tiny === 0, JSON.stringify(sheet));
+    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`);
+    await nav('today');
+    await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close()); document.documentElement.style.fontSize = '${zoom}%'`);
+    await sleep(400);
+    const strip = await ev(`(() => { const s = [...document.querySelectorAll('.habit-card__growth')]; return { found: s.length > 0, overflow: document.documentElement.scrollWidth - innerWidth, wide: s.filter((e) => [...e.querySelectorAll('*')].some((x) => x.getBoundingClientRect().right > innerWidth + 1)).length }; })()`);
+    check(`Uitbouwen, strook op Vandaag · ${size}: de trede en het ideaal staan op de kaart en passen zonder zijwaarts scrollen`, strip.found && strip.overflow <= 0 && strip.wide === 0, JSON.stringify(strip));
+  }
+  await ev(`document.documentElement.style.fontSize = '100%'`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); await state.repo.deleteHabit(${JSON.stringify(growId)}); notifyChanged(); })()`);
   await ev(`document.documentElement.style.fontSize = '100%'`);
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   ws.close();

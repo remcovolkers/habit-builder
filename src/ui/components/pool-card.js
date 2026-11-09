@@ -2,6 +2,7 @@ import { habitIcon } from './habit-icon.js';
 import { h } from '../dom.js';
 import { nl } from '../../content/nl.js';
 import { relativeDayLabel } from '../../app/format.js';
+import { growthStrip } from './growth-card.js';
 import { diffDays, weekday } from '../../domain/dates.js';
 
 function dots(count, target) {
@@ -53,7 +54,8 @@ export function poolCard(entry, { date, today, canPlan, canMore, onPlan, onMore 
         h('span', { class: 'muted' }, periodLabel(entry)),
         entry.satisfied ? h('span', { class: 'badge badge--ok' }, `✓ ${nl.today.pool.satisfied}`) : null,
         entry.atRisk ? h('span', { class: 'badge badge--risk' }, nl.today.pool.atRisk) : null),
-      planned ? h('div', { class: 'pool-card__planned' }, planned) : null),
+      planned ? h('div', { class: 'pool-card__planned' }, planned) : null,
+      entry.growth && !entry.growth.completed ? growthStrip(entry.growth, { inline: true }) : null), // een habit die uitbouwt: de trede en het ideaal
     entry.satisfied ? null : h('div', { class: 'pool-card__actions' },
       // een taak die al genoeg dagen heeft staat niet in de stapel (zie today.js), dus hier is de plusknop altijd goed
       canPlan && !entry.covered

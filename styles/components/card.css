@@ -864,3 +864,75 @@ body.is-dragging {
   -webkit-user-select: none;
   user-select: none;
 }
+
+/* ---- uitbouwen: een habit met een doel (docs/FEEDBACKRONDE-2026-11.md) ---- */
+.badge--growing {
+  justify-self: start;
+  background: var(--color-accent-16);
+  color: var(--color-accent);
+}
+
+.habit-card__growth {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  background: var(--color-accent-10);
+  border-radius: var(--radius-button);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.habit-card__growth-text {
+  overflow-wrap: anywhere;
+}
+
+.growth-card {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.growth-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.growth-card__line,
+.growth-card__reps,
+.growth-card__nudge {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.growth-card__actions,
+.growth-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.growth-card__list {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+
+.growth-card__note {
+  font-style: italic;
+}
+
+.review__growth {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* in de compacte kaart van de stapel: zonder eigen vlak, onder de naam */
+.habit-card__growth--inline {
+  padding: 0;
+  background: none;
+}

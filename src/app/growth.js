@@ -6,6 +6,7 @@ import {
 } from '../domain/growth.js';
 import { scheduleAt } from '../domain/schedule.js';
 import { RuleError, sameSchedule } from './actions.js';
+import { statsForHabit } from './habit-detail.js';
 
 const clean = (value) => {
   const trimmed = typeof value === 'string' ? value.trim() : '';
@@ -39,8 +40,30 @@ export async function setGoal(repo, { habit, kind, ideal, stepText = null }, tod
     completedOn: null,
     log: existing?.log ?? [],
   };
+  // een frequentie of hoeveelheid is een doel dat hoger ligt dan waar je nu staat
+  const probe = currentStep({ ...habit, goal }, today);
+  const now = kind === 'frequency' ? probe?.count : kind === 'quantity' ? probe?.target : null;
+  const top = kind === 'frequency' ? goal.ideal.schedule?.count : kind === 'quantity' ? goal.ideal.target : null;
+  if (now != null && Number.isInteger(top) && top <= now && !existing) throw new RuleError('goal_not_higher');
   const saved = await repo.saveHabit({ ...habit, goal });
   return { habit: saved, undo: () => repo.saveHabit(previous) };
+}
+
+/**
+ * De habits waar de app iets over wil zeggen bij de review: een nudge om op te schalen (ready), een zachte "terugschakelen mag" (shaky) of af te ronden.
+ * Geeft [{ habit, view, nudge, units, ratings, period }], gesorteerd op naam; `period` is 'month' voor een maandhabit en anders 'week'.
+ */
+export function buildGrowthPrompts({ snapshot, today }) {
+  const prompts = [];
+  for (const habit of snapshot.habits) {
+    if (habit.status !== 'active' || !isGrowing(habit)) continue;
+    const { stats, ratings } = statsForHabit({ habit, checkIns: snapshot.checkIns, pauses: snapshot.pauses, ratings: snapshot.ratings, today });
+    const nudge = growthNudge({ habit, checkIns: snapshot.checkIns.filter((c) => c.habitId === habit.id), units: stats.units, ratings, today });
+    if (nudge.state !== 'ready' && nudge.state !== 'shaky') continue;
+    const step = currentStep(habit, today);
+    prompts.push({ habit, view: growthView(habit, today), nudge, units: stats.units, ratings, period: step?.period === 'month' ? 'month' : 'week' });
+  }
+  return prompts.sort((a, b) => a.habit.name.localeCompare(b.habit.name, 'nl'));
 }
 
 /** Het doel weghalen: de habit blijft zoals hij nu is (de trede van nu wordt gewoon zijn ritme of teller). */
