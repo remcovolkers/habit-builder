@@ -1,6 +1,6 @@
 # Feedbackronde november 2026: uitbouwen, wachten met de review, prestaties per habit
 
-Status: **ronde 5**: F1, F2, F3a en F3c gebouwd; wat overblijft is afronden (release-notities, versie) en jouw doorloop op de telefoon (alle vragen Q1–Q25 beantwoord) · opgesteld 2026-11-09 · bron: drie ideeën uit de feedbackhub (v1.5.1, zie [FEEDBACK.md](FEEDBACK.md)) · bouwt voort op [PLAN.md](PLAN.md) §4.5 en §4.7, [AUTOMATISME.md](AUTOMATISME.md), [FLEXIBELE-TAKEN.md](FLEXIBELE-TAKEN.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
+Status: **gebouwd en in `develop`** (pull request #46, 2026-11-09); gaat zonder versieverhoging mee in de volgende release (alle vragen Q1–Q25 beantwoord) · opgesteld 2026-11-09 · bron: drie ideeën uit de feedbackhub (v1.5.1, zie [FEEDBACK.md](FEEDBACK.md)) · bouwt voort op [PLAN.md](PLAN.md) §4.5 en §4.7, [AUTOMATISME.md](AUTOMATISME.md), [FLEXIBELE-TAKEN.md](FLEXIBELE-TAKEN.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
 
 Dit bestand is mijn werklijst voor deze ronde. Ik werk het bij zodra jij antwoordt of ik iets nieuws vind. Alles wat ik niet zelf kan of mag beslissen staat onder **Vragen aan Remco**, met mijn voorstel erbij, zodat "ja" genoeg is.
 
@@ -258,7 +258,7 @@ Ik vink af wat klaar is en voeg toe wat ik onderweg vind. Een item met **?** wac
 
 ### Afronden per release
 - [ ] Alle tests groen, `check:layout` en `audit:scroll` op de branch
-- [ ] Release-notities (RELEASE-v1.5.2 en 1.6) en het verhogen van `appVersion` in de release-PR
+- [x] Geen versieverhoging en geen release-notitiebestand: Remco beschouwt dit als uitbreiding en onderhoud van wat er al was (B23). Dus ook geen nieuwe APK, tag of GitHub Release; de Android-app laadt de live site en krijgt de wijzigingen via "Vernieuwen"
 - [ ] Geen servermigratie nodig (te bevestigen bij T1.10 en T3.5); zo toch, dan eerst lokaal en achterwaarts compatibel
 
 ## Besluiten (tot nu toe)
@@ -287,3 +287,4 @@ Ik vink af wat klaar is en voeg toe wat ik onderweg vind. Een item met **?** wac
 | B20 | Alleen N× per week/maand krijgt een frequentiedoel, een teller een hoeveelheidsdoel en al het andere een tekstdoel (een concrete trede in woorden) | Q1, Q17: "dagelijks" bouwt via de ideale versie, niet via het aantal dagen |
 | B21 | De getoonde reeks op de habit is bij dagen soepel (één gemiste dag mag), de prestaties blijven streng | Remco, 2026-11-09 (Q22) |
 | B22 | De layout-controle draait in CI als eigen job naast de Supabase-controles, en lokaal met `LAYOUT_ONLY=growth` alleen voor uitbouwen | Remco, 2026-11-09 |
+| B23 | Geen versieverhoging voor deze ronde: het is onderhoud en uitbreiding van bestaande functies, en er is niets voor de Android-schil | Remco, 2026-11-09. Gevolg: feedback uit deze versie meldt nog `v1.5.1` |
