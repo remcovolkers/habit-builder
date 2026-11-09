@@ -11,6 +11,7 @@ import { DEFAULT_GRADUATION_DAYS, PLAN_AHEAD_DAYS } from '../domain/constants.js
 import { clampCounter, counterDoneValue, counterStatus } from '../domain/counter.js';
 import { donePartsOf, habitDayparts, hasMultipleDayparts, partsStatus } from '../domain/dayparts.js';
 import { sortDayparts } from '../domain/habit.js';
+import { isGrowing } from '../domain/growth.js';
 import { canBackfill } from '../domain/rules.js';
 import { scheduleAt } from '../domain/schedule.js';
 import { cleanCues } from '../domain/automaticity.js';
@@ -291,6 +292,7 @@ export function applyHabitForm({ existing = null, values, today, sortOrder = 0 }
 /** De gebruiker bevestigt: deze habit is van mij. Alleen voor lopende habits. */
 export async function graduateHabit(repo, habit, today) {
   if (habit.status !== 'active') throw new RuleError('not_active');
+  if (isGrowing(habit)) throw new RuleError('growing'); // een habit die uitbouwt wordt pas ingeburgerd als het uitbouwen af is
   return repo.saveHabit({ ...habit, status: 'graduated', graduatedAt: today, maintenance: false });
 }
 

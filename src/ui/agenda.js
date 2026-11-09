@@ -17,6 +17,7 @@ import { notifyViewChanged, state } from './state.js';
 const SETTINGS_KEY = 'hb-agenda';
 const CACHE_KEY = 'hb-agenda-cache';
 const DONE_KEY = 'hb-agenda-done'; // wat je hebt afgevinkt, als { nummer: dag } (zie doneId)
+const HIDDEN_KEY = 'hb-agenda-hidden'; // wat je niet meer wilt zien ("Niet tonen"), op dezelfde manier
 /** Meer dan dit bewaren we niet per bron: een agenda met honderden afspraken per dag is geen agenda meer. */
 const MAX_ITEMS = 1500;
 /** De telefoon lezen kost niets, maar ook niet elke seconde: bij elke terugkeer naar de app is genoeg. */
@@ -36,6 +37,7 @@ export function createAgenda(deps) {
     feed: emptySource(),
     local: emptySource(),
     done: {}, // afgevinkte afspraken: { [doneId]: de dag van de afspraak }
+    hidden: {}, // afspraken die niet meer getoond worden, op dezelfde manier
     loading: false,
     feedError: null, // de reden (zie data/calendar-remote.js) van de laatste mislukte poging, of null
   };
@@ -64,12 +66,23 @@ export function createAgenda(deps) {
     if (model.feedUrl || model.device) write(SETTINGS_KEY, { feedUrl: model.feedUrl, device: model.device });
     else deps.storage.remove(SETTINGS_KEY);
     write(CACHE_KEY, { feed: model.feed, local: model.local });
-    saveDone();
+    saveMarks();
   };
-  const saveDone = () => {
-    model.done = pruneDone(model.done, deps.today());
-    if (Object.keys(model.done).length > 0) write(DONE_KEY, model.done);
-    else deps.storage.remove(DONE_KEY);
+  // afgevinkt en niet getoond zijn twee lijstjes van hetzelfde soort: { nummer: dag }
+  const saveMark = (field, key) => {
+    model[field] = pruneDone(model[field], deps.today());
+    if (Object.keys(model[field]).length > 0) write(key, model[field]);
+    else deps.storage.remove(key);
+  };
+  const saveDone = () => saveMark('done', DONE_KEY);
+  const saveHidden = () => saveMark('hidden', HIDDEN_KEY);
+  const saveMarks = () => {
+    saveDone();
+    saveHidden();
+  };
+  const loadMarks = (key) => {
+    const marks = read(key);
+    return marks && typeof marks === 'object' && !Array.isArray(marks) ? pruneDone(marks, deps.today()) : {};
   };
 
   const validSource = (source) => (source && Array.isArray(source.items) && source.span && Number.isFinite(source.fetchedAt)
@@ -84,8 +97,8 @@ export function createAgenda(deps) {
     const cache = read(CACHE_KEY);
     model.feed = model.feedUrl ? validSource(cache?.feed) : emptySource();
     model.local = model.device ? validSource(cache?.local) : emptySource();
-    const done = read(DONE_KEY);
-    model.done = done && typeof done === 'object' && !Array.isArray(done) ? pruneDone(done, deps.today()) : {};
+    model.done = loadMarks(DONE_KEY);
+    model.hidden = loadMarks(HIDDEN_KEY);
   }
 
   const range = () => agendaWindow(deps.today());
@@ -161,7 +174,26 @@ export function createAgenda(deps) {
     },
 
     /** De afspraken van één dag, met hun dagdeel, uit alle bronnen. */
-    itemsFor: (date) => agendaOn({ items: mergeAgenda(model.local.items, model.feed.items), date }).map((item) => ({ ...item, done: Object.hasOwn(model.done, doneId(item)) })),
+    itemsFor: (date) => agendaOn({ items: mergeAgenda(model.local.items, model.feed.items), date })
+      .filter((item) => !Object.hasOwn(model.hidden, doneId(item)))
+      .map((item) => ({ ...item, done: Object.hasOwn(model.done, doneId(item)) })),
+
+    /**
+     * Laat een afspraak niet meer zien op Vandaag, voor een afspraak waar je niets mee moet. Hij blijft in je agenda staan en blijft op dit toestel
+     * (geen synchronisatie). Geeft { undo }.
+     */
+    hide(item) {
+      const id = doneId(item);
+      const before = Object.hasOwn(model.hidden, id) ? model.hidden[id] : null;
+      const apply = (value) => {
+        if (value === null) delete model.hidden[id];
+        else model.hidden[id] = value;
+        saveHidden();
+        changed();
+      };
+      apply(item.date);
+      return { undo: () => apply(before) };
+    },
 
     /**
      * Vinkt een afspraak af of zet hem weer open. Dat blijft op dit toestel (het gaat niet mee in de synchronisatie) en telt nergens mee.
@@ -234,10 +266,11 @@ export function createAgenda(deps) {
 
     /** Alles wissen: bij uitloggen en het verwijderen van je account. */
     clear() {
-      Object.assign(model, { feedUrl: null, device: false, feed: emptySource(), local: emptySource(), done: {}, feedError: null });
+      Object.assign(model, { feedUrl: null, device: false, feed: emptySource(), local: emptySource(), done: {}, hidden: {}, feedError: null });
       deps.storage.remove(SETTINGS_KEY);
       deps.storage.remove(CACHE_KEY);
       deps.storage.remove(DONE_KEY);
+      deps.storage.remove(HIDDEN_KEY);
       changed();
     },
   };

@@ -77,6 +77,33 @@ export const ALL_DONE_DAYS = 10; // dagen waarop alles van die dag gedaan is
 export const ALL_DONE_MIN_UNITS = 2; // zo'n dag heeft minstens twee dingen (met één is "alles" niets bijzonders)
 export const ACHIEVEMENT_DAYPARTS = Object.freeze(['morning', 'afternoon', 'evening']); // "de hele dag": een habit in elk van deze dagdelen
 export const FRIENDS_ACHIEVEMENT = 5; // vrienden
+/**
+ * Ronde 3 (docs/FEEDBACKRONDE-2026-11.md). Een mijlpaal per habit (days_N) telt niet alleen kalenderdagen maar vraagt ook een aantal keren gedaan:
+ * REPETITIONS_SHARE van wat het ritme in die dagen zou geven, met een ondergrens. Zo haalt "1× per maand" geen 21 dagen met één vinkje.
+ */
+export const MILESTONE_MIN_REPETITIONS = 3;
+/** Reeksen in weken en maanden: één gemiste periode breekt ze meteen. */
+export const WEEK_STREAK_MILESTONES = [2, 4, 8, 13];
+export const MONTH_STREAK_MILESTONES = [3, 6, 12];
+/**
+ * Uitbouwen (docs/FEEDBACKRONDE-2026-11.md): een vuistregel, geen bewezen drempel. De nudge komt na minstens de helft van de keren die "ingeburgerd" bij het
+ * ritme vraagt (ondergrens NUDGE_MIN_REPETITIONS), bij minstens CONSISTENCY_THRESHOLD gehaald en zonder dat de laatste twee eenheden gemist zijn.
+ * Na "Niet nu" komt hij pas terug na nog de helft van de drempel aan keren én NUDGE_SNOOZE_DAYS dagen. Onder NUDGE_BACK_BELOW over de laatste
+ * NUDGE_BACK_UNITS eenheden zegt de app zachtjes dat terugschakelen mag.
+ */
+export const NUDGE_SHARE = 0.5;
+export const NUDGE_MIN_REPETITIONS = 6;
+export const NUDGE_SNOOZE_DAYS = 14;
+export const NUDGE_BACK_BELOW = 0.5;
+export const NUDGE_BACK_UNITS = 4;
+export const GOAL_LOG_MAX = 30; // zoveel besluiten bewaart een doel
+
+/** Prestaties per habit en voor uitbouwen (docs/FEEDBACKRONDE-2026-11.md). */
+export const HABIT_DONE_MILESTONES = [10, 25, 50, 100]; // keren gedaan bij één habit
+export const BUILD_STEPS_ACHIEVEMENT = 3; // keer een trede hoger, bij alle habits samen
+
+/** Versie van de prestatieregels; bij een nieuwere versie worden de mijlpalen eenmalig herijkt (app/achievement-runner.js). */
+export const ACHIEVEMENT_RULES_VERSION = 2;
 /** "Sterk terug": binnen een venster van 14 dagen onder de 50% gehaald (dip), later weer op 80% of hoger. Minstens 4 eenheden in het venster, anders zegt een percentage niets. */
 export const STRONG_RETURN = Object.freeze({ windowDays: 14, dipBelow: 0.5, backAt: 0.8, minUnits: 4 });
 

@@ -2,7 +2,7 @@
 
 Mobiel-eerst PWA om gewoontes te bouwen. Vanilla JS/CSS/HTML zonder frameworks of bouwstap, offline-first met sync naar Supabase, gehost op GitHub Pages.
 
-Het volledige plan, de requirements en de domeinregels staan in [docs/PLAN.md](docs/PLAN.md); de gegevens in [docs/DATAMODEL.md](docs/DATAMODEL.md); hoe we de productieversie beschermen en toch blijven bouwen in [docs/WERKWIJZE.md](docs/WERKWIJZE.md).
+Een overzicht van alle documentatie staat in [docs/README.md](docs/README.md). Het volledige plan, de requirements en de domeinregels staan in [docs/PLAN.md](docs/PLAN.md); de gegevens in [docs/DATAMODEL.md](docs/DATAMODEL.md); hoe we de productieversie beschermen en toch blijven bouwen in [docs/WERKWIJZE.md](docs/WERKWIJZE.md).
 
 ## Lokaal draaien
 

@@ -3,7 +3,7 @@ import { DEFAULT_GRADUATION_DAYS } from './constants.js';
 import { evaluateGraduation } from './graduation.js';
 import { paceOn } from './pace.js';
 import { countActiveDays, phaseFor } from './phases.js';
-import { computeConsistency, computeStreaks } from './streaks.js';
+import { computeConsistency, computeDisplayStreaks, computeStreaks } from './streaks.js';
 import { computeStrength } from './strength.js';
 import { computeUnits } from './units.js';
 
@@ -43,6 +43,7 @@ export function buildHabitStats({
     graduated,
     units,
     streaks: computeStreaks(units),
+    displayStreaks: computeDisplayStreaks(units), // voor de weergave: bij dagen mag één gemiste dag (zie streaks.js)
     consistency,
     strength: computeStrength(units),
     activeDays,

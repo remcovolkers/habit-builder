@@ -4,6 +4,7 @@ import { h } from '../dom.js';
 import { icon } from '../svg.js';
 import { tapProps } from '../tap-to-check.js';
 import { nl } from '../../content/nl.js';
+import { growthStrip } from './growth-card.js';
 
 export function entryState(entry) {
   // een habit met meerdere dagdelen: de kaart van een dagdeel is gedaan als dat dagdeel gedaan is, ook als de dag nog deels open staat
@@ -136,6 +137,7 @@ function extras(entry, state, { canLog, onRate, onCues, onLate }) {
         onclick: () => onLate(entry),
       }, nl.today.late.button)));
   }
+  if (entry.growth && !entry.growth.completed) blocks.push(growthStrip(entry.growth)); // een habit die uitbouwt: de trede en het ideaal
   if (entry.wontToday) {
     // "ga ik niet doen": de reden en, als er een is, het plan
     const { reason, note, plan } = entry.wontToday;

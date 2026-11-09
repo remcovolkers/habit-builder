@@ -2,6 +2,7 @@
 import {
   DAYS_PER_MONTH,
   DEFAULT_GRADUATION_DAYS,
+  MILESTONE_MIN_REPETITIONS,
   MIN_REPETITIONS,
   PHASE_STARTING_UNTIL_DAY,
   REPETITIONS_SHARE,
@@ -17,6 +18,15 @@ export function timesPerWeek(schedule) {
     case 'day_of_month': return 7 / DAYS_PER_MONTH;
     default: return null;
   }
+}
+
+/**
+ * Hoeveel keren gedaan een mijlpaal van `days` actieve dagen minstens vraagt bij `perWeek` keer per week (null: onbekend, dan de ondergrens).
+ * Dagelijks: 7 dagen = 6 keer. 2× per week: 7 dagen = 3 keer. 1× per maand: 21 dagen = 3 keer.
+ */
+export function milestoneRepetitions(days, perWeek) {
+  const expected = perWeek == null ? 0 : (perWeek / 7) * days * REPETITIONS_SHARE;
+  return Math.max(MILESTONE_MIN_REPETITIONS, Math.ceil(expected - 1e-9));
 }
 
 /** Het ritme dat op `date` voor de habit geldt (valt het ervoor, dan het eerste schema); null zonder schema. */

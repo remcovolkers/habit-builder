@@ -1,6 +1,6 @@
 # Iteratie na 1.1: uitnodigen, vrienden inzien, prestaties en iconen – analyse en requirements
 
-Status: **§1 en §2 gebouwd (zie "Stand" hieronder); §3, §4, §5 en §6 af** · opgesteld 2026-10-16, besluiten 2026-10-16 · bouwt voort op [SOCIAAL.md](SOCIAAL.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
+Status: **gebouwd en uitgerold in 1.2** ([RELEASES.md](RELEASES.md#12-uitnodigen-prestaties-onboarding-en-meerdere-dagdelen); zie "Stand" hieronder voor wat per onderdeel is gedaan) · opgesteld 2026-10-16, besluiten 2026-10-16 · bouwt voort op [SOCIAAL.md](SOCIAAL.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
 
 ## Stand
 
@@ -52,7 +52,7 @@ Vijf punten van Remco, hier uitgewerkt. Per punt: wat er nu is (uit de code gele
 | L5 | De maker ziet **wie er via zijn link is gekomen**: nieuwe vrienden staan 7 dagen met "Nieuw" in de vriendenlijst (§3, uit het bestaande veld `since`). Geen pushmelding (blijft buiten scope, SOCIAAL §3.5). | S |
 | L6 | Opnieuw inwisselen door iemand die al vriend is geeft "jullie waren al vrienden", geen fout (server: `ok`; de tekst in de app moet het onderscheiden). | M |
 | L7 | Een link wijst **altijd naar het publieke adres van de app** wanneer hij wordt gemaakt op de productiehost; alleen op een testadres blijft hij naar dat testadres wijzen. De link bevat de appversie niet, maar de app toont op een onbekende uitnodigingsroute geen kale "Pagina niet gevonden" maar een uitleg ("Werk de app bij en open de link opnieuw"). | S |
-| L8 | **Release-volgorde:** de uitnodigingslink mag pas gedeeld worden vanaf een app die de route kent. De releasechecklist ([RELEASE-v1.1.md](RELEASE-v1.1.md) en vervolg) krijgt de controle "open een nieuwe link in een schone browser én in een geïnstalleerde app". | M |
+| L8 | **Release-volgorde:** de uitnodigingslink mag pas gedeeld worden vanaf een app die de route kent. De releasechecklist ([release 1.1](RELEASES.md#11-vrienden-en-ranglijst) en vervolg) krijgt de controle "open een nieuwe link in een schone browser én in een geïnstalleerde app". | M |
 
 ### Raakt
 `supabase/migrations/0004_*.sql` (kolom `uses`, plafond; additief), `src/data/social-cache.js` (link onthouden), `src/ui/views/friends-add.js`, `friends-manage.js`, `src/content/nl.js`, `docs/SOCIAAL.md` §5.2, servertests.

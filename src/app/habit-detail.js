@@ -8,6 +8,8 @@ import { buildHabitStats } from '../domain/stats.js';
 import { adviceFor, sortedRatings } from '../domain/automaticity.js';
 import { currentTrial, hasPassedTrial, trialCooldownUntil, trialOffer, trialStatus, trialsOf } from '../domain/trial.js';
 import { levelOf } from '../domain/automaticity.js';
+import { growthNudge, growthView, isGrowing } from '../domain/growth.js';
+import { habitAchievements } from './habit-achievements.js';
 import { pickTip } from './tips.js';
 
 export const NOTES_SHOWN = 5;
@@ -116,7 +118,11 @@ export function buildHabitDetail({ habit, snapshot, today, now = `${today}T12:00
     },
     latestRating,
     ratingThisWeek: habitRatings.find((r) => r.weekStart === thisWeek) ?? null,
-    canGraduate: habit.status === 'active' && stats.graduation.eligible,
+    // de prestaties van deze habit: behaald en de eerstvolgende per soort (app/habit-achievements.js)
+    achievements: habitAchievements({ habit, stats, records: (snapshot.achievements ?? []).filter((a) => a.habitId === habit.id) }),
+    canGraduate: habit.status === 'active' && stats.graduation.eligible && !isGrowing(habit),
+    // uitbouwen (domain/growth.js): de trede, het ideaal en of de app iets wil zeggen
+    growth: habit.goal ? { view: growthView(habit, today), nudge: growthNudge({ habit, checkIns: mine.checkIns, units: stats.units, ratings: habitRatings, today }), growing: isGrowing(habit) } : null,
     tipKey: pickTip({ phase: stats.phase.phase, activeDays: stats.activeDays, graduationDays, units: stats.units, pausedNow }),
   };
 }

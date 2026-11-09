@@ -30,7 +30,7 @@ test('counterStatus: met doel pas gedaan op het doel; zonder doel meteen bij 1',
 test('clampCounter en counterDoneValue', () => {
   assert.equal(clampCounter(-3), 0);
   assert.equal(clampCounter(5), 5);
-  assert.equal(clampCounter(5000), COUNTER_MAX);
+  assert.equal(clampCounter(50000), COUNTER_MAX);
   assert.equal(counterDoneValue({ unit: 'x', target: 8 }, 3), 8);
   assert.equal(counterDoneValue({ unit: 'x', target: 8 }, 10), 10);
   assert.equal(counterDoneValue({ unit: 'x', target: null }, 0), 1);
@@ -43,7 +43,7 @@ test('validateHabit: tellerregels', () => {
   assert.deepEqual(codes(validateHabit(water({ counter: { unit: 'x'.repeat(21), target: 8 } }))), ['counterUnit.too_long']);
   assert.deepEqual(codes(validateHabit(water({ counter: { unit: 'glazen', target: 0 } }))), ['counterTarget.invalid']);
   assert.deepEqual(codes(validateHabit(water({ counter: { unit: 'glazen', target: 8.5 } }))), ['counterTarget.invalid']);
-  assert.deepEqual(codes(validateHabit(water({ counter: { unit: 'glazen', target: 1000 } }))), ['counterTarget.invalid']);
+  assert.deepEqual(codes(validateHabit(water({ counter: { unit: 'glazen', target: 10000 } }))), ['counterTarget.invalid']);
 });
 
 test('validateHabit: een teller past niet bij N× per week of dag van de maand', () => {
@@ -73,7 +73,7 @@ test('repository: waarde wordt bewaard en gevalideerd', async () => {
   assert.equal((await repo.getCheckIn('w', TODAY)).value, 3);
   await repo.setCheckIn({ habitId: 'w', date: TODAY, status: 'done' });
   assert.equal((await repo.getCheckIn('w', TODAY)).value, null);
-  for (const value of [-1, 1.5, 1000, 'acht']) {
+  for (const value of [-1, 1.5, 10000, 'acht']) {
     await assert.rejects(() => repo.setCheckIn({ habitId: 'w', date: TODAY, status: 'done', value }), ValidationError);
   }
 });

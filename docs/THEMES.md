@@ -32,6 +32,17 @@ Een thema delen kan met een link: `https://remcovolkers.github.io/habit-builder/
 5. **Iconen:** een nieuw thema heeft geen eigen iconen nodig. De iconenset (`icons/set.svg`) is voor alle thema's gelijk en gebruikt `currentColor` en `--icon-accent`; controleer dat de iconen er in het nieuwe thema goed uitzien (contrast op het tegelvlak en op de medaille) en pas zo nodig `--color-text`, `--color-accent` of `--color-on-accent` aan.
 6. `npm test` controleert contrast (WCAG AA) per thema, dat elke `var(--…)` bestaat, en dat de illustraties bestaan en geen scripts bevatten.
 
+## De oorsprong van de stijl (uit de eerste opdracht aan Moda)
+
+De eerste opdracht aan Moda (drie schermen en een componentenblad; de letterlijke tekst staat in de git-geschiedenis: `git log -- docs/MODA-PROMPT.md`) vroeg om dit. De kleuren en maten staan nu in `styles/tokens.css` en `styles/themes/`; wat hieronder staat is de bedoeling erachter, voor wie een scherm of thema toevoegt.
+
+- **Uitstraling:** donker "bosdruïde", afgeleid van de stream-overlay van de maker (`v0lky1`). Rustig, gefocust, een beetje magisch, nooit druk. Alleen een donkere modus; kleur komt van één accent (neonmunt `#29ffb9`) en gloed alleen op primaire of actieve elementen.
+- **Lettertypen:** Chakra Petch voor koppen en grote cijfers (vaak hoofdletters), Manrope voor tekst en bediening, kleine "kicker"-labels in hoofdletters met ruime letterafstand. Lokaal meegeleverd, zie [fonts/README.md](../fonts/README.md).
+- **Vorm:** afgeronde kaarten (14 px, hero-kaarten 22 px) met een dunne rand in het accent, voortgangsringen met een heldere stip aan de kop, kleine animatie die ook als stilstaand ontwerp werkt (en `prefers-reduced-motion` respecteert).
+- **Navigatie:** vaste tabbalk onderaan met vijf tabs (Vandaag, Habits, Voortgang, Prestaties, Instellingen), raakvlakken minstens 44 px, contrast minstens WCAG AA.
+- **Wat er niet in hoort:** stockfoto's, illustraties van mensen en paarse of blauwe kleurverlopen. Habit-iconen kiest de gebruiker uit de iconenset.
+- **Statuskleuren:** zacht koraal voor fout en "dreigt te falen", een warm amber en een rustig grijs voor overgeslagen of gepauzeerd, passend bij het accent.
+
 ## Let op bij Pokémon
 
 De Pokémon in het Mel Theme zijn auteursrechtelijk beschermd werk van Nintendo, Game Freak en The Pokémon Company. Dit is een privé-hobbyproject voor eigen gebruik. De repository en de site zijn wel publiek: wie dat anders wil, kan het Mel Theme uit de publieke versie halen of de illustraties vervangen.

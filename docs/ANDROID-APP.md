@@ -6,7 +6,7 @@ Doel: de PWA blijft zoals hij is, en er komt een **Android-app (APK)** bij die d
 2. een melding **"Nieuwe versie staat klaar, downloaden?"** in de app zelf (eenmalig installeren, daarna bijwerken vanuit de app),
 3. daarna eventueel een **widget** (apart, zie §9).
 
-Alles gaat in één keer live, vanaf één branch (`feature/android-app`, zie §7). Dit document is het plan; de tijdsschattingen zijn schattingen, geen metingen. Markering zoals in [USE-CASES-VOLGENDE-FEATURES.md](USE-CASES-VOLGENDE-FEATURES.md): ✓ gecontroleerd, ? niet gecontroleerd, in de spike na te gaan.
+Alles gaat in één keer live, vanaf één branch (`feature/android-app`, zie §7). Dit document is het ontwerp van de Android-app, gebouwd in 1.3 en daarna uitgebreid ([RELEASES.md](RELEASES.md)). Markering zoals in [USE-CASES-VOLGENDE-FEATURES.md](USE-CASES-VOLGENDE-FEATURES.md): ✓ gecontroleerd, ? niet gecontroleerd, in de spike na te gaan.
 
 Dit vervangt het advies voor een TWA uit "Feature 4" van dat document: een TWA gebruikt Chrome-meldingen en kan geen widget leveren.
 
@@ -31,28 +31,9 @@ Dit vervangt het advies voor een TWA uit "Feature 4" van dat document: een TWA g
 
 ---
 
-## 2. Wat jij moet regelen (ik kan het niet voor je doen)
+## 2. Wat jij moet regelen
 
-| Wat | Waarom | Wanneer |
-|---|---|---|
-| **Firebase-project** (gratis, geen creditcard; ? controleer de prijspagina) met een Android-app erin; het bestand `google-services.json` aan mij geven | geeft de app een FCM-token | vóór §4.2 |
-| **Service-account-sleutel** (JSON) voor FCM, als secret `FCM_SERVICE_ACCOUNT` in Supabase | de Edge Function mag er namens het project mee versturen | vóór §4.2 |
-| **Keystore** maken (met OpenSSL, geen Java nodig), bewaren in je wachtwoordmanager, en vier GitHub-secrets zetten (§5) | de APK moet bij elke release met dezelfde sleutel getekend zijn, anders weigert Android de update | vóór §4.1 |
-| **Redirect-URL** `habitbuilder://auth` toevoegen onder Supabase → Authentication → URL Configuration | nodig voor inloggen met Google in de app | vóór §4.4 |
-| **Toestel** om op te testen, en de "installeren uit onbekende bronnen"-toestemming | de app is geen Play Store-app | vanaf de spike |
-
-De exacte stappen (commando's, waar je moet klikken) staan in [ANDROID-SETUP.md](ANDROID-SETUP.md), in de stijl van [M7-SETUP.md](M7-SETUP.md).
-
-> **De keystore kwijtraken betekent:** gebruikers moeten de app verwijderen en opnieuw installeren. Wie niet is ingelogd, verliest daarbij zijn lokale gegevens. Maak een tweede kopie op een andere plek.
-
-**Besloten** (27 oktober 2026):
-
-1. **Pakketnaam** (`appId`): `io.github.remcovolkers.habitbuilder`. Niet meer te wijzigen na de eerste release.
-2. **Appnaam** onder het icoon: "Habit Builder".
-3. **Releasebeleid:** bij elke release een nieuwe APK (§4.3). Versmallen tot alleen native wijzigingen kan later.
-4. **Sideload:** geen Play Store; eenmalig "onbekende bronnen" toestaan en mogelijk een Play Protect-melding is acceptabel.
-
----
+Het Firebase-project, de service-account-sleutel, de keystore en de GitHub-secrets staan stap voor stap in [ANDROID-SETUP.md](ANDROID-SETUP.md). De pakketnaam (`appId`) is `io.github.remcovolkers.habitbuilder` en is na de eerste release niet meer te wijzigen.
 
 ## 3. Hoe het in elkaar zit
 
@@ -186,9 +167,7 @@ Lokaal en FCM: het ontwikkelproject heeft geen herinnering-functie (zie [DEV-OMG
 
 ## 7. Branches en oplevering
 
-Eén branch, `feature/android-app` vanaf `develop`, met een commit per onderdeel (§4.1 tot §4.4). Een vroege draft-PR naar `develop`, zodat CI en de diff meegroeien. Release zoals altijd: `develop` → `main`, daarna draait `android.yml` op `main`. De widget (§9) gaat op een eigen branch erachteraan, tenzij hij toch bij dezelfde oplevering hoort.
-
-Op productie (bij de release, niet eerder): migratie 0009, de nieuwe `send-reminders` plakken, `FCM_SERVICE_ACCOUNT` als secret.
+Gebouwd op `feature/android-app` en uitgerold als 1.3. Op productie hoort bij zo'n release eerst de migratie, dan de functie, dan de app ([RELEASES.md](RELEASES.md#13-de-android-app)).
 
 ---
 
@@ -215,30 +194,13 @@ Een spike levert dus: een werkende debug-APK op jouw telefoon die een testmeldin
 
 ---
 
-## 9. Widget (daarna, apart)
+## 9. Widget
 
-- Een widget is Android-code (Kotlin en XML) en kan de IndexedDB van de WebView niet lezen. De app schrijft een kleine samenvatting ("3 van 5 vandaag" plus de datum) naar Android-opslag; de widget leest die. Dat gaat via onze eigen plugin (dezelfde als voor de installatie), die de widget ook laat verversen.
-- Alleen-lezen widget die de app opent bij een tik: ca. 2–3 dagen. Vinken vanuit de widget is veel meer werk: schrijven en synchroniseren zonder open app.
-- Eigen branch `feature/android-widget`.
+Gebouwd (1.4, alleen weergave sinds 1.4.1): zie [ANDROID-WIDGET.md](ANDROID-WIDGET.md). Kosten: Firebase en GitHub Releases kosten niets (?, prijspagina's niet opnieuw gecontroleerd); een Play Store-account is **niet** nodig, want we leveren zelf uit.
 
 ---
 
-## 10. Wat het kost
-
-| Onderdeel | Schatting werk | Wacht op |
-|---|---|---|
-| 4.1 Schil en pipeline | 1,5–2 dagen | keystore en secrets |
-| 4.2 FCM | 2–3 dagen | Firebase, service-account, test op toestel |
-| 4.3 Bijwerken | 1–1,5 dag | twee releases om het te zien werken |
-| 4.4 Google-login | 1 dag | redirect-URL in Supabase |
-| **Totaal 4.1 tot 4.4** | ruim een week (kalendertijd; mijn eigen uren veel minder) | jouw testrondes |
-| 9. Widget (alleen-lezen) | 2–3 dagen | |
-
-Geld: Firebase en GitHub Releases kosten niets (?, prijspagina's niet opnieuw gecontroleerd); een Play Store-account is **niet** nodig, want we leveren zelf uit.
-
----
-
-## 11. Open vragen
+## 10. Open vragen
 
 1. De Play Store blijft een mogelijke latere stap (dan 12 testers gedurende 14 dagen, zie "Feature 4"); nu niet.
 2. Hoe lang blijven we Web Push voor Android-Chrome ondersteunen naast de app?

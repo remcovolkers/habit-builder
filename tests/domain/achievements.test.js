@@ -2,8 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ACHIEVEMENT_KEYS, COUNT_ACHIEVEMENTS, achievementProgress, countAllDoneDays, counterFullStreak, countRecoveries, evaluateAchievements, hasComeback,
-  hasPerfectWeek, hasResumedPause, hasReviewStreak, hasStrongReturn, longestWeekRun,
+  hasPerfectWeek, hasResumedPause, hasReviewStreak, hasStrongReturn, longestWeekRun, staleAchievements,
 } from '../../src/domain/achievements.js';
+import { milestoneRepetitions, timesPerWeek } from '../../src/domain/pace.js';
 import { buildHabitStats } from '../../src/domain/stats.js';
 import { addDays, eachDay } from '../../src/domain/dates.js';
 import { ALL_WEEKDAYS } from '../../src/domain/schedule.js';
@@ -86,6 +87,7 @@ test('evaluateAchievements: 76 dagen trouw geeft de eerste mijlpalen, nog niet 1
   assert.deepEqual(keys(got), [
     'first_checkin', 'days_7@A', 'days_21@A', 'days_42@A', 'days_66@A', 'perfect_week',
     'done_10', 'done_50', 'streak_7', 'streak_14', 'streak_30', 'perfect_weeks_4', // 75 keer, 75 dagen reeks, ruim vier perfecte weken
+    'habit_done_10@A', 'habit_done_25@A', 'habit_done_50@A', // 75 keer bij deze ene habit
   ]);
 });
 
@@ -342,4 +344,103 @@ test('voortgang ronde 2: dagdelen, vrienden en alles gedaan hebben een "x van y"
   assert.deepEqual(p.why_3, { value: 1, target: 3 });
   assert.deepEqual(p.all_done_10, { value: 0, target: 10 });
   assert.deepEqual(p.automaticity_4, { value: 0, target: 4 });
+});
+
+// --- ronde 3: een minimum aantal keren, reeksen in weken en maanden, herijken (docs/FEEDBACKRONDE-2026-11.md) ---
+
+const monthly = { type: 'times_per_period', period: 'month', count: 1 };
+const twiceAWeek = { type: 'times_per_period', period: 'week', count: 2 };
+const weekUnits = (...statuses) => statuses.map((status, i) => weekUnit(status, addDays('2026-09-07', i * 7)));
+const monthUnit = (status, start) => ({ kind: 'period', span: 'month', type: 'times_per_period', start, end: addDays(start, 29), days: 30, status });
+const daysKeys = (list) => keys(list).filter((key) => key.startsWith('days_'));
+
+test('milestoneRepetitions: minstens 3, en bij een vol ritme 80% van wat het ritme in die dagen geeft', () => {
+  assert.equal(milestoneRepetitions(7, 7), 6, 'dagelijks 7 dagen');
+  assert.equal(milestoneRepetitions(66, 7), 53, 'dagelijks 66 dagen');
+  assert.equal(milestoneRepetitions(7, 2), 3, '2× per week 7 dagen');
+  assert.equal(milestoneRepetitions(42, 2), 10, '2× per week 42 dagen');
+  assert.equal(milestoneRepetitions(21, timesPerWeek(monthly)), 3, '1× per maand 21 dagen: de ondergrens');
+  assert.equal(milestoneRepetitions(365, timesPerWeek(monthly)), 10, '1× per maand een jaar');
+  assert.equal(milestoneRepetitions(7, null), 3, 'onbekend ritme: de ondergrens');
+});
+
+test('days_N per habit vraagt ook keren: "1× per maand" haalt geen 21 dagen met één vinkje', () => {
+  const oneTick = buildHabitStats({ habit: habit(monthly, '2026-08-01'), checkIns: [{ date: '2026-08-10', status: 'done' }], today: TODAY });
+  assert.ok(oneTick.activeDays >= 66 && (oneTick.consistency.rate ?? 0) >= 0.5, 'zonder het minimum zou dit alles halen');
+  assert.deepEqual(daysKeys(evaluateAchievements({ today: TODAY, stats: [oneTick] })), []);
+  const three = buildHabitStats({ habit: habit(monthly, '2026-08-01'), checkIns: [{ date: '2026-08-10' }, { date: '2026-09-10' }, { date: '2026-10-05' }].map((c) => ({ ...c, status: 'done' })), today: TODAY });
+  assert.deepEqual(daysKeys(evaluateAchievements({ today: TODAY, stats: [three] })), ['days_7@h1', 'days_21@h1', 'days_42@h1', 'days_66@h1']);
+});
+
+test('days_N: dagelijks 6 keer in de eerste week, 5 is te weinig; 2× per week vraagt 3 keer', () => {
+  const daily7 = (done) => buildHabitStats({ habit: habit(daily, '2026-10-08'), checkIns: done.map((date) => ({ date, status: 'done' })), today: TODAY });
+  assert.deepEqual(daysKeys(evaluateAchievements({ today: TODAY, stats: [daily7(eachDay('2026-10-08', '2026-10-13'))] })), ['days_7@h1'], '6 keer');
+  assert.deepEqual(daysKeys(evaluateAchievements({ today: TODAY, stats: [daily7(eachDay('2026-10-08', '2026-10-12'))] })), [], '5 keer');
+  const twice = (days) => buildHabitStats({ habit: habit(twiceAWeek, '2026-09-28'), checkIns: days.map((date) => ({ date, status: 'done' })), today: TODAY });
+  assert.deepEqual(daysKeys(evaluateAchievements({ today: TODAY, stats: [twice(['2026-09-29', '2026-10-01', '2026-10-06'])] })), ['days_7@h1']);
+  assert.deepEqual(daysKeys(evaluateAchievements({ today: TODAY, stats: [twice(['2026-09-29', '2026-10-01'])] })), []);
+});
+
+test('reeksen in weken: een gemiste week breekt, overgeslagen en nog lopende weken niet; dagen en maanden tellen niet mee', () => {
+  const got = (units) => keys(evaluateAchievements({ today: TODAY, stats: [fake({ units })] })).filter((key) => key.startsWith('weekstreak_'));
+  assert.deepEqual(got(weekUnits('done', 'done')), ['weekstreak_2']);
+  assert.deepEqual(got(weekUnits('done', 'missed', 'done')), [], 'gemist breekt');
+  assert.deepEqual(got(weekUnits('done', 'skipped', 'done')), ['weekstreak_2'], 'overgeslagen onderbreekt niet');
+  assert.deepEqual(got(weekUnits('done', 'done', 'done', 'done')), ['weekstreak_2', 'weekstreak_4']);
+  assert.deepEqual(got([dayUnit('done', '2026-10-01'), dayUnit('done', '2026-10-02')]), [], 'dagen zijn geen weken');
+  assert.deepEqual(got(weekUnits('done', 'done', 'missed', 'done', 'done', 'done', 'done')), ['weekstreak_2', 'weekstreak_4'], 'de beste reeks telt, ook na een misser');
+});
+
+test('reeksen in maanden: 3, 6 en 12 achter elkaar, een gemiste maand breekt', () => {
+  const months = (...statuses) => statuses.map((status, i) => monthUnit(status, addDays('2025-10-01', i * 30)));
+  const got = (units) => keys(evaluateAchievements({ today: TODAY, stats: [fake({ units })] })).filter((key) => key.startsWith('monthstreak_'));
+  assert.deepEqual(got(months('done', 'done')), []);
+  assert.deepEqual(got(months('done', 'done', 'done')), ['monthstreak_3']);
+  assert.deepEqual(got(months('done', 'done', 'missed', 'done')), []);
+  assert.deepEqual(got(months(...Array(12).fill('done'))), ['monthstreak_3', 'monthstreak_6', 'monthstreak_12']);
+  const p = achievementProgress({ today: TODAY, stats: [fake({ units: months('done', 'done') })] });
+  assert.deepEqual(p.monthstreak_3, { value: 2, target: 3 });
+  assert.deepEqual(p.weekstreak_2, { value: 0, target: 2 });
+});
+
+test('staleAchievements: alleen mijlpalen van een bestaande habit die niet meer kloppen; de rest blijft', () => {
+  const oneTick = buildHabitStats({ habit: habit(monthly, '2026-08-01', { id: 'm' }), checkIns: [{ date: '2026-08-10', status: 'done' }], today: TODAY });
+  const solid = buildHabitStats({ habit: habit(daily, '2026-08-01', { id: 'd' }), checkIns: eachDay('2026-08-01', '2026-10-14').map((date) => ({ date, status: 'done' })), today: TODAY });
+  const unlocked = [
+    { key: 'days_21', habitId: 'm' }, // klopt niet meer
+    { key: 'days_66', habitId: 'm' },
+    { key: 'days_21', habitId: 'd' }, // klopt nog
+    { key: 'days_21', habitId: 'weg' }, // een verwijderde habit: blijft staan
+    { key: 'first_checkin', habitId: null }, // geen mijlpaal
+    { key: 'first_friend', habitId: null }, // hangt van buiten af: nooit intrekken
+  ];
+  assert.deepEqual(staleAchievements({ today: TODAY, stats: [oneTick, solid], unlocked }).map((u) => `${u.key}@${u.habitId}`), ['days_21@m', 'days_66@m']);
+});
+
+// --- prestaties per habit en uitbouwen ---
+
+const entry = (choice, date = '2026-10-01') => ({ date, choice, from: 'a', to: 'b' });
+const growingHabit = (id, log = [], completedOn = null) => ({ id, status: 'active', goal: { kind: 'frequency', ideal: {}, stepStart: '2026-09-01', credit: 0, snoozedAt: null, completedOn, log } });
+const growKeys = (habits) => keys(evaluateAchievements({ today: TODAY, stats: [], habits })).filter((key) => /^(build|built)/.test(key));
+
+test('habit_done_N: keren gedaan bij één habit, per habit apart', () => {
+  const got = keys(evaluateAchievements({ today: TODAY, stats: [fake({ habitId: 'A', totalDone: 26 }), fake({ habitId: 'B', totalDone: 9 })] })).filter((key) => key.startsWith('habit_done'));
+  assert.deepEqual(got, ['habit_done_10@A', 'habit_done_25@A']);
+  assert.deepEqual(keys(evaluateAchievements({ today: TODAY, stats: [fake({ habitId: 'A', totalDone: 100 })] })).filter((key) => key.startsWith('habit_done')), ['habit_done_10@A', 'habit_done_25@A', 'habit_done_50@A', 'habit_done_100@A']);
+});
+
+test('uitbouwen: Eerste trede en Drie treden tellen keren omhoog bij alle habits samen; omlaag en blijven tellen niet', () => {
+  assert.deepEqual(growKeys([growingHabit('A', [entry('stay'), entry('down')])]), []);
+  assert.deepEqual(growKeys([growingHabit('A', [entry('up')])]), ['build_first_step']);
+  assert.deepEqual(growKeys([growingHabit('A', [entry('up'), entry('up')]), growingHabit('B', [entry('up')])]), ['build_first_step', 'build_steps_3']);
+  const p = achievementProgress({ today: TODAY, stats: [], habits: [growingHabit('A', [entry('up'), entry('up')])] });
+  assert.deepEqual([p.build_first_step, p.build_steps_3], [{ value: 1, target: 1 }, { value: 2, target: 3 }]);
+});
+
+test('uitbouwen: Uitgebouwd per habit, en "Terug is ook vooruit" na een stap terug en weer verder', () => {
+  assert.deepEqual(keys(evaluateAchievements({ today: TODAY, stats: [], habits: [growingHabit('A', [], '2026-10-10'), growingHabit('B')] })).filter((key) => key.startsWith('built')), ['built_goal@A']);
+  assert.deepEqual(growKeys([growingHabit('A', [entry('down'), entry('stay')])]), [], 'terug en nog niet weer verder');
+  assert.deepEqual(growKeys([growingHabit('A', [entry('up'), entry('down'), entry('up')])]), ['build_first_step', 'build_back']);
+  assert.deepEqual(growKeys([growingHabit('A', [entry('down')], '2026-10-10')]), ['built_goal@A', 'build_back'], 'terug en daarna uitgebouwd telt ook');
+  assert.deepEqual(growKeys([growingHabit('A', [entry('up'), entry('up')])]).includes('build_back'), false, 'alleen omhoog is geen stap terug');
 });

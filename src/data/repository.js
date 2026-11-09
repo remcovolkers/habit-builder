@@ -7,7 +7,7 @@
 //   listCheckIns(habitId?) / getCheckIn(habitId, date) / setCheckIn({habitId,date,status,note?,value?,parts?}) / clearCheckIn(habitId, date)
 //   listPauses(habitId?) / addPause({habitId,from,to?}) / updatePause(id, patch) / removePause(id)
 //   listDayPlans() / setDayPlan({habitId,date}) / clearDayPlan(habitId, date)
-//   listAchievements() / unlockAchievement({key, habitId?, date})
+//   listAchievements() / unlockAchievement({key, habitId?, date}) / revokeAchievement({key, habitId?})
 //   listRatings(habitId?) / setRating({habitId, weekStart, score})   (automatisme 1–5, per week)
 //   listReviews() / getReview(weekStart) / saveReview({weekStart, wentWell, wentBad})
 //   getMonthReview(monthStart) / saveMonthReview({monthStart, adjust}) / setMonthTaskApplied({monthStart, date})
@@ -189,6 +189,11 @@ export function createRepository({
       const existing = await store.get('achievements', id);
       if (existing && live(existing)) return existing; // eenmaal ontgrendeld blijft zo
       return upsert('achievements', { id, key, habitId, date });
+    },
+
+    /** Een ontgrendeling intrekken: alleen voor het herijken na een strengere regel (domain/achievements.js, staleAchievements). Zacht verwijderd, dus de sync neemt het mee. */
+    async revokeAchievement({ key, habitId = null }) {
+      return softDelete('achievements', `${key}|${habitId ?? ''}`);
     },
 
     // --- automatisme-cijfer per week ------------------------------------------------------------

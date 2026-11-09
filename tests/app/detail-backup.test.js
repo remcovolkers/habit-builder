@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { buildHabitDetail, phaseBar, streakSpan } from '../../src/app/habit-detail.js';
 import { pickTip } from '../../src/app/tips.js';
 import { buildExport, parseImport } from '../../src/app/backup.js';
-import { checkAchievements } from '../../src/app/achievement-runner.js';
+import { checkAchievements, ensureAchievementRules, recalibrateAchievements } from '../../src/app/achievement-runner.js';
 import {
   completeMonthTask, graduateHabit, rateAutomaticity, RuleError, saveMonthlyReview, saveWeeklyReview, setMaintenance,
 } from '../../src/app/actions.js';
@@ -12,7 +12,7 @@ import { addDays, eachDay, isoWeek, localNow } from '../../src/domain/dates.js';
 import {
   monthReviewClosesOn, monthReviewOpensOn, monthReviewState, monthTasks, reviewNudges, weekReviewClosesOn, weekReviewOpensOn, weekReviewState, weeksOfMonth,
 } from '../../src/domain/reviews.js';
-import { buildMonthReviewCard, buildWeekReviewCard } from '../../src/app/reviews.js';
+import { buildMonthReviewCard, buildWeekReviewCard, firstUseDate } from '../../src/app/reviews.js';
 import { TIPS } from '../../src/content/tips.js';
 import { ACHIEVEMENT_INFO } from '../../src/content/achievements.js';
 import { ACHIEVEMENT_KEYS } from '../../src/domain/achievements.js';
@@ -297,6 +297,61 @@ test('review-kaarten: de fase en de vensters per periode', () => {
   assert.deepEqual([month('2026-10-10', '2026-10-24T10:00').state, month('2026-10-10', '2026-10-25T10:00').state, month('2026-10-10', '2026-11-02T12:00').state], ['before', 'open', 'closed']);
   assert.equal(month('2026-10-10', '2026-10-25T10:00').weeks.length, 1);
   assert.equal(month('2026-12-10', '2026-10-25T10:00').isFuture, true);
+});
+
+test('een review staat pas klaar na drie dagen gebruik (de eerste dag telt mee)', () => {
+  const SATURDAY = '2026-10-17T10:00';
+  // wie zondag begon, heeft zondag + maandag = 2 dagen: de review van de week ervoor staat maandagochtend nog niet klaar
+  assert.deepEqual(reviewNudges({ reviews: [], now: '2026-10-19T10:00', firstUse: '2026-10-18' }).map((n) => n.kind), []);
+  assert.deepEqual(reviewNudges({ reviews: [], now: '2026-10-19T10:00', firstUse: '2026-10-17' }).map((n) => n.kind), ['week'], 'zaterdag, zondag, maandag = 3 dagen');
+  assert.deepEqual(reviewNudges({ reviews: [], now: SATURDAY, firstUse: '2026-10-15' }).map((n) => n.kind), ['week'], 'donderdag, vrijdag, zaterdag = 3 dagen');
+  assert.deepEqual(reviewNudges({ reviews: [], now: SATURDAY, firstUse: '2026-10-16' }), [], 'vrijdag, zaterdag = 2 dagen');
+  assert.deepEqual(reviewNudges({ reviews: [], now: SATURDAY, firstUse: '2026-10-17' }), [], 'vandaag begonnen');
+  assert.deepEqual(reviewNudges({ reviews: [], now: '2026-10-25T10:00', firstUse: '2026-10-24' }), [], 'twee dagen: ook de maandreview wacht');
+  assert.equal(reviewNudges({ reviews: [], now: SATURDAY, firstUse: null }).length, 1, 'onbekend: niets houdt tegen');
+
+  const habit = (createdAt) => ({ id: 'h', createdAt });
+  assert.equal(firstUseDate({ habits: [], checkIns: [] }), null);
+  assert.equal(firstUseDate({ habits: [{ id: 'x' }], checkIns: [] }), null, 'zonder aanmaakdatum is het onbekend');
+  assert.equal(firstUseDate({ habits: [habit('2026-10-16T08:00:00.000Z')], checkIns: [{ createdAt: '2026-10-14T08:00:00.000Z' }], settings: { timezone: 'Europe/Amsterdam' } }), '2026-10-14', 'de vroegste, ook van een check-in');
+  assert.equal(firstUseDate({ habits: [habit('2026-10-16T23:30:00.000Z')], settings: { timezone: 'Europe/Amsterdam' } }), '2026-10-17', 'in lokale tijd: na middernacht in Nederland is het al de volgende dag');
+
+  // de kaart op Voortgang: open, maar te vroeg
+  const fresh = { reviews: [], habits: [habit('2026-10-17T09:00:00.000Z')], checkIns: [], settings: { timezone: 'Europe/Amsterdam' } };
+  assert.deepEqual([buildWeekReviewCard({ snapshot: fresh, now: '2026-10-17T10:00', date: '2026-10-17' }).state, buildWeekReviewCard({ snapshot: fresh, now: '2026-10-17T10:00', date: '2026-10-17' }).tooEarly], ['open', true]);
+  assert.equal(buildWeekReviewCard({ snapshot: fresh, now: '2026-10-18T10:00', date: '2026-10-18' }).tooEarly, true, 'dag 2');
+  assert.equal(buildWeekReviewCard({ snapshot: fresh, now: '2026-10-19T10:00', date: '2026-10-19' }).tooEarly, false, 'dag 3');
+  assert.equal(buildWeekReviewCard({ snapshot: fresh, now: '2026-10-14T10:00', date: '2026-10-14' }).tooEarly, false, 'nog niet open is niet "te vroeg"');
+  assert.equal(buildMonthReviewCard({ snapshot: { ...fresh, habits: [habit('2026-10-25T09:00:00.000Z')] }, now: '2026-10-25T10:00', date: '2026-10-25' }).tooEarly, true);
+});
+
+test('herijken: een mijlpaal die met de nieuwe regel niet klopt wordt ingetrokken, de rest houdt zijn datum, en het gebeurt maar één keer', async () => {
+  const { repo } = testRepo();
+  const monthly = { type: 'times_per_period', period: 'month', count: 1 };
+  const slow = await repo.saveHabit(validHabit({ name: 'Tuin', startDate: '2026-08-01', schedules: [{ effectiveFrom: '2026-08-01', schedule: monthly }] }));
+  const solid = await repo.saveHabit(validHabit({ name: 'Water', startDate: '2026-08-01', schedules: [{ effectiveFrom: '2026-08-01', schedule: daily }] }));
+  await repo.setCheckIn({ habitId: slow.id, date: '2026-08-10', status: 'done' }); // één vinkje in twee maanden
+  for (const c of doneRange(solid.id, '2026-08-01', '2026-10-14')) await repo.setCheckIn(c);
+  // zoals het vóór de strengere regel ging: alles ontgrendeld, met een eigen datum
+  await repo.unlockAchievement({ key: 'days_21', habitId: slow.id, date: '2026-09-01' });
+  await repo.unlockAchievement({ key: 'days_21', habitId: solid.id, date: '2026-08-22' });
+  await repo.unlockAchievement({ key: 'first_checkin', date: '2026-08-10' });
+
+  assert.equal((await repo.getSettings()).achievementRules, undefined, 'nog nooit herijkt');
+  const revoked = await ensureAchievementRules(repo, TODAY);
+  assert.deepEqual(revoked.map((a) => `${a.key}@${a.habitId === slow.id ? 'slow' : a.habitId}`), ['days_21@slow']);
+  const left = await repo.listAchievements();
+  assert.deepEqual(left.map((a) => `${a.key}|${a.date}`).sort(), ['days_21|2026-08-22', 'first_checkin|2026-08-10'], 'wat klopt houdt zijn oorspronkelijke datum');
+  assert.equal((await repo.getSettings()).achievementRules, 2);
+
+  assert.deepEqual(await ensureAchievementRules(repo, TODAY), [], 'de tweede keer niets meer');
+  await checkAchievements(repo, TODAY); // en de gewone controle geeft de ingetrokken mijlpaal niet opnieuw
+  assert.equal((await repo.listAchievements()).some((a) => a.key === 'days_21' && a.habitId === slow.id), false);
+
+  // de knop in Instellingen: dezelfde toetsing, zonder de versie
+  await repo.unlockAchievement({ key: 'days_7', habitId: slow.id, date: '2026-09-01' });
+  assert.deepEqual((await recalibrateAchievements(repo, TODAY)).map((a) => a.key), ['days_7']);
+  assert.deepEqual(await recalibrateAchievements(repo, TODAY), [], 'daarna klopt alles');
 });
 
 test('weeksOfMonth: een week hoort bij de maand van zijn donderdag, dus bij precies één maand', () => {

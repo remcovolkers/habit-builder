@@ -2,13 +2,14 @@
 // `now` is de lokale muurtijd, 'YYYY-MM-DDTHH:MM' (localNow); een review staat open van vrijdag 00:00 tot maandag 12:00 (week) of van de 25e
 // tot de 2e om 12:00 (maand), zie domain/reviews.js. `today` is de dag van de app (met de dagwissel); die bepaalt welke periode "nu" is.
 // Tussen middernacht en de dagwissel is `today` dus nog gisteren, terwijl `now` al de nieuwe dag is: de review van de vorige week staat dan nog open.
-import { addMonths, endOfMonth, endOfWeek, startOfMonth, startOfWeek } from '../domain/dates.js';
+import { addMonths, endOfMonth, endOfWeek, localNow, startOfMonth, startOfWeek } from '../domain/dates.js';
 import { averageScore, reflectionsBetween } from '../domain/reflections.js';
 import {
   monthReviewClosesOn,
   monthReviewFor,
   monthReviewOpensOn,
   monthReviewState,
+  usedLongEnough,
   weekReviewClosesOn,
   weekReviewFor,
   weekReviewHasContent,
@@ -16,6 +17,17 @@ import {
   weekReviewState,
   weeksOfMonth,
 } from '../domain/reviews.js';
+
+/**
+ * De eerste dag waarop de gebruiker iets heeft vastgelegd: de vroegste aanmaakdatum van een habit of check-in, als lokale dag.
+ * null als dat niet te zeggen is (geen gegevens, of records zonder aanmaakdatum): dan houdt de wachttijd van een review niets tegen.
+ */
+export function firstUseDate(snapshot) {
+  const stamps = [...(snapshot.habits ?? []), ...(snapshot.checkIns ?? [])].map((record) => record.createdAt).filter((stamp) => typeof stamp === 'string' && stamp !== '').sort();
+  const first = stamps.length > 0 ? new Date(stamps[0]) : null;
+  if (first === null || Number.isNaN(first.getTime())) return null;
+  return localNow(first, snapshot.settings?.timezone).slice(0, 10);
+}
 
 /** De weekreview van de week waarin `date` valt: wat er is ingevuld (of null) en in welke fase hij is ('before' | 'open' | 'closed'). */
 export function buildWeekReviewCard({ snapshot, now, date, today = now.slice(0, 10) }) {
@@ -27,6 +39,7 @@ export function buildWeekReviewCard({ snapshot, now, date, today = now.slice(0, 
     start,
     end,
     state: weekReviewState(start, now),
+    tooEarly: weekReviewState(start, now) === 'open' && !usedLongEnough(firstUseDate(snapshot), today),
     isCurrent: start <= today && today <= end,
     review: weekReviewHasContent(record) ? record : null,
     opensOn: weekReviewOpensOn(start),
@@ -59,6 +72,7 @@ export function buildMonthReviewCard({ snapshot, now, date, today = now.slice(0,
     start,
     end,
     state: monthReviewState(start, now),
+    tooEarly: monthReviewState(start, now) === 'open' && !usedLongEnough(firstUseDate(snapshot), today),
     isCurrent: start <= today && today <= end,
     isFuture: start > today,
     weeks: weeks.filter((week) => week.review),

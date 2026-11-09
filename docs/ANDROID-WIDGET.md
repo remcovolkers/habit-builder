@@ -1,6 +1,6 @@
 # Widget voor Vandaag (Android)
 
-Status: **in aanbouw** op `feature/android-widget`. Opzet, keuzes en afspraken tussen de app en de widget. Hoort bij [ANDROID-APP.md](ANDROID-APP.md) §9.
+Status: **gebouwd** (1.4, alleen weergave sinds 1.4.1; zie [RELEASES.md](RELEASES.md#14-de-widget-voor-vandaag)). Opzet, keuzes en afspraken tussen de app en de widget. Hoort bij [ANDROID-APP.md](ANDROID-APP.md) §9.
 
 ## Wat het doet
 
