@@ -1,6 +1,6 @@
 # Agenda: afspraken uit je agenda op Vandaag
 
-Status: **gebouwd, nog niet uitgerold** · 2026-11-02 · bouwt voort op [LOSSE-AFSPRAKEN.md](LOSSE-AFSPRAKEN.md) (Vandaag, dagdelen) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md) · privacy: [PRIVACY.md](PRIVACY.md)
+Status: **gebouwd en uitgerold** (1.5.0 en 1.5.1, zie [RELEASES.md](RELEASES.md#150-je-agenda-op-vandaag-en-een-dag-overslaan)) · opgesteld 2026-11-02 · bouwt voort op [LOSSE-AFSPRAKEN.md](LOSSE-AFSPRAKEN.md) (Vandaag, dagdelen) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md) · privacy: [PRIVACY.md](PRIVACY.md)
 
 ## Het probleem
 

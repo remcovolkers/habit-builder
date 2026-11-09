@@ -1,6 +1,6 @@
 # Habit Builder – Plan & Requirements
 
-Status: **versie 1.4.1** (de widget alleen nog weergave, [RELEASE-v1.4.1.md](RELEASE-v1.4.1.md); daarvoor 1.4: de widget voor Vandaag, [RELEASE-v1.4.md](RELEASE-v1.4.md); daarvoor 1.3: de Android-app, [RELEASE-v1.3.md](RELEASE-v1.3.md); daarvoor `v1.2`: uitnodigen, prestaties, onboarding en meerdere dagdelen; daarvoor `v1.1`: vrienden en ranglijst, en `v1.0`) · Werkwijze: [WERKWIJZE.md](WERKWIJZE.md). Vrienden en ranglijst: [SOCIAAL.md](SOCIAAL.md) (heft D5 en "sociale functies buiten scope" op voor dat onderdeel)
+Status: **versie 1.5.1, plus onderhoud in `develop`** (wat er per versie in zat: [RELEASES.md](RELEASES.md); de lijst met rijen hieronder houdt de mijlpalen bij) · Werkwijze: [WERKWIJZE.md](WERKWIJZE.md). Vrienden en ranglijst: [SOCIAAL.md](SOCIAAL.md) (heft D5 en "sociale functies buiten scope" op voor dat onderdeel)
 
 ## 1. Doel en scope
 
@@ -36,9 +36,14 @@ Een mobiel-eerst PWA waarmee je gewoontes bouwt: terugkerende habits met een cad
 | M5 PWA: manifest, icoon, offline start, updatemelding, installatieknop | klaar |
 | M7 ochtendherinnering (Web Push): server ingericht, geplande melding en testmelding komen aan op een echte telefoon (Android); batterij-uitleg en ontwikkelaarsopties voor het testen | klaar |
 | FAB, lege toestanden, weekstrook, week-/maandoverzicht, notities, herstelmoment, volgorde van habits, privacylink in de app | klaar |
-| Vrienden en ranglijst (S1–S5, [SOCIAAL.md](SOCIAAL.md)): punten, server, data-laag, schermen, privacyverklaring en voorwaarden | klaar, versie 1.1 ([RELEASE-v1.1.md](RELEASE-v1.1.md)) |
-| "Ga ik niet doen": een taak opgeven met een reden en een optioneel plan, telt als gemist ([WONT-DO.md](WONT-DO.md)) | gebouwd op `feature/losse-afspraken`, geen servermigratie nodig |
-| Losse afspraken: een eenmalige herinnering met een dag en een dagdeel op Vandaag, los van de habits ([LOSSE-AFSPRAKEN.md](LOSSE-AFSPRAKEN.md)) | gebouwd op `feature/losse-afspraken`, nog niet uitgerold (eerst migratie 0008 op productie) |
+| Vrienden en ranglijst (S1–S5, [SOCIAAL.md](SOCIAAL.md)): punten, server, data-laag, schermen, privacyverklaring en voorwaarden | klaar, versie 1.1 ([release 1.1](RELEASES.md#11-vrienden-en-ranglijst)) |
+| "Ga ik niet doen": een taak opgeven met een reden en een optioneel plan, telt als gemist ([WONT-DO.md](WONT-DO.md)) | klaar en live, geen servermigratie nodig |
+| Losse afspraken: een eenmalige herinnering met een dag en een dagdeel op Vandaag, los van de habits ([LOSSE-AFSPRAKEN.md](LOSSE-AFSPRAKEN.md)) | klaar en live (vraagt migratie 0008 op productie) |
+| Android-app: schil, ochtendherinnering via FCM, updatemelding, inloggen met Google ([ANDROID-APP.md](ANDROID-APP.md)) | klaar, 1.3 ([RELEASES.md](RELEASES.md#13-de-android-app)) |
+| Widget voor Vandaag ([ANDROID-WIDGET.md](ANDROID-WIDGET.md)) | klaar, 1.4 en 1.4.1 |
+| Agenda op Vandaag ([AGENDA.md](AGENDA.md)) en een dag overslaan ([DAG-OVERSLAAN.md](DAG-OVERSLAAN.md)) | klaar, 1.5.0 en 1.5.1 |
+| Een taak naar een ander dagdeel slepen en "Hoe ging je dag?" ([DAGDEEL-EN-DAGREFLECTIE.md](DAGDEEL-EN-DAGREFLECTIE.md)) | klaar en live (vraagt migratie 0011 op productie) |
+| Uitbouwen, prestaties per habit, reeksen in weken en maanden, herijken, review pas na drie dagen ([FEEDBACKRONDE-2026-11.md](FEEDBACKRONDE-2026-11.md)) | gebouwd in `develop`, geen servermigratie, geen versieverhoging |
 
 ## Dekking van de eisen (stand versie 1)
 
