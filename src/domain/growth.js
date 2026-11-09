@@ -132,6 +132,19 @@ export function growthView(habit, today) {
   return { kind: goal.kind, current, ideal, progress, stepNumber, atIdeal, completed: goal.completedOn != null };
 }
 
+// --- wat je hebt gedaan (voor de prestaties) -------------------------------------------------------
+
+/** Hoe vaak ging je met deze habit een trede hoger? */
+export const countStepsUp = (goal) => (goal?.log ?? []).filter((entry) => entry.choice === 'up').length;
+
+/** Ging je een keer terug en pakte je het daarna weer op: later weer een trede hoger, of het uitbouwen afgerond? */
+export function hasSteppedBack(goal) {
+  const log = goal?.log ?? [];
+  const down = log.findIndex((entry) => entry.choice === 'down');
+  if (down < 0) return false;
+  return log.slice(down + 1).some((entry) => entry.choice === 'up') || goal.completedOn != null;
+}
+
 // --- keren op deze trede en de nudge ---------------------------------------------------------------
 
 /** Hoeveel keren moet je op een trede gedaan hebben voor de nudge? Zie NUDGE_*: de helft van wat ingeburgerd bij dit ritme vraagt, met een ondergrens. */

@@ -9,6 +9,8 @@ Hoort bij [ITERATIE-1.2.md](ITERATIE-1.2.md) §6. **Eén iconenset voor alle the
 
 **Aanvulling 2026-11-09:** zeven iconen voor de reeksen in weken en maanden (`ach-weekstreak-*`, `ach-monthstreak-*`), met de hand getekend in dezelfde stijl (bron: `docs/icons/icons-ronde3.html`). Nu 59 ui-sleutels en 192 in de sprite.
 
+**Aanvulling 2026-11-09 (2):** acht iconen voor de prestaties per habit (`ach-habit-done-*`) en voor uitbouwen (`ach-build-*`, `ach-built-goal`), met de hand getekend (bron: `docs/icons/icons-ronde3b.html`). Nu 67 ui-sleutels en 200 in de sprite.
+
 **Doorgestreept (de "anti"-stand):** elk habit-icoon kan met een streep erdoor ("geen alcohol", "ontbijt overslaan"). Dat is geen apart icoon maar een stand: in `habit.icon` staat de emoji met U+20E0 (het verbodsteken) erachter, en de app tekent zelf één diagonale streep in de accentkleur over het icoon. `no-sugar`, `no-smoking` en `screen-off` zijn **altijd doorgestreept**: hun tekening in de set heeft zelf **geen streep meer** (die is op 2026-10-19 uit `docs/icons/icons-complete.html` gehaald), de app tekent hem met dezelfde logica als bij elk ander icoon (`STRUCK_ICON_KEYS` in `src/app/icons.js`). Bestaande habits met zo'n icoon blijven dus ongewijzigd doorgestreept, ook zonder teken in `habit.icon`. Dit vraagt niets aan Moda; teken bij een nieuw icoon nooit zelf een streep.
 
 **109 van 109 iconen zijn gemaakt en staan in de app** (`icons/set.svg`, gebouwd met `npm run icons:build` uit `docs/icons/icons-complete.html`). Ze zijn gemaakt met **één prompt**, de **"Alles in één keer"-prompt** onderaan dit document. Die gaf de goede uitvoer in één keer: **gebruik hem als basis voor elke nieuwe aanvraag** (bijvoorbeeld voor een nieuwe prestatie of een extra habit-icoon), met alleen de nieuwe sleutels in de lijst. De vier batches hieronder zijn de terugvalroute als een set te groot wordt.
@@ -182,7 +184,7 @@ Dat kan ook: één prompt voor alle 97 iconen (zie "Alles in één keer" onderaa
 | `trophy` | beker | 🏆 | a trophy cup | klaar (met de hand getekend) |
 | `home` | thuis | 🏠 | a house | klaar (met de hand getekend) |
 
-## De 59 sleutels (prestaties, tips en tekens)
+## De 67 sleutels (prestaties, tips en tekens)
 Een prestatie `first_checkin` heet in de set `ach-first-checkin`, een tip `never_miss_twice` heet `tip-never-miss-twice`. De prestaties onder "gepland" hebben nog geen regel in de app ([ITERATIE-1.2.md](ITERATIE-1.2.md) §5); hun icoon wordt alvast gemaakt zodat de set in één keer af is.
 
 | Sleutel | Nederlands | Wat tekenen | Stand |
@@ -216,6 +218,14 @@ Een prestatie `first_checkin` heet in de set `ach-first-checkin`, een tip `never
 | `ach-monthstreak-3` | 3 maanden op rij | the calendar with three accent dots | klaar (met de hand getekend) |
 | `ach-monthstreak-6` | 6 maanden op rij | the calendar with two rows of three dots | klaar (met de hand getekend) |
 | `ach-monthstreak-12` | 12 maanden op rij | the calendar with a grid of twelve dots | klaar (met de hand getekend) |
+| `ach-habit-done-10` | 10 keer bij één habit | one tile (a habit) with a check | klaar (met de hand getekend) |
+| `ach-habit-done-25` | 25 keer bij één habit | two tiles, a check on the front one | klaar (met de hand getekend) |
+| `ach-habit-done-50` | 50 keer bij één habit | three tiles behind each other, a check on the front one | klaar (met de hand getekend) |
+| `ach-habit-done-100` | 100 keer bij één habit | a stack of tiles with a spark | klaar (met de hand getekend) |
+| `ach-build-first-step` | Eerste trede | one stair step with an arrow up | klaar (met de hand getekend) |
+| `ach-build-steps-3` | Drie treden | three stair steps up with a spark | klaar (met de hand getekend) |
+| `ach-built-goal` | Uitgebouwd | stair steps with a flag on top | klaar (met de hand getekend) |
+| `ach-build-back` | Terug is ook vooruit | a circular arrow: back and onward | klaar (met de hand getekend) |
 | `ach-perfect-weeks-4` | 4 perfecte weken | four small stars in a row under a crown | klaar |
 | `ach-recover-5` | Nooit twee keer missen | a shield with a bounce-back arrow | klaar |
 | `ach-strong-return` | Sterk terug | a line dipping then rising steeply | klaar |

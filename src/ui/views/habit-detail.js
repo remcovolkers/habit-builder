@@ -18,6 +18,7 @@ import {
 import { automaticityChart, automaticityMeter, automaticityPicker, cueLine, guideLink, noteRated } from '../components/automaticity.js';
 import { trialCard } from '../components/trial.js';
 import { growthCard, growthStartCard } from '../components/growth-card.js';
+import { habitAchievementsCard } from '../components/achievement.js';
 import { currentSchedule } from './habits.js';
 import { habitDayparts } from '../../domain/dayparts.js';
 
@@ -244,8 +245,9 @@ function renderDetail(detail) {
 
       h('section', { class: 'tiles' },
         tile(nl.detail.tiles.strength, String(pct(stats.strength)), '%', meter(pct(stats.strength))),
-        tile(nl.detail.tiles.streak, String(stats.streaks.current), pluralUnit(detail.streakSpan, stats.streaks.current),
-          h('span', { class: 'tile__hint' }, uiIcon('ui-streak', 'theme-icon--inline'), ' ', nl.detail.streakBest(stats.streaks.best, pluralUnit(detail.streakSpan, stats.streaks.best)))),
+        tile(nl.detail.tiles.streak, String(stats.displayStreaks.current), pluralUnit(detail.streakSpan, stats.displayStreaks.current),
+          h('span', { class: 'tile__hint' }, uiIcon('ui-streak', 'theme-icon--inline'), ' ', nl.detail.streakBest(stats.displayStreaks.best, pluralUnit(detail.streakSpan, stats.displayStreaks.best)),
+            detail.streakSpan === 'day' ? h('span', { class: 'xs muted' }, ` · ${nl.detail.streakGrace}`) : null)),
         tile(nl.detail.tiles.consistency, stats.consistency.rate === null ? nl.detail.noData : String(pct(stats.consistency.rate)), stats.consistency.rate === null ? '' : '%',
           h('span', { class: 'tile__hint' }, nl.detail.consistencyHint)),
         tile(nl.detail.tiles.total, String(stats.totalDone), '×',
@@ -255,6 +257,7 @@ function renderDetail(detail) {
      h('div', { class: 'detail__secondary page__pane' },
       detail.growth ? growthCard(detail) : growthStartCard(detail),
       detail.growth?.growing ? null : graduationCard(detail), // een habit die uitbouwt wordt pas ingeburgerd als het uitbouwen af is
+      habitAchievementsCard(detail),
       automaticityCard(detail),
       trialCard(detail),
       notesCard(detail),

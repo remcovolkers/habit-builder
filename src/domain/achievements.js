@@ -13,6 +13,8 @@ import {
   FIVE_ACTIVE_ACHIEVEMENT,
   FRIENDS_ACHIEVEMENT,
   GRADUATED_MILESTONES,
+  HABIT_DONE_MILESTONES,
+  BUILD_STEPS_ACHIEVEMENT,
   MILESTONE_DAYS,
   MILESTONE_MIN_CONSISTENCY,
   MINIMAL_ACHIEVEMENT,
@@ -27,6 +29,7 @@ import {
   WHY_HABITS_ACHIEVEMENT,
 } from './constants.js';
 import { milestoneRepetitions } from './pace.js';
+import { countStepsUp, hasSteppedBack } from './growth.js';
 import { isWeekReview } from './reviews.js';
 import { computeStreaks } from './streaks.js';
 import { habitDayparts } from './dayparts.js';
@@ -41,6 +44,8 @@ export const COUNT_ACHIEVEMENTS = Object.freeze([
   ...STREAK_MILESTONES.map((n) => ({ key: `streak_${n}`, measure: 'bestDayStreak', target: n })),
   ...WEEK_STREAK_MILESTONES.map((n) => ({ key: `weekstreak_${n}`, measure: 'bestWeekStreak', target: n })),
   ...MONTH_STREAK_MILESTONES.map((n) => ({ key: `monthstreak_${n}`, measure: 'bestMonthStreak', target: n })),
+  { key: 'build_first_step', measure: 'buildSteps', target: 1 },
+  { key: 'build_steps_3', measure: 'buildSteps', target: BUILD_STEPS_ACHIEVEMENT },
   { key: 'perfect_weeks_4', measure: 'perfectWeekRun', target: PERFECT_WEEKS_RUN },
   { key: 'recover_5', measure: 'recoveries', target: RECOVERIES_ACHIEVEMENT },
   { key: 'minimal_5', measure: 'minimalUsed', target: MINIMAL_ACHIEVEMENT },
@@ -86,6 +91,12 @@ export const ACHIEVEMENT_KEYS = Object.freeze([
   // ronde 3: reeksen in weken en maanden
   ...WEEK_STREAK_MILESTONES.map((n) => `weekstreak_${n}`),
   ...MONTH_STREAK_MILESTONES.map((n) => `monthstreak_${n}`),
+  // ronde 3: per habit en uitbouwen
+  ...HABIT_DONE_MILESTONES.map((n) => `habit_done_${n}`),
+  'build_first_step',
+  'build_steps_3',
+  'built_goal',
+  'build_back',
 ]);
 
 /** Heeft de habit een gemiste periode van ≥ 7 dagen gehad waarna hij weer is opgepakt? */
@@ -236,6 +247,7 @@ export function achievementMeasures({ today, stats, habits = [], checkIns = [], 
     minimalUsed: checkIns.filter((c) => c.status === 'minimal' && known.has(c.habitId)).length,
     counterStreak: Math.max(0, ...stats.filter((s) => counterIds.has(s.habitId)).map((s) => counterFullStreak(s.units ?? []))),
     graduatedCount: stats.filter((s) => s.graduated).length,
+    buildSteps: habits.reduce((sum, habit) => sum + countStepsUp(habit.goal), 0),
   };
 }
 
@@ -297,6 +309,9 @@ export function evaluateAchievements({ today, stats, reviews: allReviews = [], u
   const measures = achievementMeasures({ today, stats, habits, checkIns, ratings, friends });
   for (const { key, measure, target } of COUNT_ACHIEVEMENTS) if (measures[measure] >= target) grant(key);
   for (const s of stats) if (hasStrongReturn(s.units ?? [])) grant('strong_return', s.habitId);
+  for (const s of stats) for (const n of HABIT_DONE_MILESTONES) if ((s.totalDone ?? 0) >= n) grant(`habit_done_${n}`, s.habitId);
+  for (const habit of habits) if (habit.goal?.completedOn) grant('built_goal', habit.id);
+  if (habits.some((habit) => hasSteppedBack(habit.goal))) grant('build_back');
   if (habits.some((habit) => String(habit.minimalVersion ?? '').trim() !== '')) grant('minimal_first');
   if (hasResumedPause(pauses, checkIns, today)) grant('pause_resume');
 

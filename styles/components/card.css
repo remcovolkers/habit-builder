@@ -936,3 +936,9 @@ body.is-dragging {
   padding: 0;
   background: none;
 }
+
+/* prestaties per habit op de habit-pagina */
+.habit-achievements {
+  display: grid;
+  gap: var(--space-3);
+}

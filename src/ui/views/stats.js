@@ -19,7 +19,7 @@ function overviewRow(habit, snapshot, today) {
   const strength = Math.round(stats.strength * 100);
   const fill = h('div', { class: 'meter__fill' });
   fill.style.setProperty('--p', String(strength));
-  const unit = nl.detail.units[span][stats.streaks.current === 1 ? 0 : 1];
+  const unit = nl.detail.units[span][stats.displayStreaks.current === 1 ? 0 : 1];
   return h('li', { class: 'card card--flush', dataset: { color: habit.color } },
     h('a', { class: 'overview-row', href: `#/habits/${encodeURIComponent(habit.id)}` },
       h('div', { class: 'overview-row__top' },
@@ -29,7 +29,7 @@ function overviewRow(habit, snapshot, today) {
       h('div', { class: 'meter', role: 'img', 'aria-label': `${nl.stats.strength} ${strength}%` }, fill),
       h('div', { class: 'overview-row__stats' },
         h('span', null, `${nl.stats.strength} ${strength}%`),
-        h('span', null, nl.stats.streak(stats.streaks.current, unit)),
+        h('span', null, nl.stats.streak(stats.displayStreaks.current, unit)),
         h('span', null, stats.consistency.rate === null ? nl.detail.noData : nl.stats.consistency(Math.round(stats.consistency.rate * 100))))));
 }
 

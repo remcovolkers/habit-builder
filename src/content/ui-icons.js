@@ -18,6 +18,7 @@ export const UI_ICON_GROUPS = Object.freeze([
       'three-active', 'review-streak-4',
       // ronde 3: reeksen in weken en maanden
       'weekstreak-2', 'weekstreak-4', 'weekstreak-8', 'weekstreak-13', 'monthstreak-3', 'monthstreak-6', 'monthstreak-12',
+      'habit-done-10', 'habit-done-25', 'habit-done-50', 'habit-done-100', 'build-first-step', 'build-steps-3', 'built-goal', 'build-back',
     ])),
   },
   {

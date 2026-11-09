@@ -1,6 +1,6 @@
 # Feedbackronde november 2026: uitbouwen, wachten met de review, prestaties per habit
 
-Status: **ronde 4**: F2, F3a en F1 (uitbouwen) gebouwd; F3c en de prestaties voor uitbouwen volgen (alle vragen Q1–Q25 beantwoord) · opgesteld 2026-11-09 · bron: drie ideeën uit de feedbackhub (v1.5.1, zie [FEEDBACK.md](FEEDBACK.md)) · bouwt voort op [PLAN.md](PLAN.md) §4.5 en §4.7, [AUTOMATISME.md](AUTOMATISME.md), [FLEXIBELE-TAKEN.md](FLEXIBELE-TAKEN.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
+Status: **ronde 5**: F1, F2, F3a en F3c gebouwd; wat overblijft is afronden (release-notities, versie) en jouw doorloop op de telefoon (alle vragen Q1–Q25 beantwoord) · opgesteld 2026-11-09 · bron: drie ideeën uit de feedbackhub (v1.5.1, zie [FEEDBACK.md](FEEDBACK.md)) · bouwt voort op [PLAN.md](PLAN.md) §4.5 en §4.7, [AUTOMATISME.md](AUTOMATISME.md), [FLEXIBELE-TAKEN.md](FLEXIBELE-TAKEN.md) · werkwijze: [WERKWIJZE.md](WERKWIJZE.md)
 
 Dit bestand is mijn werklijst voor deze ronde. Ik werk het bij zodra jij antwoordt of ik iets nieuws vind. Alles wat ik niet zelf kan of mag beslissen staat onder **Vragen aan Remco**, met mijn voorstel erbij, zodat "ja" genoeg is.
 
@@ -10,7 +10,7 @@ Dit bestand is mijn werklijst voor deze ronde. Ik werk het bij zodra jij antwoor
 |---|---|---|---|---|
 | F1 | Een habit kunnen **uitbouwen**: een doel ("4× per week sporten") waar je naartoe groeit, met reflectie en op- of terugschakelen | nieuwe feature | groot | ontwerp af, bouwen volgt na F3a; **gebouwd**: rekenlaag, handelingen en schermen (kaart op de habit, strook op Vandaag, bladen, weekreview); de uitbouw-prestaties volgen met F3c |
 | F2 | Het weekoverzicht pas klaar na minstens 3 dagen gebruik | verbetering | klein | **gebouwd** op deze branch |
-| F3 | Prestaties: 1× per maand of 2× per week moet anders tellen, een mogelijke reset, en prestaties per habit naast het algemene scherm | verbetering + nieuwe weergave | middel–groot | **F3a gebouwd** (minimum aantal keren, reeksen in weken en maanden, herijken); F3c en de uitbouw-prestaties volgen met F1 |
+| F3 | Prestaties: 1× per maand of 2× per week moet anders tellen, een mogelijke reset, en prestaties per habit naast het algemene scherm | verbetering + nieuwe weergave | middel–groot | **gebouwd**: F3a (minimum aantal keren, reeksen in weken en maanden, herijken) en F3c (prestaties per habit, de uitbouw-prestaties met iconen, soepele getoonde reeks) |
 
 Voorgestelde volgorde: **F2** (klaar) → **F3a** (de tellingen herstellen, want daar zit een fout in) → **F1** → **F3c** (prestaties per habit, ook voor de uitbouw-habits). Akkoord (Q15).
 
@@ -220,7 +220,7 @@ Ik vink af wat klaar is en voeg toe wat ik onderweg vind. Een item met **?** wac
 - [x] Tests voor regel, meldingen en push (1174 groen)
 - [x] Testgegevens van de layout-check teruggedateerd
 - [x] Q16 bevestigd
-- [ ] `npm run check:layout` draaien op de branch (heeft Chrome en de lokale database nodig); ook voor de nieuwe sectie "Prestaties herijken" in Instellingen
+- [x] `npm run check:layout` gedraaid op de branch (2026-11-09, 265 van 265 OK, 201 s); de uitbouw-controles ook los met `LAYOUT_ONLY=growth` (9 s). De knop "Prestaties herijken" heeft nog geen eigen layoutcontrole
 
 ### F3a: tellingen herstellen (eerstvolgende stap)
 - [x] T3.1 Audit van alle sleutels (zie "Uitkomst van de audit" bij F3a) en tests per ritme (dagelijks, 2× per week, 1× per maand)
@@ -230,8 +230,8 @@ Ik vink af wat klaar is en voeg toe wat ik onderweg vind. Een item met **?** wac
 - [x] T3.5 Versie van de regels (`achievementRules`) in de instellingen; de knop in Instellingen vangt het geval op dat een oude appversie een ingetrokken mijlpaal weer ontgrendelt (R5)
 - [x] T3.6 Back-up: `achievementRules` reist mee in de instellingen; een oude back-up zonder het veld wordt bij de volgende start weer herijkt
 - [x] T3.11 Reeksen per eenheid (Q13, Q22): `weekstreak_2/4/8/13` en `monthstreak_3/6/12`, streng, met zeven nieuwe iconen ([docs/icons/icons-ronde3.html](icons/icons-ronde3.html)). Wie ze al verdiend had, krijgt ze bij de eerstvolgende controle vanzelf, met de datum van die dag (de regels rekenen de geschiedenis niet per datum na)
-- [ ] T3.12 De getoonde reeks op de habit laat één gemiste dag niet meteen afbreken (Q22: dagelijks soepel in de weergave, streng voor prestaties)
-- [ ] T3.13 De detailtekst van een mijlpaal toont "2 van 3 keer" voor de habit
+- [x] T3.12 De getoonde reeks op de habit (`computeDisplayStreaks`: dagen soepel, weken en maanden streng; de prestaties blijven streng) laat één gemiste dag niet meteen afbreken (Q22: dagelijks soepel in de weergave, streng voor prestaties)
+- [x] T3.13 De detailtekst van een mijlpaal toont "2 van 3 keer" voor de habit (op de habit-pagina: "36 van 42 dagen, en nog 5 keer gedaan")
 
 ### F1: uitbouwen
 - [x] T1.1 Domein: `goal` valideren (`validateGoal` in [growth.js](../src/domain/growth.js)) in [habit.js](../src/domain/habit.js) voor de soorten uit Q17 (frequentie: alleen `times_per_period` boven het huidige aantal; hoeveelheid: boven het huidige tellerdoel)
@@ -246,15 +246,15 @@ Ik vink af wat klaar is en voeg toe wat ik onderweg vind. Een item met **?** wac
 - [x] T1.8 Doel instellen en een bestaande habit omzetten (Q6): op de habit-pagina, via "Doel instellen" (zie B19)
 - [x] T1.9 Spotlight (b): stap-indicator en balk op de kaart van Vandaag en de stapel en de kaart op de habit; bekeken op 390 px en 320 px met 200% tekst (schermafbeeldingen). De controles in `check:layout` zijn toegevoegd maar **nog niet gedraaid**
 - [x] T1.10 Test: opslaan door een oudere appversie (`tests/app/growth.test.js`) verliest `goal` niet (R1)
-- [ ] T1.11 **?** Uitleg in "Zo werkt het" ([guide.js](../src/content/guide.js)); privacy: geen nieuwe soort gegevens naar de server, te bevestigen
-- [ ] T1.12 Prestaties voor uitbouwen met iconen (Q23)
+- [x] T1.11 Uitleg in "Zo werkt het" ([guide.js](../src/content/guide.js), sectie Uitbouwen). Privacy: het doel is een veld op de habit en reist mee in dezelfde gegevens als de habit; er is geen nieuwe soort gegevens naar de server
+- [x] T1.12 Prestaties voor uitbouwen met iconen (Q23)
 - [ ] T1.13 Uitlegfilmpje bijwerken, alleen als je dat wilt ([tools/film](../tools/film))
 
 ### F3c: prestaties per habit
-- [ ] T3.7 Voortgang per habit in het domein (`achievementProgress` met habit)
-- [ ] T3.8 Nieuwe sleutels (keren per habit: 10, 25, 50, 100) met teksten en iconen volgens [MODA-ICONS.md](MODA-ICONS.md)
-- [ ] T3.9 Blok "Prestaties van deze habit" in [views/habit-detail.js](../src/ui/views/habit-detail.js): behaald plus de eerstvolgende per soort (Q12)
-- [ ] T3.10 Het algemene scherm: "behaald bij: …" blijft, controleren met de nieuwe sleutels
+- [x] T3.7 Voortgang per habit in het domein (`habitAchievements` in [app/habit-achievements.js](../src/app/habit-achievements.js)) (`achievementProgress` met habit)
+- [x] T3.8 Nieuwe sleutels (keren per habit: 10, 25, 50, 100) en voor uitbouwen `build_first_step`, `build_steps_3`, `built_goal`, `build_back`; acht nieuwe iconen ([docs/icons/icons-ronde3b.html](icons/icons-ronde3b.html)) met teksten en iconen volgens [MODA-ICONS.md](MODA-ICONS.md)
+- [x] T3.9 Blok "Prestaties van deze habit" in [views/habit-detail.js](../src/ui/views/habit-detail.js): behaald plus de eerstvolgende per soort (Q12)
+- [x] T3.10 Het algemene scherm: (de groep Uitbouwen staat er alleen voor wie een doel heeft of er al iets uit behaalde) "behaald bij: …" blijft, controleren met de nieuwe sleutels
 
 ### Afronden per release
 - [ ] Alle tests groen, `check:layout` en `audit:scroll` op de branch
@@ -285,3 +285,5 @@ Ik vink af wat klaar is en voeg toe wat ik onderweg vind. Een item met **?** wac
 | B18 | De boost: een nieuwe trede start met een tegoed van de helft van de keren op de vorige trede, hoogstens de helft van de nudge-drempel van de nieuwe trede; instelbaar in `constants.js` | Remco, 2026-11-09 (Q24) |
 | B19 | Het doel wordt ingesteld op de **habit-pagina** ("Doel instellen"), niet in het formulier Habit bewerken; de fase van de habit blijft zoals hij was en de kaart "Uitbouwen" (trede, ideaal, balk) komt erbij | Houdt het formulier klein en laat de fasebalk niet liegen; ook voor bestaande habits (Q6). Aan te passen als je het doel al bij het aanmaken wilt kunnen kiezen |
 | B20 | Alleen N× per week/maand krijgt een frequentiedoel, een teller een hoeveelheidsdoel en al het andere een tekstdoel (een concrete trede in woorden) | Q1, Q17: "dagelijks" bouwt via de ideale versie, niet via het aantal dagen |
+| B21 | De getoonde reeks op de habit is bij dagen soepel (één gemiste dag mag), de prestaties blijven streng | Remco, 2026-11-09 (Q22) |
+| B22 | De layout-controle draait in CI als eigen job naast de Supabase-controles, en lokaal met `LAYOUT_ONLY=growth` alleen voor uitbouwen | Remco, 2026-11-09 |

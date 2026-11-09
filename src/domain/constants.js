@@ -98,6 +98,10 @@ export const NUDGE_BACK_BELOW = 0.5;
 export const NUDGE_BACK_UNITS = 4;
 export const GOAL_LOG_MAX = 30; // zoveel besluiten bewaart een doel
 
+/** Prestaties per habit en voor uitbouwen (docs/FEEDBACKRONDE-2026-11.md). */
+export const HABIT_DONE_MILESTONES = [10, 25, 50, 100]; // keren gedaan bij één habit
+export const BUILD_STEPS_ACHIEVEMENT = 3; // keer een trede hoger, bij alle habits samen
+
 /** Versie van de prestatieregels; bij een nieuwere versie worden de mijlpalen eenmalig herijkt (app/achievement-runner.js). */
 export const ACHIEVEMENT_RULES_VERSION = 2;
 /** "Sterk terug": binnen een venster van 14 dagen onder de 50% gehaald (dip), later weer op 80% of hoger. Minstens 4 eenheden in het venster, anders zegt een percentage niets. */

@@ -87,6 +87,7 @@ test('evaluateAchievements: 76 dagen trouw geeft de eerste mijlpalen, nog niet 1
   assert.deepEqual(keys(got), [
     'first_checkin', 'days_7@A', 'days_21@A', 'days_42@A', 'days_66@A', 'perfect_week',
     'done_10', 'done_50', 'streak_7', 'streak_14', 'streak_30', 'perfect_weeks_4', // 75 keer, 75 dagen reeks, ruim vier perfecte weken
+    'habit_done_10@A', 'habit_done_25@A', 'habit_done_50@A', // 75 keer bij deze ene habit
   ]);
 });
 
@@ -414,4 +415,32 @@ test('staleAchievements: alleen mijlpalen van een bestaande habit die niet meer 
     { key: 'first_friend', habitId: null }, // hangt van buiten af: nooit intrekken
   ];
   assert.deepEqual(staleAchievements({ today: TODAY, stats: [oneTick, solid], unlocked }).map((u) => `${u.key}@${u.habitId}`), ['days_21@m', 'days_66@m']);
+});
+
+// --- prestaties per habit en uitbouwen ---
+
+const entry = (choice, date = '2026-10-01') => ({ date, choice, from: 'a', to: 'b' });
+const growingHabit = (id, log = [], completedOn = null) => ({ id, status: 'active', goal: { kind: 'frequency', ideal: {}, stepStart: '2026-09-01', credit: 0, snoozedAt: null, completedOn, log } });
+const growKeys = (habits) => keys(evaluateAchievements({ today: TODAY, stats: [], habits })).filter((key) => /^(build|built)/.test(key));
+
+test('habit_done_N: keren gedaan bij één habit, per habit apart', () => {
+  const got = keys(evaluateAchievements({ today: TODAY, stats: [fake({ habitId: 'A', totalDone: 26 }), fake({ habitId: 'B', totalDone: 9 })] })).filter((key) => key.startsWith('habit_done'));
+  assert.deepEqual(got, ['habit_done_10@A', 'habit_done_25@A']);
+  assert.deepEqual(keys(evaluateAchievements({ today: TODAY, stats: [fake({ habitId: 'A', totalDone: 100 })] })).filter((key) => key.startsWith('habit_done')), ['habit_done_10@A', 'habit_done_25@A', 'habit_done_50@A', 'habit_done_100@A']);
+});
+
+test('uitbouwen: Eerste trede en Drie treden tellen keren omhoog bij alle habits samen; omlaag en blijven tellen niet', () => {
+  assert.deepEqual(growKeys([growingHabit('A', [entry('stay'), entry('down')])]), []);
+  assert.deepEqual(growKeys([growingHabit('A', [entry('up')])]), ['build_first_step']);
+  assert.deepEqual(growKeys([growingHabit('A', [entry('up'), entry('up')]), growingHabit('B', [entry('up')])]), ['build_first_step', 'build_steps_3']);
+  const p = achievementProgress({ today: TODAY, stats: [], habits: [growingHabit('A', [entry('up'), entry('up')])] });
+  assert.deepEqual([p.build_first_step, p.build_steps_3], [{ value: 1, target: 1 }, { value: 2, target: 3 }]);
+});
+
+test('uitbouwen: Uitgebouwd per habit, en "Terug is ook vooruit" na een stap terug en weer verder', () => {
+  assert.deepEqual(keys(evaluateAchievements({ today: TODAY, stats: [], habits: [growingHabit('A', [], '2026-10-10'), growingHabit('B')] })).filter((key) => key.startsWith('built')), ['built_goal@A']);
+  assert.deepEqual(growKeys([growingHabit('A', [entry('down'), entry('stay')])]), [], 'terug en nog niet weer verder');
+  assert.deepEqual(growKeys([growingHabit('A', [entry('up'), entry('down'), entry('up')])]), ['build_first_step', 'build_back']);
+  assert.deepEqual(growKeys([growingHabit('A', [entry('down')], '2026-10-10')]), ['built_goal@A', 'build_back'], 'terug en daarna uitgebouwd telt ook');
+  assert.deepEqual(growKeys([growingHabit('A', [entry('up'), entry('up')])]).includes('build_back'), false, 'alleen omhoog is geen stap terug');
 });

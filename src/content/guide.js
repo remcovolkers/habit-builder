@@ -61,6 +61,16 @@ export const GUIDE_SECTIONS = Object.freeze([
     ],
   },
   {
+    id: 'grow',
+    title: 'Uitbouwen',
+    paragraphs: [
+      'Wil je uiteindelijk meer, maar niet meteen? Stel bij de habit een doel in: je ideale versie. Je begint op de trede van nu en groeit er zelf naartoe, bijvoorbeeld van 1 naar 4 keer per week, van 500 naar 2000 ml water, of van een kwartier lezen naar een uur.',
+      'Maak een trede concreet: "een kwartier lezen", niet "meer lezen". Dan weet je op elke trede wat je moet doen.',
+      'Jij kiest wanneer je een trede hoger gaat. Als het op een trede al een tijd goed gaat (gedaan, niet alleen verstreken dagen), zegt de app het rustig. Een trede lager mag altijd; het is bijsturen, geen mislukken.',
+      'Elke nieuwe trede begint met een deel van wat je al deed, dus je begint niet op nul. Een habit die uitbouwt wordt pas ingeburgerd als je het uitbouwen afrondt.',
+    ],
+  },
+  {
     id: 'rooted',
     title: 'Ingeburgerd',
     paragraphs: [

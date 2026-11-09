@@ -576,6 +576,7 @@ export const nl = {
     notes: { title: 'Laatste notities' },
     noData: '–',
     streakBest: (n, unit) => `beste: ${n} ${unit}`,
+    streakGrace: 'één gemiste dag mag',
     units: { day: ['dag', 'dagen'], week: ['week', 'weken'], month: ['maand', 'maanden'] },
     totalSince: (label) => `sinds ${label}`,
     heatmap: {
@@ -910,6 +911,17 @@ export const nl = {
 
   achievements: {
     title: 'Prestaties',
+    // het blok op de habit-pagina
+    habit: {
+      title: 'Prestaties van deze habit',
+      empty: 'Nog niets behaald bij deze habit. De eerste mijlpaal komt eraan.',
+      next: 'Volgende',
+      reachedOn: (label) => `Behaald op ${label}`,
+      days: (value, target) => `${value} van ${target} dagen`,
+      daysReps: (value, target, reps) => `${value} van ${target} dagen, en nog ${reps} keer gedaan`,
+      times: (value, target) => `${value} van ${target} keer`,
+      goal: 'Rond het uitbouwen af',
+    },
     recalibrate: {
       title: 'Prestaties herijken',
       hint: 'Sommige mijlpalen per habit vragen sinds kort ook een aantal keren gedaan. Herijken haalt weg wat daar niet aan voldoet; de rest blijft staan met zijn datum.',

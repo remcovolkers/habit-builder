@@ -4,6 +4,7 @@ import { nl } from '../../content/nl.js';
 import { mascot } from './mascot.js';
 import { uiIcon } from './habit-icon.js';
 import { ACHIEVEMENT_INFO } from '../../content/achievements.js';
+import { formatDateShort } from '../../app/format.js';
 
 /** Eén medaille. sub = ondertitel (bv. de habit waarvoor je hem haalde). Met onOpen is hij aan te tikken (de uitleg op de pagina Prestaties). */
 export function achievementMedal({ info, sub = null, locked = false, onOpen = null }) {
@@ -16,6 +17,31 @@ export function achievementMedal({ info, sub = null, locked = false, onOpen = nu
   return onOpen
     ? h('li', attrs, h('button', { type: 'button', class: 'achv__button', onclick: onOpen }, ...parts))
     : h('li', attrs, ...parts);
+}
+
+/**
+ * Het blok op de habit-pagina: wat je bij deze habit behaalde en de eerstvolgende per soort met voortgang. `achievements` komt uit habitAchievements
+ * (app/habit-achievements.js); de teksten staan in content/achievements.js.
+ */
+export function habitAchievementsCard({ achievements }) {
+  const t = nl.achievements.habit;
+  const reached = achievements.reached.filter(({ key }) => ACHIEVEMENT_INFO[key]);
+  const next = achievements.next.filter(({ key }) => ACHIEVEMENT_INFO[key]);
+  const progress = (item) => {
+    if (item.target === null) return t.goal;
+    if (item.key.startsWith('days_')) return item.repsNeeded > 0 ? t.daysReps(item.value, item.target, item.repsNeeded) : t.days(item.value, item.target);
+    return t.times(item.value, item.target);
+  };
+  return h('section', { class: 'card habit-achievements' },
+    h('h2', { class: 'section__title' }, t.title),
+    reached.length === 0 ? h('p', { class: 'card__text muted' }, t.empty) : null,
+    reached.length > 0
+      ? h('ul', { class: 'achievements', 'aria-label': t.title }, ...reached.map(({ key, date }) => achievementMedal({ info: ACHIEVEMENT_INFO[key], sub: t.reachedOn(formatDateShort(date)) })))
+      : null,
+    next.length > 0 ? h('p', { class: 'kicker' }, t.next) : null,
+    next.length > 0
+      ? h('ul', { class: 'achievements', 'aria-label': t.next }, ...next.map((item) => achievementMedal({ info: ACHIEVEMENT_INFO[item.key], sub: progress(item), locked: true })))
+      : null);
 }
 
 /** Het blad met de uitleg bij één prestatie (zie app/achievement-detail.js voor wat erin staat). */
