@@ -188,3 +188,18 @@ test('notificationHash: een tik op een melding gaat naar een route binnen de app
   }
   assert.equal(notificationHash('./#/today', 'geen url'), null);
 });
+
+test('samenvatting: nog open, dag nog niet afgesloten en weekreview klaar (voor de avond- en reviewmeldingen)', () => {
+  const day = (over) => buildReminderSummary({ snapshot: snapshot({ habits: [habit('A', daily), habit('B', daily)], ...over }), today: TODAY, settings }).days;
+  // vandaag (donderdag 15 oktober): twee taken, geen dagreflectie
+  assert.deepEqual(day({})[TODAY].slice(5), [2, 1, 0], 'twee open, dag niet afgesloten, geen weekreview op donderdag');
+  const checkIns = [{ habitId: 'A', date: TODAY, status: 'done' }];
+  assert.equal(day({ checkIns })[TODAY][5], 1, 'één gedaan: nog één open');
+  assert.equal(day({ checkIns: [...checkIns, { habitId: 'B', date: TODAY, status: 'done' }] })[TODAY][5], 0, 'alles gedaan');
+  assert.equal(day({ dayReflections: [{ date: TODAY, score: 4, note: null }] })[TODAY][6], 0, 'dag afgesloten met een dagreflectie');
+  // de weekreview: zondag 18 oktober (week van 12 oktober) en maandag 19 oktober (dezelfde week), niet op andere dagen
+  const flags = (reviews) => Object.fromEntries(Object.entries(day({ reviews })).map(([date, entry]) => [date, entry[7]]));
+  assert.deepEqual(flags([]), { '2026-10-15': 0, '2026-10-16': 0, '2026-10-17': 0, '2026-10-18': 1, '2026-10-19': 1, '2026-10-20': 0, '2026-10-21': 0 });
+  const filled = flags([{ weekStart: '2026-10-12', wentWell: 'goed', wentBad: '' }]);
+  assert.deepEqual([filled['2026-10-18'], filled['2026-10-19']], [0, 0], 'ingevuld: geen melding op zondag en maandag');
+});

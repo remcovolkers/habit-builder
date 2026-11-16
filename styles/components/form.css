@@ -653,6 +653,17 @@ select.input {
   width: 100%;
 }
 
+/* de extra meldingen (avond, weekreview): een schakelaar met uitleg per soort; geen vaste breedtes, de tekst breekt af bij grote letters */
+.reminder-card__extras {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+.reminder-card__extras .field {
+  margin-top: var(--space-2);
+}
+
 .reminder-card__dev {
   display: grid;
   gap: var(--space-2);

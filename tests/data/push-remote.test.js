@@ -119,3 +119,23 @@ test('sendTestReminder voor de app: wijst het toestel aan met { token }, ook met
   await sendTestReminder({ client, token: 'tok-1', delaySeconds: 15 });
   assert.deepEqual(client.calls[1].options.body, { test: true, token: 'tok-1', delaySeconds: 15 });
 });
+
+test('saveSubscription en saveAppDevice: de aan/uit van de extra meldingen gaat alleen mee als de app die kent (anders blijft wat er staat)', async () => {
+  const without = fakeClient();
+  await saveSubscription({ client: without, userId: 'u1', subscription, remindTime: '08:00', timezone: 'UTC', summary: {} });
+  assert.ok(!('notify_evening' in without.calls[0].row) && !('notify_review' in without.calls[0].row));
+
+  const web = fakeClient();
+  await saveSubscription({ client: web, userId: 'u1', subscription, remindTime: '08:00', timezone: 'UTC', summary: {}, notify: { evening: true, review: false } });
+  assert.deepEqual([web.calls[0].row.notify_evening, web.calls[0].row.notify_review], [true, false]);
+
+  const app = fakeClient();
+  await saveAppDevice({ client: app, userId: 'u1', token: 'tok-1', remindTime: '08:00', timezone: 'UTC', summary: {}, notify: { evening: false, review: true } });
+  assert.deepEqual([app.calls[0].row.notify_evening, app.calls[0].row.notify_review], [false, true]);
+});
+
+test('sendTestReminder: met een soort vraagt hij de echte tekst van die melding', async () => {
+  const client = fakeClient();
+  await sendTestReminder({ client, token: 'tok-1', kind: 'evening' });
+  assert.deepEqual(client.calls[0].options.body, { test: true, token: 'tok-1', kind: 'evening' });
+});

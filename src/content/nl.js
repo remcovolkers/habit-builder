@@ -1179,6 +1179,15 @@ export const nl = {
     failedDetail: (detail) => `Aanzetten is niet gelukt (${detail}).`,
     disable: 'Herinnering uitzetten',
     status: (time) => `Aan: elke dag rond ${time}.`,
+    // de extra meldingen onder de ochtendherinnering: per toestel aan of uit
+    extras: {
+      title: 'Meer meldingen',
+      evening: 'Avondmelding om 23:00',
+      eveningHint: '"Laatste sprintje?" als er nog taken open staan, anders "Wil je je dag afsluiten?". Zonder melding als alles klaar is en je dag is afgesloten.',
+      review: 'Weekreview-meldingen',
+      reviewHint: 'Zondag om 18:00 "Weekreview staat vanaf nu open", en maandag om 23:30 "Weekreview staat nog open". Alleen als je hem nog niet hebt ingevuld; dan staat de weekreview niet meer in de ochtendmelding.',
+    },
+    testKinds: { evening: 'Test: avondmelding', review_open: 'Test: weekreview open', review_closing: 'Test: weekreview sluit bijna' },
     test: 'Stuur een testmelding',
     testSent: 'Testmelding verstuurd. Die komt zo binnen.',
     devTitle: 'Ontwikkelaar: meldingen testen',

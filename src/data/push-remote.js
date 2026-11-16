@@ -10,11 +10,16 @@ function fail(error, fallback) {
   return wrapped;
 }
 
+/**
+ * De aan/uit-kolommen van de extra meldingen (migratie 0012): { evening, review } van de app. Zonder `notify` (een oudere aanroep) blijft wat er staat ongemoeid.
+ */
+const notifyColumns = (notify) => (notify ? { notify_evening: notify.evening === true, notify_review: notify.review === true } : {});
+
 /** Registreert dit apparaat (of werkt het bij). `subscription` is wat `pushSubscription.toJSON()` geeft. */
-export async function saveSubscription({ client, userId, subscription, remindTime, timezone, summary, lastNotifiedDate }) {
+export async function saveSubscription({ client, userId, subscription, remindTime, timezone, summary, lastNotifiedDate, notify }) {
   const { endpoint, keys } = subscription;
   if (!endpoint || !keys?.p256dh || !keys?.auth) throw new Error('onvolledig push-abonnement');
-  const row = { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth, remind_time: remindTime, timezone, summary };
+  const row = { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth, remind_time: remindTime, timezone, summary, ...notifyColumns(notify) };
   // alleen meesturen als het tijdstip is ingesteld of gewijzigd (zie rearmDate); een gewone bijwerking van de samenvatting laat het staan
   if (lastNotifiedDate !== undefined) row.last_notified_date = lastNotifiedDate;
   const { error } = await client.from(TABLE).upsert(row, { onConflict: 'user_id,endpoint' });
@@ -22,9 +27,9 @@ export async function saveSubscription({ client, userId, subscription, remindTim
 }
 
 /** Registreert de Android-app op dit toestel (of werkt hem bij). `token` is het FCM-token; de server stuurt er via Firebase naartoe. */
-export async function saveAppDevice({ client, userId, token, remindTime, timezone, summary, lastNotifiedDate }) {
+export async function saveAppDevice({ client, userId, token, remindTime, timezone, summary, lastNotifiedDate, notify }) {
   if (!token || typeof token !== 'string') throw new Error('geen FCM-token');
-  const row = { user_id: userId, platform: 'android', fcm_token: token, remind_time: remindTime, timezone, summary };
+  const row = { user_id: userId, platform: 'android', fcm_token: token, remind_time: remindTime, timezone, summary, ...notifyColumns(notify) };
   if (lastNotifiedDate !== undefined) row.last_notified_date = lastNotifiedDate; // zie saveSubscription
   const { error } = await client.from(TABLE).upsert(row, { onConflict: 'user_id,fcm_token' });
   if (error) throw fail(error, 'Opslaan mislukt');
@@ -62,9 +67,10 @@ export async function deleteSubscription({ client, endpoint }) {
  * 'no_device' (geen abonnement gevonden), 'push_failed' (de push-dienst weigerde het) of 'unknown'.
  * Een browser wijst zichzelf aan met zijn `endpoint`, de Android-app met zijn FCM-`token`.
  */
-export async function sendTestReminder({ client, endpoint, token, delaySeconds = 0 }) {
+export async function sendTestReminder({ client, endpoint, token, delaySeconds = 0, kind }) {
   const device = endpoint === undefined ? { token } : { endpoint };
-  const { data, error } = await client.functions.invoke('send-reminders', { body: delaySeconds > 0 ? { test: true, ...device, delaySeconds } : { test: true, ...device } });
+  // `kind`: 'evening' | 'review_open' | 'review_closing': de echte tekst van die melding in plaats van de algemene testtekst
+  const { data, error } = await client.functions.invoke('send-reminders', { body: { test: true, ...device, ...(delaySeconds > 0 ? { delaySeconds } : {}), ...(kind ? { kind } : {}) } });
   if (error) {
     const status = Number(error.context?.status ?? 0);
     if (status === 404) {

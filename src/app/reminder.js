@@ -4,7 +4,7 @@
 // [hoeveel gewoontes er gepland staan, hoeveel taken er nog in de stapel liggen]. De server maakt daar de tekst van.
 // Zo staan er geen namen van habits op de server-kant van de herinnering, en blijft de logica van "wat staat er
 // vandaag" op één plek: hier, in de app.
-import { addDays, endOfMonth, startOfMonth, weekday } from '../domain/dates.js';
+import { addDays, endOfMonth, startOfMonth, startOfWeek, weekday } from '../domain/dates.js';
 import { monthReviewFor, usedLongEnough, weekReviewFor, weekReviewHasContent } from '../domain/reviews.js';
 import { firstUseDate } from './reviews.js';
 import { DISPLAY_NAME_MAX } from './settings.js';
@@ -27,12 +27,15 @@ export function validateReminderTime(time, dayStartHour) {
 }
 
 /**
- * { name, days: { 'YYYY-MM-DD': [gepland, in de stapel, aandacht, review, maandreview] } } voor vandaag en de dagen erna.
+ * { name, days: { 'YYYY-MM-DD': [gepland, in de stapel, aandacht, review, maandreview, nog open, dag niet afgesloten, weekreview klaar] } } voor vandaag en de dagen erna.
  *   aandacht     taken die langer liggen dan afgesproken en waar nog niet op is gereageerd (weekelijks opnieuw; zie nudgesOn)
  *   review       1 op een maandag als de review van de week ervoor nog niet is ingevuld (hij opent zondag 18:00 en staat open tot maandag 23:59,
  *                dus de melding van de ochtend komt als hij nog openstaat)
  *   maandreview  1 op de laatste dag van de maand als de maandreview ('Wat pas ik aan?') nog niet is ingevuld
- * De melding stuurt bij een review door naar Voortgang (zie composeMessage in de Edge Function).
+ *   nog open     hoeveel gewone taken van die dag nog niet zijn gedaan (de avondmelding "Laatste sprintje?")
+ *   afgesloten   1 als er voor die dag nog geen dagreflectie is (de avondmelding "Wil je je dag afsluiten?" als alles gedaan is)
+ *   weekreview   1 op zondag en maandag als de review van die week nog niet is ingevuld (de meldingen zondag 18:00 en maandag 23:30)
+ * De melding stuurt bij een review door naar Voortgang (zie composeMessage en composeExtra in de Edge Function).
  */
 export function buildReminderSummary({ snapshot, today, settings, days = REMINDER_DAYS }) {
   const entries = {};
@@ -47,7 +50,11 @@ export function buildReminderSummary({ snapshot, today, settings, days = REMINDE
     const ready = usedLongEnough(firstUse, date); // een review staat pas klaar na een paar dagen gebruik
     const review = ready && weekday(date) === 0 && !weekReviewHasContent(weekReviewFor(snapshot.reviews, addDays(date, -7))) ? 1 : 0;
     const monthReview = ready && date === endOfMonth(date) && !monthReviewFor(snapshot.reviews, startOfMonth(date))?.adjust?.trim() ? 1 : 0;
-    entries[date] = [planned, pool, attention, review, monthReview];
+    // 5: hoeveel van vandaag nog open staan, 6: de dag is nog niet afgesloten (geen dagreflectie), 7: de weekreview staat klaar (zondag en maandag)
+    const open = Math.max(0, view.progress.total - view.progress.done);
+    const unreflected = (snapshot.dayReflections ?? []).some((reflection) => reflection.date === date) ? 0 : 1;
+    const weekReviewReady = ready && [6, 0].includes(weekday(date)) && !weekReviewHasContent(weekReviewFor(snapshot.reviews, startOfWeek(weekday(date) === 0 ? addDays(date, -1) : date))) ? 1 : 0;
+    entries[date] = [planned, pool, attention, review, monthReview, open, unreflected, weekReviewReady];
   }
   return { name: String(settings.displayName ?? '').trim().slice(0, DISPLAY_NAME_MAX), days: entries };
 }

@@ -1,6 +1,6 @@
 # Meldingen en opschonen: voorstel
 
-Status: stap 1 (§1 en §2) is **gebouwd**; de meldingen (§3 en §4) zijn nog voorstel. Gebaseerd op de code op `develop` (na de Android-app, versie 1.3).
+Status: stap 1 (§1 en §2) is **gebouwd**. Van de meldingen (§3 en §4) is **16 november 2026** een eerste deel gebouwd, zie §4.5; de rest is nog voorstel. Gebaseerd op de code op `develop` (na de Android-app, versie 1.3).
 
 **Besluiten van Remco**
 
@@ -114,6 +114,24 @@ unique (subscription_id, slot)
 **Server.** `send-reminders` loopt elke 5 minuten (ongewijzigd) en beoordeelt per moment "is het aan de beurt?" met een eigen uitstelmarge per soort (ochtend 180 min zoals nu, avond 120, terugblik sluit 60: te laat melden heeft geen zin). Tekst per soort, boodschap met het juiste kanaal en een eigen `collapse_key`, zodat een avondmelding de ochtendmelding niet vervangt. Dezelfde route werkt voor Web Push en FCM.
 
 **App.** De kaart "Meldingen" wordt een lijst momenten met een schakelaar en een tijd, de testknoppen (ontwikkelaarsopties) kunnen per soort testen, en `createChannel` maakt de drie kanalen. Bestaande gebruikers houden hun ochtendherinnering precies zoals hij was.
+
+### 4.5 Wat er nu is: avondmelding en weekreview-meldingen (16 november 2026)
+
+Een kleinere variant van §4.2, zonder de tabel met momenten, voor drie vaste meldingen. Migratie **0012** (`0012_extra_reminders.sql`) voegt per apparaat toe: `notify_evening`, `notify_review` (aan/uit, standaard uit) en drie claimkolommen `last_evening_date`, `last_review_open`, `last_review_closing`.
+
+| Melding | Wanneer | Tekst | Tik opent |
+|---|---|---|---|
+| **Avond** (aan/uit) | elke dag 23:00, tot 24:00 | "Laatste sprintje?" met "Nog 2 taken te doen vandaag." als er nog taken open staan; anders "Wil je je dag afsluiten?" als je dag nog geen reflectie heeft; anders **niets** | Vandaag |
+| **Weekreview open** (aan/uit, samen met de volgende) | zondag 18:00, tot 20:00 | "Weekreview staat vanaf nu open", alleen als hij nog niet is ingevuld | Voortgang, die week |
+| **Weekreview sluit bijna** | maandag 23:30, tot 23:58 | "Weekreview staat nog open", alleen als hij nog niet is ingevuld | Voortgang, de week van gisteren |
+
+- De tijden zijn vast (lokale tijd van het toestel). Het schakelen doe je per toestel onder Instellingen → Ochtendherinnering → "Meer meldingen".
+- Staan de reviewmeldingen aan, dan zit de weekreview niet meer in de ochtendmelding.
+- De app stuurt per dag drie getallen méér mee in de samenvatting: `nog open`, `dag niet afgesloten`, `weekreview klaar` (`src/app/reminder.js`). De server kent nog steeds geen habitnamen.
+- Elke soort heeft een eigen `tag` (een nieuwe avondmelding vervangt de ochtendmelding niet) en een eigen levensduur (avond 2 uur, review open 3 uur, sluit bijna 25 minuten: een melding na sluiting heeft geen zin).
+- Alles gaat nog via het ene Android-kanaal "Ochtendherinnering". Aparte kanalen per soort (zodat je er één in Android kunt dempen) kan later; dan moet de app die kanalen eerst aanmaken.
+- Testen: met ontwikkelaarsopties aan staan onder de kaart drie knoppen die de echte tekst van elke melding sturen, ook als er nu niets te melden is.
+- Uitrollen: **eerst migratie 0012, dan de Edge Function, dan de app**. Een oudere app schrijft de kolommen niet: alles blijft dan uit.
 
 ### 4.3 Tests
 

@@ -116,6 +116,9 @@ export async function vapidAuthorization({ endpoint, subject, publicKey, private
   return `vapid t=${header}.${claims}.${b64uEncode(signature)}, k=${publicKey}`;
 }
 
+/** Hoe lang een melding mag wachten op een telefoon die uit staat, tenzij het bericht zelf `ttl` (seconden) noemt. */
+export const DEFAULT_TTL_SECONDS = 43200;
+
 /** Eén push versturen. Geeft { status, gone }: gone = het abonnement bestaat niet meer (404/410) en kan weg. */
 export async function sendPush({ subscription, message, vapid, fetchImpl = fetch, now = Date.now() }) {
   const body = await encryptPayload({ plaintext: JSON.stringify(message), p256dh: subscription.p256dh, auth: subscription.auth });
@@ -126,9 +129,9 @@ export async function sendPush({ subscription, message, vapid, fetchImpl = fetch
       Authorization: authorization,
       'Content-Encoding': 'aes128gcm',
       'Content-Type': 'application/octet-stream',
-      TTL: '43200', // 12 uur: staat de telefoon uit, dan is een ochtendmelding 's avonds niet meer nuttig
+      TTL: String(message.ttl ?? DEFAULT_TTL_SECONDS), // staat de telefoon uit, dan is een melding na een tijdje niet meer nuttig (ochtend: 12 uur)
       Urgency: 'high', // een melding op een vast tijdstip: bij 'normal' mag Android hem in de slaapstand uren uitstellen
-      Topic: 'morning-reminder', // een nieuwe melding vervangt een nog niet afgeleverde
+      Topic: message.tag ?? 'morning-reminder', // een nieuwe melding van dezelfde soort vervangt een nog niet afgeleverde
     },
     body,
   });
@@ -200,9 +203,9 @@ export async function sendFcm({ device, message, account, fetchImpl = fetch, now
         data: { url: String(message.url ?? ''), sent: String(message.sent ?? '') },
         android: {
           priority: 'HIGH', // een melding op een vast tijdstip: bij normale prioriteit mag Android hem in de slaapstand uitstellen
-          ttl: '43200s', // 12 uur, zoals bij Web Push: 's avonds is een ochtendmelding niet meer nuttig
-          collapse_key: 'morning-reminder', // een nieuwe melding vervangt een nog niet afgeleverde
-          notification: { channel_id: FCM_CHANNEL_ID, tag: 'morning-reminder' },
+          ttl: `${message.ttl ?? DEFAULT_TTL_SECONDS}s`, // zoals bij Web Push
+          collapse_key: message.tag ?? 'morning-reminder', // een nieuwe melding van dezelfde soort vervangt een nog niet afgeleverde
+          notification: { channel_id: FCM_CHANNEL_ID, tag: message.tag ?? 'morning-reminder' },
         },
       },
     }),
@@ -250,6 +253,66 @@ export function isDue(subscription, now) {
   return late >= 0 && late < GRACE_MINUTES && subscription.last_notified_date !== moment.date;
 }
 
+// --- de extra meldingen: avond, weekreview open, weekreview sluit bijna -------------------------------------------------------------
+// Vaste momenten (lokale tijd van het toestel), per apparaat aan of uit (notify_evening, notify_review). De week- en dagnummers kloppen met de
+// weekreview in de app: open zondag 18:00, dicht maandag 23:59 (src/domain/reviews.js).
+export const EXTRA_KINDS = Object.freeze({
+  evening: { column: 'last_evening_date', flag: 'notify_evening', weekday: null, from: 23 * 60, grace: 60, ttl: 2 * 3600, tag: 'evening-check' },
+  review_open: { column: 'last_review_open', flag: 'notify_review', weekday: 0, from: 18 * 60, grace: 120, ttl: 3 * 3600, tag: 'review-open' }, // zondag 18:00
+  review_closing: { column: 'last_review_closing', flag: 'notify_review', weekday: 1, from: 23 * 60 + 30, grace: 28, ttl: 25 * 60, tag: 'review-closing' }, // maandag 23:30
+});
+
+/** Dag van de week van een lokale datum: 0 = zondag, 1 = maandag … */
+const weekdayOf = (date) => new Date(`${date}T00:00:00Z`).getUTCDay();
+
+/** De extra meldingen die nu aan de beurt zijn voor dit abonnement: [{ kind, key }]. `key` (de datum) is wat als "gemeld" wordt vastgelegd. */
+export function dueExtras(subscription, now) {
+  let moment;
+  try {
+    moment = localMoment(now, subscription.timezone);
+  } catch {
+    return []; // onbekende tijdzone: liever niets sturen dan op een verkeerd moment
+  }
+  const due = [];
+  for (const [kind, spec] of Object.entries(EXTRA_KINDS)) {
+    if (subscription[spec.flag] !== true) continue;
+    if (spec.weekday !== null && weekdayOf(moment.date) !== spec.weekday) continue;
+    const late = moment.minutes - spec.from;
+    if (late >= 0 && late < spec.grace && subscription[spec.column] !== moment.date) due.push({ kind, key: moment.date });
+  }
+  return due;
+}
+
+/**
+ * De tekst van een extra melding, of null als er niets te melden is. De samenvatting per dag is
+ * [gepland, stapel, aandacht, review, maandreview, nog open, dag nog niet afgesloten, weekreview klaar]; een oudere app stuurt er minder, dan is de rest "niets".
+ * `force` (de testknop): ook een tekst als er niets te melden is.
+ */
+export function composeExtra(kind, subscription, now, { force = false } = {}) {
+  let local;
+  try {
+    local = localMoment(now, subscription.timezone);
+  } catch {
+    return null;
+  }
+  const spec = EXTRA_KINDS[kind];
+  if (!spec) return null;
+  const entry = subscription.summary?.days?.[local.date];
+  const number = (index) => (Array.isArray(entry) ? Math.max(0, Number(entry[index]) || 0) : 0);
+  const base = { tag: spec.tag, ttl: spec.ttl };
+
+  if (kind === 'evening') {
+    const open = number(5);
+    if (open > 0) return { ...base, title: 'Laatste sprintje?', body: `Nog ${plural(open, 'taak', 'taken')} te doen vandaag.`, url: './#/today' };
+    if (force || number(6) === 1) return { ...base, title: 'Wil je je dag afsluiten?', body: 'Alles staat af. Schrijf in een paar woorden hoe je dag was.', url: './#/today' };
+    return null;
+  }
+  if (!force && number(7) !== 1) return null; // de weekreview is al ingevuld, of de app is te kort in gebruik
+  if (kind === 'review_open') return { ...base, title: 'Weekreview staat vanaf nu open', body: 'Kijk terug op je week. Hij sluit maandag om 23:59.', url: `./#/stats?review=week&date=${local.date}` };
+  // maandag: de review die staat te sluiten is die van de week die gisteren eindigde
+  return { ...base, title: 'Weekreview staat nog open', body: 'Hij sluit vanavond om 23:59.', url: `./#/stats?review=week&date=${dayBefore(local.date)}` };
+}
+
 /** 'YYYY-MM-DD' van de dag ervoor. */
 const dayBefore = (date) => new Date(Date.parse(`${date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
 
@@ -275,7 +338,8 @@ export function composeMessage(subscription, now) {
   const pool = Math.max(0, Number(entry[1]) || 0);
   // sinds de aandacht-melding: [gepland, stapel, aandacht, review, maandreview]; een oudere app stuurt er minder, dan is de rest 0
   const attention = Math.max(0, Number(entry[2]) || 0);
-  const weekReview = Number(entry[3]) === 1;
+  // staan de reviewmeldingen aan (zondag 18:00 en maandag 23:30), dan hoort de weekreview niet ook nog in de ochtendmelding
+  const weekReview = Number(entry[3]) === 1 && subscription.notify_review !== true;
   const monthReview = Number(entry[4]) === 1;
   if (due === 0 && pool === 0 && attention === 0 && !weekReview && !monthReview) return null;
 
@@ -304,7 +368,7 @@ function createDb({ url, key, fetchImpl }) {
     if (!response.ok) throw new Error(`database ${response.status}: ${(await response.text()).slice(0, 200)}`);
     return response.status === 204 ? null : response.json();
   };
-  const columns = 'id,user_id,platform,endpoint,p256dh,auth,fcm_token,remind_time,timezone,summary,last_notified_date';
+  const columns = 'id,user_id,platform,endpoint,p256dh,auth,fcm_token,remind_time,timezone,summary,last_notified_date,notify_evening,notify_review,last_evening_date,last_review_open,last_review_closing';
   return {
     all: () => call(`push_subscriptions?select=${columns}&limit=1000`),
     forUser: (userId) => call(`push_subscriptions?select=${columns}&user_id=eq.${encodeURIComponent(userId)}`),
@@ -318,6 +382,16 @@ function createDb({ url, key, fetchImpl }) {
       return rows.length > 0;
     },
     release: (id, previous) => call(`push_subscriptions?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ last_notified_date: previous }) }),
+    /** Zoals `claim`, voor een extra melding: `column` is de last_*-kolom van dat soort, `key` de datum. */
+    claimExtra: async (id, column, key) => {
+      const rows = await call(`push_subscriptions?id=eq.${encodeURIComponent(id)}&or=(${column}.is.null,${column}.neq.${key})`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({ [column]: key }),
+      });
+      return rows.length > 0;
+    },
+    releaseExtra: (id, column, previous) => call(`push_subscriptions?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ [column]: previous }) }),
     remove: (id) => call(`push_subscriptions?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }),
   };
 }
@@ -348,6 +422,30 @@ async function userFromToken({ url, key, token, fetchImpl }) {
   return typeof user?.id === 'string' ? user.id : null;
 }
 
+/**
+ * Eén melding naar één apparaat (Web Push of FCM). Geeft { counter, decision, retry, gone }: counter = welke teller in het resultaat omhoog gaat,
+ * decision = de reden (voor het antwoord), retry = het "gemeld" moet worden teruggedraaid zodat de volgende ronde het opnieuw probeert, gone = de rij kan weg.
+ */
+async function transmit({ subscription, message, vapid, fcmAccount, fetchImpl, now }) {
+  try {
+    // `sent`: wanneer de server hem verstuurde. De app onthoudt wanneer hij aankwam, zodat je kunt zien of een melding vertraging had.
+    const payload = { ...message, sent: now.getTime() };
+    let outcome;
+    if (subscription.fcm_token) { // een app-toestel
+      if (!fcmAccount) return { counter: 'failed', decision: 'fcm_niet_ingesteld', retry: true, gone: false }; // het secret ontbreekt: dit toestel slaan we over, de webabonnementen gaan gewoon door
+      outcome = await sendFcm({ device: subscription, message: payload, account: fcmAccount, fetchImpl, now: now.getTime() });
+    } else {
+      outcome = await sendPush({ subscription, message: payload, vapid, fetchImpl, now: now.getTime() });
+    }
+    if (outcome.ok) return { counter: 'sent', decision: 'verstuurd', retry: false, gone: false };
+    if (outcome.gone) return { counter: 'removed', decision: `abonnement_verlopen_${outcome.status}`, retry: false, gone: true };
+    return { counter: 'failed', decision: `push_dienst_weigerde_${outcome.status}`, retry: true, gone: false };
+  } catch (error) {
+    console.error('versturen mislukt', shortId(subscription.id), error?.message);
+    return { counter: 'failed', decision: 'fout_bij_versturen', retry: true, gone: false };
+  }
+}
+
 /** Stuurt naar de gegeven abonnementen en ruimt verlopen op. `claim`: alleen versturen als "vandaag" nog vrij is (cron). */
 async function deliver({ subscriptions, db, vapid, fcmAccount = null, fetchImpl, now, claim, forceText }) {
   // decisions: per apparaat wat er gebeurde en waarom. Staat in het antwoord (zie net._http_response) zodat je kunt zien waarom er geen melding kwam.
@@ -373,38 +471,45 @@ async function deliver({ subscriptions, db, vapid, fcmAccount = null, fetchImpl,
       decide(subscription, 'niets_gepland_vandaag');
       continue;
     }
-    try {
-      // `sent`: wanneer de server hem verstuurde. De app onthoudt wanneer hij aankwam, zodat je kunt zien of een melding vertraging had.
-      const payload = { ...message, sent: now.getTime() };
-      let outcome;
-      if (subscription.fcm_token) { // een app-toestel
-        if (!fcmAccount) { // het secret ontbreekt: dit toestel slaan we over, de webabonnementen gaan gewoon door
-          result.failed++;
-          decide(subscription, 'fcm_niet_ingesteld');
-          if (claim) await db.release(subscription.id, subscription.last_notified_date ?? null);
-          continue;
-        }
-        outcome = await sendFcm({ device: subscription, message: payload, account: fcmAccount, fetchImpl, now: now.getTime() });
-      } else {
-        outcome = await sendPush({ subscription, message: payload, vapid, fetchImpl, now: now.getTime() });
+    const sent = await transmit({ subscription, message, vapid, fcmAccount, fetchImpl, now });
+    result[sent.counter]++;
+    decide(subscription, sent.decision);
+    if (claim && sent.retry) await db.release(subscription.id, subscription.last_notified_date ?? null).catch(() => {}); // volgende ronde opnieuw proberen
+    if (sent.gone) await db.remove(subscription.id);
+  }
+  return result;
+}
+
+/**
+ * De extra meldingen (avond, weekreview) die nu aan de beurt zijn: per apparaat per soort eerst claimen (dan stuurt een tweede run niets dubbel),
+ * dan de tekst maken uit de samenvatting. Is er niets te melden (alles gedaan, review al ingevuld), dan blijft het als "gemeld" staan.
+ */
+async function deliverExtras({ subscriptions, db, vapid, fcmAccount = null, fetchImpl, now }) {
+  const result = { sent: 0, skipped: 0, removed: 0, failed: 0, decisions: [] };
+  for (const subscription of subscriptions) {
+    for (const { kind, key } of dueExtras(subscription, now)) {
+      const { column } = EXTRA_KINDS[kind];
+      const decide = (outcome) => result.decisions.push({ id: shortId(subscription.id), kind, outcome });
+      const previous = subscription[column] ?? null;
+      if (!(await db.claimExtra(subscription.id, column, key))) {
+        result.skipped++;
+        decide('al_gemeld');
+        continue;
       }
-      if (outcome.ok) {
-        result.sent++;
-        decide(subscription, 'verstuurd');
-      } else if (outcome.gone) {
+      const message = composeExtra(kind, subscription, now);
+      if (!message) {
+        result.skipped++;
+        decide('niets_te_melden');
+        continue;
+      }
+      const sent = await transmit({ subscription, message, vapid, fcmAccount, fetchImpl, now });
+      result[sent.counter]++;
+      decide(sent.decision);
+      if (sent.retry) await db.releaseExtra(subscription.id, column, previous).catch(() => {}); // volgende ronde opnieuw proberen
+      if (sent.gone) {
         await db.remove(subscription.id);
-        result.removed++;
-        decide(subscription, `abonnement_verlopen_${outcome.status}`);
-      } else {
-        result.failed++;
-        decide(subscription, `push_dienst_weigerde_${outcome.status}`);
-        if (claim) await db.release(subscription.id, subscription.last_notified_date ?? null); // volgende ronde opnieuw proberen
+        break; // de rij is weg: de andere soorten voor dit toestel hoeven niet meer
       }
-    } catch (error) {
-      console.error('versturen mislukt', shortId(subscription.id), error?.message);
-      result.failed++;
-      decide(subscription, 'fout_bij_versturen');
-      if (claim) await db.release(subscription.id, subscription.last_notified_date ?? null).catch(() => {});
     }
   }
   return result;
@@ -431,6 +536,10 @@ export function inspect(subscription, now) {
     last_notified_date: subscription.last_notified_date ?? null,
     due: isDue(subscription, now),
     planned_today: Array.isArray(entry) ? entry : null,
+    notify_evening: subscription.notify_evening === true,
+    notify_review: subscription.notify_review === true,
+    extras_due: dueExtras(subscription, now).map((extra) => extra.kind),
+    last_extras: { evening: subscription.last_evening_date ?? null, review_open: subscription.last_review_open ?? null, review_closing: subscription.last_review_closing ?? null },
   };
 }
 
@@ -463,9 +572,16 @@ export async function handleRequest(request, { env, fetchImpl = fetch, now = new
     if (!safeEqual(cronHeader, env('CRON_SECRET'))) return json(401, { error: 'geen toegang' });
     const all = await db.all();
     const due = all.filter((subscription) => isDue(subscription, now));
-    const outcome = await deliver({ subscriptions: due, db, vapid, fcmAccount, fetchImpl, now, claim: true });
+    const morning = await deliver({ subscriptions: due, db, vapid, fcmAccount, fetchImpl, now, claim: true });
+    // de rijen die in de ochtendronde zijn verwijderd (verlopen abonnement) hoeven niet nog eens
+    const gone = new Set(morning.decisions.filter((decision) => decision.outcome.startsWith('abonnement_verlopen')).map((decision) => decision.id));
+    const extras = await deliverExtras({ subscriptions: all.filter((subscription) => !gone.has(shortId(subscription.id))), db, vapid, fcmAccount, fetchImpl, now });
+    const outcome = {
+      sent: morning.sent + extras.sent, skipped: morning.skipped + extras.skipped, removed: morning.removed + extras.removed, failed: morning.failed + extras.failed,
+      decisions: [...morning.decisions, ...extras.decisions],
+    };
     const body = { mode: 'cron', at: now.toISOString(), checked: all.length, due: due.length, ...outcome, inspect: all.map((subscription) => inspect(subscription, now)) };
-    if (due.length > 0) console.log('cron', JSON.stringify({ due: due.length, sent: outcome.sent, skipped: outcome.skipped, removed: outcome.removed, failed: outcome.failed, decisions: outcome.decisions }));
+    if (due.length > 0 || extras.decisions.length > 0) console.log('cron', JSON.stringify({ due: due.length, sent: outcome.sent, skipped: outcome.skipped, removed: outcome.removed, failed: outcome.failed, decisions: outcome.decisions }));
     return json(200, body);
   }
 
@@ -491,11 +607,11 @@ export async function handleRequest(request, { env, fetchImpl = fetch, now = new
   const run = async () => {
     if (delay > 0) await sleep(delay * 1000);
     const at = new Date(now.getTime() + delay * 1000);
-    const test = (subscription) => ({
-      title: 'Testmelding',
-      body: composeMessage(subscription, at)?.body ?? 'Het werkt. Vandaag is er niets in te plannen.',
-      url: './#/today',
-    });
+    const kind = typeof body.kind === 'string' && EXTRA_KINDS[body.kind] ? body.kind : null;
+    // met `kind`: de echte tekst van die extra melding (ook als er nu niets te melden zou zijn), zodat je hem kunt zien zonder tot 23:00 te wachten
+    const test = (subscription) => (kind
+      ? composeExtra(kind, subscription, at, { force: true })
+      : { title: 'Testmelding', body: composeMessage(subscription, at)?.body ?? 'Het werkt. Vandaag is er niets in te plannen.', url: './#/today' });
     const results = { sent: 0, skipped: 0, removed: 0, failed: 0 };
     for (const subscription of subscriptions) {
       const one = await deliver({ subscriptions: [subscription], db, vapid, fcmAccount, fetchImpl, now: at, claim: false, forceText: test(subscription) });

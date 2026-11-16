@@ -1,6 +1,6 @@
 import { fill, h } from '../dom.js';
 import { showToast } from './toast.js';
-import { disableReminder, enableReminder, onRemindersChanged, readPushLog, reminders, setReminderTime, testReminder } from '../reminders.js';
+import { disableReminder, enableReminder, onRemindersChanged, readPushLog, reminders, setNotify, setReminderTime, testReminder } from '../reminders.js';
 import { state } from '../state.js';
 import { openDialog } from './dialog.js';
 import { timePicker } from './time-picker.js';
@@ -132,7 +132,33 @@ export function reminderCard() {
             else say(r.testFailed[result.reason] ?? r.testFailed.unknown, true);
           }),
         }, r.testDelayed),
+        ...['evening', 'review_open', 'review_closing'].map((kind) => h('button', {
+          type: 'button', id: `testReminder-${kind}`, class: 'button button--ghost button--block', disabled: busy,
+          onclick: () => guarded(async () => {
+            say('');
+            const result = await testReminder({ kind });
+            if (result.ok) say(r.testSent);
+            else say(r.testFailed[result.reason] ?? r.testFailed.unknown, true);
+          }),
+        }, r.testKinds[kind])),
         pushLog));
+  }
+
+  /** De avondmelding en de weekreview-meldingen: elk een eigen schakelaar met uitleg, per toestel. */
+  function extras() {
+    const e = r.extras;
+    const row = (kind, label, hint) => h('div', { class: 'field' },
+      h('label', { class: 'switch' },
+        h('input', {
+          type: 'checkbox', id: `notify-${kind}`, checked: reminders[kind], disabled: busy, 'aria-describedby': `notify-${kind}-hint`,
+          onchange: (event) => guarded(async () => { await setNotify(kind, event.target.checked); }),
+        }),
+        h('span', null, label)),
+      h('p', { class: 'field__hint', id: `notify-${kind}-hint` }, hint));
+    return h('div', { class: 'reminder-card__extras', id: 'reminderExtras' },
+      h('p', { class: 'kicker' }, e.title),
+      row('evening', e.evening, e.eveningHint),
+      row('review', e.review, e.reviewHint));
   }
 
   function timeField(input) {
@@ -176,6 +202,7 @@ export function reminderCard() {
         h('p', { class: 'field__hint', id: 'reminderStatus' }, r.status(reminders.time)),
         appNote(),
         timeField(input),
+        extras(),
         h('div', { class: 'stack' },
           h('button', {
             type: 'button', id: 'disableReminder', class: 'button button--ghost button--block', disabled: busy,
