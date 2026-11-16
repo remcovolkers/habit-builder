@@ -109,26 +109,26 @@ test('in een proef komt er geen aandachtssignaal voor de taak', async () => {
 test('answerTrial: gelukt kan alleen als de taak in de periode is gedaan, en alleen in de review', async () => {
   const { repo, habit } = await setup();
   await startTrial(repo, { habitId: habit.id }, TODAY, NOW);
-  const friday = '2026-10-23';
-  const answer = (passed, today = friday, now = `${today}T10:00`) => answerTrial(repo, { habitId: habit.id, start: '2026-10-19', passed }, today, now);
+  const sunday = '2026-10-25';
+  const answer = (passed, today = sunday, now = `${today}T20:00`) => answerTrial(repo, { habitId: habit.id, start: '2026-10-19', passed }, today, now);
 
   await assert.rejects(() => answer(true, '2026-10-21'), (e) => e instanceof RuleError && e.code === 'trial_closed'); // de review is nog dicht
   await assert.rejects(() => answer(true), (e) => e instanceof RuleError && e.code === 'trial_not_done'); // niet afgevinkt
   await repo.setCheckIn({ habitId: habit.id, date: '2026-10-22', status: 'done' });
   const saved = await answer(true);
-  assert.deepEqual([saved.trials[0].result, saved.trials[0].answeredOn], ['passed', friday]);
+  assert.deepEqual([saved.trials[0].result, saved.trials[0].answeredOn], ['passed', sunday]);
   await assert.rejects(() => answer(false), (e) => e.code === 'trial_closed', 'een beantwoorde proef is klaar');
 });
 
 test('answerTrial: mislukt mag ook zonder afvinken, de app helpt weer en de wachttijd loopt', async () => {
   const { repo, habit } = await setup();
   await startTrial(repo, { habitId: habit.id }, TODAY, NOW);
-  const friday = '2026-10-23';
-  const saved = await answerTrial(repo, { habitId: habit.id, start: '2026-10-19', passed: false }, friday, `${friday}T10:00`);
+  const sunday = '2026-10-25';
+  const saved = await answerTrial(repo, { habitId: habit.id, start: '2026-10-19', passed: false }, sunday, `${sunday}T20:00`);
   assert.equal(saved.trials[0].result, 'failed');
 
   // meteen weer de gewone stapel (ook de rest van die week)
-  assert.equal((await dayView(repo, '2026-10-24', '2026-10-24')).pool.length, 1);
+  assert.equal((await dayView(repo, '2026-10-25', '2026-10-25')).pool.length, 1);
   // en een nieuwe proef kan pas na de wachttijd: 4 hele weken na het eind van de proef
   await assert.rejects(() => startTrial(repo, { habitId: habit.id }, '2026-11-22', '2026-11-22T09:00'), (e) => e.code === 'trial_cooldown');
   const again = await startTrial(repo, { habitId: habit.id }, '2026-11-23', '2026-11-23T09:00');
@@ -139,7 +139,7 @@ test('answerTrial: mislukt mag ook zonder afvinken, de app helpt weer en de wach
 test('answerTrial: na het sluiten van de review kan het niet meer (de proef verloopt, zonder wachttijd)', async () => {
   const { repo, habit } = await setup();
   await startTrial(repo, { habitId: habit.id }, TODAY, NOW);
-  await assert.rejects(() => answerTrial(repo, { habitId: habit.id, start: '2026-10-19', passed: false }, '2026-10-26', '2026-10-26T12:00'), (e) => e.code === 'trial_closed');
+  await assert.rejects(() => answerTrial(repo, { habitId: habit.id, start: '2026-10-19', passed: false }, '2026-10-27', '2026-10-27T00:00'), (e) => e.code === 'trial_closed');
   const next = await startTrial(repo, { habitId: habit.id }, '2026-10-27', '2026-10-27T09:00');
   assert.equal(next.trials.length, 2, 'verlopen zonder antwoord: meteen opnieuw kan');
 });
@@ -158,9 +158,9 @@ test('de detailpagina zegt wat er met de proef is en telt een geslaagde proef me
   const running = await detail('2026-10-21', '2026-10-21T09:00');
   assert.deepEqual([running.trial.offer.state, running.trial.current.status, running.trial.current.done], ['busy', 'running', 0]);
   await repo.setCheckIn({ habitId: habit.id, date: '2026-10-21', status: 'done' });
-  assert.equal((await detail('2026-10-23', '2026-10-23T09:00')).trial.current.status, 'answer');
-  assert.equal((await detail('2026-10-23', '2026-10-23T09:00')).trial.current.done, 1);
-  await answerTrial(repo, { habitId: habit.id, start: '2026-10-19', passed: true }, '2026-10-23', '2026-10-23T09:00');
+  assert.equal((await detail('2026-10-25', '2026-10-25T20:00')).trial.current.status, 'answer');
+  assert.equal((await detail('2026-10-25', '2026-10-25T20:00')).trial.current.done, 1);
+  await answerTrial(repo, { habitId: habit.id, start: '2026-10-19', passed: true }, '2026-10-25', '2026-10-25T20:00');
   const after = await detail('2026-10-30', '2026-10-30T09:00');
   assert.equal(after.trial.passed, true);
   assert.equal(after.trial.current, null);

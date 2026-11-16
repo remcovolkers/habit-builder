@@ -653,6 +653,125 @@ select.input {
   width: 100%;
 }
 
+/* Instellingen: een overzicht van gegroepeerde rijen, elke rij opent een eigen pagina (#/settings/<id>).
+   Telefoon en tablet: óf het overzicht óf de pagina. Vanaf 960 px (layout.css) staan ze naast elkaar. */
+@media (max-width: 959.98px) {
+  .settings--detail .settings__nav,
+  .settings:not(.settings--detail) .settings__detail {
+    display: none;
+  }
+}
+
+/* de paginakop: terugknop boven de titel (niet ernaast, zoals een kop met knoppen rechts) */
+.settings__detail > .page-header {
+  display: block;
+}
+
+.settings-group {
+  margin-top: var(--space-6);
+}
+
+.settings-group__title {
+  margin-bottom: var(--space-2);
+}
+
+.settings-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-card);
+}
+
+.settings-list__item + .settings-list__item {
+  border-top: 1px solid var(--color-hairline);
+}
+
+/* geen vaste hoogte of breedte: bij grote tekst breken titel en waarde af in plaats van dat er iets uitsteekt */
+.settings-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px; /* px, niet rem: bij 200% tekst moet er genoeg breedte overblijven voor de tekst zelf */
+  width: 100%;
+  min-height: var(--size-tap);
+  padding: var(--space-3) 16px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.settings-row:hover {
+  background: rgb(var(--accent-rgb) / 0.06);
+}
+
+/* de gekozen rij is alleen gemarkeerd als de pagina naast het overzicht staat (computer); op de telefoon is het overzicht een gewone lijst */
+@media (min-width: 960px) {
+  .settings-row[aria-current='page'] {
+    background: rgb(var(--accent-rgb) / 0.1);
+    box-shadow: inset 3px 0 0 var(--color-accent);
+  }
+}
+
+.settings-row__icon,
+.settings-row__chevron {
+  display: inline-flex;
+  color: var(--color-accent);
+}
+
+.settings-row__chevron {
+  color: var(--color-text-faint);
+}
+
+.settings-row__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.settings-row__chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.settings-row__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settings-row__title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  overflow-wrap: anywhere;
+}
+
+.settings-row__value {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.settings-row__value[hidden] {
+  display: none;
+}
+
+/* de extra meldingen (avond, weekreview): een schakelaar met uitleg per soort; geen vaste breedtes, de tekst breekt af bij grote letters */
+.reminder-card__extras {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+.reminder-card__extras .field {
+  margin-top: var(--space-2);
+}
+
 .reminder-card__dev {
   display: grid;
   gap: var(--space-2);

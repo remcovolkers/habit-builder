@@ -142,12 +142,6 @@ const withPlugin = (options) => {
   globalThis.Capacitor = { isNativePlatform: () => true, Plugins: { PushNotifications: plugin } };
 };
 
-test('aanzetten meldt elke stap, zodat te zien is waar het vastloopt', async () => {
-  const steps = [];
-  await reminders.enableReminder('08:00', { onStep: (text) => steps.push(text) });
-  assert.deepEqual(steps.map((text) => text.slice(0, 6)), ['Stap 1', 'Stap 2', 'Stap 3', 'Stap 4']);
-});
-
 test('addListener geeft geen Promise terug (alleen een callback-id): het token komt toch aan en aanzetten lukt', async () => {
   withPlugin({ plainListeners: true });
   const result = await reminders.enableReminder('08:00');
@@ -359,3 +353,27 @@ test('initReminders in de app: een tik op een melding opent de pagina (nooit een
   assert.equal(store.has('hb-fcm-token'), false);
 });
 
+
+test('extra meldingen: staan standaard uit, en aanzetten schrijft de keuze naar de server en onthoudt hem op dit toestel', async () => {
+  await reminders.enableReminder('08:00');
+  const first = writes().at(-1).body;
+  const firstRow = Array.isArray(first) ? first[0] : first;
+  assert.deepEqual([firstRow.notify_evening, firstRow.notify_review], [false, false], 'standaard uit');
+
+  await reminders.setNotify('evening', true);
+  const second = writes().at(-1).body;
+  const secondRow = Array.isArray(second) ? second[0] : second;
+  assert.deepEqual([secondRow.notify_evening, secondRow.notify_review], [true, false]);
+  assert.equal(store.get('hb-notify-evening'), '1');
+  assert.equal(reminders.reminders.evening, true);
+
+  await reminders.setNotify('review', true);
+  const third = writes().at(-1).body;
+  assert.equal((Array.isArray(third) ? third[0] : third).notify_review, true);
+  await reminders.refreshReminders();
+  assert.deepEqual([reminders.reminders.evening, reminders.reminders.review], [true, true], 'na een herstart uit de opslag');
+
+  const before = writes().length;
+  await reminders.setNotify('onbekend', true);
+  assert.equal(writes().length, before, 'een onbekende soort doet niets');
+});

@@ -17,13 +17,15 @@ import { account, onAccountChanged, onBeforeLeave } from './account.js';
 import { onChanged, state } from './state.js';
 
 const TIME_KEY = 'hb-reminder-time';
+const NOTIFY_KEYS = { evening: 'hb-notify-evening', review: 'hb-notify-review' }; // de extra meldingen (avond, weekreview), per toestel; standaard uit
 const TOKEN_KEY = 'hb-fcm-token'; // het FCM-token van dit toestel, zolang de herinnering aanstaat (alleen in de app)
 /** Het meldingskanaal; de server noemt hetzelfde kanaal in elk bericht (FCM_CHANNEL_ID in de Edge Function). */
 const CHANNEL_ID = 'morning-reminder';
 
 // tot de eerste controle verborgen: anders flitst de kaart even op voor wie hem niet kan gebruiken
 // alsoInBrowser: alleen in de app, of er voor dit account ook een herinnering in een browser staat (dan komen er twee meldingen)
-export const reminders = { status: 'unconfigured', time: DEFAULT_REMINDER_TIME, alsoInBrowser: false };
+// evening / review: staan de avondmelding en de weekreview-meldingen aan op dit toestel?
+export const reminders = { status: 'unconfigured', time: DEFAULT_REMINDER_TIME, alsoInBrowser: false, evening: false, review: false };
 
 const events = new EventTarget();
 export function onRemindersChanged(listener) {
@@ -60,6 +62,22 @@ function readStoredTime() {
     return validateReminderTime(stored, 0) === null ? stored : DEFAULT_REMINDER_TIME;
   } catch {
     return DEFAULT_REMINDER_TIME;
+  }
+}
+
+function readNotify(kind) {
+  try {
+    return localStorage.getItem(NOTIFY_KEYS[kind]) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function storeNotify(kind, on) {
+  try {
+    localStorage.setItem(NOTIFY_KEYS[kind], on ? '1' : '0');
+  } catch {
+    /* opslag geblokkeerd: de keuze staat dan alleen op de server */
   }
 }
 
@@ -109,6 +127,8 @@ function checkBrowserReminder() {
 /** Bepaalt de status opnieuw en laat de UI tekenen. */
 export async function refreshReminders() {
   reminders.time = readStoredTime();
+  reminders.evening = readNotify('evening');
+  reminders.review = readNotify('review');
   const plugin = appPush();
   if (!plugin && !config.vapidPublicKey) reminders.status = 'unconfigured'; // de app heeft geen VAPID-sleutel nodig
   else if (!supported()) reminders.status = 'unsupported';
@@ -129,13 +149,14 @@ async function upload(device, time, { rearm = false } = {}) {
   const client = await auth.getClient();
   const snapshot = await state.repo.snapshot();
   const summary = buildReminderSummary({ snapshot, today: state.today, settings: state.settings });
+  const notify = { evening: reminders.evening, review: reminders.review };
   const common = {
-    client, userId: account.user.id, remindTime: time, timezone: state.settings.timezone, summary,
+    client, userId: account.user.id, remindTime: time, timezone: state.settings.timezone, summary, notify,
     lastNotifiedDate: rearm ? rearmDate({ time, now: new Date(), timeZone: state.settings.timezone }) : undefined,
   };
   if (device.kind === 'app') await saveAppDevice({ ...common, token: device.id });
   else await saveSubscription({ ...common, subscription: device.subscription.toJSON() });
-  lastUploaded = JSON.stringify([device.id, time, state.settings.timezone, summary]);
+  lastUploaded = JSON.stringify([device.id, time, state.settings.timezone, summary, notify]);
 }
 
 let lastUploaded = '';
@@ -149,7 +170,7 @@ export async function syncReminder({ force = false, rearm = false } = {}) {
     if (!device) return;
     const snapshot = await state.repo.snapshot();
     const summary = buildReminderSummary({ snapshot, today: state.today, settings: state.settings });
-    const signature = JSON.stringify([device.id, reminders.time, state.settings.timezone, summary]);
+    const signature = JSON.stringify([device.id, reminders.time, state.settings.timezone, summary, { evening: reminders.evening, review: reminders.review }]);
     if (!force && signature === lastUploaded) return;
     await upload(device, reminders.time, { rearm });
   } catch (error) {
@@ -163,13 +184,13 @@ const scheduleUpload = () => {
 };
 
 /** Aanzetten. Aanroepen direct vanuit een tik van de gebruiker: de browser vraagt dan om toestemming. */
-export async function enableReminder(time, { onStep } = {}) {
+export async function enableReminder(time) {
   const problem = validateReminderTime(time, state.settings.dayStartHour);
   if (problem) return { ok: false, reason: problem };
   if (!navigator.onLine) return { ok: false, reason: 'offline' };
 
   const plugin = appPush();
-  if (plugin) return enableInApp(plugin, time, onStep);
+  if (plugin) return enableInApp(plugin, time);
 
   const permission = await Notification.requestPermission(); // eerste await: de tik telt dan nog als gebaar
   if (permission !== 'granted') {
@@ -238,11 +259,9 @@ function registerForPush(plugin) {
 
 /**
  * Aanzetten in de app: meldingstoestemming (Android 13+), het kanaal, een FCM-token, en het toestel bij de server aanmelden.
- * `onStep(tekst)` meldt de voortgang; bij een fout bevat het resultaat `detail` met de stap en de reden (de kaart toont dat met ontwikkelaarsopties aan).
+ * Bij een fout bevat het resultaat `detail` met de stap en de reden (de kaart toont dat met ontwikkelaarsopties aan).
  */
-async function enableInApp(plugin, time, onStep) {
-  const step = (text) => onStep?.(text);
-  step(nl.reminder.steps.permission);
+async function enableInApp(plugin, time) {
   const permission = (await plugin.requestPermissions().catch(() => null))?.receive; // eerste await: de tik telt dan nog als gebaar
   if (permission !== 'granted') {
     await refreshReminders();
@@ -250,17 +269,14 @@ async function enableInApp(plugin, time, onStep) {
   }
   let token = null;
   try {
-    step(nl.reminder.steps.channel);
     // zonder bestaand kanaal toont Android de melding in een stil standaardkanaal; de server noemt dit kanaal in elk bericht
     await withTimeout(
       plugin.createChannel({ id: CHANNEL_ID, name: nl.reminder.channelName, description: nl.reminder.channelDescription, importance: 4, visibility: 0, vibration: true }),
       appTimeouts.channel, 'kanaal');
-    step(nl.reminder.steps.token);
     token = await registerForPush(plugin);
     storeToken(token);
     storeTime(time);
     reminders.time = time;
-    step(nl.reminder.steps.upload);
     await withTimeout(upload({ kind: 'app', id: token }, time, { rearm: true }), appTimeouts.upload, 'opslaan');
   } catch (error) {
     console.warn('herinnering aanzetten mislukt', error);
@@ -324,6 +340,15 @@ export async function setReminderTime(time) {
   return null;
 }
 
+/** De avondmelding (`kind` 'evening') of de weekreview-meldingen ('review') aan of uit op dit toestel. */
+export async function setNotify(kind, on) {
+  if (!(kind in NOTIFY_KEYS)) return;
+  storeNotify(kind, on);
+  reminders[kind] = on;
+  emit();
+  await syncReminder({ force: true });
+}
+
 /** De laatste melding die op dit toestel aankwam: { sent, received } (ms), of null. Geschreven door de service worker. */
 export async function readPushLog() {
   try {
@@ -336,13 +361,13 @@ export async function readPushLog() {
 }
 
 /** Laat de server een melding sturen (met `delaySeconds` pas na een paar seconden). Geeft { ok } of { ok: false, reason }. */
-export async function testReminder({ delaySeconds = 0 } = {}) {
+export async function testReminder({ delaySeconds = 0, kind } = {}) {
   const device = await currentDevice().catch(() => null);
   if (!device) return { ok: false, reason: 'no_device' };
   try {
     await upload(device, reminders.time); // eerst bijwerken: de testtekst komt uit de actuele samenvatting
     const target = device.kind === 'app' ? { token: device.id } : { endpoint: device.id };
-    return await sendTestReminder({ client: await auth.getClient(), ...target, delaySeconds });
+    return await sendTestReminder({ client: await auth.getClient(), ...target, delaySeconds, kind });
   } catch (error) {
     console.warn('testmelding mislukt', error);
     return { ok: false, reason: 'unknown' };

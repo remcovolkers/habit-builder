@@ -76,7 +76,7 @@ export function eachDay(from, to) {
 
 /**
  * De lokale muurtijd in `timeZone` als 'YYYY-MM-DDTHH:MM', zonder dagwissel. Voor momenten die op de klok liggen, zoals het openen en
- * sluiten van een review (vrijdag 00:00, maandag 12:00). Tekst in dit formaat is op volgorde te vergelijken.
+ * sluiten van een review (zondag 18:00, maandag 23:59). Tekst in dit formaat is op volgorde te vergelijken.
  */
 export function localNow(now, timeZone) {
   const parts = Object.fromEntries(

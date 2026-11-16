@@ -7,6 +7,8 @@ import * as auth from '../../data/auth.js';
 import { fetchDevUsage } from '../../data/dev-usage.js';
 import { installCard } from '../components/install-card.js';
 import { reminderCard } from '../components/reminder-card.js';
+import { onRemindersChanged, reminders } from '../reminders.js';
+import { onPwaChanged, pwa } from '../../pwa.js';
 import { agendaConnectCard } from '../components/agenda-connect.js';
 import { themeFor } from '../../app/themes.js';
 import { themeOptions } from '../components/theme-picker.js';
@@ -23,7 +25,7 @@ import { openFeedbackSheet } from '../components/feedback-sheet.js';
 import { icon } from '../svg.js';
 import { isNativeApp } from '../../native.js';
 import { timezoneLabel } from '../../app/timezone.js';
-import { checkAppUpdate, pretendAppUpdate } from '../app-update.js';
+import { checkAppUpdate, downloadAppUpdate, pretendAppUpdate } from '../app-update.js';
 
 function timeZones() {
   const zones = typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : [];
@@ -78,7 +80,7 @@ function backupSection() {
   return h('section', { class: 'section' },
     h('h2', { class: 'section__title' }, b.title),
     hint,
-    h('details', { class: 'fold', id: 'backupDetails' },
+    h('details', { class: 'fold', id: 'backupDetails', open: true },
       h('summary', null, b.summary),
       h('div', { class: 'stack' },
         h('button', { type: 'button', id: 'exportBackup', class: 'button button--secondary button--block', onclick: download }, b.export),
@@ -172,25 +174,43 @@ function devUsageLine() {
   return line;
 }
 
-/** Alleen in de app, met ontwikkelaarsopties: de updatecontrole nu uitvoeren (en zien wat eruit komt), of de balk laten zien. */
+/** Alleen in de app, met ontwikkelaarsopties: de updatebalk laten zien, en de terugkeer van Google nabootsen. (De updatecontrole zelf staat voor iedereen onder Over Habit Builder.) */
 function appUpdateTools() {
   const t = nl.settings.dev;
-  const result = h('p', { class: 'field__hint', id: 'appUpdateResult', role: 'status', 'aria-live': 'polite' });
   return h('div', { class: 'stack' },
-    h('button', {
-      type: 'button', id: 'appUpdateCheck', class: 'button button--secondary button--block',
-      onclick: async () => {
-        result.textContent = '…';
-        const outcome = await checkAppUpdate({ force: true });
-        const say = t.appUpdateResult;
-        result.textContent = outcome.status === 'available' ? say.available(outcome.version, outcome.current)
-          : outcome.status === 'current' ? say.current(outcome.current, outcome.latest)
-            : outcome.status === 'skipped' ? say.skipped(outcome.reason) : say.failed(outcome.reason);
-      },
-    }, t.appUpdateCheck),
     h('button', { type: 'button', id: 'appUpdatePretend', class: 'button button--ghost button--block', onclick: pretendAppUpdate }, t.appUpdatePretend),
-    h('button', { type: 'button', id: 'googleReturnTest', class: 'button button--ghost button--block', onclick: () => location.assign(`${auth.NATIVE_REDIRECT}?error=access_denied`) }, t.googleReturnTest),
-    result);
+    h('button', { type: 'button', id: 'googleReturnTest', class: 'button button--ghost button--block', onclick: () => location.assign(`${auth.NATIVE_REDIRECT}?error=access_denied`) }, t.googleReturnTest));
+}
+
+/** Alleen in de Android-app: nu controleren of er een nieuwe versie klaarstaat (de webversie werkt zichzelf bij). */
+function updateSection() {
+  const u = nl.settings.update;
+  const result = h('p', { class: 'field__hint', id: 'appUpdateResult', role: 'status', 'aria-live': 'polite' });
+  const download = h('button', { type: 'button', id: 'appUpdateDownload', class: 'button button--primary button--block', hidden: true, onclick: downloadAppUpdate }, u.download);
+  const check = h('button', {
+    type: 'button', id: 'appUpdateCheck', class: 'button button--secondary button--block',
+    onclick: async () => {
+      check.disabled = true;
+      download.hidden = true;
+      result.className = 'field__hint';
+      result.textContent = u.checking;
+      const outcome = await checkAppUpdate({ force: true });
+      check.disabled = false;
+      if (outcome.status === 'available') {
+        result.textContent = u.available(outcome.version, outcome.current);
+        download.hidden = false;
+      } else if (outcome.status === 'current') {
+        result.textContent = u.current(outcome.current);
+      } else {
+        result.textContent = u.failed;
+        result.className = 'field__error';
+      }
+    },
+  }, u.check);
+  return h('section', { class: 'section' },
+    h('h2', { class: 'section__title' }, u.title),
+    h('p', { class: 'section__hint' }, u.hint),
+    h('div', { class: 'stack' }, check, download, result));
 }
 
 /**
@@ -228,19 +248,18 @@ function versionLine() {
     dev);
 }
 
-export function settingsView() {
+/** Jouw dag: de tijdzone volgt het toestel (de lange lijst is er alleen voor wie hem echt wil wijzigen) en wanneer een nieuwe dag begint. Wijzigingen gelden direct. */
+function daySection() {
   const { settings } = state;
   const errorEl = (id) => h('p', { id, class: 'field__error', role: 'alert', hidden: true });
   const errorEls = { timezone: errorEl('err-timezone'), dayStartHour: errorEl('err-dayStartHour') };
-
   const tz = h('select', { id: 'timezone', class: 'input', 'aria-describedby': 'err-timezone' },
     ...timeZones().map((zone) => h('option', { value: zone, selected: zone === settings.timezone }, zone)));
   const hour = h('select', { id: 'dayStartHour', class: 'input', 'aria-describedby': 'hint-day err-dayStartHour' },
     ...Array.from({ length: MAX_DAY_START_HOUR + 1 }, (_, i) =>
       h('option', { value: String(i), selected: i === settings.dayStartHour }, nl.settings.dayStartOption(i))));
 
-  async function submit(event) {
-    event.preventDefault();
+  async function apply() {
     for (const el of Object.values(errorEls)) el.hidden = true;
     try {
       await saveSettings({ timezone: tz.value, dayStartHour: Number(hour.value) });
@@ -255,38 +274,116 @@ export function settingsView() {
       }
     }
   }
+  tz.addEventListener('change', apply);
+  hour.addEventListener('change', apply);
 
-  // de tijdzone volgt het toestel; de lange lijst is er alleen voor wie hem echt wil wijzigen
   const tzLine = h('p', { id: 'timezoneLine', class: 'field__label' }, nl.settings.timezoneIs(timezoneLabel(settings.timezone)));
   const tzField = h('div', { class: 'field', id: 'timezoneField', hidden: true },
     h('label', { class: 'field__label', for: 'timezone' }, nl.settings.timezone), tz, errorEls.timezone);
   const tzChange = h('button', { type: 'button', id: 'timezoneChange', class: 'button button--ghost button--small', onclick: () => { tzField.hidden = false; tzChange.hidden = true; tz.focus(); } }, nl.settings.timezoneChange);
 
-  return h('div', null,
-    h('h1', { class: 'page-title' }, nl.settings.title),
-    h('div', { class: 'settings__columns' },
-     h('div', { class: 'settings__col' },
-      accountCard(),
-      installCard(),
-      reminderCard(),
-      agendaConnectCard(),
-      themeSection()),
-     h('div', { class: 'settings__col' },
-    h('form', { class: 'form', novalidate: true, onsubmit: submit },
-      h('h2', { class: 'section__title' }, nl.settings.dayTitle),
-      h('div', { class: 'field' },
-        tzLine,
-        h('p', { class: 'field__hint' }, nl.settings.timezoneFromDevice),
-        tzChange,
-        tzField),
-      h('div', { class: 'field' },
-        h('label', { class: 'field__label', for: 'dayStartHour' }, nl.settings.dayStart), hour,
-        h('p', { id: 'hint-day', class: 'field__hint' }, nl.settings.dayStartHint), errorEls.dayStartHour),
-      h('button', { type: 'submit', class: 'button button--primary button--block' }, nl.settings.save)),
-    backupSection(),
-    achievementsSection(),
-    guideSection(),
-    feedbackSection(),
-    legalSection(),
-    versionLine())));
+  return h('section', { class: 'section' },
+    h('h2', { class: 'section__title' }, nl.settings.dayTitle),
+    h('div', { class: 'field' },
+      tzLine,
+      h('p', { class: 'field__hint' }, nl.settings.timezoneFromDevice),
+      tzChange,
+      tzField),
+    h('div', { class: 'field' },
+      h('label', { class: 'field__label', for: 'dayStartHour' }, nl.settings.dayStart), hour,
+      h('p', { id: 'hint-day', class: 'field__hint' }, nl.settings.dayStartHint), errorEls.dayStartHour));
+}
+
+// --- het overzicht en de pagina's ---------------------------------------------------------------------------------------------------------
+// Instellingen is een overzicht van gegroepeerde rijen; elke rij opent een eigen pagina (#/settings/<id>). Op een telefoon vervangt de pagina het
+// overzicht (met "‹ Instellingen" om terug te gaan); vanaf 960 px staan het overzicht en de gekozen pagina naast elkaar. Alles past direct toe.
+
+const hubText = nl.settings.hub;
+
+/** De rijen, per groep. `build`: de inhoud van de pagina; `href`: een rij die naar een andere pagina gaat; `action`: een rij die een blad opent. */
+function settingsGroups() {
+  return [
+    { id: 'you', items: [
+      { id: 'account', icon: 'user', build: () => [accountCard()], listen: onAccountChanged,
+        value: () => (account.status === 'signed-in' ? (state.settings.displayName || account.user?.email || null) : account.status === 'restoring' ? null : hubText.values.signedOut) },
+      { id: 'notifications', icon: 'bell', build: () => [reminderCard()], listen: onRemindersChanged,
+        visible: () => reminders.status !== 'unconfigured',
+        value: () => (reminders.status === 'on' ? hubText.values.notificationsOn(reminders.time) : hubText.values.notificationsOff) },
+    ] },
+    { id: 'app', items: [
+      { id: 'appearance', icon: 'palette', build: () => [themeSection()], value: () => themeFor(state.settings.theme).name },
+      { id: 'day', icon: 'clock', build: () => [daySection()], value: () => hubText.values.day(state.settings.dayStartHour, timezoneLabel(state.settings.timezone)) },
+      { id: 'agenda', icon: 'calendar', build: () => [agendaConnectCard()] },
+      { id: 'install', icon: 'install', build: () => [installCard()], listen: onPwaChanged, visible: () => !pwa.installed && (pwa.canInstall || pwa.ios) },
+    ] },
+    { id: 'data', items: [
+      { id: 'data', icon: 'archive', build: () => [backupSection(), achievementsSection()] },
+    ] },
+    { id: 'help', items: [
+      { id: 'guide', icon: 'help', href: '#/uitleg' },
+      { id: 'feedback', icon: 'feedback', action: (button) => openFeedbackSheet({ opener: button }) },
+      { id: 'legal', icon: 'shield', build: () => [legalSection()] },
+      { id: 'about', icon: 'info', build: () => [isNativeApp() ? updateSection() : null, versionLine()], value: () => hubText.values.about(config.appVersion) },
+    ] },
+  ];
+}
+
+/** Eén rij van het overzicht: icoon, titel, de huidige waarde (blijft bijgewerkt) en een pijltje. */
+function settingsRow(item, { current }) {
+  const title = hubText.sections[item.id];
+  const value = h('span', { class: 'settings-row__value' });
+  const showValue = () => {
+    const text = item.value?.() ?? null;
+    value.textContent = text ?? '';
+    value.hidden = text === null || text === '';
+  };
+  const content = [
+    h('span', { class: 'settings-row__icon' }, icon(item.icon)),
+    h('span', { class: 'settings-row__text' }, h('span', { class: 'settings-row__title' }, title), value),
+    h('span', { class: 'settings-row__chevron' }, icon('next')),
+  ];
+  const control = item.action
+    ? h('button', { type: 'button', class: 'settings-row', id: `settingsRow-${item.id}`, 'aria-haspopup': 'dialog', onclick: () => item.action(control) }, ...content)
+    : h('a', { class: 'settings-row', id: `settingsRow-${item.id}`, href: item.href ?? `#/settings/${item.id}`, 'aria-current': current ? 'page' : null }, ...content);
+  const li = h('li', { class: 'settings-list__item' }, control);
+  const refresh = () => {
+    showValue();
+    li.hidden = item.visible ? !item.visible() : false;
+  };
+  refresh();
+  if (item.listen) {
+    const stop = item.listen(() => (li.isConnected ? refresh() : stop()));
+  }
+  return li;
+}
+
+/** De pagina van één onderdeel: een terugknop (alleen op de telefoon), de titel en de inhoud. */
+function settingsDetail(item) {
+  const title = hubText.sections[item.id];
+  const nodes = item.build().filter(Boolean);
+  // heet het eerste blok op de pagina hetzelfde als de pagina zelf, dan is die tweede kop dubbel: visueel verbergen, voor schermlezers blijft hij staan
+  const first = nodes[0]?.querySelector?.('.section__title');
+  if (first && first.textContent.trim() === title) first.classList.add('visually-hidden');
+  return h('div', { class: 'settings__detail', id: `settings-${item.id}` },
+    h('div', { class: 'page-header' },
+      h('a', { class: 'back-link settings__back', href: '#/settings' }, `‹ ${hubText.back}`),
+      h('h2', { class: 'page-title settings__detail-title' }, title)),
+    ...nodes);
+}
+
+export function settingsView({ section = null } = {}) {
+  const groups = settingsGroups();
+  const items = groups.flatMap((group) => group.items);
+  const chosen = items.find((item) => item.id === section && item.build) ?? null;
+  // op een breed scherm staat er altijd een pagina naast het overzicht: zonder keuze de eerste
+  const shown = chosen ?? items.find((item) => item.build);
+  return h('div', { class: `settings${chosen ? ' settings--detail' : ''}` },
+    h('div', { class: 'settings__layout' },
+      h('nav', { class: 'settings__nav', 'aria-label': nl.settings.title },
+        h('h1', { class: 'page-title' }, nl.settings.title),
+        ...groups.map((group) => h('section', { class: 'settings-group', 'aria-labelledby': `settings-group-${group.id}` },
+          h('h2', { class: 'kicker settings-group__title', id: `settings-group-${group.id}` }, hubText.groups[group.id]),
+          h('ul', { class: 'settings-list' }, ...group.items.map((item) => settingsRow(item, { current: item === shown }))))),
+      ),
+      settingsDetail(shown)));
 }

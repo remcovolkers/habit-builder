@@ -163,7 +163,7 @@ export const nl = {
       hideText: 'Deze afspraak verdwijnt van Vandaag, alleen op dit toestel. In je agenda blijft hij staan.',
       toasts: { done: (title) => `Afgevinkt: ${title}`, reopened: (title) => `Weer open: ${title}`, hidden: (title) => `Niet meer getoond: ${title}` },
     },
-    // de melding dat een review open staat (week: vrijdag tot maandag 12:00; maand: de 25e tot de 2e om 12:00)
+    // de melding dat een review open staat (week: zondag 18:00 tot maandag 23:59; maand: de 25e tot de 2e om 12:00)
     reviewNote: {
       badge: 'Review',
       week: 'Week review staat vanaf nu open',
@@ -521,18 +521,47 @@ export const nl = {
       off: 'Ontwikkelaarsopties staan uit',
       title: 'Ontwikkelaar',
       turnOff: 'Ontwikkelaarsopties uitzetten',
-      appUpdateCheck: 'Controleer op een nieuwe app-versie',
       appUpdatePretend: 'Toon de updatebalk (proef)',
       googleReturnTest: 'Proef: terugkeer van Google (annuleren)', // opent habitbuilder://auth?error=… zoals Google doet; Android moet de app openen en de melding tonen
-      appUpdateResult: {
-        available: (version, current) => `Versie ${version} staat klaar (jij hebt ${current}).`,
-        current: (current, latest) => `Je hebt de nieuwste versie (${current}); nieuwste release: ${latest ?? 'geen'}.`,
-        skipped: (reason) => `Niet gecontroleerd: ${reason}.`,
-        failed: (reason) => `Controleren mislukt: ${reason}.`,
-      },
       usage: (users, activeToday) => `Gebruikers buiten jou: ${users} · vandaag actief: ${activeToday}`,
     },
     title: 'Instellingen',
+    // het overzicht: groepen met rijen, elke rij opent een eigen pagina
+    hub: {
+      back: 'Instellingen',
+      groups: { you: 'Jij', app: 'De app', data: 'Gegevens', help: 'Hulp en info' },
+      sections: {
+        account: 'Account',
+        notifications: 'Meldingen',
+        appearance: 'Uiterlijk',
+        day: 'Jouw dag',
+        agenda: 'Agenda',
+        install: 'App installeren',
+        data: 'Gegevens',
+        guide: 'Zo werkt het',
+        feedback: 'Feedback geven',
+        legal: 'Privacy en voorwaarden',
+        about: 'Over Habit Builder',
+      },
+      values: {
+        signedOut: 'Niet ingelogd',
+        notificationsOn: (time) => `Aan · ${time}`,
+        notificationsOff: 'Uit',
+        day: (hour, zone) => `Begint ${String(hour).padStart(2, '0')}:00 · ${zone}`,
+        about: (version) => `Versie ${version}`,
+      },
+    },
+    // controleren op een nieuwe versie van de Android-app (voor iedereen; de webversie werkt zichzelf bij)
+    update: {
+      title: 'Nieuwe versie',
+      hint: 'De app kijkt zelf één keer per dag of er een nieuwe versie klaarstaat. Je kunt het hier ook nu doen.',
+      check: 'Controleer op een nieuwe versie',
+      checking: 'Bezig met controleren…',
+      available: (version, current) => `Versie ${version} staat klaar (jij hebt ${current}).`,
+      download: 'Downloaden',
+      current: (current) => `Je hebt de nieuwste versie (${current}).`,
+      failed: 'Controleren lukte niet. Probeer het later opnieuw.',
+    },
     legal: {
       title: 'Privacy en voorwaarden',
       hint: 'Wat we bewaren, waarom, en de spelregels voor deze app.',
@@ -1169,16 +1198,17 @@ export const nl = {
     enable: 'Herinnering aanzetten',
     enabling: 'Bezig met aanzetten…',
     foregroundOpen: 'Openen', // een melding die binnenkomt terwijl de app open staat: Android toont die niet zelf, de app laat hem als balk zien
-    // de stappen van het aanzetten in de app; met ontwikkelaarsopties aan staat de huidige stap onder de knop
-    steps: {
-      permission: 'Stap 1 van 4: toestemming voor meldingen…',
-      channel: 'Stap 2 van 4: meldingskanaal maken…',
-      token: 'Stap 3 van 4: Google om een token vragen…',
-      upload: 'Stap 4 van 4: dit toestel bij de server aanmelden…',
-    },
     failedDetail: (detail) => `Aanzetten is niet gelukt (${detail}).`,
     disable: 'Herinnering uitzetten',
-    status: (time) => `Aan: elke dag rond ${time}.`,
+    // de extra meldingen onder de ochtendherinnering: per toestel aan of uit
+    extras: {
+      title: 'Meer meldingen',
+      evening: 'Avondmelding om 23:00',
+      eveningHint: '"Laatste sprintje?" als er nog taken open staan, anders "Wil je je dag afsluiten?". Zonder melding als alles klaar is en je dag is afgesloten.',
+      review: 'Weekreview-meldingen',
+      reviewHint: 'Zondag om 18:00 "Weekreview staat vanaf nu open", en maandag om 23:30 "Weekreview staat nog open". Alleen als je hem nog niet hebt ingevuld; dan staat de weekreview niet meer in de ochtendmelding.',
+    },
+    testKinds: { evening: 'Test: avondmelding', review_open: 'Test: weekreview open', review_closing: 'Test: weekreview sluit bijna' },
     test: 'Stuur een testmelding',
     testSent: 'Testmelding verstuurd. Die komt zo binnen.',
     devTitle: 'Ontwikkelaar: meldingen testen',

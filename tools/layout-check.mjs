@@ -304,7 +304,7 @@ async function main() {
   await ev(`(async () => { const { state, notifyChanged } = await import('/src/ui/state.js'); for (const habit of await state.repo.listHabits()) await state.repo.deleteHabit(habit.id); notifyChanged(); })()`);
   // Zo werkt het: bereikbaar uit Instellingen, past op 320 px met 200% tekst en biedt de introductie opnieuw aan
   await nav('settings');
-  const link = await ev(`document.querySelector('#guideLink')?.getAttribute('href')`);
+  const link = await ev(`document.querySelector('#settingsRow-guide')?.getAttribute('href')`);
   await nav('uitleg');
   await ev(`document.documentElement.style.fontSize = '200%'`);
   await sleep(300);
@@ -718,7 +718,7 @@ async function main() {
   const noPageScroll = () => ev(`(() => { const main = document.querySelector('.app__main'); return { page: document.documentElement.scrollHeight - innerHeight, bodyY: Math.round(window.scrollY),
     clipped: getComputedStyle(main).overflowY === 'hidden' ? main.scrollHeight - main.clientHeight : 0 }; })()`);
   const settle = async (route) => { await nav(route); await ev(`document.documentElement.style.fontSize = '100%'`); await ev(`document.querySelectorAll('dialog[open]').forEach((d) => d.close())`); await sleep(300); };
-  for (const [what, route] of [['Vandaag', 'today'], ['Habits', 'habits'], ['Voortgang', 'stats'], ['Habit: nieuw', 'habits/new'], ['Instellingen', 'settings'], ['Prestaties', 'achievements'], ['Zo werkt het', 'uitleg'], ['Introductie', 'welkom/2']]) {
+  for (const [what, route] of [['Vandaag', 'today'], ['Habits', 'habits'], ['Voortgang', 'stats'], ['Habit: nieuw', 'habits/new'], ['Instellingen', 'settings'], ['Instellingen: meldingen', 'settings/notifications'], ['Prestaties', 'achievements'], ['Zo werkt het', 'uitleg'], ['Introductie', 'welkom/2']]) {
     await settle(route);
     const m = await noPageScroll();
     check(`desktop, ${what}: de pagina zelf scrolt niet (alleen het werkvlak of een kolom)`, m.page <= 1 && m.bodyY === 0, JSON.stringify(m));
@@ -884,7 +884,7 @@ async function main() {
   const fbButtons = (label) => `[...document.querySelectorAll('dialog.dialog--feedback .dialog__actions .button')].find((b) => b.textContent === '${label}')`;
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await settle('settings');
-  await ev(`document.querySelector('#feedbackOpen').click()`);
+  await ev(`document.querySelector('#settingsRow-feedback').click()`);
   await sleep(500);
   const fbSheet = await ev(`(() => { const d = document.querySelector('dialog.dialog--feedback[open]'); return { open: !!d, kinds: d?.querySelectorAll('input[name="feedbackKind"]').length ?? 0, hash: location.hash, contact: !!d?.querySelector('#feedbackContact'),
     context: d?.querySelector('.feedback-form__context')?.textContent ?? '', height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight, overflow: d ? d.scrollWidth - d.clientWidth : 1 }; })()`);
@@ -905,12 +905,12 @@ async function main() {
     fbSheet.open && fbSheet.kinds === 4 && fbSheet.hash === '#/settings' && !fbSheet.contact && fbSheet.context.includes('#/settings') && fbSheet.context.includes(`(${config.appVersion})`) && fbSheet.height <= fbSheet.vh && fbSheet.overflow <= 0, JSON.stringify(fbSheet));
   check('feedback: leeg versturen geeft twee meldingen en laat het blad open; zonder verbinding komt er een melding, het blad blijft open en je tekst blijft staan; annuleren geeft de focus terug',
     fbEmpty.open && fbEmpty.errors.length === 2 && fbOffline.open && fbOffline.text === 'Een donker thema graag' && fbOffline.errors.length === 1 && /probeer het zo opnieuw/.test(fbOffline.errors[0])
-      && !fbClosed.open && fbClosed.hash === '#/settings' && fbClosed.focus === 'feedbackOpen', JSON.stringify({ fbEmpty, fbOffline, fbClosed }));
+      && !fbClosed.open && fbClosed.hash === '#/settings' && fbClosed.focus === 'settingsRow-feedback', JSON.stringify({ fbEmpty, fbOffline, fbClosed }));
   // op de kleinste schermen met grote tekst
   await send('Emulation.setDeviceMetricsOverride', { width: 320, height: 568, deviceScaleFactor: 2, mobile: true });
   await ev(`document.documentElement.style.fontSize = '200%'`);
   await sleep(400);
-  await ev(`document.querySelector('#feedbackOpen').click()`);
+  await ev(`document.querySelector('#settingsRow-feedback').click()`);
   await sleep(500);
   const fbSmall = await ev(`(() => { const d = document.querySelector('dialog.dialog--feedback[open]'); return { open: !!d, overflow: d ? d.scrollWidth - d.clientWidth : 1, height: d ? Math.round(d.getBoundingClientRect().height) : 0, vh: innerHeight,
     tiny: [...(d?.querySelectorAll('.dialog__actions .button, .choice__face') ?? [])].filter((b) => b.getBoundingClientRect().height < 44).length }; })()`);
@@ -1174,8 +1174,8 @@ async function main() {
   const savedOther = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); return (await state.repo.listReasons()).filter((r) => r.reason === 'other').map((r) => r.note); })()`);
   check('"Anders" met een toelichting wordt als reden bewaard', savedOther.includes('Auto kapot'), JSON.stringify(savedOther));
 
-  // Voortgang: week en maand bepalen samen het overzicht, de tegel en de review; bladeren kan onbeperkt; een review staat open van vrijdag 00:00 tot maandag
-  // 12:00 (week) en van de 25e tot de 2e 12:00 (maand). Wat open, nog dicht of gesloten is hangt van de klok af: de verwachtingen worden met dezelfde regels nagerekend.
+  // Voortgang: week en maand bepalen samen het overzicht, de tegel en de review; bladeren kan onbeperkt; een review staat open van zondag 18:00 tot maandag
+  // 23:59 (week) en van de 25e tot de 2e 12:00 (maand). Wat open, nog dicht of gesloten is hangt van de klok af: de verwachtingen worden met dezelfde regels nagerekend.
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await nav('stats');
   await ev(`document.documentElement.style.fontSize = '100%'`);
@@ -1210,7 +1210,7 @@ async function main() {
     && (clock.weekState === 'open' ? v.form && weekFields : !v.form && v.empty === 'Nog niet open'), JSON.stringify({ clock, v }));
   for (let i = 0; i < 4; i++) await click('[data-focus-key="next"]', 250);
   v = await viewState();
-  check('Voortgang, week: vooruit bladeren kan (4 weken), de tegel toont wat gepland staat en de review is "Nog niet open" zonder formulier', !v.nextOff && v.tile === 'Gepland deze week' && v.empty === 'Nog niet open' && /opent op vrijdag/.test(v.emptyText ?? '') && !v.form, JSON.stringify(v));
+  check('Voortgang, week: vooruit bladeren kan (4 weken), de tegel toont wat gepland staat en de review is "Nog niet open" zonder formulier', !v.nextOff && v.tile === 'Gepland deze week' && v.empty === 'Nog niet open' && /opent op zondag .* 18:00/.test(v.emptyText ?? '') && !v.form, JSON.stringify(v));
   await click('.overview__today');
   for (let i = 0; i < 6; i++) await click('[data-focus-key="prev"]', 250);
   v = await viewState();
@@ -1218,7 +1218,7 @@ async function main() {
   await click('.overview__today');
   for (let i = 0; i < 2; i++) await click('[data-focus-key="prev"]', 250);
   v = await viewState();
-  check('Voortgang, week: een gesloten week met review staat als kaart (goed en slecht) zonder "Bewerk", met "Gesloten sinds maandag … 12:00"', v.state === 'closed' && v.saved && !v.edit && !v.form && /Gesloten sinds maandag .* 12:00/.test(v.foot ?? ''), JSON.stringify(v));
+  check('Voortgang, week: een gesloten week met review staat als kaart (goed en slecht) zonder "Bewerk", met "Gesloten sinds maandag … 23:59"', v.state === 'closed' && v.saved && !v.edit && !v.form && /Gesloten sinds maandag .* 23:59/.test(v.foot ?? ''), JSON.stringify(v));
   await click('.overview__today');
   if (clock.weekState === 'open') {
     // de weekreview invullen: het formulier wordt een kaart met "Bewerk"
@@ -1226,7 +1226,7 @@ async function main() {
     await ev(`document.querySelector('.review-card form').requestSubmit()`);
     await sleep(700);
     const savedWeek = await ev(`(() => ({ form: !!document.querySelector('.review-card form'), items: [...document.querySelectorAll('.review-saved__text')].map((e) => e.textContent), edit: !!document.querySelector('.review-saved [data-focus-key^="edit:"]'), foot: document.querySelector('.review-saved__foot .xs')?.textContent }))()`);
-    check('Voortgang, week: na opslaan staat de review als kaart (goed en slecht) met een "Bewerk"-knop en "Open tot maandag … 12:00", zonder formulier', !savedWeek.form && savedWeek.items.join('|') === 'Elke dag water|Te laat naar bed' && savedWeek.edit && /Open tot maandag .* 12:00/.test(savedWeek.foot ?? ''), JSON.stringify(savedWeek));
+    check('Voortgang, week: na opslaan staat de review als kaart (goed en slecht) met een "Bewerk"-knop en "Open tot maandag … 23:59", zonder formulier', !savedWeek.form && savedWeek.items.join('|') === 'Elke dag water|Te laat naar bed' && savedWeek.edit && /Open tot maandag .* 23:59/.test(savedWeek.foot ?? ''), JSON.stringify(savedWeek));
     await click('.review-saved [data-focus-key^="edit:"]');
     const editing = await ev(`({ well: document.querySelector('#wentWell')?.value, cancel: [...document.querySelectorAll('.review-card .button')].some((b) => b.textContent === 'Annuleren') })`);
     check('Voortgang, week: "Bewerk" opent het formulier met wat er stond en een "Annuleren"', editing.well === 'Elke dag water' && editing.cancel, JSON.stringify(editing));
@@ -1505,7 +1505,7 @@ async function main() {
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await ev(`document.documentElement.style.fontSize = '100%'`);
   await agendaSeed(null);
-  await nav('settings');
+  await nav('settings/agenda');
   await sleep(500);
   const signedOut = await ev(`({ hint: document.querySelector('#agendaSignedOut')?.textContent ?? null, input: !!document.querySelector('#agendaUrl') })`);
   check('Instellingen, agenda zonder account: een uitleg om in te loggen en geen invoerveld', /Log in/.test(signedOut.hint ?? '') && !signedOut.input, JSON.stringify(signedOut));

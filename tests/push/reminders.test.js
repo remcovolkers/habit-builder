@@ -70,8 +70,9 @@ test('composeMessage: een maandreview komt erbij, en een tik opent Voortgang bij
   assert.equal(message([0, 0, 0, 1, 1]).body, 'Je weekterugblik en maandreview staan klaar.');
   assert.equal(message([3, 0, 0, 0, 1]).body, 'Je maandreview staat klaar. Vandaag staat 3 gewoontes op je lijst.');
   assert.equal(message([0, 0, 0, 0, 1]).url, './#/stats?review=month&date=2026-10-16');
-  assert.equal(message([0, 0, 0, 1, 0]).url, './#/stats?review=week&date=2026-10-16');
-  assert.equal(message([0, 0, 0, 1, 1]).url, './#/stats?review=week&date=2026-10-16');
+  // de weekreview die klaarstaat is die van de week die gisteren eindigde: de link wijst naar de dag ervoor
+  assert.equal(message([0, 0, 0, 1, 0]).url, './#/stats?review=week&date=2026-10-15');
+  assert.equal(message([0, 0, 0, 1, 1]).url, './#/stats?review=week&date=2026-10-15');
   assert.equal(message([3, 1, 0, 0, 0]).url, './#/today', 'zonder review blijft het Vandaag');
   assert.equal(message([0, 0, 0, 0, 'ja']), null, 'rommel telt niet');
 });
@@ -161,9 +162,9 @@ async function world({ subs, users = { 'token-a': 'user-a', 'token-b': 'user-b' 
     }
     assert.equal(method, 'PATCH');
     const patch = JSON.parse(init.body);
-    if (url.searchParams.has('or')) { // de claim: alleen als nog niet van vandaag
-      if (row && row.last_notified_date === patch.last_notified_date) return Response.json([]);
-      if (!row) return Response.json([]);
+    if (url.searchParams.has('or')) { // de claim: alleen als dat soort nog niet van vandaag is (last_notified_date of een last_*-kolom van de extra meldingen)
+      const [column] = Object.keys(patch);
+      if (!row || row[column] === patch[column]) return Response.json([]);
       Object.assign(row, patch);
       return Response.json([row]);
     }
@@ -372,4 +373,129 @@ test('testmelding met vertraging: een onbekend apparaat geeft ook dan een nette 
   const response = await call({ authorization: 'Bearer token-b' }, { test: true, delaySeconds: 10 }, 'POST', at(6, 5), { sleep: async () => {}, background: (p) => tasks.push(p) });
   assert.equal(response.status, 404);
   assert.equal(tasks.length, 0);
+});
+
+// ---------------------------------------------------------------------------------------------
+// De extra meldingen: avond (elke dag 23:00), weekreview open (zondag 18:00) en sluit bijna (maandag 23:30)
+// ---------------------------------------------------------------------------------------------
+const { dueExtras, composeExtra } = reminders;
+// 2026-10-16 is een vrijdag, 18 oktober een zondag, 19 oktober een maandag (CEST, UTC+2)
+const local = (day, hh, mm = 0) => new Date(Date.UTC(2026, 9, day, hh - 2, mm));
+const on = (extra = {}) => sub({ notify_evening: true, notify_review: true, ...extra });
+const kinds = (subscription, now) => dueExtras(subscription, now).map((extra) => extra.kind);
+const reviewOnly = (extra = {}) => on({ notify_evening: false, ...extra });
+
+test('dueExtras: de avondmelding komt elke dag vanaf 23:00, één keer, en alleen als hij aanstaat', () => {
+  assert.deepEqual(kinds(on(), local(16, 22, 59)), []);
+  assert.deepEqual(kinds(on(), local(16, 23, 0)), ['evening']);
+  assert.deepEqual(kinds(on(), local(16, 23, 59)), ['evening']);
+  assert.deepEqual(kinds(on(), local(17, 0, 0)), [], 'na middernacht is het een nieuwe dag, en die begint niet met een avondmelding');
+  assert.deepEqual(kinds(on({ last_evening_date: '2026-10-16' }), local(16, 23, 5)), [], 'al gemeld vandaag');
+  assert.deepEqual(kinds(on({ last_evening_date: '2026-10-15' }), local(16, 23, 5)), ['evening']);
+  assert.deepEqual(kinds(on({ notify_evening: false }), local(16, 23, 5)), [], 'uit');
+  assert.deepEqual(kinds(sub(), local(16, 23, 5)), [], 'een oudere app schrijft de kolommen niet: alles blijft uit');
+});
+
+test('dueExtras: de weekreview opent zondag 18:00 en sluit bijna maandag 23:30, niet op andere dagen of tijden', () => {
+  assert.deepEqual(kinds(reviewOnly(), local(18, 17, 59)), []);
+  assert.deepEqual(kinds(reviewOnly(), local(18, 18, 0)), ['review_open']);
+  assert.deepEqual(kinds(reviewOnly(), local(18, 19, 55)), ['review_open']);
+  assert.deepEqual(kinds(reviewOnly(), local(18, 20, 0)), [], 'te laat: dan liever niets');
+  assert.deepEqual(kinds(reviewOnly(), local(17, 18, 0)), [], 'zaterdag 18:00: nog niet open');
+  assert.deepEqual(kinds(reviewOnly(), local(19, 23, 29)), []);
+  assert.deepEqual(kinds(reviewOnly(), local(19, 23, 30)), ['review_closing']);
+  assert.deepEqual(kinds(reviewOnly(), local(19, 23, 57)), ['review_closing']);
+  assert.deepEqual(kinds(reviewOnly(), local(19, 23, 58)), [], 'twee minuten voor sluiting heeft een melding geen zin meer');
+  assert.deepEqual(kinds(reviewOnly({ last_review_open: '2026-10-18' }), local(18, 18, 5)), [], 'al gemeld');
+  assert.deepEqual(kinds(on({ notify_review: false }), local(18, 18, 5)), [], 'uit');
+  assert.deepEqual(kinds(on(), local(19, 23, 30)), ['evening', 'review_closing'], 'maandag 23:30 valt nog binnen het uur van de avondmelding');
+});
+
+test('dueExtras: rekent in de tijdzone van het apparaat en slaat een onbekende tijdzone over', () => {
+  const newYork = on({ timezone: 'America/New_York' }); // 23:00 EDT = 03:00 UTC de volgende dag
+  assert.deepEqual(kinds(newYork, new Date(Date.UTC(2026, 9, 17, 3, 0))), ['evening']);
+  assert.deepEqual(kinds(newYork, local(16, 23, 0)), []);
+  assert.deepEqual(kinds(on({ timezone: 'Mars/Olympus' }), local(16, 23, 0)), []);
+});
+
+test('composeExtra: avond: "Laatste sprintje?" met aantal, of "Wil je je dag afsluiten?" als alles gedaan is, anders niets', () => {
+  const day = (entry) => on({ summary: { days: { '2026-10-16': entry } } });
+  const evening = (entry) => composeExtra('evening', day(entry), local(16, 23, 0));
+  assert.deepEqual(evening([4, 0, 0, 0, 0, 2, 1, 0]), { tag: 'evening-check', ttl: 7200, title: 'Laatste sprintje?', body: 'Nog 2 taken te doen vandaag.', url: './#/today' });
+  assert.equal(evening([4, 0, 0, 0, 0, 1, 0, 0]).body, 'Nog 1 taak te doen vandaag.', 'ook als je dag al is afgesloten: er staat nog iets open');
+  assert.equal(evening([4, 0, 0, 0, 0, 0, 1, 0]).title, 'Wil je je dag afsluiten?');
+  assert.equal(evening([4, 0, 0, 0, 0, 0, 0, 0]), null, 'alles gedaan en de dag is afgesloten: stil');
+  assert.equal(evening([4, 0, 0, 0, 0]), null, 'een oudere app: weten we niet, dus stil');
+  assert.equal(composeExtra('evening', on(), local(16, 23, 0)), null, 'geen samenvatting voor vandaag');
+});
+
+test('composeExtra: weekreview: alleen als hij nog niet is ingevuld, en de link wijst naar de goede week', () => {
+  const flagged = (date, flag) => on({ summary: { days: { [date]: [0, 0, 0, 0, 0, 0, 0, flag] } } });
+  const open = composeExtra('review_open', flagged('2026-10-18', 1), local(18, 18, 0));
+  assert.deepEqual([open.title, open.url, open.tag], ['Weekreview staat vanaf nu open', './#/stats?review=week&date=2026-10-18', 'review-open']);
+  const closing = composeExtra('review_closing', flagged('2026-10-19', 1), local(19, 23, 30));
+  assert.deepEqual([closing.title, closing.body, closing.url, closing.ttl], ['Weekreview staat nog open', 'Hij sluit vanavond om 23:59.', './#/stats?review=week&date=2026-10-18', 1500], 'maandag: de week die gisteren eindigde');
+  assert.equal(composeExtra('review_open', flagged('2026-10-18', 0), local(18, 18, 0)), null, 'al ingevuld');
+  assert.equal(composeExtra('review_closing', flagged('2026-10-19', 0), local(19, 23, 30)), null);
+  assert.equal(composeExtra('onbekend', on(), local(18, 18, 0)), null);
+});
+
+test('composeMessage: staan de reviewmeldingen aan, dan zit de weekreview niet meer in de ochtendmelding', () => {
+  const days = { '2026-10-16': [0, 0, 0, 1] };
+  assert.equal(composeMessage(sub({ summary: { days } }), at(6)).body, 'Je weekterugblik staat klaar.');
+  assert.equal(composeMessage(sub({ summary: { days }, notify_review: true }), at(6)), null, 'de review krijgt zijn eigen meldingen (zondag en maandag)');
+});
+
+test('cron: de avondmelding gaat om 23:00 naar wie hem aan heeft, één keer', async () => {
+  const days = { '2026-10-16': [4, 0, 0, 0, 0, 3, 1, 0] };
+  const { call, rows, pushes } = await world({ subs: [{ notify_evening: true, summary: { days } }, { summary: { days } }] });
+  const result = await (await call(cron, {}, 'POST', local(16, 23, 0))).json();
+  assert.deepEqual(pushes, [0], 'het toestel met de melding uit krijgt niets');
+  assert.deepEqual(result.decisions.map((d) => [d.kind, d.outcome]), [['evening', 'verstuurd']]);
+  assert.equal(rows[0].last_evening_date, '2026-10-16');
+  assert.equal(rows[1].last_evening_date ?? null, null);
+  const again = await (await call(cron, {}, 'POST', local(16, 23, 5))).json();
+  assert.equal(again.sent, 0, 'een tweede ronde stuurt niets dubbel');
+  assert.deepEqual(pushes, [0]);
+});
+
+test('cron: niets te melden om 23:00 = geen melding, en niet elke 5 minuten opnieuw bekijken', async () => {
+  const { call, pushes, rows } = await world({ subs: [{ notify_evening: true, summary: { days: { '2026-10-16': [4, 0, 0, 0, 0, 0, 0, 0] } } }] });
+  const result = await (await call(cron, {}, 'POST', local(16, 23, 0))).json();
+  assert.deepEqual(result.decisions.map((d) => d.outcome), ['niets_te_melden']);
+  assert.deepEqual(pushes, []);
+  assert.equal(rows[0].last_evening_date, '2026-10-16');
+});
+
+test('cron: een storing bij de avondmelding wordt de volgende ronde opnieuw geprobeerd, een verlopen abonnement opgeruimd', async () => {
+  const days = { '2026-10-16': [4, 0, 0, 0, 0, 3, 1, 0] };
+  const { call, rows } = await world({ subs: [{ notify_evening: true, summary: { days } }, { notify_evening: true, summary: { days } }], pushStatus: { 0: 500, 1: 410 } });
+  const result = await (await call(cron, {}, 'POST', local(16, 23, 0))).json();
+  assert.deepEqual({ failed: result.failed, removed: result.removed }, { failed: 1, removed: 1 });
+  assert.deepEqual(rows.map((row) => row.id), ['s0']);
+  assert.equal(rows[0].last_evening_date ?? null, null, 'vrijgegeven');
+});
+
+test('cron: zondag 18:00 en maandag 23:30 sturen de weekreview-meldingen', async () => {
+  const summary = { days: { '2026-10-18': [0, 0, 0, 0, 0, 0, 0, 1], '2026-10-19': [0, 0, 0, 1, 0, 0, 0, 1] } };
+  const { call, rows, pushes } = await world({ subs: [{ notify_review: true, summary }] });
+  const sunday = await (await call(cron, {}, 'POST', local(18, 18, 0))).json();
+  assert.deepEqual(sunday.decisions.map((d) => [d.kind, d.outcome]), [['review_open', 'verstuurd']]);
+  const monday = await (await call(cron, {}, 'POST', local(19, 23, 30))).json();
+  assert.deepEqual(monday.decisions.map((d) => [d.kind, d.outcome]), [['review_closing', 'verstuurd']]);
+  assert.deepEqual(pushes, [0, 0]);
+  assert.deepEqual([rows[0].last_review_open, rows[0].last_review_closing], ['2026-10-18', '2026-10-19']);
+});
+
+test('cron-antwoord: de inspectie laat zien of de extra meldingen aanstaan en wat er aan de beurt is', async () => {
+  const { call } = await world({ subs: [{ notify_evening: true }] });
+  const body = await (await call(cron, {}, 'POST', local(16, 23, 0))).json();
+  assert.deepEqual([body.inspect[0].notify_evening, body.inspect[0].notify_review, body.inspect[0].extras_due], [true, false, ['evening']]);
+});
+
+test('test: met een soort stuurt hij de echte tekst van die melding, ook als er nu niets te melden is', async () => {
+  const { call, pushes } = await world({ subs: [{}] });
+  const result = await (await call({ authorization: 'Bearer token-a' }, { test: true, kind: 'review_closing' })).json();
+  assert.equal(result.sent, 1);
+  assert.deepEqual(pushes, [0]);
 });

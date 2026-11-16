@@ -63,6 +63,7 @@ const routes = [
   { path: '/vrienden/beheer', render: () => friendsManageView() },
   { path: '/vrienden/uitnodiging/:code', render: ({ params }) => friendsInviteView({ code: params.code }) },
   { path: '/settings', render: () => settingsView() },
+  { path: '/settings/:section', render: ({ params }) => settingsView({ section: params.section }) },
   { path: '/uitleg', render: () => guideView() },
   { path: '/feedback', render: () => feedbackAdminView() },
   { path: '/welkom/:step', render: ({ params }) => welcomeView({ step: params.step }) },

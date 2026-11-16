@@ -181,15 +181,15 @@ test('rateAutomaticity: huidige week, overschrijven, validatie', async () => {
   for (const score of [0, 6, 2.5, '4']) await assert.rejects(() => rateAutomaticity(repo, { habitId: 'h', score }, TODAY), ValidationError);
 });
 
-// 2026-10-16 is een vrijdag: de weekreview van 12 t/m 18 oktober staat open van vrijdag 16 oktober 00:00 tot maandag 19 oktober 12:00
-const FRI = '2026-10-16T00:00';
+// 2026-10-18 is een zondag: de weekreview van 12 t/m 18 oktober staat open van zondag 18 oktober 18:00 tot en met maandag 19 oktober 23:59
+const SUN_OPENS = '2026-10-18T18:00';
 const SUN = '2026-10-18T20:00';
 
-test('reviewvensters: week vrijdag 00:00 tot maandag 12:00, maand de 25e 00:00 tot de 2e 12:00', () => {
+test('reviewvensters: week zondag 18:00 tot maandag 23:59, maand de 25e 00:00 tot de 2e 12:00', () => {
   const week = (now) => weekReviewState('2026-10-12', now);
-  assert.deepEqual(['2026-10-12T09:00', '2026-10-15T23:59'].map(week), ['before', 'before']);
-  assert.deepEqual(['2026-10-16T00:00', '2026-10-17T14:00', SUN, '2026-10-19T11:59'].map(week), ['open', 'open', 'open', 'open']);
-  assert.deepEqual(['2026-10-19T12:00', '2026-10-20T09:00', '2026-11-30T09:00'].map(week), ['closed', 'closed', 'closed']);
+  assert.deepEqual(['2026-10-12T09:00', '2026-10-16T00:00', '2026-10-17T14:00', '2026-10-18T00:00', '2026-10-18T17:59'].map(week), ['before', 'before', 'before', 'before', 'before']);
+  assert.deepEqual([SUN_OPENS, SUN, '2026-10-18T23:59', '2026-10-19T00:00', '2026-10-19T12:00', '2026-10-19T23:59'].map(week), ['open', 'open', 'open', 'open', 'open', 'open']);
+  assert.deepEqual(['2026-10-20T00:00', '2026-10-20T09:00', '2026-11-30T09:00'].map(week), ['closed', 'closed', 'closed']);
   const month = (now) => monthReviewState('2026-10-01', now);
   assert.deepEqual(['2026-10-01T09:00', '2026-10-24T23:59'].map(month), ['before', 'before']);
   assert.deepEqual(['2026-10-25T00:00', '2026-10-31T23:59', '2026-11-01T18:00', '2026-11-02T11:59'].map(month), ['open', 'open', 'open', 'open']);
@@ -197,8 +197,9 @@ test('reviewvensters: week vrijdag 00:00 tot maandag 12:00, maand de 25e 00:00 t
   // een korte maand: de 25e en de 2e liggen er ook in; de week die over de maandgrens loopt sluit gewoon op maandag
   assert.equal(monthReviewState('2026-02-01', '2026-02-25T00:00'), 'open');
   assert.equal(monthReviewState('2026-02-01', '2026-03-02T12:00'), 'closed');
-  assert.equal(weekReviewState('2026-10-26', '2026-11-02T11:59'), 'open', 'de weekreview over de maandgrens heen sluit op maandag 2 november 12:00');
-  assert.deepEqual([weekReviewOpensOn('2026-10-12'), weekReviewClosesOn('2026-10-12'), monthReviewOpensOn('2026-10-01'), monthReviewClosesOn('2026-10-01')], ['2026-10-16', '2026-10-19', '2026-10-25', '2026-11-02']);
+  assert.equal(weekReviewState('2026-10-26', '2026-11-02T23:59'), 'open', 'de weekreview over de maandgrens heen sluit na maandag 2 november 23:59');
+  assert.equal(weekReviewState('2026-10-26', '2026-11-03T00:00'), 'closed');
+  assert.deepEqual([weekReviewOpensOn('2026-10-12'), weekReviewClosesOn('2026-10-12'), monthReviewOpensOn('2026-10-01'), monthReviewClosesOn('2026-10-01')], ['2026-10-18', '2026-10-19', '2026-10-25', '2026-11-02']);
 });
 
 test('localNow: de muurtijd in de tijdzone van de gebruiker, zonder dagwissel', () => {
@@ -208,17 +209,17 @@ test('localNow: de muurtijd in de tijdzone van de gebruiker, zonder dagwissel', 
   assert.equal(localNow(new Date('2026-10-16T00:05:00Z'), 'Europe/Amsterdam').slice(11), '02:05');
 });
 
-test('saveWeeklyReview: pas vanaf vrijdag en tot maandag 12:00, per week, overschrijven en lengtegrens', async () => {
+test('saveWeeklyReview: pas vanaf zondag 18:00 en tot maandag 23:59, per week, overschrijven en lengtegrens', async () => {
   const { repo } = testRepo();
-  await assert.rejects(() => saveWeeklyReview(repo, { wentWell: 'x', wentBad: '' }, '2026-10-14', '2026-10-15T23:59'), (e) => e instanceof RuleError && e.code === 'review_locked');
-  await saveWeeklyReview(repo, { wentWell: ' lezen ging goed ', wentBad: 'te laat naar bed' }, '2026-10-14', FRI); // een dag in de week is genoeg
+  await assert.rejects(() => saveWeeklyReview(repo, { wentWell: 'x', wentBad: '' }, '2026-10-14', '2026-10-18T17:59'), (e) => e instanceof RuleError && e.code === 'review_locked');
+  await saveWeeklyReview(repo, { wentWell: ' lezen ging goed ', wentBad: 'te laat naar bed' }, '2026-10-14', SUN_OPENS); // een dag in de week is genoeg
   await saveWeeklyReview(repo, { wentWell: 'lezen ging goed', wentBad: 'te laat opgestaan' }, '2026-10-13', SUN);
   const reviews = await repo.listReviews();
   assert.equal(reviews.length, 1);
   assert.deepEqual([reviews[0].weekStart, reviews[0].wentBad], ['2026-10-12', 'te laat opgestaan']);
   assert.equal('adjust' in reviews[0], false, 'wat pas ik aan hoort niet meer bij de week');
-  await saveWeeklyReview(repo, { wentWell: 'nog iets', wentBad: '' }, '2026-10-12', '2026-10-19T11:59'); // maandagochtend: nog open
-  await assert.rejects(() => saveWeeklyReview(repo, { wentWell: 'te laat', wentBad: '' }, '2026-10-12', '2026-10-19T12:00'), (e) => e instanceof RuleError && e.code === 'review_closed');
+  await saveWeeklyReview(repo, { wentWell: 'nog iets', wentBad: '' }, '2026-10-12', '2026-10-19T23:59'); // maandagavond: nog open
+  await assert.rejects(() => saveWeeklyReview(repo, { wentWell: 'te laat', wentBad: '' }, '2026-10-12', '2026-10-20T00:00'), (e) => e instanceof RuleError && e.code === 'review_closed');
   assert.equal((await repo.getReview('2026-10-12')).wentWell, 'nog iets', 'na het sluiten verandert er niets meer');
   await assert.rejects(() => saveWeeklyReview(repo, { wentWell: 'x', wentBad: 'y' }, '2026-10-05', '2026-10-17T10:00'), (e) => e.code === 'review_closed', 'een eerdere week alsnog invullen kan niet meer');
   await assert.rejects(() => saveWeeklyReview(repo, { wentWell: 'x'.repeat(1001), wentBad: '' }, '2026-10-12', SUN), ValidationError);
@@ -261,26 +262,30 @@ test('maandtaak: staat klaar vanaf de eerste van de volgende maand tot hij is af
   assert.deepEqual(await tasks('2026-11-03'), []);
 });
 
-test('reviewNudges: de weekreview van vrijdag tot maandag 12:00, de maandreview van de 25e tot de 2e 12:00; ingevuld of gesloten = geen melding', () => {
+test('reviewNudges: de weekreview van zondag 18:00 tot maandag 23:59, de maandreview van de 25e tot de 2e 12:00; ingevuld of gesloten = geen melding', () => {
   const nudges = (now, reviews = []) => reviewNudges({ reviews, now }).map((n) => `${n.kind}:${n.start}`);
   assert.deepEqual(nudges('2026-10-14T10:00'), [], 'woensdag, midden in de maand');
-  assert.deepEqual(nudges('2026-10-15T23:59'), [], 'donderdag');
-  assert.deepEqual(nudges('2026-10-16T00:00'), ['week:2026-10-12'], 'vrijdag');
+  assert.deepEqual(nudges('2026-10-16T00:00'), [], 'vrijdag: de week is nog bezig');
+  assert.deepEqual(nudges('2026-10-18T17:59'), [], 'zondag vóór 18:00');
+  assert.deepEqual(nudges(SUN_OPENS), ['week:2026-10-12'], 'zondag 18:00');
   assert.deepEqual(nudges(SUN), ['week:2026-10-12']);
-  assert.deepEqual(nudges('2026-10-19T11:59'), ['week:2026-10-12'], 'maandagochtend: de week ervoor is nog open');
-  assert.deepEqual(nudges('2026-10-19T12:00'), [], 'maandag 12:00: gesloten, en de nieuwe week begint pas vrijdag');
-  assert.deepEqual(nudges('2026-10-24T20:00'), ['week:2026-10-19'], 'zaterdag 24 oktober: de maandreview opent pas op 25 oktober');
-  assert.deepEqual(nudges('2026-10-25T00:00'), ['week:2026-10-19', 'month:2026-10-01'], 'zondag 25 oktober: week en maand');
+  assert.deepEqual(nudges('2026-10-19T12:00'), ['week:2026-10-12'], 'maandagmiddag: de week ervoor is nog open');
+  assert.deepEqual(nudges('2026-10-19T23:59'), ['week:2026-10-12'], 'maandag 23:59: de laatste minuut');
+  assert.deepEqual(nudges('2026-10-20T00:00'), [], 'dinsdag: gesloten, en de nieuwe week begint pas zondag');
+  assert.deepEqual(nudges('2026-10-24T20:00'), [], 'zaterdag 24 oktober: de maandreview opent pas op 25 oktober');
+  assert.deepEqual(nudges('2026-10-25T00:00'), ['month:2026-10-01'], 'zondag 25 oktober vroeg: alleen de maand, de week opent om 18:00');
+  assert.deepEqual(nudges('2026-10-25T18:00'), ['week:2026-10-19', 'month:2026-10-01'], 'zondag 25 oktober 18:00: week en maand');
   assert.deepEqual(nudges('2026-10-29T10:00'), ['month:2026-10-01'], 'donderdag 29 oktober: alleen de maand');
-  assert.deepEqual(nudges('2026-10-30T10:00'), ['week:2026-10-26', 'month:2026-10-01'], 'vrijdag 30 oktober: beide, eerst de week');
-  assert.deepEqual(reviewNudges({ reviews: [], now: '2026-10-30T10:00' }).map((n) => n.closesOn), ['2026-11-02', '2026-11-02']);
+  assert.deepEqual(nudges('2026-11-01T20:00'), ['week:2026-10-26', 'month:2026-10-01'], 'zondag 1 november: beide, eerst de week');
+  assert.deepEqual(reviewNudges({ reviews: [], now: '2026-11-01T20:00' }).map((n) => n.closesOn), ['2026-11-02', '2026-11-02']);
   const week = { weekStart: '2026-10-26', wentWell: 'goed', wentBad: '' };
   const month = { id: 'month:2026-10', period: 'month', monthStart: '2026-10-01', adjust: 'vroeger opstaan', appliedAt: null };
-  assert.deepEqual(nudges('2026-10-30T10:00', [week]), ['month:2026-10-01'], 'weekreview ingevuld');
-  assert.deepEqual(nudges('2026-10-30T10:00', [week, month]), [], 'beide ingevuld');
-  assert.deepEqual(nudges('2026-10-30T10:00', [{ weekStart: '2026-10-26', wentWell: '', wentBad: '', adjust: 'oud' }]), ['week:2026-10-26', 'month:2026-10-01'], 'een lege (oude) weekreview telt niet als ingevuld');
+  assert.deepEqual(nudges('2026-11-01T20:00', [week]), ['month:2026-10-01'], 'weekreview ingevuld');
+  assert.deepEqual(nudges('2026-11-01T20:00', [week, month]), [], 'beide ingevuld');
+  assert.deepEqual(nudges('2026-11-01T20:00', [{ weekStart: '2026-10-26', wentWell: '', wentBad: '', adjust: 'oud' }]), ['week:2026-10-26', 'month:2026-10-01'], 'een lege (oude) weekreview telt niet als ingevuld');
   assert.deepEqual(nudges('2026-11-02T11:59'), ['week:2026-10-26', 'month:2026-10-01'], 'maandag 2 november vóór 12:00: week en maand van vorige keer staan nog open');
-  assert.deepEqual(nudges('2026-11-02T12:00'), [], 'daarna niets meer');
+  assert.deepEqual(nudges('2026-11-02T12:00'), ['week:2026-10-26'], 'na 12:00 is de maand gesloten, de week blijft de hele maandag open');
+  assert.deepEqual(nudges('2026-11-03T00:00'), [], 'daarna niets meer');
   assert.deepEqual(nudges('2026-11-24T10:00'), [], 'een maand van 30 dagen: de 25e is nog niet geweest');
   assert.deepEqual(nudges('2026-02-25T10:00'), ['month:2026-02-01'], 'februari (woensdag 25): de maandreview staat open, de week nog niet');
 });
@@ -290,7 +295,8 @@ test('review-kaarten: de fase en de vensters per periode', () => {
   const week = (date, now) => buildWeekReviewCard({ snapshot, now, date });
   assert.deepEqual([week('2026-10-14', '2026-10-14T10:00').state, week('2026-10-14', '2026-10-14T10:00').isCurrent], ['before', true]);
   assert.equal(week('2026-10-14', SUN).state, 'open');
-  assert.equal(week('2026-10-14', '2026-10-19T12:00').state, 'closed');
+  assert.equal(week('2026-10-14', '2026-10-19T23:59').state, 'open');
+  assert.equal(week('2026-10-14', '2026-10-20T00:00').state, 'closed');
   assert.equal(week('2026-10-14', SUN).review.wentWell, 'goed');
   assert.deepEqual([week('2026-10-21', SUN).state, week('2026-10-21', SUN).isCurrent, week('2026-10-21', SUN).review], ['before', false, null], 'een week in de toekomst');
   const month = (date, now) => buildMonthReviewCard({ snapshot, now, date });
@@ -300,15 +306,14 @@ test('review-kaarten: de fase en de vensters per periode', () => {
 });
 
 test('een review staat pas klaar na drie dagen gebruik (de eerste dag telt mee)', () => {
-  const SATURDAY = '2026-10-17T10:00';
   // wie zondag begon, heeft zondag + maandag = 2 dagen: de review van de week ervoor staat maandagochtend nog niet klaar
   assert.deepEqual(reviewNudges({ reviews: [], now: '2026-10-19T10:00', firstUse: '2026-10-18' }).map((n) => n.kind), []);
   assert.deepEqual(reviewNudges({ reviews: [], now: '2026-10-19T10:00', firstUse: '2026-10-17' }).map((n) => n.kind), ['week'], 'zaterdag, zondag, maandag = 3 dagen');
-  assert.deepEqual(reviewNudges({ reviews: [], now: SATURDAY, firstUse: '2026-10-15' }).map((n) => n.kind), ['week'], 'donderdag, vrijdag, zaterdag = 3 dagen');
-  assert.deepEqual(reviewNudges({ reviews: [], now: SATURDAY, firstUse: '2026-10-16' }), [], 'vrijdag, zaterdag = 2 dagen');
-  assert.deepEqual(reviewNudges({ reviews: [], now: SATURDAY, firstUse: '2026-10-17' }), [], 'vandaag begonnen');
+  assert.deepEqual(reviewNudges({ reviews: [], now: SUN, firstUse: '2026-10-16' }).map((n) => n.kind), ['week'], 'vrijdag, zaterdag, zondag = 3 dagen');
+  assert.deepEqual(reviewNudges({ reviews: [], now: SUN, firstUse: '2026-10-17' }), [], 'zaterdag, zondag = 2 dagen');
+  assert.deepEqual(reviewNudges({ reviews: [], now: SUN, firstUse: '2026-10-18' }), [], 'vandaag begonnen');
   assert.deepEqual(reviewNudges({ reviews: [], now: '2026-10-25T10:00', firstUse: '2026-10-24' }), [], 'twee dagen: ook de maandreview wacht');
-  assert.equal(reviewNudges({ reviews: [], now: SATURDAY, firstUse: null }).length, 1, 'onbekend: niets houdt tegen');
+  assert.equal(reviewNudges({ reviews: [], now: SUN, firstUse: null }).length, 1, 'onbekend: niets houdt tegen');
 
   const habit = (createdAt) => ({ id: 'h', createdAt });
   assert.equal(firstUseDate({ habits: [], checkIns: [] }), null);
@@ -318,9 +323,8 @@ test('een review staat pas klaar na drie dagen gebruik (de eerste dag telt mee)'
 
   // de kaart op Voortgang: open, maar te vroeg
   const fresh = { reviews: [], habits: [habit('2026-10-17T09:00:00.000Z')], checkIns: [], settings: { timezone: 'Europe/Amsterdam' } };
-  assert.deepEqual([buildWeekReviewCard({ snapshot: fresh, now: '2026-10-17T10:00', date: '2026-10-17' }).state, buildWeekReviewCard({ snapshot: fresh, now: '2026-10-17T10:00', date: '2026-10-17' }).tooEarly], ['open', true]);
-  assert.equal(buildWeekReviewCard({ snapshot: fresh, now: '2026-10-18T10:00', date: '2026-10-18' }).tooEarly, true, 'dag 2');
-  assert.equal(buildWeekReviewCard({ snapshot: fresh, now: '2026-10-19T10:00', date: '2026-10-19' }).tooEarly, false, 'dag 3');
+  assert.deepEqual([buildWeekReviewCard({ snapshot: fresh, now: SUN, date: '2026-10-18' }).state, buildWeekReviewCard({ snapshot: fresh, now: SUN, date: '2026-10-18' }).tooEarly], ['open', true], 'zaterdag + zondag = dag 2');
+  assert.equal(buildWeekReviewCard({ snapshot: fresh, now: '2026-10-19T10:00', date: '2026-10-18' }).tooEarly, false, 'maandag: dag 3, de week ervoor staat nog open');
   assert.equal(buildWeekReviewCard({ snapshot: fresh, now: '2026-10-14T10:00', date: '2026-10-14' }).tooEarly, false, 'nog niet open is niet "te vroeg"');
   assert.equal(buildMonthReviewCard({ snapshot: { ...fresh, habits: [habit('2026-10-25T09:00:00.000Z')] }, now: '2026-10-25T10:00', date: '2026-10-25' }).tooEarly, true);
 });

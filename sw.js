@@ -88,7 +88,7 @@ self.addEventListener('push', (event) => {
   event.waitUntil(Promise.all([recordPush(data.sent), self.registration.showNotification(text(data.title, 'Habit Builder'), {
     body: text(data.body, 'Bekijk wat er vandaag op je lijst staat.'),
     icon: 'icons/icon-192.png',
-    tag: REMINDER_TAG, // een nieuwe melding vervangt de vorige in plaats van te stapelen
+    tag: typeof data.tag === 'string' && /^[\w-]{1,32}$/.test(data.tag) ? data.tag : REMINDER_TAG, // een nieuwe melding van dezelfde soort vervangt de vorige in plaats van te stapelen; de avond- en reviewmelding hebben een eigen soort
     // Zonder renotify vervangt Android een melding met dezelfde tag STILLETJES: geen geluid, geen trilling, scherm blijft uit.
     // Dan sta je pas bij het ontgrendelen bij de melding stil. renotify laat elke nieuwe melding opnieuw aankondigen.
     renotify: true,

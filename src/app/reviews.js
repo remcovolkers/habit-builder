@@ -1,5 +1,5 @@
 // De gegevens voor de review-kaarten op Voortgang: per week en per maand wat er is ingevuld en of invullen kan. Puur.
-// `now` is de lokale muurtijd, 'YYYY-MM-DDTHH:MM' (localNow); een review staat open van vrijdag 00:00 tot maandag 12:00 (week) of van de 25e
+// `now` is de lokale muurtijd, 'YYYY-MM-DDTHH:MM' (localNow); een review staat open van zondag 18:00 tot maandag 23:59 (week) of van de 25e
 // tot de 2e om 12:00 (maand), zie domain/reviews.js. `today` is de dag van de app (met de dagwissel); die bepaalt welke periode "nu" is.
 // Tussen middernacht en de dagwissel is `today` dus nog gisteren, terwijl `now` al de nieuwe dag is: de review van de vorige week staat dan nog open.
 import { addMonths, endOfMonth, endOfWeek, localNow, startOfMonth, startOfWeek } from '../domain/dates.js';
