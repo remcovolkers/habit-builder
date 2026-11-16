@@ -32,15 +32,17 @@ test('een proef begint op de eerstvolgende hele week of maand; is vandaag de eer
   assert.deepEqual(trialRangeFrom('month', '2026-12-31'), { start: '2027-01-01', end: '2027-01-31' });
 });
 
-test('stand van een weekproef: gepland, loopt, vraag vanaf vrijdag tot maandag 12:00, daarna verlopen', () => {
+test('stand van een weekproef: gepland, loopt, vraag vanaf zondag 18:00 tot maandag 23:59, daarna verlopen', () => {
   const trial = weekTrial();
   const at = (today, now) => trialStatus(trial, today, now);
   assert.equal(at(THURSDAY, '2026-10-15T09:00'), 'planned');
   assert.equal(at('2026-10-19', '2026-10-19T09:00'), 'running');
-  assert.equal(at('2026-10-22', '2026-10-22T23:59'), 'running');
-  assert.equal(at('2026-10-23', '2026-10-23T00:00'), 'answer');
-  assert.equal(at('2026-10-26', '2026-10-26T11:59'), 'answer');
-  assert.equal(at('2026-10-26', '2026-10-26T12:00'), 'expired');
+  assert.equal(at('2026-10-23', '2026-10-23T00:00'), 'running', 'vrijdag: de week loopt nog');
+  assert.equal(at('2026-10-25', '2026-10-25T17:59'), 'running');
+  assert.equal(at('2026-10-25', '2026-10-25T18:00'), 'answer');
+  assert.equal(at('2026-10-26', '2026-10-26T12:00'), 'answer', 'maandag: nog de hele dag');
+  assert.equal(at('2026-10-26', '2026-10-26T23:59'), 'answer');
+  assert.equal(at('2026-10-27', '2026-10-27T00:00'), 'expired');
   assert.equal(trialStatus({ ...trial, result: 'passed' }, '2026-10-30', '2026-10-30T09:00'), 'passed');
   assert.equal(trialStatus({ ...trial, result: 'failed' }, '2026-10-20', '2026-10-20T09:00'), 'failed');
 });
@@ -121,9 +123,9 @@ test('trialsToAnswer: de proeven waar de review van die week of maand nu naar vr
   const b = flexible('month', { id: 'b', trials: [monthTrial({ start: '2026-10-01', end: '2026-10-31' })] });
   const habits = [a, b];
   const ask = (period, start, today, now) => trialsToAnswer({ habits, period, start, today, now }).map((x) => x.habit.id);
-  assert.deepEqual(ask('week', '2026-10-19', '2026-10-23', '2026-10-23T09:00'), ['a']);
-  assert.deepEqual(ask('week', '2026-10-19', '2026-10-21', '2026-10-21T09:00'), [], 'de review is nog niet open');
-  assert.deepEqual(ask('week', '2026-10-12', '2026-10-23', '2026-10-23T09:00'), [], 'een andere week');
+  assert.deepEqual(ask('week', '2026-10-19', '2026-10-25', '2026-10-25T20:00'), ['a']);
+  assert.deepEqual(ask('week', '2026-10-19', '2026-10-24', '2026-10-24T20:00'), [], 'de review is nog niet open (zaterdag; hij opent zondag 18:00)');
+  assert.deepEqual(ask('week', '2026-10-12', '2026-10-25', '2026-10-25T20:00'), [], 'een andere week');
   assert.deepEqual(ask('month', '2026-10-01', '2026-10-26', '2026-10-26T09:00'), ['b']);
   assert.deepEqual(ask('week', '2026-10-01', '2026-10-26', '2026-10-26T09:00'), [], 'een maandproef hoort niet bij een weekreview');
 });

@@ -70,8 +70,9 @@ test('composeMessage: een maandreview komt erbij, en een tik opent Voortgang bij
   assert.equal(message([0, 0, 0, 1, 1]).body, 'Je weekterugblik en maandreview staan klaar.');
   assert.equal(message([3, 0, 0, 0, 1]).body, 'Je maandreview staat klaar. Vandaag staat 3 gewoontes op je lijst.');
   assert.equal(message([0, 0, 0, 0, 1]).url, './#/stats?review=month&date=2026-10-16');
-  assert.equal(message([0, 0, 0, 1, 0]).url, './#/stats?review=week&date=2026-10-16');
-  assert.equal(message([0, 0, 0, 1, 1]).url, './#/stats?review=week&date=2026-10-16');
+  // de weekreview die klaarstaat is die van de week die gisteren eindigde: de link wijst naar de dag ervoor
+  assert.equal(message([0, 0, 0, 1, 0]).url, './#/stats?review=week&date=2026-10-15');
+  assert.equal(message([0, 0, 0, 1, 1]).url, './#/stats?review=week&date=2026-10-15');
   assert.equal(message([3, 1, 0, 0, 0]).url, './#/today', 'zonder review blijft het Vandaag');
   assert.equal(message([0, 0, 0, 0, 'ja']), null, 'rommel telt niet');
 });

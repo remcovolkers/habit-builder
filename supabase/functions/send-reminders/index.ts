@@ -250,12 +250,15 @@ export function isDue(subscription, now) {
   return late >= 0 && late < GRACE_MINUTES && subscription.last_notified_date !== moment.date;
 }
 
+/** 'YYYY-MM-DD' van de dag ervoor. */
+const dayBefore = (date) => new Date(Date.parse(`${date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 /**
  * De tekst van de melding. null = er is niets te doen vandaag, dus ook geen melding.
  * Is er voor vandaag geen samenvatting (de app is al een tijd niet geopend), dan een algemene tekst.
- * Staat er een review klaar (week op zondag, maand op de laatste dag van de maand), dan staat die vooraan en opent een tik op de melding
+ * Staat er een review klaar (week op maandag, maand op de laatste dag van de maand), dan staat die vooraan en opent een tik op de melding
  * Voortgang bij die review (met een korte markering). Staan beide klaar, dan gaat de tik naar de weekreview.
  */
 export function composeMessage(subscription, now) {
@@ -286,7 +289,9 @@ export function composeMessage(subscription, now) {
   // neutraal en zonder namen: de server kent de habits niet
   if (attention > 0) parts.push(`${plural(attention, 'taak', 'taken')} ${attention === 1 ? 'vraagt' : 'vragen'} aandacht.`);
   const review = weekReview ? 'week' : monthReview ? 'month' : null;
-  return { title, body: parts.join(' '), url: review ? `./#/stats?review=${review}&date=${date}` : url };
+  // de weekreview die klaarstaat is die van de week die gisteren (zondag) eindigde: de link wijst naar die week, niet naar de nieuwe
+  const reviewDate = weekReview ? dayBefore(date) : date;
+  return { title, body: parts.join(' '), url: review ? `./#/stats?review=${review}&date=${reviewDate}` : url };
 }
 
 // ============================================================================================

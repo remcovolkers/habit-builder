@@ -122,7 +122,7 @@ test('isAndroid: alleen Android krijgt de uitleg over batterij-instellingen', as
   assert.equal(isAndroid(''), false);
 });
 
-test('samenvatting: aandacht (weekelijks, zonder reactie) en de review op zondag', () => {
+test('samenvatting: aandacht (weekelijks, zonder reactie) en de review op maandag', () => {
   const bed = habit('Bed', { type: 'times_per_period', period: 'month', count: 2 }, { startDate: '2026-08-01' });
   const checkIns = [{ habitId: 'Bed', date: '2026-08-20', status: 'done' }];
   // laatst gedaan 20 augustus: het probleem begon 11 september, dus 9 en 16 oktober zijn meldmomenten (TODAY is donderdag 15 oktober)
@@ -133,21 +133,21 @@ test('samenvatting: aandacht (weekelijks, zonder reactie) en de review op zondag
   const answered = buildReminderSummary({ snapshot: snapshot({ habits: [bed], checkIns, reasons: [{ habitId: 'Bed', date: TODAY, reason: 'forgot', note: null }] }), today: TODAY, settings });
   assert.deepEqual(Object.values(answered.days).map((entry) => entry[2]), [0, 0, 0, 0, 0, 0, 0]);
 
-  // zondag 18 oktober: de weekreview staat klaar zolang hij niet is opgeslagen
-  assert.deepEqual(Object.entries(summary.days).filter(([, entry]) => entry[3] === 1).map(([date]) => date), ['2026-10-18']);
+  // maandag 19 oktober: de weekreview van de week ervoor (open tot maandag 23:59) staat klaar zolang hij niet is opgeslagen
+  assert.deepEqual(Object.entries(summary.days).filter(([, entry]) => entry[3] === 1).map(([date]) => date), ['2026-10-19']);
   const reviewed = buildReminderSummary({ snapshot: snapshot({ reviews: [{ weekStart: '2026-10-12', wentWell: 'goed', wentBad: '' }] }), today: TODAY, settings });
   assert.deepEqual(Object.values(reviewed.days).map((entry) => entry[3]), [0, 0, 0, 0, 0, 0, 0]);
   // een review zonder inhoud (bijvoorbeeld een oude met alleen "wat pas ik aan") telt niet als ingevuld
   const legacy = buildReminderSummary({ snapshot: snapshot({ reviews: [{ weekStart: '2026-10-12', wentWell: '', adjust: 'x' }] }), today: TODAY, settings });
-  assert.equal(legacy.days['2026-10-18'][3], 1);
+  assert.equal(legacy.days['2026-10-19'][3], 1);
 });
 
 test('samenvatting: de reviewmelding wacht tot de app drie dagen is gebruikt', () => {
   const days = (createdAt) => buildReminderSummary({ snapshot: snapshot({ habits: [{ ...habit('A', daily), createdAt }] }), today: TODAY, settings }).days;
-  const sunday = (createdAt) => days(createdAt)['2026-10-18'][3];
-  assert.equal(sunday('2026-10-16T08:00:00.000Z'), 1, 'vrijdag, zaterdag, zondag = 3 dagen');
-  assert.equal(sunday('2026-10-17T08:00:00.000Z'), 0, 'zaterdag en zondag = 2 dagen');
-  assert.equal(sunday('2026-10-18T08:00:00.000Z'), 0, 'zondag begonnen');
+  const monday = (createdAt) => days(createdAt)['2026-10-19'][3];
+  assert.equal(monday('2026-10-17T08:00:00.000Z'), 1, 'zaterdag, zondag, maandag = 3 dagen');
+  assert.equal(monday('2026-10-18T08:00:00.000Z'), 0, 'zondag en maandag = 2 dagen');
+  assert.equal(monday('2026-10-19T08:00:00.000Z'), 0, 'maandag begonnen');
 });
 
 test('samenvatting: de maandreview staat klaar op de laatste dag van de maand zolang hij niet is ingevuld', () => {
@@ -156,8 +156,8 @@ test('samenvatting: de maandreview staat klaar op de laatste dag van de maand zo
   const filled = [{ id: 'month:2026-10', period: 'month', monthStart: '2026-10-01', adjust: 'vroeger opstaan', appliedAt: null }];
   assert.equal(days('2026-10-28', filled)['2026-10-31'][4], 0);
   assert.equal(days('2026-10-28', [])['2026-10-30'][4], 0, 'alleen op de laatste dag');
-  // een maandrecord telt niet als weekreview voor de zondag
-  assert.equal(days('2026-10-15', filled)['2026-10-18'][3], 1);
+  // een maandrecord telt niet als weekreview voor de maandag
+  assert.equal(days('2026-10-15', filled)['2026-10-19'][3], 1);
 });
 
 test('samenvatting: een taak met "Niet in deze week" telt die week niet mee in de stapel van de herinnering', () => {

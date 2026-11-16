@@ -4,7 +4,7 @@
 // [hoeveel gewoontes er gepland staan, hoeveel taken er nog in de stapel liggen]. De server maakt daar de tekst van.
 // Zo staan er geen namen van habits op de server-kant van de herinnering, en blijft de logica van "wat staat er
 // vandaag" op één plek: hier, in de app.
-import { addDays, endOfMonth, startOfMonth, startOfWeek, weekday } from '../domain/dates.js';
+import { addDays, endOfMonth, startOfMonth, weekday } from '../domain/dates.js';
 import { monthReviewFor, usedLongEnough, weekReviewFor, weekReviewHasContent } from '../domain/reviews.js';
 import { firstUseDate } from './reviews.js';
 import { DISPLAY_NAME_MAX } from './settings.js';
@@ -29,7 +29,8 @@ export function validateReminderTime(time, dayStartHour) {
 /**
  * { name, days: { 'YYYY-MM-DD': [gepland, in de stapel, aandacht, review, maandreview] } } voor vandaag en de dagen erna.
  *   aandacht     taken die langer liggen dan afgesproken en waar nog niet op is gereageerd (weekelijks opnieuw; zie nudgesOn)
- *   review       1 op een zondag als de review van die week nog niet is ingevuld
+ *   review       1 op een maandag als de review van de week ervoor nog niet is ingevuld (hij opent zondag 18:00 en staat open tot maandag 23:59,
+ *                dus de melding van de ochtend komt als hij nog openstaat)
  *   maandreview  1 op de laatste dag van de maand als de maandreview ('Wat pas ik aan?') nog niet is ingevuld
  * De melding stuurt bij een review door naar Voortgang (zie composeMessage in de Edge Function).
  */
@@ -44,7 +45,7 @@ export function buildReminderSummary({ snapshot, today, settings, days = REMINDE
     const pool = view.pool.filter((entry) => !entry.satisfied && !entry.covered).length;
     const attention = nudgesOn({ snapshot, date, prepared });
     const ready = usedLongEnough(firstUse, date); // een review staat pas klaar na een paar dagen gebruik
-    const review = ready && weekday(date) === 6 && !weekReviewHasContent(weekReviewFor(snapshot.reviews, startOfWeek(date))) ? 1 : 0;
+    const review = ready && weekday(date) === 0 && !weekReviewHasContent(weekReviewFor(snapshot.reviews, addDays(date, -7))) ? 1 : 0;
     const monthReview = ready && date === endOfMonth(date) && !monthReviewFor(snapshot.reviews, startOfMonth(date))?.adjust?.trim() ? 1 : 0;
     entries[date] = [planned, pool, attention, review, monthReview];
   }

@@ -17,7 +17,7 @@ import { formatDateLong, formatDateShort } from '../../app/format.js';
 import { REVIEW_TEXT_MAX, ValidationError } from '../../data/repository.js';
 import { wontSpan } from '../../domain/attention.js';
 import { isoWeek } from '../../domain/dates.js';
-import { REVIEW_CLOSING_TIME } from '../../domain/reviews.js';
+import { MONTH_REVIEW_CLOSING_TIME, WEEK_REVIEW_CLOSING_TIME, WEEK_REVIEW_OPENING_TIME } from '../../domain/reviews.js';
 
 const t = nl.stats.review;
 
@@ -126,16 +126,19 @@ const startEditing = (key) => () => { editing = key; notifyChanged(); };
 
 // --- week --------------------------------------------------------------------------------------------
 
-/** 'maandag 19 oktober 12:00' */
-const closingLabel = (date) => `${formatDateLong(date)} ${REVIEW_CLOSING_TIME}`;
+/** 'maandag 19 oktober 23:59' (week) of 'maandag 2 november 12:00' (maand) */
+const weekClosingLabel = (date) => `${formatDateLong(date)} ${WEEK_REVIEW_CLOSING_TIME}`;
+const closingLabel = (date) => `${formatDateLong(date)} ${MONTH_REVIEW_CLOSING_TIME}`;
+/** 'zondag 18 oktober 18:00' */
+const weekOpeningLabel = (date) => `${formatDateLong(date)} ${WEEK_REVIEW_OPENING_TIME}`;
 
 function weekBody({ snapshot, today, card }) {
   const w = t.week;
   const key = weekKey(card.start);
   const form = editing === key;
-  const until = w.openUntil(closingLabel(card.closesOn));
+  const until = w.openUntil(weekClosingLabel(card.closesOn));
 
-  if (card.state === 'before' && !card.isCurrent) return quiet({ title: w.lockedTitle, text: w.locked(formatDateLong(card.opensOn)) });
+  if (card.state === 'before' && !card.isCurrent) return quiet({ title: w.lockedTitle, text: w.locked(weekOpeningLabel(card.opensOn)) });
   if (card.tooEarly) return quiet({ title: w.earlyTitle, text: w.early }); // net begonnen: er valt nog niets terug te blikken
 
   // de terugblik: voor de huidige week de taken die aandacht vragen (elk met één tik voor de reden), anders de uitkomst van de week
@@ -192,11 +195,11 @@ function weekBody({ snapshot, today, card }) {
 
   let content;
   if (card.state === 'before') {
-    content = quiet({ title: w.lockedTitle, text: w.locked(formatDateLong(card.opensOn)) });
+    content = quiet({ title: w.lockedTitle, text: w.locked(weekOpeningLabel(card.opensOn)) });
   } else if (card.state === 'closed') {
     content = card.review
-      ? savedCard({ key, items, footer: w.closedNote(closingLabel(card.closesOn)) })
-      : quiet({ title: w.closedTitle, text: w.closedEmpty(closingLabel(card.closesOn)) });
+      ? savedCard({ key, items, footer: w.closedNote(weekClosingLabel(card.closesOn)) })
+      : quiet({ title: w.closedTitle, text: w.closedEmpty(weekClosingLabel(card.closesOn)) });
   } else if (card.review && !form) {
     content = savedCard({ key, items, footer: until, onEdit: startEditing(key) });
   } else {

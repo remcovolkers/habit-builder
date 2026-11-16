@@ -228,7 +228,7 @@ const scenes = [
     id: 'review',
     async run(F) {
       await F.cut({ kind: 'demo', variant: 'full', now: FRIDAY });
-      await F.sayAndRead({ title: 'Elke vrijdag: de weekreview', body: 'Vanaf vrijdag staat de review open, tot maandag 12:00. Je ziet alleen wat is blijven liggen. Is alles gelukt, dan staat dat er ook.' });
+      await F.sayAndRead({ title: 'Elke zondagavond: de weekreview', body: 'Vanaf zondagavond staat de review open, tot maandagavond. Je ziet alleen wat is blijven liggen. Is alles gelukt, dan staat dat er ook.' });
       await F.tap('Naar de weekreview', { after: 1600 });
       await F.hold(2000);
       await F.scrollBy(900, 1400);

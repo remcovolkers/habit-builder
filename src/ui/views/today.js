@@ -31,7 +31,7 @@ import { noteRated } from '../components/automaticity.js';
 import { buildAttention, forToday } from '../../app/attention.js';
 import { attentionCard, openReasonSheet, reasonLabel } from '../components/attention.js';
 import { wontSpan } from '../../domain/attention.js';
-import { monthTasks, REVIEW_CLOSING_TIME, reviewNudges } from '../../domain/reviews.js';
+import { MONTH_REVIEW_CLOSING_TIME, monthTasks, reviewNudges, WEEK_REVIEW_CLOSING_TIME } from '../../domain/reviews.js';
 import { firstUseDate } from '../../app/reviews.js';
 import { dismissReviewNudges, reviewNudgeDismissed } from '../review-nudge-state.js';
 import { counterDoneValue } from '../../domain/counter.js';
@@ -483,7 +483,7 @@ function renderDay(view, week, attention, toPlan = 0, tasks = [], reviewNotes = 
           h('span', { class: 'badge badge--review' }, r.badge),
           h('h2', { id: 'reviewnote-title', class: 'reviewnote__title' }, title),
           h('p', { class: 'xs muted reviewnote__until' }, reviewNotes.map((note) => {
-            const label = `${formatDateLong(note.closesOn)} ${REVIEW_CLOSING_TIME}`;
+            const label = `${formatDateLong(note.closesOn)} ${note.kind === 'week' ? WEEK_REVIEW_CLOSING_TIME : MONTH_REVIEW_CLOSING_TIME}`;
             return kinds.length === 1 ? r.until(label) : r.untilKind[note.kind](label);
           }).join(' ')),
           h('div', { class: 'reviewnote__actions' },

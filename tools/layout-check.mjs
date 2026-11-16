@@ -1174,8 +1174,8 @@ async function main() {
   const savedOther = await ev(`(async () => { const { state } = await import('/src/ui/state.js'); return (await state.repo.listReasons()).filter((r) => r.reason === 'other').map((r) => r.note); })()`);
   check('"Anders" met een toelichting wordt als reden bewaard', savedOther.includes('Auto kapot'), JSON.stringify(savedOther));
 
-  // Voortgang: week en maand bepalen samen het overzicht, de tegel en de review; bladeren kan onbeperkt; een review staat open van vrijdag 00:00 tot maandag
-  // 12:00 (week) en van de 25e tot de 2e 12:00 (maand). Wat open, nog dicht of gesloten is hangt van de klok af: de verwachtingen worden met dezelfde regels nagerekend.
+  // Voortgang: week en maand bepalen samen het overzicht, de tegel en de review; bladeren kan onbeperkt; een review staat open van zondag 18:00 tot maandag
+  // 23:59 (week) en van de 25e tot de 2e 12:00 (maand). Wat open, nog dicht of gesloten is hangt van de klok af: de verwachtingen worden met dezelfde regels nagerekend.
   await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await nav('stats');
   await ev(`document.documentElement.style.fontSize = '100%'`);
@@ -1218,7 +1218,7 @@ async function main() {
   await click('.overview__today');
   for (let i = 0; i < 2; i++) await click('[data-focus-key="prev"]', 250);
   v = await viewState();
-  check('Voortgang, week: een gesloten week met review staat als kaart (goed en slecht) zonder "Bewerk", met "Gesloten sinds maandag … 12:00"', v.state === 'closed' && v.saved && !v.edit && !v.form && /Gesloten sinds maandag .* 12:00/.test(v.foot ?? ''), JSON.stringify(v));
+  check('Voortgang, week: een gesloten week met review staat als kaart (goed en slecht) zonder "Bewerk", met "Gesloten sinds maandag … 23:59"', v.state === 'closed' && v.saved && !v.edit && !v.form && /Gesloten sinds maandag .* 23:59/.test(v.foot ?? ''), JSON.stringify(v));
   await click('.overview__today');
   if (clock.weekState === 'open') {
     // de weekreview invullen: het formulier wordt een kaart met "Bewerk"
@@ -1226,7 +1226,7 @@ async function main() {
     await ev(`document.querySelector('.review-card form').requestSubmit()`);
     await sleep(700);
     const savedWeek = await ev(`(() => ({ form: !!document.querySelector('.review-card form'), items: [...document.querySelectorAll('.review-saved__text')].map((e) => e.textContent), edit: !!document.querySelector('.review-saved [data-focus-key^="edit:"]'), foot: document.querySelector('.review-saved__foot .xs')?.textContent }))()`);
-    check('Voortgang, week: na opslaan staat de review als kaart (goed en slecht) met een "Bewerk"-knop en "Open tot maandag … 12:00", zonder formulier', !savedWeek.form && savedWeek.items.join('|') === 'Elke dag water|Te laat naar bed' && savedWeek.edit && /Open tot maandag .* 12:00/.test(savedWeek.foot ?? ''), JSON.stringify(savedWeek));
+    check('Voortgang, week: na opslaan staat de review als kaart (goed en slecht) met een "Bewerk"-knop en "Open tot maandag … 23:59", zonder formulier', !savedWeek.form && savedWeek.items.join('|') === 'Elke dag water|Te laat naar bed' && savedWeek.edit && /Open tot maandag .* 23:59/.test(savedWeek.foot ?? ''), JSON.stringify(savedWeek));
     await click('.review-saved [data-focus-key^="edit:"]');
     const editing = await ev(`({ well: document.querySelector('#wentWell')?.value, cancel: [...document.querySelectorAll('.review-card .button')].some((b) => b.textContent === 'Annuleren') })`);
     check('Voortgang, week: "Bewerk" opent het formulier met wat er stond en een "Annuleren"', editing.well === 'Elke dag water' && editing.cancel, JSON.stringify(editing));

@@ -10,9 +10,10 @@ export const state = { repo: null, settings: null, today: null };
 /** De lokale muurtijd nu, 'YYYY-MM-DDTHH:MM' (voor het openen en sluiten van reviews). */
 export const wallClockNow = (now = new Date()) => localNow(now, state.settings.timezone);
 
-// Een review opent om 00:00 en sluit om 12:00 (domain/reviews.js): schermen tekenen opnieuw als de halve dag omslaat, ook als de dagwissel (04:00) later is.
+// Een review opent om 00:00 of 18:00 en sluit om 12:00 of 23:59 (domain/reviews.js): schermen tekenen opnieuw als daar een grens voorbijgaat
+// (de dag wordt in drie stukken gedeeld: tot 12:00, tot 18:00, daarna), ook als de dagwissel (04:00) later is.
 let clockHalf = null;
-const halfOfDay = (now) => { const t = wallClockNow(now); return `${t.slice(0, 10)}${t.slice(11, 13) >= '12' ? 'pm' : 'am'}`; };
+const halfOfDay = (now) => { const t = wallClockNow(now); const hour = t.slice(11, 13); return `${t.slice(0, 10)}${hour >= '18' ? 'c' : hour >= '12' ? 'b' : 'a'}`; };
 
 function recomputeToday(now = new Date()) {
   const next = todayFor(now, state.settings.timezone, state.settings.dayStartHour);

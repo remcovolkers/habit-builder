@@ -21,15 +21,18 @@ export const weekReviewFor = (reviews, weekStart) => weekReviews(reviews).find((
 export const monthReviewFor = (reviews, monthStart) => monthReviews(reviews).find((r) => r.monthStart === startOfMonth(monthStart)) ?? null;
 
 // --- wanneer een review open staat ----------------------------------------------------------------------------------------------------
-// Een weekreview gaat vrijdag 00:00 open en sluit de maandag erna om 12:00. Een maandreview opent op de 25e (00:00) en sluit op de 2e van de
-// volgende maand om 12:00. Daarbuiten kun je niets invullen of wijzigen. Alle momenten zijn lokale muurtijd, 'YYYY-MM-DDTHH:MM' (zie localNow).
-export const WEEK_REVIEW_OPENS_AFTER_DAYS = 4; // vrijdag: vier dagen na de maandag
+// Een weekreview gaat zondag om 18:00 open en sluit de maandag erna om 23:59: de hele maandag kun je hem nog invullen. Een maandreview opent op de
+// 25e (00:00) en sluit op de 2e van de volgende maand om 12:00. Daarbuiten kun je niets invullen of wijzigen. Alle momenten zijn lokale muurtijd,
+// 'YYYY-MM-DDTHH:MM' (zie localNow).
+export const WEEK_REVIEW_OPENS_AFTER_DAYS = 6; // zondag: zes dagen na de maandag
 export const WEEK_REVIEW_CLOSES_AFTER_DAYS = 7; // de maandag erna
+export const WEEK_REVIEW_OPENING_TIME = '18:00';
+export const WEEK_REVIEW_CLOSING_TIME = '23:59'; // de laatste minuut dat het nog kan
 export const MONTH_REVIEW_OPENS_DAY = '25';
 export const MONTH_REVIEW_CLOSES_DAY = '02';
-export const REVIEW_CLOSING_TIME = '12:00';
+export const MONTH_REVIEW_CLOSING_TIME = '12:00';
 
-/** De dag waarop de weekreview opent (vrijdag) en sluit (maandag, om 12:00). */
+/** De dag waarop de weekreview opent (zondag, om 18:00) en sluit (maandag, om 23:59). */
 export const weekReviewOpensOn = (weekStart) => addDays(weekStart, WEEK_REVIEW_OPENS_AFTER_DAYS);
 export const weekReviewClosesOn = (weekStart) => addDays(weekStart, WEEK_REVIEW_CLOSES_AFTER_DAYS);
 /** De dag waarop de maandreview opent (de 25e) en sluit (de 2e van de volgende maand, om 12:00). */
@@ -42,13 +45,18 @@ export const REVIEW_MIN_USE_DAYS = 3;
 /** Heb je de app op `date` lang genoeg gebruikt voor een review? `firstUse` is de eerste dag van gebruik; null (onbekend) houdt niets tegen. */
 export const usedLongEnough = (firstUse, date) => firstUse == null || diffDays(date, firstUse) + 1 >= REVIEW_MIN_USE_DAYS;
 
-/** 'before' (nog niet open) | 'open' | 'closed' (gesloten) voor `now` ('YYYY-MM-DDTHH:MM'). */
-function windowState(opensOn, closesOn, now) {
-  if (now < `${opensOn}T00:00`) return 'before';
-  return now < `${closesOn}T${REVIEW_CLOSING_TIME}` ? 'open' : 'closed';
+/** 'before' (nog niet open) | 'open' | 'closed' (gesloten) voor `now` ('YYYY-MM-DDTHH:MM'): open vanaf het openingsmoment tot het sluitmoment. */
+function windowState(opensOn, openingTime, closesOn, closingTime, now) {
+  if (now < `${opensOn}T${openingTime}`) return 'before';
+  return now < `${closesOn}T${closingTime}` ? 'open' : 'closed';
 }
-export const weekReviewState = (weekStart, now) => windowState(weekReviewOpensOn(weekStart), weekReviewClosesOn(weekStart), now);
-export const monthReviewState = (monthStart, now) => windowState(monthReviewOpensOn(monthStart), monthReviewClosesOn(monthStart), now);
+// De week sluit na de laatste minuut van de maandag (23:59): de eerste minuut erbuiten is dinsdag 00:00.
+const weekClosingMoment = (weekStart) => ({ day: addDays(weekReviewClosesOn(weekStart), 1), time: '00:00' });
+export const weekReviewState = (weekStart, now) => {
+  const closing = weekClosingMoment(weekStart);
+  return windowState(weekReviewOpensOn(weekStart), WEEK_REVIEW_OPENING_TIME, closing.day, closing.time, now);
+};
+export const monthReviewState = (monthStart, now) => windowState(monthReviewOpensOn(monthStart), '00:00', monthReviewClosesOn(monthStart), MONTH_REVIEW_CLOSING_TIME, now);
 
 /**
  * De weken die bij een maand horen: de week hoort bij de maand waarin zijn donderdag valt (zoals bij ISO-weken),
@@ -78,8 +86,8 @@ export function monthTasks({ reviews, today }) {
 }
 
 /**
- * De meldingen op Vandaag dat een review open staat en nog niet is ingevuld. Dat geldt voor de week van nu (vanaf vrijdag) en voor de week ervoor
- * (tot maandag 12:00), en op dezelfde manier voor de maand van nu (vanaf de 25e) en de maand ervoor (tot de 2e om 12:00).
+ * De meldingen op Vandaag dat een review open staat en nog niet is ingevuld. Dat geldt voor de week van nu (vanaf zondag 18:00) en voor de week ervoor
+ * (tot maandag 23:59), en op dezelfde manier voor de maand van nu (vanaf de 25e) en de maand ervoor (tot de 2e om 12:00).
  * Geeft [{ kind, start, closesOn }]: eerst de weken, dan de maanden, telkens de oudste eerst.
  * `firstUse` (de eerste dag van gebruik, of null): zolang de app nog geen REVIEW_MIN_USE_DAYS dagen is gebruikt, staat er niets klaar.
  */

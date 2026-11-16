@@ -163,7 +163,7 @@ export const nl = {
       hideText: 'Deze afspraak verdwijnt van Vandaag, alleen op dit toestel. In je agenda blijft hij staan.',
       toasts: { done: (title) => `Afgevinkt: ${title}`, reopened: (title) => `Weer open: ${title}`, hidden: (title) => `Niet meer getoond: ${title}` },
     },
-    // de melding dat een review open staat (week: vrijdag tot maandag 12:00; maand: de 25e tot de 2e om 12:00)
+    // de melding dat een review open staat (week: zondag 18:00 tot maandag 23:59; maand: de 25e tot de 2e om 12:00)
     reviewNote: {
       badge: 'Review',
       week: 'Week review staat vanaf nu open',

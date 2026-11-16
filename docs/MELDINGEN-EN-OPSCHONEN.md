@@ -70,7 +70,7 @@ Nu: **één tijdstip per apparaat** (`push_subscriptions.remind_time`), **één 
 
 | | Venster in de app (`domain/reviews.js`) | Wat de melding nu doet |
 |---|---|---|
-| Weekreview | opent **vrijdag** 00:00, sluit **maandag 12:00** | meldt alleen op **zondag** |
+| Weekreview | opent **zondag 18:00**, sluit **maandag 23:59** (sinds 16 nov 2026; eerder vrijdag t/m maandag 12:00) | meldt alleen op **maandag** (de ochtend, de week ervoor) |
 | Maandreview | opent op de **25e**, sluit op de **2e 12:00** | meldt alleen op de **laatste dag** van de maand |
 
 Je hoort dus niet dat hij opent, en niet dat hij bijna sluit. Dat past precies bij jouw wens.
@@ -86,8 +86,8 @@ Je hoort dus niet dat hij opent, en niet dat hij bijna sluit. Dat past precies b
 | **Ochtend** (bestaat al) | elke dag, jouw tijd, standaard 08:00 | er iets te doen is | "Vandaag staan 3 gewoontes op je lijst." | Vandaag | Ochtendherinnering |
 | **Avondcheck** (nieuw, standaard uit) | elke dag, jouw tijd, standaard 20:00 | er nog iets **open** staat | "Nog 2 te doen vandaag." | Vandaag | Wat staat er nog open |
 | **Extra moment** (nieuw, standaard uit) | jouw tijd | zelfde soort als de avondcheck | "Nog 3 te doen." | Vandaag | Wat staat er nog open |
-| **Terugblik staat klaar** (los, besloten) | week: **vrijdag** 09:00, maand: **de 25e** 09:00 | de review nog niet is ingevuld | "Je weekterugblik staat klaar." | Voortgang, bij die review | Terugblik |
-| **Terugblik sluit bijna** | **24 uur van tevoren**: week **zondag 12:00**, maand **de 1e 12:00** | de review nog niet is ingevuld | "Je weekterugblik sluit morgen om 12:00." | Voortgang, bij die review | Terugblik |
+| **Terugblik staat klaar** (los, besloten) | week: **zondag** 18:00 (zodra hij opent), maand: **de 25e** 09:00 | de review nog niet is ingevuld | "Je weekterugblik staat klaar." | Voortgang, bij die review | Terugblik |
+| **Terugblik sluit bijna** | **24 uur van tevoren** past niet meer bij de week (dat is zondag 23:59): voorstel week **maandag 12:00**, maand **de 1e 12:00** | de review nog niet is ingevuld | "Je weekterugblik sluit vandaag om 23:59." | Voortgang, bij die review | Terugblik |
 
 Ontwerpkeuzes:
 
@@ -95,8 +95,8 @@ Ontwerpkeuzes:
 - **Meerdere momenten = een lijstje met aan/uit en een tijd per moment**, hoogstens drie per dag. Geen vrije agenda.
 - **Eigen Android-kanalen** (Ochtend, Wat staat er nog open, Terugblik). Zo kun je in de Android-instellingen één soort dempen of het geluid per soort anders zetten zonder de app aan te raken. Dat is precies waar een echte app beter in is dan Chrome.
 - **Per dagdeel** (ochtend/middag/avond-habits, zoals tandenpoetsen) kan later, maar niet in de eerste versie: de samenvatting moet dan de open taken per dagdeel meesturen. Eerst het totaal.
-- De vensters zijn **vast** (zondag 12:00 en de 1e 12:00); ze volgen uit het reviewvenster, daar valt niets in te stellen.
-- "Terugblik staat klaar" komt **los** (besloten), op vrijdag en de 25e om 09:00, ook als de ochtendmelding om 08:00 al binnenkwam. De ochtendmelding bevat dus niet langer de reviewregel.
+- De vensters zijn **vast** (maandag 12:00 en de 1e 12:00); ze volgen uit het reviewvenster, daar valt niets in te stellen.
+- "Terugblik staat klaar" komt **los** (besloten), op zondag om 18:00 en de 25e om 09:00, ook als de ochtendmelding om 08:00 al binnenkwam. De ochtendmelding bevat dus niet langer de reviewregel.
 
 ### 4.2 Techniek
 
@@ -126,7 +126,7 @@ unique (subscription_id, slot)
 ### 4.4 Volgorde (elke stap los te leveren)
 
 1. §1 en §2: de app opruimen (klein, geen server).
-2. De reviewmeldingen op de echte vensters zetten, zonder nieuwe tabel: de bestaande vlaggen verschuiven naar vrijdag en de 25e. Verbetert meteen wat nu niet klopt.
+2. De reviewmeldingen op de echte vensters zetten, zonder nieuwe tabel: de bestaande vlaggen verschuiven naar de vensters (de weekvlag staat sinds 16 nov 2026 op maandag; de 25e volgt). Verbetert meteen wat nu niet klopt.
 3. Migratie 0010 en de server omzetten naar momenten, **zonder gedragsverandering** (alleen het ochtendmoment).
 4. De avondcheck en het extra moment (nieuw).
 5. "Terugblik sluit bijna" (vraagt stap 3 omdat er twee meldingen op één dag kunnen komen).
@@ -141,7 +141,7 @@ Rolloutvolgorde bij een release is zoals altijd: eerst de migratie, dan de funct
 2. **Hoeveel momenten**: genoeg met ochtend + avond + één extra, of wil je echt een vrij aantal (dan maximaal drie, om niet te veel in de weg te zitten)?
 3. **Per dagdeel** (bijvoorbeeld "tandenpoetsen avond" om 21:00): nu niet, later pas? Mijn advies: later.
 4. **Terugblik staat klaar** in de ochtendmelding (één melding op vrijdag en de 25e) of altijd los? Mijn advies: in de ochtend meenemen, los om 09:00 als de ochtend uit staat.
-5. **Sluit bijna:** precies 24 uur ervoor (zondag 12:00 en de 1e 12:00), of liever een vast avonduur (bijvoorbeeld zondag 19:00)? Jij vroeg 24 uur; dat is mijn advies.
+5. **Sluit bijna:** het reviewvenster van de week sluit nu maandag 23:59; "24 uur ervoor" zou zondag 23:59 zijn, midden in de nacht. Voorstel: maandag 12:00 (week) en de 1e 12:00 (maand), of een vast avonduur (bijvoorbeeld maandag 19:00)?
 6. **"Plan je week"** (je flexibele taken plannen) als wekelijkse melding, bijvoorbeeld zondagavond? Dat zou een zesde melding zijn; ik heb het niet meegenomen.
 7. **Tijdzone automatisch** van je telefoon (met een vraag als hij verandert) in plaats van een keuzelijst?
 8. **Dubbele melding Chrome en app:** de app mag de web-herinnering van je account met een knop uitzetten (voorstel in §1), akkoord?
