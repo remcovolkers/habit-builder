@@ -99,6 +99,15 @@ export function planningStart({ today, date = today }) {
 }
 
 /**
+ * De afspraken uit je agenda in de week die je plant, per dag: [{ date, items }], vanaf `planningStart` (een dag die al geweest is valt niet meer te plannen)
+ * tot en met zondag. `itemsFor(date)` geeft de afspraken van één dag (ui/agenda.js). Alleen om te lezen: ze veranderen niets aan het plan of het voorstel.
+ */
+export function agendaWeek({ today, date = today, itemsFor }) {
+  const from = planningStart({ today, date });
+  return eachDay(from, endOfWeek(from)).map((day) => ({ date: day, items: itemsFor(day) }));
+}
+
+/**
  * Een voorstel voor de ontbrekende keren: [{ habitId, date }]. Per taak komen de dagen zo ver mogelijk uit elkaar (tot de afstand die bij het
  * ritme past: periode gedeeld door het aantal keren), zo vroeg mogelijk, en op de dag met de minste andere taken. De taak met de minste ruimte gaat eerst.
  */

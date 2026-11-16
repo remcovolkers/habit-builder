@@ -83,9 +83,11 @@ Alles staat **alleen op dit toestel** (localStorage): `hb-agenda` (het adres en 
 | A13 | Een afgevinkte afspraak telt nergens mee, net als een losse afspraak (L3) | "Alles gedaan" blijft over habits gaan |
 | A14 | De naam van de agenda staat achter het woord Agenda, niet ervoor of ernaast | Zo blijft de regel kort en blijft "Agenda" het kenmerk van dit soort kaart. Een lange naam (een e-mailadres) breekt af |
 | A15 | ⋯ op een agenda-kaart met alleen "Niet tonen", bewaard als afvinken (A12) | Dezelfde kaart als de andere ziet er rustiger uit met ⋯ op dezelfde plek, en niet elke afspraak (een verjaardag van een collega) wil je elke keer zien. Wijzigen of verwijderen blijft in je agenda zelf. Een herhalende afspraak verberg je per keer, want de sleutel is dag, tijd en naam |
+| A16 | In **Plan je week** staat je agenda als uitklapper bovenaan (per dag met afspraken een regel) en als stipjes onder de dagen van elke taak; **Verdeel voor mij** houdt er geen rekening mee | Je wilt bij het kiezen van de dagen zien wat er al in je week staat. Alleen lezen, zoals overal (A8): het verandert het plan niet. Zonder gekoppelde agenda blijft het blad zoals het was |
 
 ## Nog open
 
+- **Verdeel voor mij met je agenda.** Het voorstel zou een dag met veel afspraken kunnen mijden; nu kijkt alleen de gebruiker (A16).
 - **Afvinken op meer toestellen.** Nu per toestel (A12). Synchroniseren kan met een nieuwe collectie en een migratie, als de nummers (geen namen) naar de server mogen.
 - **Wie een afspraak maakte** in een gedeelde agenda. De feed noemt dat niet; de telefoon ook niet, behalve via de naam van de agenda.
 - **Afgewezen afspraken in de feed.** De telefoon slaat ze over; of de iCal-feed van Google ze ook geeft en hoe hij ze markeert, is niet gecontroleerd. In de feed staat het adres van je account in het pad, dus filteren op `ATTENDEE;PARTSTAT=DECLINED` voor dat adres is mogelijk.

@@ -1,7 +1,7 @@
 // "Plan je week": de rijen per flexibele taak en het voorstel dat de ontbrekende keren verdeelt.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildWeekPlan, planningStart, suggestPlan } from '../../src/app/week-plan.js';
+import { agendaWeek, buildWeekPlan, planningStart, suggestPlan } from '../../src/app/week-plan.js';
 import { lastChanceThisWeek, neededInWindow } from '../../src/domain/planning.js';
 import { applyHabitForm, setPlanSkip } from '../../src/app/actions.js';
 import { validateHabit } from '../../src/domain/habit.js';
@@ -363,4 +363,13 @@ test('Plan je week: de rij van een taak per maand weet in de laatste week dat ov
   assert.equal(row(planned, 'wc').lastChance, false, 'al ingepland: overslaan kost niets');
   const skipped = buildWeekPlan({ snapshot: snap({ habits: [flexible('wc', 1, 'month', { noPlanWeek: '2026-10-26' })] }), today: '2026-10-28' });
   assert.deepEqual([row(skipped, 'wc').skipped, row(skipped, 'wc').lastChance], [true, true], 'na overslaan blijft de waarschuwing');
+});
+
+test('Plan je week: de agenda van de week loopt vanaf vandaag tot zondag, en in de volgende week vanaf maandag', () => {
+  const itemsFor = (date) => (date === '2026-10-16' ? [{ title: 'Tandarts', date }] : []);
+  const week = agendaWeek({ today: THURSDAY, itemsFor });
+  assert.deepEqual(week.map((d) => d.date), ['2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18'], 'donderdag t/m zondag: wat geweest is valt niet meer te plannen');
+  assert.deepEqual(week.map((d) => d.items.length), [0, 1, 0, 0]);
+  const next = agendaWeek({ today: THURSDAY, date: '2026-10-21', itemsFor });
+  assert.deepEqual([next[0].date, next.at(-1).date, next.length], ['2026-10-19', '2026-10-25', 7], 'kijk je naar een dag in de volgende week, dan is dat de hele week');
 });

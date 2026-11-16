@@ -1037,6 +1037,15 @@ export const nl = {
     completeHint: 'Je kunt hem nog wel op meer dagen plannen.',
     daysFor: (name) => `Dagen voor ${name}`,
     states: { free: 'niet gepland', planned: 'gepland', done: 'gedaan', blocked: 'niet beschikbaar', past: 'voorbij' },
+    // je agenda in het blad, om rekening mee te houden bij het kiezen van de dagen (alleen om te lezen, docs/AGENDA.md)
+    agenda: {
+      title: 'Je agenda deze week',
+      titleNext: 'Je agenda volgende week',
+      count: (n) => (n === 0 ? 'geen afspraken' : n === 1 ? '1 afspraak' : `${n} afspraken`),
+      none: 'Er staan geen afspraken meer in je agenda voor deze dagen.',
+      more: (n) => `nog ${n} ${n === 1 ? 'afspraak' : 'afspraken'}`,
+      busy: (n) => `${n} ${n === 1 ? 'afspraak' : 'afspraken'} in je agenda`,
+    },
     empty: 'Je hebt geen taken zonder vaste dag. Maak een taak met "X keer per week" of "X keer per maand" en hij verschijnt hier.',
     suggest: 'Verdeel voor mij',
     suggested: (n) => `${n} ${n === 1 ? 'dag' : 'dagen'} ingepland`,

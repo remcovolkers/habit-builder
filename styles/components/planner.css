@@ -160,6 +160,101 @@
   line-height: 1;
 }
 
+/* een dag met afspraken uit je agenda: stipjes onder de dag (één per afspraak, tot drie), alleen om rekening mee te houden */
+.planner__busy {
+  font-size: 0.75rem;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+/* je agenda deze week: een uitklapper boven de taken, per dag met afspraken een regel; lange namen breken af in plaats van zijwaarts te scrollen */
+.planner__agenda {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-card);
+}
+
+.planner__agenda-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--size-tap);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+}
+
+.planner__agenda-title .icon,
+.planner__agenda-title svg {
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.planner__agenda-count {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-muted);
+}
+
+.planner__agenda-none {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.planner__agenda-list,
+.planner__agenda-items {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planner__agenda-list {
+  margin-top: var(--space-3);
+}
+
+.planner__agenda-day {
+  display: grid;
+  gap: 2px;
+}
+
+.planner__agenda-date {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.planner__agenda-items {
+  gap: 2px;
+  font-size: var(--font-size-sm);
+}
+
+.planner__agenda-item {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--space-2);
+}
+
+.planner__agenda-when {
+  flex: none;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.planner__agenda-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.planner__agenda-more {
+  color: var(--color-text-muted);
+}
+
 /* "Niet in deze week": een stille knop onder de dagen; staat hij aan, dan is de rij gedempt (geen herinnering, geen voorstel) */
 .planner__foot {
   display: flex;
