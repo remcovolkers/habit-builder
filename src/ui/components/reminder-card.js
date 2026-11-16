@@ -199,7 +199,6 @@ export function reminderCard() {
         }
       }));
       fill(root, ...heading,
-        h('p', { class: 'field__hint', id: 'reminderStatus' }, r.status(reminders.time)),
         appNote(),
         timeField(input),
         extras(),
@@ -230,7 +229,7 @@ export function reminderCard() {
             guarded(async () => {
               say('');
               // met ontwikkelaarsopties aan: elke stap zichtbaar, zodat te zien is waar het vastloopt
-              const result = await enableReminder(time, { onStep: (text) => { if (isDev()) say(text); } });
+              const result = await enableReminder(time);
               if (result.ok) {
                 showToast({ message: r.enabled });
                 showBatteryTip();

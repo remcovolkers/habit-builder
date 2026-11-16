@@ -6,8 +6,7 @@
 
 /* ---- kolomgroepen: op mobiel gewoon onder elkaar (zelfde ritme als voorheen) ---- */
 .today__columns,
-.stats__columns,
-.settings__columns {
+.stats__columns {
   display: block;
 }
 
@@ -454,16 +453,20 @@
     margin-top: 0;
   }
 
-  /* instellingen: twee kolommen */
-  .settings__columns {
+  /* instellingen: links het overzicht, rechts de gekozen pagina (op de telefoon is het één van de twee) */
+  .settings__layout {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(16rem, 21rem) minmax(0, 1fr);
     gap: var(--space-10);
     align-items: start;
   }
 
-  .settings__col > .section:first-child,
-  .settings__col > .form:first-child {
+  .settings__back {
+    display: none; /* het overzicht staat al naast de pagina */
+  }
+
+  /* de titel van de pagina staat op dezelfde hoogte als "Instellingen" links */
+  .settings__detail > .page-header {
     margin-top: 0;
   }
 

@@ -142,12 +142,6 @@ const withPlugin = (options) => {
   globalThis.Capacitor = { isNativePlatform: () => true, Plugins: { PushNotifications: plugin } };
 };
 
-test('aanzetten meldt elke stap, zodat te zien is waar het vastloopt', async () => {
-  const steps = [];
-  await reminders.enableReminder('08:00', { onStep: (text) => steps.push(text) });
-  assert.deepEqual(steps.map((text) => text.slice(0, 6)), ['Stap 1', 'Stap 2', 'Stap 3', 'Stap 4']);
-});
-
 test('addListener geeft geen Promise terug (alleen een callback-id): het token komt toch aan en aanzetten lukt', async () => {
   withPlugin({ plainListeners: true });
   const result = await reminders.enableReminder('08:00');

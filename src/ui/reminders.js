@@ -184,13 +184,13 @@ const scheduleUpload = () => {
 };
 
 /** Aanzetten. Aanroepen direct vanuit een tik van de gebruiker: de browser vraagt dan om toestemming. */
-export async function enableReminder(time, { onStep } = {}) {
+export async function enableReminder(time) {
   const problem = validateReminderTime(time, state.settings.dayStartHour);
   if (problem) return { ok: false, reason: problem };
   if (!navigator.onLine) return { ok: false, reason: 'offline' };
 
   const plugin = appPush();
-  if (plugin) return enableInApp(plugin, time, onStep);
+  if (plugin) return enableInApp(plugin, time);
 
   const permission = await Notification.requestPermission(); // eerste await: de tik telt dan nog als gebaar
   if (permission !== 'granted') {
@@ -259,11 +259,9 @@ function registerForPush(plugin) {
 
 /**
  * Aanzetten in de app: meldingstoestemming (Android 13+), het kanaal, een FCM-token, en het toestel bij de server aanmelden.
- * `onStep(tekst)` meldt de voortgang; bij een fout bevat het resultaat `detail` met de stap en de reden (de kaart toont dat met ontwikkelaarsopties aan).
+ * Bij een fout bevat het resultaat `detail` met de stap en de reden (de kaart toont dat met ontwikkelaarsopties aan).
  */
-async function enableInApp(plugin, time, onStep) {
-  const step = (text) => onStep?.(text);
-  step(nl.reminder.steps.permission);
+async function enableInApp(plugin, time) {
   const permission = (await plugin.requestPermissions().catch(() => null))?.receive; // eerste await: de tik telt dan nog als gebaar
   if (permission !== 'granted') {
     await refreshReminders();
@@ -271,17 +269,14 @@ async function enableInApp(plugin, time, onStep) {
   }
   let token = null;
   try {
-    step(nl.reminder.steps.channel);
     // zonder bestaand kanaal toont Android de melding in een stil standaardkanaal; de server noemt dit kanaal in elk bericht
     await withTimeout(
       plugin.createChannel({ id: CHANNEL_ID, name: nl.reminder.channelName, description: nl.reminder.channelDescription, importance: 4, visibility: 0, vibration: true }),
       appTimeouts.channel, 'kanaal');
-    step(nl.reminder.steps.token);
     token = await registerForPush(plugin);
     storeToken(token);
     storeTime(time);
     reminders.time = time;
-    step(nl.reminder.steps.upload);
     await withTimeout(upload({ kind: 'app', id: token }, time, { rearm: true }), appTimeouts.upload, 'opslaan');
   } catch (error) {
     console.warn('herinnering aanzetten mislukt', error);

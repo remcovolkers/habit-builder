@@ -333,20 +333,20 @@ const scenes = [
     id: 'gegevens',
     async run(F) {
       await F.chapter(9, { sub: 'Account, back-up en instellingen', start: { kind: 'demo', variant: 'full', hash: '#/settings', now: MORNING } });
-      F.cleanVersionLine();
+      await F.tap({ css: '#settingsRow-account' }, { after: 1000 });
       await F.sayAndRead({ title: 'Alles staat op je toestel', body: 'Zonder account werkt de app gewoon, ook zonder internet. Je gegevens verlaten dan je telefoon niet.' });
       await F.tap('Inloggen of account maken', { after: 1600 });
       await F.sayAndRead({ title: 'Met een account op meer apparaten', body: 'Log in met Google of met een code per e-mail. Dan staat er een kopie op de server en loopt alles gelijk.' });
       await F.go('#/settings');
-      F.cleanVersionLine();
-      await F.scrollToText('Gegevens', { block: 'start' });
-      await F.sayAndRead({ title: 'Een back-up maak je zelf', body: 'Download je gegevens als bestand en zet ze op een ander moment weer terug. Een nieuwe tijdzone of dagwissel stel je hier ook in.' });
+      await F.tap({ css: '#settingsRow-data' }, { after: 1200 });
+      await F.sayAndRead({ title: 'Een back-up maak je zelf', body: 'Download je gegevens als bestand en zet ze op een ander moment weer terug. Een nieuwe tijdzone of dagwissel stel je onder Jouw dag in.' });
       await F.say({
         title: 'Handig om te weten',
         points: ['Installeer de app op je beginscherm', 'Ochtendherinnering op Android en computer', 'Feedback geven kan altijd, ook zonder account'],
       });
       await F.hold(6000);
-      await F.tap('Zo werkt het', { after: 1500 });
+      await F.go('#/settings');
+      await F.tap({ css: '#settingsRow-guide' }, { after: 1500 });
       await F.sayAndRead({ title: 'Zo werkt het', body: 'Alle uitleg uit dit filmpje staat ook in de app, onder Instellingen. Ook de introductie kun je opnieuw bekijken.' });
       await F.scrollBy(900, 1300);
       await F.hold(2200);

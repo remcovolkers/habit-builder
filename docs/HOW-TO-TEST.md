@@ -99,7 +99,7 @@ De kaart **Wekelijkse review**, bovenaan de nieuwe terugblik:
 
 - **Sync:** log in met stub in een tweede browserprofiel; na een paar seconden staan dezelfde 12 habits en reacties er. Geef in profiel 1 een reden en vernieuw profiel 2.
 - **Server:** Studio (http://localhost:54323) → tabel `records`, filter op `collection` = `reasons`: één rij per gegeven reden, met `habitId`, `date`, `reason`, `note`.
-- **Back-up:** Instellingen → exporteren. Het bestand bevat een lijst `reasons`. Importeer het in het lege account en kijk of de reden terugkomt in de terugblik.
+- **Back-up:** Instellingen → Gegevens → exporteren. Het bestand bevat een lijst `reasons`. Importeer het in het lege account en kijk of de reden terugkomt in de terugblik.
 
 ## I. Wat je lokaal niet kunt testen
 
@@ -216,7 +216,7 @@ Werkt ook zonder account. Met een account en lokale Supabase (migratie 0008, `np
 4. **Afvinken**: tik het rondje. Er komt "Gedaan" en een melding met **Ongedaan maken**. Op een dag in de toekomst staat het rondje uit (net als bij habits).
 5. **Doorschuiven**: maak een afspraak voor vandaag en zet de dag van het toestel een dag door (of maak er een in een eerdere dag via `await state.repo.saveAppointment(...)` in de console). Een open afspraak van gisteren staat op vandaag met "Afspraak · Van gisteren", zonder oranje of waarschuwing. Vink je hem af, dan blijft hij vandaag staan en is hij morgen weg.
 6. **Wijzigen en verwijderen**: tik ⋯ op een afspraak. Hetzelfde blad opent met **Opslaan** en **Verwijderen**. Een andere dag kiezen zet hem op die dag (en maakt hem weer open). **Verwijderen** haalt hem weg met een melding **Ongedaan maken**.
-7. **Back-up**: Instellingen → exporteren; het bestand bevat een lijst `appointments`. Importeer het in een leeg account: de afspraken komen terug.
+7. **Back-up**: Instellingen → Gegevens → exporteren; het bestand bevat een lijst `appointments`. Importeer het in een leeg account: de afspraken komen terug.
 8. **Sync** (met account): zet een afspraak op het ene apparaat, ververs op het andere. Studio (`http://localhost:54323`), tabel `records`, filter op `collection` = `appointments`: één rij per afspraak.
 9. **Grote tekst**: de knop, de kaarten en het blad op 320 px met 200% tekst, zonder zijwaarts scrollen (`npm run check:layout` controleert dit).
 
@@ -248,7 +248,7 @@ De feed werkt alleen met een account en de functie `calendar-feed`; de agenda va
 7. **Offline**: zet het vliegtuigstand aan en open Vandaag. De laatst opgehaalde afspraken staan er nog. **Koppelen** zegt "Je bent offline…".
 8. **Een wijziging in Google**: verplaats een afspraak. Binnen een paar uur (Google ververst de feed zelf) en na **Nu verversen** staat hij op de nieuwe plek en niet dubbel.
 9. **Wissen**: **Ontkoppelen** haalt de afspraken van Vandaag weg. Koppel opnieuw en log uit: ook dan staat er niets meer. Controle in de browser (Application → Local storage): `hb-agenda` en `hb-agenda-cache` zijn weg.
-10. **Back-up en vrienden**: het back-upbestand (Instellingen → exporteren) bevat geen agenda, en `records` in Studio heeft geen rij met je agenda.
+10. **Back-up en vrienden**: het back-upbestand (Instellingen → Gegevens → exporteren) bevat geen agenda, en `records` in Studio heeft geen rij met je agenda.
 11. **Telefoon (Android-app)**: onder **Agenda** staat ook **Agenda van deze telefoon**. Tik **Agenda van deze telefoon gebruiken**: Android vraagt toestemming. Weiger: "Habit Builder mag je agenda niet lezen…" en het staat niet aan. Tik opnieuw en sta toe: de afspraken van je telefoon staan op Vandaag, ook zonder account.
 12. **Beide bronnen**: koppel dezelfde Google Agenda ook via het adres. Een afspraak staat maar één keer op Vandaag, en onder de kaart staat een korte opmerking dat dat zo hoort. Vink een afspraak af terwijl alleen het adres is gekoppeld, zet daarna de telefoon ook aan: hij blijft afgevinkt.
 12b. **De naam van de agenda (telefoon)**: een afspraak uit een gedeelde agenda (bijvoorbeeld van Mel) toont de naam die de agenda-app van de telefoon aan die agenda geeft, achter het woord Agenda. Een afspraak uit je eigen agenda toont de naam van je eigen agenda. Met alleen het adres staat de naam van de gedeelde agenda erachter (zoals Google hem toont).
@@ -272,7 +272,7 @@ Voor het slepen op een telefoon en de tik op de kaart heb je een echt toestel no
 10. **Widget en week**: een verplaatste habit staat in de widget (Android) in het nieuwe dagdeel; de ring en de weekstrook veranderen niet.
 11. **Hoe ging je dag**: onderaan Vandaag staat "Je dag" met vijf woorden. Kies er een: "Bewaard". Er komt een notitieveld; typ iets, tik **Notitie bewaren**. Sluit de app en open hem opnieuw: cijfer en notitie staan er nog. **Wissen** haalt ze weg. Een dag in de toekomst of langer dan 14 dagen terug heeft geen "Je dag". Ring, punten, reeksen en de ranglijst veranderen niet.
 12. **Weekreview**: Voortgang → week → "Hoe je dagen gingen" met het gemiddelde en per dag het woord en de notitie. Zonder ingevulde dagen staat dat blok er niet.
-13. **Back-up en sync**: een back-up (Instellingen → exporteren) bevat `dayMoves` en `dayReflections`; na importeren staan ze er weer. Met een account staan ze in `records` in Studio (collectie `dayMoves` / `dayReflections`) en komen ze op een tweede apparaat binnen. Heb je migratie 0011 nog niet uitgevoerd, dan blijven ze op het toestel.
+13. **Back-up en sync**: een back-up (Instellingen → Gegevens → exporteren) bevat `dayMoves` en `dayReflections`; na importeren staan ze er weer. Met een account staan ze in `records` in Studio (collectie `dayMoves` / `dayReflections`) en komen ze op een tweede apparaat binnen. Heb je migratie 0011 nog niet uitgevoerd, dan blijven ze op het toestel.
 14. **Grote tekst**: Vandaag op 320 px met 200% tekst: "Je dag" breekt netjes af (de vijf woorden komen onder elkaar) en er is geen zijwaarts scrollen.
 
 ## V. Uitbouwen, prestaties per habit en de wachttijd van een review (docs/FEEDBACKRONDE-2026-11.md)
@@ -287,9 +287,22 @@ Kan in de browser met een testaccount (`npm run dev:seed`) of anoniem. Geen serv
 6. **Weekreview:** vanaf zondag 18:00 staat er onder Voortgang (week) een blokje **Uitbouwen: hoe ging het?** voor habits met een nudge, met dezelfde knoppen. Bij een maandhabit staat het in de maandreview.
 7. **Prestaties van deze habit:** op de habit-pagina staat een blok met wat je behaalde en de eerstvolgende per soort ("36 van 42 dagen, en nog 5 keer gedaan"). Op **Prestaties** staat de groep *Uitbouwen* alleen als je een doel hebt (of er al iets uit behaalde): *Eerste trede*, *Drie treden*, *Uitgebouwd*, *Terug is ook vooruit*.
 8. **Minimum aantal keren:** een habit "1× per maand" met één vinkje haalt geen *21 dagen* meer. Er zijn reeksen in weken (2/4/8/13) en maanden (3/6/12); één gemiste week of maand breekt ze. De getoonde reeks op de habit mag bij dagen één gemiste dag hebben ("één gemiste dag mag").
-9. **Herijken:** Instellingen → **Prestaties herijken**. Wat niet meer klopt wordt ingetrokken (met een melding hoeveel), de rest houdt zijn datum. Bij de eerste start na de update gebeurt dit vanzelf, bij een account pas na de eerste sync.
+9. **Herijken:** Instellingen → Gegevens → **Prestaties herijken**. Wat niet meer klopt wordt ingetrokken (met een melding hoeveel), de rest houdt zijn datum. Bij de eerste start na de update gebeurt dit vanzelf, bij een account pas na de eerste sync.
 10. **Review pas na drie dagen:** een nieuwe gebruiker ziet geen melding "je review staat klaar" en op Voortgang "Nog even gebruiken", tot de app drie dagen is gebruikt (de eerste dag telt mee).
 11. **Grote tekst:** de kaart, de bladen en de strook op 320 px met 200% tekst: geen zijwaarts scrollen, knoppen minstens 44 px (`LAYOUT_ONLY=growth node tools/layout-check.mjs` controleert dit in 9 seconden).
+
+## W. Instellingen als overzicht met pagina's (16 november 2026)
+
+Instellingen is geen lange scroll meer maar een overzicht van gegroepeerde rijen (icoon, titel, huidige waarde, pijltje). Elke rij opent een eigen pagina op `#/settings/<onderdeel>`.
+
+1. **Overzicht (390 px):** vier groepen: *Jij* (Account, Meldingen), *De app* (Uiterlijk, Jouw dag, Agenda, App installeren), *Gegevens*, *Hulp en info* (Zo werkt het, Feedback geven, Privacy en voorwaarden, Over Habit Builder). Rechts naast elke titel staat de huidige waarde: "Niet ingelogd" of je naam, "Aan · 08:00" of "Uit", de themanaam, "Begint 04:00 · Amsterdam", "Versie …". *App installeren* staat er alleen in een browser die dat kan.
+2. **Een rij openen:** de pagina vervangt het overzicht, met "‹ Instellingen" om terug te gaan. De waarde in het overzicht klopt na terugkeren (zet de herinnering aan en ga terug: "Aan · 08:00").
+3. **Alles past direct toe:** onder *Jouw dag* staat geen Opslaan-knop meer. Kies een ander uur of een andere tijdzone: "Opgeslagen" en de regel in het overzicht verandert mee.
+4. **Meldingen:** de pagina toont de ochtendherinnering met "Meer meldingen" (avond en weekreview). Onder "Herinnering aanzetten" staat geen statusregel meer; ook de regel "Aan: elke dag rond …" is weg (het tijdstip staat in het veld).
+5. **Over Habit Builder:** in de Android-app staat bovenaan **Controleer op een nieuwe versie** (voor iedereen, niet alleen met ontwikkelaarsopties): "Bezig met controleren…", daarna "Je hebt de nieuwste versie (x)." of "Versie y staat klaar" met een knop *Downloaden*. In een browser staat die knop er niet (de webversie werkt zichzelf bij). Zeven keer tikken op de versieregel zet de ontwikkelaarsopties nog steeds aan.
+6. **Feedback geven** is een rij die het blad opent; na annuleren staat de focus weer op die rij. **Zo werkt het** gaat naar `#/uitleg` en "‹ Instellingen" brengt je terug.
+7. **Computer (vanaf 960 px):** links het overzicht, rechts de gekozen pagina; zonder keuze staat Account rechts. De gekozen rij is gemarkeerd en er is geen terugknop. `#/settings` blijft het adres van het overzicht.
+8. **Grote tekst:** 320 px met 200% tekst: titels en waarden breken af, niets steekt uit en je scrolt niet zijwaarts.
 
 ## Automatische controles
 
