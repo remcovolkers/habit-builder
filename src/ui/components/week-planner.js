@@ -6,14 +6,44 @@ import { habitIcon } from './habit-icon.js';
 import { showToast } from './toast.js';
 import { notifyChanged, state } from '../state.js';
 import { nl } from '../../content/nl.js';
-import { buildWeekPlan, planningStart, suggestPlan } from '../../app/week-plan.js';
+import { agendaWeek, buildWeekPlan, planningStart, suggestPlan } from '../../app/week-plan.js';
 import { planHabit, RuleError, setPlanSkip, unplanHabit } from '../../app/actions.js';
 import { diffDays, weekday } from '../../domain/dates.js';
+import { agenda } from '../agenda.js';
+import { agendaWhen } from './agenda-card.js';
 import { icon } from '../svg.js';
 
 const p = nl.planner;
+const MAX_DOTS = 3; // zoveel stipjes onder een dag, voor hoe vol je agenda die dag is
+const MAX_PER_DAY = 4; // zoveel afspraken per dag in het agendablok, de rest als "nog n afspraken"
 
 const dayLabel = (date, today) => (date === today ? p.today : `${nl.weekdays.short[weekday(date)]} ${Number(date.slice(8))}`);
+const longDayLabel = (date, today) => (date === today ? p.today : `${nl.weekdays.long[weekday(date)]} ${Number(date.slice(8))}`);
+
+/** Heeft de gebruiker een agenda gekoppeld (feed of toestel)? Zonder agenda blijft het blad zoals het was: geen leeg blok. */
+const agendaLinked = () => Boolean(agenda.model.feedUrl || agenda.model.device);
+
+/** Je agenda in het blad: per dag met afspraken één regel (tijd en naam). Een uitklapper, zodat het blad bij een volle week rustig blijft. */
+function agendaBlock(week, { nextWeek, open, onToggle }) {
+  const a = p.agenda;
+  const days = week.filter((day) => day.items.length > 0);
+  const total = days.reduce((sum, day) => sum + day.items.length, 0);
+  return h('details', { class: 'planner__agenda', open: open ?? total > 0, ontoggle: (event) => onToggle(event.currentTarget.open) },
+    h('summary', { class: 'planner__agenda-title' },
+      icon('calendar'),
+      h('span', null, nextWeek ? a.titleNext : a.title),
+      h('span', { class: 'planner__agenda-count' }, a.count(total))),
+    days.length === 0
+      ? h('p', { class: 'planner__agenda-none' }, a.none)
+      : h('ul', { class: 'planner__agenda-list' }, ...days.map(({ date, items }) =>
+        h('li', { class: 'planner__agenda-day' },
+          h('span', { class: 'planner__agenda-date' }, longDayLabel(date, state.today)),
+          h('ul', { class: 'planner__agenda-items' },
+            ...items.slice(0, MAX_PER_DAY).map((item) => h('li', { class: 'planner__agenda-item' },
+              h('span', { class: 'planner__agenda-when' }, agendaWhen(item)),
+              h('span', { class: 'planner__agenda-name' }, item.title || nl.today.agenda.untitled))),
+            items.length > MAX_PER_DAY ? h('li', { class: 'planner__agenda-more' }, a.more(items.length - MAX_PER_DAY)) : null)))));
+}
 
 /** 'morgen' of de naam van de dag ("zaterdag"): wanneer een taak die later in het venster begint start. */
 const startLabel = (date, today) => (diffDays(date, today) === 1 ? nl.days.tomorrow.toLowerCase() : nl.weekdays.long[weekday(date)]);
@@ -73,14 +103,20 @@ export function openWeekPlanner({ date = null } = {}) {
   // de dag waarvan de week "Niet in deze week" krijgt: vandaag, of de maandag van de volgende week
   const planFrom = () => planningStart({ today: state.today, date: date ?? state.today });
   let confirming = null; // de taak waarbij we vragen of overslaan echt de bedoeling is (de laatste kans van de maand)
+  let agendaOpen = null; // null = standaard (open als er afspraken zijn); anders wat de gebruiker koos, ook na een verversing
+  let busy = new Map(); // hoeveel afspraken uit je agenda er per dag zijn (datum → aantal), voor de stipjes onder de dagen
 
   async function draw(focusKey = null) {
     const snapshot = await state.repo.snapshot();
     const rows = buildWeekPlan({ snapshot, today: state.today, date: date ?? state.today });
+    // je agenda van deze week (alleen om te lezen): als blok bovenaan en als stipjes onder de dagen, om bij het kiezen rekening mee te houden
+    const week = agendaLinked() && rows.length > 0 ? agendaWeek({ today: state.today, date: date ?? state.today, itemsFor: (day) => agenda.itemsFor(day) }) : [];
+    busy = new Map(week.map((day) => [day.date, day.items.length]));
     fill(body,
       rows.length === 0
         ? h('p', { class: 'planner__empty' }, p.empty)
-        : h('ul', { class: 'planner__list' }, ...rows.map((row) => rowElement(row))));
+        : [week.length > 0 ? agendaBlock(week, { nextWeek: planFrom() > state.today, open: agendaOpen, onToggle: (value) => { agendaOpen = value; } }) : null,
+          h('ul', { class: 'planner__list' }, ...rows.map((row) => rowElement(row)))]);
     if (focusKey) body.querySelector(`[data-focus-key="${CSS.escape(focusKey)}"]`)?.focus();
     return rows;
   }
@@ -102,17 +138,19 @@ export function openWeekPlanner({ date = null } = {}) {
           const key = `plan:${habit.id}:${day.date}`;
           const past = day.date < state.today;
           const blocked = past || day.state === 'blocked' || day.state === 'done';
+          const appointments = past ? 0 : busy.get(day.date) ?? 0;
           return h('button', {
             type: 'button',
             class: 'planner__day',
-            dataset: { state: day.state, past: past ? 'true' : null, nextPeriod: day.inUnit ? null : 'true', focusKey: key },
+            dataset: { state: day.state, past: past ? 'true' : null, nextPeriod: day.inUnit ? null : 'true', busy: appointments > 0 ? 'true' : null, focusKey: key },
             'aria-pressed': day.state === 'planned' ? 'true' : 'false',
-            'aria-label': `${habit.name}, ${dayLabel(day.date, state.today)}: ${p.states[day.state]}`,
+            'aria-label': `${habit.name}, ${dayLabel(day.date, state.today)}: ${p.states[day.state]}${appointments > 0 ? `, ${p.agenda.busy(appointments)}` : ''}`,
             disabled: blocked,
             onclick: () => toggle(row, day, key),
           },
           h('span', { class: 'planner__weekday' }, dayLabel(day.date, state.today)),
-          h('span', { class: 'planner__mark', 'aria-hidden': 'true' }, day.state === 'done' ? '✓' : day.state === 'planned' ? '●' : day.state === 'blocked' ? '–' : ''));
+          h('span', { class: 'planner__mark', 'aria-hidden': 'true' }, day.state === 'done' ? '✓' : day.state === 'planned' ? '●' : day.state === 'blocked' ? '–' : ''),
+          appointments > 0 ? h('span', { class: 'planner__busy', 'aria-hidden': 'true' }, '•'.repeat(Math.min(appointments, MAX_DOTS))) : null);
         })),
       // "Niet in deze week": alleen als er iets te plannen is (of het al zo staat, zodat je het kunt terugdraaien)
       confirming === habit.id && row.lastChance && !row.skipped
@@ -178,7 +216,10 @@ export function openWeekPlanner({ date = null } = {}) {
 
   // wat nog ingepland moet worden is gemarkeerd (zie "Nog n taken om in te plannen"); bij het openen scrolt de eerste in beeld
   draw().then(() => body.querySelector('.planner__row[data-needs="true"]')?.scrollIntoView({ block: 'nearest' }));
+  // de agenda kan terwijl het blad openstaat verversen (op de achtergrond): teken opnieuw, en houd de focus op waar hij stond
+  const stopWatching = agenda.onChange(() => draw(body.contains(document.activeElement) ? document.activeElement.dataset.focusKey ?? null : null));
   openDialog({
+    onClose: stopWatching,
     title: p.title,
     description: p.description,
     className: 'dialog--planner',
